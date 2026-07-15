@@ -1,0 +1,96 @@
+.container {
+  display: flex;
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  gap: 30px;
+}
+
+.canvasContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.canvas {
+  border: 2px solid #333;
+  border-radius: 50%;
+  background: #092560;
+}
+
+.controls {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.title {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  color: #2060c0;
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 13px;
+  color: #ccc;
+  display: flex;
+  justify-content: space-between;
+}
+
+.labelValue {
+  color: #2060c0;
+  font-weight: bold;
+}
+
+.rangeInput {
+  width: 100%;
+  accent-color: #2060c0;
+  cursor: pointer;
+}
+
+.button {
+  margin-top: 10px;
+  padding: 12px;
+  background: #2060c0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.button:hover {
+  background: #2a70d0;
+}
+
+.seedInputContainer {
+  display: flex;
+  gap: 8px;
+}
+
+.seedInput {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #222;
+  color: #eee;
+  font-family: monospace;
+}
+
+.seedButton {
+  margin: 0;
+  padding: 8px 16px;
+}
