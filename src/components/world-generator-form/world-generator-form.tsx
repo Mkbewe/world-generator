@@ -17,6 +17,7 @@ export function WorldGeneratorForm({ params, updateParam, generateMap }: WorldGe
 
   useEffect(() => {
     randomizeSeed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <div className={styles.controls}>

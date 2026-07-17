@@ -133,6 +133,7 @@ export function generateWorldMap(
   const largeCount = rawIslandPositions.filter(i => i.type === 'LARGE').length;
   const mediumCount = rawIslandPositions.filter(i => i.type === 'MEDIUM').length;
   const smallCount = rawIslandPositions.filter(i => i.type === 'SMALL').length;
+  // eslint-disable-next-line no-console
   console.log(
     `Wygenerowano: ${largeCount} dużych, ${mediumCount} średnich, ${smallCount} małych (razem: ${rawIslandPositions.length})`
   );
