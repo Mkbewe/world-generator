@@ -1,8 +1,8 @@
 import { createNoise2D } from 'simplex-noise';
 
-import type { IslandCenter, IslandPosition, Params } from '../types/island.types';
+import type { IslandCenter, IslandPosition, Params } from '../types/world.types';
 
-export function generateIslandMap(
+export function generateWorldMap(
   canvas: HTMLCanvasElement,
   params: Params,
   onSeedGenerated?: (seed: string) => void

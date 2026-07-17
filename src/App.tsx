@@ -1,7 +1,5 @@
-import { IslandGenerator } from './components/island-generator';
+import { WorldGenerator } from './components/world-generator';
 
-function App() {
-  return <IslandGenerator />;
+export function App() {
+  return <WorldGenerator />;
 }
-
-export default App;

@@ -1,19 +1,19 @@
 import { useEffect } from 'react';
 
-import type { Params } from '../../types/island.types';
-import styles from './island-generator-form.module.css';
+import type { Params } from '../../types/world.types';
+import styles from './world-generator-form.module.css';
 
-interface IslandGeneratorFormProps {
+interface WorldGeneratorFormProps {
   params: Params;
   updateParam: <K extends keyof Params>(key: K, value: Params[K]) => void;
   generateMap: () => void;
 }
 
-export default function IslandGeneratorForm({
+export function WorldGeneratorForm({
   params,
   updateParam,
   generateMap,
-}: IslandGeneratorFormProps) {
+}: WorldGeneratorFormProps) {
   const randomizeSeed = (): void => {
     const newSeed = Math.floor(Math.random() * 1000000);
     updateParam('seed', newSeed.toString());

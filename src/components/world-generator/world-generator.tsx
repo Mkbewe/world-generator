@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 
-import type { Params } from '../../types/island.types';
-import { generateIslandMap } from '../../utils/island-generation';
-import IslandGeneratorForm from '../island-generator-form/island-generator-form';
-import styles from './island-generator.module.css';
+import type { Params } from '../../types/world.types';
+import { generateWorldMap } from '../../utils/world-generation';
+import { WorldGeneratorForm } from '../world-generator-form';
+import styles from './world-generator.module.css';
 
-export default function IslandGenerator() {
+export function WorldGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [params, setParams] = useState<Params>({
     largeCount: 3,
@@ -27,14 +27,14 @@ export default function IslandGenerator() {
       return;
     }
 
-    generateIslandMap(canvasRef.current, params, newSeed => {
+    generateWorldMap(canvasRef.current, params, newSeed => {
       setParams(prev => ({ ...prev, seed: newSeed }));
     });
   };
 
   return (
     <div className={styles.container}>
-      <IslandGeneratorForm
+      <WorldGeneratorForm
         params={params}
         updateParam={updateParam}
         generateMap={handleGenerateMap}
