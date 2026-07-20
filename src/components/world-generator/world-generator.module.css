@@ -17,4 +17,18 @@
   border: 2px solid #333;
   border-radius: 50%;
   background: #092560;
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column-reverse;
+    padding: 15px;
+    gap: 20px;
+  }
+
+  .canvas {
+    width: 100%;
+  }
 }
