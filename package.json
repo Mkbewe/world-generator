@@ -14,7 +14,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky",
+    "check:all": "pnpm run typecheck && pnpm run lint && pnpm run format && pnpm run test"
+  },
+  "lint-staged": {
+    "*": [
+      "prettier --write --ignore-unknown"
+    ],
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
     "react": "^19.2.7",
@@ -22,6 +32,8 @@
     "simplex-noise": "^4.0.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/eslintrc": "^3.3.6",
     "@eslint/js": "^9.39.5",
     "@testing-library/jest-dom": "^6.9.1",
@@ -40,7 +52,9 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^13.0.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.1.0",
     "prettier": "^3.9.5",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.64.0",
