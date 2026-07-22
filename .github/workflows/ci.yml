@@ -10,28 +10,33 @@ jobs:
   check-branch:
     name: Validate Branch
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.base_ref == 'master'
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Check if source branch is allowed
         run: |
+          TARGET_BRANCH="${{ github.base_ref }}"
           SOURCE_BRANCH="${{ github.head_ref }}"
 
           echo "PR source branch: $SOURCE_BRANCH"
-          echo "PR target branch: ${{ github.base_ref }}"
+          echo "PR target branch: $TARGET_BRANCH"
 
-          # Allow only develop or release/* branches to merge to master
-          if [[ "$SOURCE_BRANCH" == "develop" ]] || [[ "$SOURCE_BRANCH" == release/* ]]; then
+          # Only validate if target is master
+          if [[ "$TARGET_BRANCH" != "master" ]]; then
+            echo "✅ Target is $TARGET_BRANCH, skipping branch validation"
+            exit 0
+          fi
+
+          # Allow only develop branch to merge to master
+          if [[ "$SOURCE_BRANCH" == "develop" ]]; then
             echo "✅ Branch $SOURCE_BRANCH is allowed to merge to master"
             exit 0
           else
             echo "❌ ERROR: Branch $SOURCE_BRANCH cannot be merged directly to master!"
             echo ""
-            echo "Only these branches can be merged to master:"
-            echo "  - develop"
-            echo "  - release/*"
+            echo "Only the develop branch can be merged to master."
             echo ""
-            echo "Please merge your changes to develop first, then create a release."
+            echo "Please merge your changes to develop first."
             exit 1
           fi
 
