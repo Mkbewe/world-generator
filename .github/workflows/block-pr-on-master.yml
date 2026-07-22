@@ -4,7 +4,6 @@ on:
   pull_request:
     branches:
       - master
-
     types: [opened, reopened, synchronize, edited]
 
 jobs:
@@ -12,15 +11,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Prevent feature -> master
+      - name: Validate source branch
+        shell: bash
         run: |
-          BASE="${{ github.event.pull_request.base.ref }}"
           HEAD="${{ github.event.pull_request.head.ref }}"
 
           echo "Head: $HEAD"
-          echo "Base: $BASE"
 
-          if [[ "$BASE" == "master" && "$HEAD" == feature/* ]]; then
-            echo "Feature branches must be merged into develop first."
+          if [[ "$HEAD" != "develop" && "$HEAD" != hotfix/* && "$HEAD" != release/* ]]; then
+            echo "Only develop, hotfix/* and release/* branches can be merged into master."
             exit 1
           fi
