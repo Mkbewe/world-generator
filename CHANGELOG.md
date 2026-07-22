@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.4](https://github.com/Mkbewe/world-generator/compare/v0.0.3...v0.0.4) (2026-07-22)
+
+
+### Features
+
+* add fav icons ([#21](https://github.com/Mkbewe/world-generator/issues/21)) ([02a9ed4](https://github.com/Mkbewe/world-generator/commit/02a9ed4fba1f641dce9ce076c3a797a0967475e7))
+
 ### [0.0.3](https://github.com/Mkbewe/world-generator/compare/v0.0.2...v0.0.3) (2026-07-22)
 
 
