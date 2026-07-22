@@ -10,17 +10,24 @@ jobs:
   check-branch:
     name: Validate Branch
     runs-on: ubuntu-latest
-    # Fail if PR to master is NOT from develop
-    if: github.event_name == 'pull_request' && github.base_ref == 'master' && github.head_ref != 'develop'
+    # Only run for PRs to master
+    if: github.event_name == 'pull_request' && github.base_ref == 'master'
 
     steps:
-      - name: Block non-develop branches
+      - name: Validate source branch
         run: |
-          echo "❌ ERROR: Only the develop branch can be merged to master!"
-          echo ""
-          echo "Current source branch: ${{ github.head_ref }}"
-          echo "Please merge your changes to develop first."
-          exit 1
+          SOURCE_BRANCH="${{ github.head_ref }}"
+
+          if [[ "$SOURCE_BRANCH" == "develop" ]]; then
+            echo "✅ Branch $SOURCE_BRANCH is allowed to merge to master"
+            exit 0
+          else
+            echo "❌ ERROR: Only the develop branch can be merged to master!"
+            echo ""
+            echo "Current source branch: $SOURCE_BRANCH"
+            echo "Please merge your changes to develop first."
+            exit 1
+          fi
 
   quality:
     needs: [check-branch]
