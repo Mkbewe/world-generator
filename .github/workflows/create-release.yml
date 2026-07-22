@@ -1,0 +1,90 @@
+name: Create GitHub Release
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if version changed
+        id: version_check
+        run: |
+          # Get current version from package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=v${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+
+          # Check if tag already exists
+          if git rev-parse "v${CURRENT_VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${CURRENT_VERSION} already exists, skipping release"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Creating new release for v${CURRENT_VERSION}"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract changelog for current version
+        if: steps.version_check.outputs.skip == 'false'
+        id: changelog
+        run: |
+          VERSION=${{ steps.version_check.outputs.current_version }}
+
+          # Extract changelog section for this version
+          if [ -f "CHANGELOG.md" ]; then
+            # Get content between version header and next version header or end of file
+            CHANGELOG_CONTENT=$(sed -n "/^## \[${VERSION#v}\]/,/^## \[/p" CHANGELOG.md | sed '$d')
+
+            # If empty, use the whole latest section
+            if [ -z "$CHANGELOG_CONTENT" ]; then
+              CHANGELOG_CONTENT=$(sed -n '/^## /,/^## /p' CHANGELOG.md | sed '$d')
+            fi
+
+            # Save to file for GitHub Release
+            echo "$CHANGELOG_CONTENT" > /tmp/release_notes.md
+            echo "has_changelog=true" >> $GITHUB_OUTPUT
+          else
+            echo "No CHANGELOG.md found"
+            echo "has_changelog=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Git Tag
+        if: steps.version_check.outputs.skip == 'false'
+        run: |
+          VERSION=${{ steps.version_check.outputs.current_version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=${{ steps.version_check.outputs.current_version }}
+
+          if [ "${{ steps.changelog.outputs.has_changelog }}" == "true" ]; then
+            gh release create "$VERSION" \
+              --title "Release $VERSION" \
+              --notes-file /tmp/release_notes.md
+          else
+            gh release create "$VERSION" \
+              --title "Release $VERSION" \
+              --generate-notes
+          fi
