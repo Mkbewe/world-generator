@@ -1,1 +1,1 @@
-export { WorldCanvas } from './world-canvas';
+export { WorldCanvas, type WorldCanvasRef } from './world-canvas';
