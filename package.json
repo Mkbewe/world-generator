@@ -31,6 +31,7 @@
     ]
   },
   "dependencies": {
+    "@radix-ui/themes": "^3.3.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "simplex-noise": "^4.0.3"
