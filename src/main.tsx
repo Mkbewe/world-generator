@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { App } from './app.tsx';
+import '@radix-ui/themes/styles.css';
+import './theme-custom.css';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
