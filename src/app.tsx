@@ -1,5 +1,10 @@
-import { WorldGenerator } from './components/world-generator';
+import { Layout } from './components/layout';
+import { WorldCanvas } from './components/world-canvas';
 
 export function App() {
-  return <WorldGenerator />;
+  return (
+    <Layout>
+      <WorldCanvas />
+    </Layout>
+  );
 }

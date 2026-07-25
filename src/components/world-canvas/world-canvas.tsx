@@ -2,10 +2,10 @@ import { useRef, useState } from 'react';
 
 import type { Params } from '../../types/world.types';
 import { generateWorldMap } from '../../utils/world-generation/world-generation';
-import { WorldGeneratorForm } from '../world-generator-form';
-import styles from './world-generator.module.css';
+import { WorldControls } from '../world-controls';
+import styles from './world-canvas.module.css';
 
-export function WorldGenerator() {
+export function WorldCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [params, setParams] = useState<Params>({
     largeCount: 3,
@@ -34,11 +34,7 @@ export function WorldGenerator() {
 
   return (
     <div className={styles.container}>
-      <WorldGeneratorForm
-        params={params}
-        updateParam={updateParam}
-        generateMap={handleGenerateMap}
-      />
+      <WorldControls params={params} updateParam={updateParam} generateMap={handleGenerateMap} />
 
       <div className={styles.canvasContainer}>
         <canvas ref={canvasRef} className={styles.canvas} width='600' height='600' />
