@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.5](https://github.com/Mkbewe/world-generator/compare/v0.0.4...v0.0.5) (2026-07-25)
+
+
+### Features
+
+* add header ([#29](https://github.com/Mkbewe/world-generator/issues/29)) ([c782340](https://github.com/Mkbewe/world-generator/commit/c7823406ce10fa070519246a7d9450c416648569))
+* add theme and ui library ([#30](https://github.com/Mkbewe/world-generator/issues/30)) ([5a4b9fa](https://github.com/Mkbewe/world-generator/commit/5a4b9fa68cd4366dfb4c39c8526d9aa1091b9a7e))
+
+
+### Chores
+
+* update readme ([#27](https://github.com/Mkbewe/world-generator/issues/27)) ([615a708](https://github.com/Mkbewe/world-generator/commit/615a70869764236659eef3112a8aab93f1a04521))
+
+
+### Code Refactoring
+
+* new fav icon ([#26](https://github.com/Mkbewe/world-generator/issues/26)) ([fd89bd3](https://github.com/Mkbewe/world-generator/commit/fd89bd3fe1fe1f8251fb4b680a5291894c1e2dfd))
+* refactor world generator components ([#28](https://github.com/Mkbewe/world-generator/issues/28)) ([bac7dbb](https://github.com/Mkbewe/world-generator/commit/bac7dbb990f479e8ce667d61e0f3deb3c10cbfcc))
+
+
+### Continuous Integration
+
+* add pr title check workflow ([#25](https://github.com/Mkbewe/world-generator/issues/25)) ([d2e62db](https://github.com/Mkbewe/world-generator/commit/d2e62db38b8254f7d5957c53d33e2eb77a605abc))
+* add release type to pr tittle check ([21a5b86](https://github.com/Mkbewe/world-generator/commit/21a5b860e37621a706da1295abb3ebc345ccdecc))
+
 ### [0.0.4](https://github.com/Mkbewe/world-generator/compare/v0.0.3...v0.0.4) (2026-07-22)
 
 
