@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 
-import { WorldGeneratorForm } from './world-generator-form';
+import { WorldControls } from './world-controls';
 
-describe('WorldGeneratorForm', () => {
+describe('WorldControls', () => {
   const mockParams = {
     largeCount: 3,
     mediumCount: 5,
@@ -19,7 +19,7 @@ describe('WorldGeneratorForm', () => {
 
   it('should render successfully', () => {
     const { container } = render(
-      <WorldGeneratorForm
+      <WorldControls
         params={mockParams}
         updateParam={mockUpdateParam}
         generateMap={mockGenerateMap}
