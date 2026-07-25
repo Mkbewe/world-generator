@@ -1,11 +1,15 @@
-import { useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 
 import type { Params } from '../../types/world.types';
 import { generateWorldMap } from '../../utils/world-generation/world-generation';
 import { WorldControls } from '../world-controls';
 import styles from './world-canvas.module.css';
 
-export function WorldCanvas() {
+export interface WorldCanvasRef {
+  exportMap: () => void;
+}
+
+export const WorldCanvas = forwardRef<WorldCanvasRef>((_, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [params, setParams] = useState<Params>({
     largeCount: 3,
@@ -32,6 +36,22 @@ export function WorldCanvas() {
     });
   };
 
+  const handleExportMap = (): void => {
+    if (!canvasRef.current) {
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const link = document.createElement('a');
+    link.download = `world-map-${params.seed || Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
+  useImperativeHandle(ref, () => ({
+    exportMap: handleExportMap,
+  }));
+
   return (
     <div className={styles.container}>
       <WorldControls params={params} updateParam={updateParam} generateMap={handleGenerateMap} />
@@ -41,4 +61,6 @@ export function WorldCanvas() {
       </div>
     </div>
   );
-}
+});
+
+WorldCanvas.displayName = 'WorldCanvas';
