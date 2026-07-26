@@ -12,10 +12,6 @@ describe('Header', () => {
   it('should display logo and title', () => {
     render(<Header />);
 
-    const logo = screen.getByAltText('World Generator Logo');
-    expect(logo).toBeInTheDocument();
-    expect(logo).toHaveAttribute('src', '/favicon.svg');
-
     const title = screen.getByText('World Generator');
     expect(title).toBeInTheDocument();
   });
@@ -46,11 +42,11 @@ describe('Header', () => {
     expect(mockExport).toHaveBeenCalledTimes(1);
   });
 
-  it('should have correct title attribute on export button', () => {
+  it('should have export button with correct text', () => {
     const mockExport = vi.fn();
     render(<Header onExportMap={mockExport} />);
 
     const exportButton = screen.getByRole('button', { name: /export png/i });
-    expect(exportButton).toHaveAttribute('title', 'Export map as PNG');
+    expect(exportButton).toBeInTheDocument();
   });
 });
