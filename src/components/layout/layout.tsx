@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { Footer } from '../footer';
 import { Header } from '../header';
 import styles from './layout.module.css';
 
@@ -15,6 +16,7 @@ export function Layout({ children, onExportMap, onToggleTheme, currentTheme }: L
     <div className={styles.layout}>
       <Header onExportMap={onExportMap} onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
       <main className={styles.main}>{children}</main>
+      <Footer />
     </div>
   );
 }
