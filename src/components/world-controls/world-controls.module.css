@@ -1,5 +1,4 @@
 .controls {
-  width: 320px;
   display: flex;
   flex-direction: column;
   gap: 14px;

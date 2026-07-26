@@ -9,8 +9,8 @@ export function Footer() {
 
   return (
     <footer className={styles.footer}>
-      <Container size='4'>
-        <Flex direction='column' align='center' gap='2'>
+      <Container size='4' py='6'>
+        <Flex direction='column' px={{ initial: '4', sm: '8' }} align='center' gap='2'>
           <Text size='2' weight='medium'>
             World Generator v{version}
           </Text>

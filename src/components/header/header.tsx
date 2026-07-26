@@ -12,8 +12,13 @@ interface HeaderProps {
 export function Header({ onExportMap, onToggleTheme, currentTheme }: HeaderProps) {
   return (
     <header className={styles.header}>
-      <Container size='4' px='4'>
-        <Flex justify='between' align='center' className={styles.headerContent}>
+      <Container size='4' py='4'>
+        <Flex
+          justify='between'
+          px={{ initial: '4', sm: '8' }}
+          align='center'
+          className={styles.headerContent}
+        >
           <Flex align='center' gap='4'>
             <Avatar src='/favicon.svg' alt='World Generator Logo' size='3' fallback='WG' />
             <Heading size='6' weight='bold' className={styles.title}>
