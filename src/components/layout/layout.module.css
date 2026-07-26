@@ -12,7 +12,13 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  max-width: 1400px;
+  max-width: 1136px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 3rem;
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 2rem 1rem;
+  }
 }

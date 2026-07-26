@@ -1,9 +1,8 @@
 .container {
   display: flex;
   background: var(--gray-2);
-  padding: 20px;
+  padding: 30px;
   border-radius: var(--radius-4);
-  box-shadow: 0 10px 40px var(--gray-a7);
   gap: 30px;
   width: 100%;
 }
