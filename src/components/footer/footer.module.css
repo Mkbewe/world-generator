@@ -1,0 +1,13 @@
+.footer {
+  width: 100%;
+  padding: 2rem 0;
+  background-color: var(--gray-2);
+  border-top: 1px solid var(--gray-6);
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 1.5rem 0;
+  }
+}
