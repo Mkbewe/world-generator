@@ -2,7 +2,15 @@ name: PR Title Check
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, edited, reopened]
+
+permissions:
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   validate-pr-title:
@@ -26,11 +34,10 @@ jobs:
             ci
             chore
             revert
-            release
           requireScope: false
-          subjectPattern: ^[a-z].+$
+          subjectPattern: ^[a-z][^A-Z]*$
           subjectPatternError: |
-            The subject "{subject}" found in PR title "{title}" must start with a lowercase letter.
+            The subject "{subject}" found in PR title "{title}" must start with a lowercase letter and must not contain any uppercase letters.
 
             Valid examples:
             - feat: add new feature
