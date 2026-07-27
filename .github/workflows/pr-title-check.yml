@@ -2,7 +2,15 @@ name: PR Title Check
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, edited, reopened]
+
+permissions:
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   validate-pr-title:
@@ -26,7 +34,6 @@ jobs:
             ci
             chore
             revert
-            release
           requireScope: false
           subjectPattern: ^[a-z].+$
           subjectPatternError: |
