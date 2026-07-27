@@ -35,9 +35,9 @@ jobs:
             chore
             revert
           requireScope: false
-          subjectPattern: ^[a-z].+$
+          subjectPattern: ^[a-z][^A-Z]*$
           subjectPatternError: |
-            The subject "{subject}" found in PR title "{title}" must start with a lowercase letter.
+            The subject "{subject}" found in PR title "{title}" must start with a lowercase letter and must not contain any uppercase letters.
 
             Valid examples:
             - feat: add new feature
