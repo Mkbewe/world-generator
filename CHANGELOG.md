@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/Mkbewe/world-generator/compare/v0.0.5...v0.0.6) (2026-07-31)
+
+
+### Features
+
+* add footer ([#33](https://github.com/Mkbewe/world-generator/issues/33)) ([07926ac](https://github.com/Mkbewe/world-generator/commit/07926acf7f3f3158b00af120facd8c7e9aed27af))
+
+
+### Code Refactoring
+
+* pr title check ([#34](https://github.com/Mkbewe/world-generator/issues/34)) ([56ecc8b](https://github.com/Mkbewe/world-generator/commit/56ecc8b44d2ed0ef490c356bf279204e8a544c83))
+
+
+### Chores
+
+* add test run to commit lint ([#35](https://github.com/Mkbewe/world-generator/issues/35)) ([df924c4](https://github.com/Mkbewe/world-generator/commit/df924c44cc4b092bfc40686d32f935e831a68e9b))
+
 ### [0.0.5](https://github.com/Mkbewe/world-generator/compare/v0.0.4...v0.0.5) (2026-07-25)
 
 
