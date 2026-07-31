@@ -2,9 +2,10 @@ name: PR Title Check
 
 on:
   pull_request:
-    types: [opened, edited, reopened]
+    types: [opened, edited, reopened, synchronize]
 
 permissions:
+  contents: read
   pull-requests: read
   statuses: write
 
@@ -17,29 +18,14 @@ jobs:
     name: Validate PR Title
     runs-on: ubuntu-latest
     steps:
-      - name: Check PR title follows Conventional Commits
-        uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            style
-            refactor
-            perf
-            test
-            build
-            ci
-            chore
-            revert
-          requireScope: false
-          subjectPattern: ^[a-z][^A-Z]*$
-          subjectPatternError: |
-            The subject "{subject}" found in PR title "{title}" must start with a lowercase letter and must not contain any uppercase letters.
+      - uses: actions/checkout@v4
 
-            Valid examples:
-            - feat: add new feature
-            - fix(api): resolve null pointer exception
-            - docs: update README
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate PR title with commitlint
+        run: |
+          npm install -g @commitlint/cli @commitlint/config-conventional
+          echo "${{ github.event.pull_request.title }}" | commitlint --config commitlint.config.cjs
