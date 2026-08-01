@@ -1,0 +1,57 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    name: Deploy to Vercel Dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Project
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel Staging
+        id: deploy
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Assign Dev Alias
+        run: |
+          vercel alias set ${{ steps.deploy.outputs.url }} world-generator.dev.vercel.app --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment deployment URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `🚀 Deployed to dev: https://world-generator.dev.vercel.app\nUnique URL: ${{ steps.deploy.outputs.url }}`
+            })
