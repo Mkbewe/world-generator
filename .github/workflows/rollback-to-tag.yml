@@ -20,6 +20,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     name: Validate Input
@@ -62,7 +65,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
           vercel-args: ${{ inputs.environment == 'production' && '--prod' || '--prod=false' }}
-          alias-domains: ${{ inputs.environment == 'production' && '' || 'world-generator.dev.vercel.app' }}
+          alias-domains: ${{ inputs.environment == 'production' && '' || 'world-generator-dev.vercel.app' }}
 
       - name: Create rollback notification
         uses: actions/github-script@v7
