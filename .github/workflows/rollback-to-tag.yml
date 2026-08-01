@@ -78,9 +78,9 @@ jobs:
         id: deploy
         run: |
           if [ "${{ inputs.environment }}" == "production" ]; then
-            DEPLOYMENT_URL=$(vercel deploy ./dist --prod --token=${{ secrets.VERCEL_TOKEN }})
+            DEPLOYMENT_URL=$(vercel deploy ./dist --prod --yes --token=${{ secrets.VERCEL_TOKEN }})
           else
-            DEPLOYMENT_URL=$(vercel deploy ./dist --prod=false --token=${{ secrets.VERCEL_TOKEN }})
+            DEPLOYMENT_URL=$(vercel deploy ./dist --prod=false --yes --token=${{ secrets.VERCEL_TOKEN }})
           fi
           echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
 
