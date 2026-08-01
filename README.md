@@ -40,26 +40,20 @@ pnpm check:all
 
 ## Branching strategy
 
-The repository uses a simple, scalable Git flow:
+The repository uses a simplified GitHub Flow:
 
-- `master` — production branch (deployed to Vercel)
-- `develop` — integration / stage branch
+- `master` — the single long-lived branch (protected)
 - `feature/<name>` — new work
-- `release/<version>` — release preparation
 - `hotfix/<name>` — emergency fixes
 
 Recommended flow:
 
-1. Create a `feature/*` branch from `develop`
-2. Open a PR to `develop` (merge or squash)
-3. After review, merge to `develop`
-4. For release:
-   - Create `release/v0.0.x` branch from `develop`
-   - Run `pnpm release` (bumps version, updates CHANGELOG)
-   - Open PR from `release/v0.0.x` to `master`
-   - **Use "Rebase and merge"** to keep linear history
-5. After merge to `master`:
-   - Sync `develop` with `master` (rebase locally or PR from `master` to `develop`)
+1. Create a `feature/*` (or `hotfix/*`) branch from `master`
+2. Open a PR to `master`
+3. After review and green CI, **squash and merge** into `master`
+
+Every push to `master` is automatically deployed to the **dev** environment
+(see [Deployment](#deployment)). Production is promoted manually.
 
 ## Commit naming convention
 
@@ -132,25 +126,39 @@ Examples:
 - `fix:` → bumps `patch`
 - `BREAKING CHANGE:` → bumps `major`
 
-After merging to `master`, GitHub Actions automatically:
-- creates a git tag (e.g., `v0.0.4`)
+Typical flow: on a `feature/*` branch run `pnpm release` to bump the version
+and update `CHANGELOG.md`, then open the PR. When the version bump in
+`package.json` lands on `master`, the **Create GitHub Release** workflow
+automatically:
+- creates a git tag (e.g., `v0.0.5`)
 - creates a GitHub release with changelog notes
 
 ## Deployment
 
-The `master` branch is automatically deployed to Vercel on every push.
+Deployment is decoupled from merging: every push to `master` ships to **dev**,
+and production is promoted manually from a dev deployment that has been tested.
+No rebuild happens on promotion — the exact artifact tested on dev is the one
+that goes live.
 
-Live URL: https://world-generator-five.vercel.app
+**Environments:**
 
-**Automatic deployments:**
-- **Production**: every push to `master` → live URL
-- **Preview**: every PR → unique preview URL for testing
+- **Dev** — https://world-generator-dev.vercel.app
+- **Production** — the project's production domain on Vercel
 
-No manual deployment workflow needed - Vercel handles:
-- Build (`pnpm build`)
-- Deploy to CDN
-- SSL certificates
-- Environment configuration
+**Workflows** (`.github/workflows/`):
+
+- **Deploy to Dev** (`deploy-dev.yml`) — runs automatically on every push to
+  `master`. Builds and deploys a Vercel preview, then aliases it to the dev URL.
+- **Promote to Production** (`deploy-production.yml`) — manual
+  (`workflow_dispatch`). Takes a dev deployment URL and runs `vercel promote`
+  to make it the live production deployment (no rebuild). Requires typing
+  `deploy` to confirm.
+- **Rollback Production** (`rollback.yml`) — manual (`workflow_dispatch`).
+  Promotes a previous good deployment URL back to production via `vercel promote`.
+  Requires typing `rollback` to confirm.
+
+Deployment auth is provided by the `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
+`VERCEL_PROJECT_ID` repository secrets.
 
 ## Notes
 
