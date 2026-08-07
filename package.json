@@ -1,7 +1,7 @@
 {
   "name": "world-generator",
   "private": true,
-  "version": "0.0.6",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,10 +17,10 @@
     "preview": "vite preview",
     "prepare": "husky",
     "check:all": "pnpm run typecheck && pnpm run lint && pnpm run format && pnpm run test",
-    "release": "standard-version",
-    "release:minor": "standard-version --release-as minor",
-    "release:major": "standard-version --release-as major",
-    "release:patch": "standard-version --release-as patch"
+    "release": "standard-version --skip.tag",
+    "release:patch": "standard-version --release-as patch --skip.tag",
+    "release:minor": "standard-version --release-as minor --skip.tag",
+    "release:major": "standard-version --release-as major --skip.tag"
   },
   "lint-staged": {
     "*": [
