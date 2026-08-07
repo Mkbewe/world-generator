@@ -1,0 +1,62 @@
+name: Vercel Promote
+description: Resolve a Vercel deployment (explicit URL or current dev) and promote it to production.
+
+inputs:
+  deployment_url:
+    description: Deployment URL to promote. Leave empty to resolve the current dev deployment.
+    required: false
+    default: ''
+  dev_alias:
+    description: Dev alias to resolve when deployment_url is empty.
+    required: false
+    default: world-generator-dev.vercel.app
+  vercel_token:
+    description: Vercel token (Full Account scope).
+    required: true
+  vercel_org_id:
+    description: Vercel org id (team_...).
+    required: true
+  vercel_project_id:
+    description: Vercel project id (prj_...).
+    required: true
+
+outputs:
+  target:
+    description: The deployment that was promoted.
+    value: ${{ steps.resolve.outputs.target }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve deployment to promote
+      id: resolve
+      shell: bash
+      env:
+        VERCEL_ORG_ID: ${{ inputs.vercel_org_id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel_project_id }}
+      run: |
+        if [ -n "${{ inputs.deployment_url }}" ]; then
+          TARGET="${{ inputs.deployment_url }}"
+          echo "Using provided deployment: $TARGET"
+        else
+          echo "No URL provided — resolving current dev deployment..."
+          TARGET=$(npx vercel@latest inspect "${{ inputs.dev_alias }}" \
+            --token=${{ inputs.vercel_token }} 2>&1 \
+            | grep -oiE 'dpl_[A-Za-z0-9]+' | head -1)
+          echo "Resolved dev deployment id: $TARGET"
+        fi
+        if [ -z "$TARGET" ]; then
+          echo "❌ Could not resolve a deployment to promote."
+          exit 1
+        fi
+        echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+
+    - name: Promote deployment to production
+      shell: bash
+      env:
+        VERCEL_ORG_ID: ${{ inputs.vercel_org_id }}
+        VERCEL_PROJECT_ID: ${{ inputs.vercel_project_id }}
+      run: |
+        npx vercel@latest promote "${{ steps.resolve.outputs.target }}" \
+          --yes \
+          --token=${{ inputs.vercel_token }}

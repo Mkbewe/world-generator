@@ -12,19 +12,26 @@ jobs:
   deploy:
     name: Deploy to Vercel Dev
     runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v42
+      - name: Deploy to Vercel (preview)
         id: deploy
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
-          alias-domains: world-generator-dev.vercel.app
+        run: |
+          URL=$(npx vercel@latest deploy --yes --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $URL"
+
+      - name: Alias to dev
+        run: |
+          npx vercel@latest alias set "${{ steps.deploy.outputs.url }}" \
+            world-generator-dev.vercel.app \
+            --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Comment deployment URL
         uses: actions/github-script@v7
@@ -34,5 +41,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
-              body: `🚀 Deployed to dev: https://world-generator-dev.vercel.app\nUnique URL: ${{ steps.deploy.outputs.preview-url }}`
+              body: `🚀 Deployed to dev: https://world-generator-dev.vercel.app\n🔗 Unique URL: ${{ steps.deploy.outputs.url }}`
             })
