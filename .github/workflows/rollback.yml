@@ -53,5 +53,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
-              body: `🔄 Rolled back production to: ${{ steps.promote.outputs.target }}`
+              body: `🔄 Rolled back production\n🔗 ${{ steps.promote.outputs.url }}\n📦 Deployment: ${{ steps.promote.outputs.target }}`
             })

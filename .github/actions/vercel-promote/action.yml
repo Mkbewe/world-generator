@@ -22,8 +22,11 @@ inputs:
 
 outputs:
   target:
-    description: The deployment that was promoted.
+    description: The deployment that was promoted (dpl_ id or URL).
     value: ${{ steps.resolve.outputs.target }}
+  url:
+    description: A human-friendly URL for the promoted deployment (falls back to target).
+    value: ${{ steps.resolve.outputs.url }}
 
 runs:
   using: composite
@@ -37,19 +40,27 @@ runs:
       run: |
         if [ -n "${{ inputs.deployment_url }}" ]; then
           TARGET="${{ inputs.deployment_url }}"
+          DISPLAY="${{ inputs.deployment_url }}"
           echo "Using provided deployment: $TARGET"
         else
           echo "No URL provided — resolving current dev deployment..."
-          TARGET=$(npx vercel@latest inspect "${{ inputs.dev_alias }}" \
-            --token=${{ inputs.vercel_token }} 2>&1 \
-            | grep -oiE 'dpl_[A-Za-z0-9]+' | head -1)
+          INSPECT=$(npx vercel@latest inspect "${{ inputs.dev_alias }}" \
+            --token=${{ inputs.vercel_token }} 2>&1)
+          TARGET=$(echo "$INSPECT" | grep -oiE 'dpl_[A-Za-z0-9]+' | head -1)
+          DISPLAY=$(echo "$INSPECT" | grep -oiE 'https://[a-z0-9.-]+\.vercel\.app' \
+            | grep -v "${{ inputs.dev_alias }}" | head -1)
           echo "Resolved dev deployment id: $TARGET"
+          echo "Resolved dev deployment url: $DISPLAY"
         fi
         if [ -z "$TARGET" ]; then
           echo "❌ Could not resolve a deployment to promote."
           exit 1
         fi
+        if [ -z "$DISPLAY" ]; then
+          DISPLAY="$TARGET"
+        fi
         echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+        echo "url=$DISPLAY" >> "$GITHUB_OUTPUT"
 
     - name: Promote deployment to production
       shell: bash

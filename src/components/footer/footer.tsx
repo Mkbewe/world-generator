@@ -1,8 +1,7 @@
 import { Container, Flex, Text } from '@radix-ui/themes';
 
+import { appConfig } from '../../config';
 import styles from './footer.module.css';
-
-const version = '0.0.5';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -12,13 +11,13 @@ export function Footer() {
       <Container size='4' py='6'>
         <Flex direction='column' px={{ initial: '4', sm: '8' }} align='center' gap='2'>
           <Text size='2' weight='medium'>
-            World Generator v{version}
+            {appConfig.name} v{appConfig.version}
           </Text>
           <Text size='1' color='gray'>
-            Create procedural island worlds
+            {appConfig.description}
           </Text>
           <Text size='1' color='gray'>
-            © {currentYear} World Generator
+            © {currentYear} {appConfig.name}
           </Text>
         </Flex>
       </Container>
