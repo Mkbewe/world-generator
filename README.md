@@ -127,11 +127,20 @@ Examples:
 - `BREAKING CHANGE:` → bumps `major`
 
 Typical flow: on a `feature/*` branch run `pnpm release` to bump the version
-and update `CHANGELOG.md`, then open the PR. When the version bump in
-`package.json` lands on `master`, the **Create GitHub Release** workflow
-automatically:
-- creates a git tag (e.g., `v0.0.5`)
+and update `CHANGELOG.md` (no git tag is created locally), then open the PR and
+merge it to `master`. Merging only ships the build to **dev** — no tag or
+release yet.
+
+The git tag and GitHub release are created later, when the tested build is
+**promoted to production**. The **Promote to Production** workflow calls the
+**Create GitHub Release** workflow (`create-release.yml`, a reusable
+`workflow_call`) as its final step, which:
+- creates a git tag for the current `package.json` version (e.g., `v0.1.0`)
 - creates a GitHub release with changelog notes
+
+This means a GitHub release always corresponds to something that is live in
+production. Rollbacks do **not** create releases. The tag step is idempotent —
+promoting the same version again will not create a duplicate tag or release.
 
 ## Deployment
 
@@ -155,7 +164,9 @@ that goes live.
   (`workflow_dispatch`). Promotes a tested dev deployment to production via
   `vercel promote` (no rebuild). Leave the deployment URL **empty** to promote
   the current dev deployment, or pass a specific dev deployment URL to promote
-  that one. Requires typing `deploy` to confirm.
+  that one. Requires typing `deploy` to confirm. After a successful promotion it
+  creates the git tag and GitHub release for the current version (see
+  [Versioning and releases](#versioning-and-releases)).
 - **Rollback Production** (`rollback.yml`) — manual (`workflow_dispatch`).
   Promotes a previous good deployment URL back to production via `vercel promote`.
   Requires typing `rollback` to confirm.

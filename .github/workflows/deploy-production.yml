@@ -55,3 +55,11 @@ jobs:
               commit_sha: context.sha,
               body: `✅ Promoted to production\n🔗 ${{ steps.promote.outputs.url }}\n📦 Deployment: ${{ steps.promote.outputs.target }}`
             })
+
+  release:
+    name: Create GitHub Release
+    needs: promote
+    uses: ./.github/workflows/create-release.yml
+    permissions:
+      contents: write
+      pull-requests: write
