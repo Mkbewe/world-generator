@@ -31,16 +31,19 @@ jobs:
     name: Roll back production
     runs-on: ubuntu-latest
     needs: validate
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Promote previous deployment to production
-        run: |
-          npx vercel@latest promote "${{ inputs.deployment_url }}" \
-            --yes \
-            --token=${{ secrets.VERCEL_TOKEN }}
+        id: promote
+        uses: ./.github/actions/vercel-promote
+        with:
+          deployment_url: ${{ inputs.deployment_url }}
+          vercel_token: ${{ secrets.VERCEL_TOKEN }}
+          vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Create rollback comment
         uses: actions/github-script@v7
@@ -50,5 +53,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
-              body: `🔄 Rolled back production to: ${{ inputs.deployment_url }}`
+              body: `🔄 Rolled back production to: ${{ steps.promote.outputs.target }}`
             })
