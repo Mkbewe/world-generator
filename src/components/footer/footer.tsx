@@ -1,7 +1,7 @@
 import { Container, Flex, Text } from '@radix-ui/themes';
 
 import { appConfig } from '../../config';
-import styles from './footer.module.css';
+import styles from './footer.module.scss';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();

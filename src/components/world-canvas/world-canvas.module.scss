@@ -6,6 +6,12 @@
   width: 100%;
   gap: 30px;
   justify-content: space-between;
+
+  @include mobile {
+    flex-direction: column-reverse;
+    padding: 15px;
+    gap: 20px;
+  }
 }
 
 .canvasContainer {
@@ -17,19 +23,11 @@
 .canvas {
   border: 2px solid var(--gray-6);
   border-radius: 50%;
-  background: #092560;
+  background: $color-ocean;
   max-width: 100%;
   height: auto;
-}
 
-@media (max-width: 768px) {
-  .container {
-    flex-direction: column-reverse;
-    padding: 15px;
-    gap: 20px;
-  }
-
-  .canvas {
+  @include mobile {
     width: 100%;
   }
 }
