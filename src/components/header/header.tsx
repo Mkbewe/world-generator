@@ -12,6 +12,8 @@ interface HeaderProps {
 export function Header({ onExportMap, onToggleTheme, currentTheme }: HeaderProps) {
   return (
     <header className={styles.header}>
+      {' '}
+      Test
       <Container size='4' py='4'>
         <Flex
           justify='between'
