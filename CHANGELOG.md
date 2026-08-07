@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.1.0](https://github.com/Mkbewe/world-generator/compare/v0.0.6...v0.1.0) (2026-08-07)
+
+
+### Bug Fixes
+
+* test layout change ([#46](https://github.com/Mkbewe/world-generator/issues/46)) ([ffcf991](https://github.com/Mkbewe/world-generator/commit/ffcf9911f4761dee0ede13abdfd0d90a31b684b9))
+
+
+### Chores
+
+* disable automatic production deployments for master branch ([#37](https://github.com/Mkbewe/world-generator/issues/37)) ([ebc79ca](https://github.com/Mkbewe/world-generator/commit/ebc79ca4b3b64b859b563fe850603425844aa762))
+* use commit lint in pr title check ([#38](https://github.com/Mkbewe/world-generator/issues/38)) ([8a95c5b](https://github.com/Mkbewe/world-generator/commit/8a95c5b2c0cf0784bc473f5cf6b52354a5575b61))
+
+
+### Tests
+
+* test pr ([#48](https://github.com/Mkbewe/world-generator/issues/48)) ([9ddae9a](https://github.com/Mkbewe/world-generator/commit/9ddae9a1156048ca6f4f0067ddb8224b91a14a9a))
+
+
+### Continuous Integration
+
+* change deployment strategy ([#39](https://github.com/Mkbewe/world-generator/issues/39)) ([c915033](https://github.com/Mkbewe/world-generator/commit/c91503394ee2edbf18ef91f07509e7024673164d))
+* clean up vercel ci ([#45](https://github.com/Mkbewe/world-generator/issues/45)) ([98efaf9](https://github.com/Mkbewe/world-generator/commit/98efaf9f6609a44aafe6aecc0f3479f080fd4891))
+* final refactor actions and config ([#50](https://github.com/Mkbewe/world-generator/issues/50)) ([4ff74d4](https://github.com/Mkbewe/world-generator/commit/4ff74d4c4b052e4f97789d3b088676b9f1c9d133))
+* fix deploy to dev ([#47](https://github.com/Mkbewe/world-generator/issues/47)) ([e4d3793](https://github.com/Mkbewe/world-generator/commit/e4d3793dcfa63789b5f1726ff064209d6ff3bd9f))
+* fix vercel deploy yes flag ([#41](https://github.com/Mkbewe/world-generator/issues/41)) ([99e407f](https://github.com/Mkbewe/world-generator/commit/99e407faf78231337d2c84041db7ea57055f2dc2))
+* fix vercel deployment ([#40](https://github.com/Mkbewe/world-generator/issues/40)) ([301b9b6](https://github.com/Mkbewe/world-generator/commit/301b9b6b76ba18bb81ef0bb7f091ae1ad18c93bc))
+* refactor ci ([#49](https://github.com/Mkbewe/world-generator/issues/49)) ([70712e9](https://github.com/Mkbewe/world-generator/commit/70712e9b23159912024d80c3db0a7e4dbded8f9a))
+* update vercel action ([#43](https://github.com/Mkbewe/world-generator/issues/43)) ([8497b55](https://github.com/Mkbewe/world-generator/commit/8497b550640f5bcefd5a5010bad933bd4e756bf2))
+* use vercel-action ([#42](https://github.com/Mkbewe/world-generator/issues/42)) ([242376f](https://github.com/Mkbewe/world-generator/commit/242376f1238f8e0f469de8923e91a0cd64ac9379))
+* vercel fix ([#44](https://github.com/Mkbewe/world-generator/issues/44)) ([aac3da5](https://github.com/Mkbewe/world-generator/commit/aac3da5e0463e1c93b0931bba93ab61e0919c29f))
+
 ### [0.0.6](https://github.com/Mkbewe/world-generator/compare/v0.0.5...v0.0.6) (2026-07-31)
 
 
