@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client';
 
 import { App } from './app.tsx';
 import '@radix-ui/themes/styles.css';
-import './theme/index.css';
-import './index.css';
+import './theme/index.scss';
+import './index.scss';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

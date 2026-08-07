@@ -1,0 +1,15 @@
+// Static design tokens shared across stylesheets.
+// NOTE: runtime, theme-aware values (colors that change with light/dark) come
+// from Radix Themes CSS custom properties (e.g. var(--gray-2)) — keep those as
+// CSS variables. Only put genuinely constant values here.
+
+// Breakpoints
+$breakpoint-mobile: 768px;
+
+// Brand colors outside the Radix palette
+$color-brand-teal: #64ffda;
+$color-brand-teal-dark: #00bfa5;
+$color-ocean: #092560;
+
+// Layout
+$layout-max-width: 1136px;

@@ -47,10 +47,10 @@
   font-weight: bold;
   font-size: 14px;
   transition: background 0.2s;
-}
 
-.button:hover {
-  background: var(--accent-10);
+  &:hover {
+    background: var(--accent-10);
+  }
 }
 
 .seedInputContainer {

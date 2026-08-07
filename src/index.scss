@@ -14,7 +14,7 @@ html {
   text-rendering: optimizeLegibility;
 }
 
-@media (max-width: 768px) {
+@include mobile {
   html {
     font-size: 14px;
   }

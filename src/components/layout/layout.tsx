@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Footer } from '../footer';
 import { Header } from '../header';
-import styles from './layout.module.css';
+import styles from './layout.module.scss';
 
 interface LayoutProps {
   children: ReactNode;

@@ -1,7 +1,7 @@
 import { DownloadIcon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Avatar, Button, Container, Flex, Heading, IconButton } from '@radix-ui/themes';
 
-import styles from './header.module.css';
+import styles from './header.module.scss';
 
 interface HeaderProps {
   onExportMap?: () => void;

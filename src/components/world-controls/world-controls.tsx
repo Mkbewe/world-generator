@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 import type { Params } from '../../types/world.types';
-import styles from './world-controls.module.css';
+import styles from './world-controls.module.scss';
 
 interface WorldControlsProps {
   params: Params;

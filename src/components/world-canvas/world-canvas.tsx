@@ -3,7 +3,7 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import type { Params } from '../../types/world.types';
 import { generateWorldMap } from '../../utils/world-generation/world-generation';
 import { WorldControls } from '../world-controls';
-import styles from './world-canvas.module.css';
+import styles from './world-canvas.module.scss';
 
 export interface WorldCanvasRef {
   exportMap: () => void;
