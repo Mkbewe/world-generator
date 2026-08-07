@@ -148,14 +148,23 @@ that goes live.
 **Workflows** (`.github/workflows/`):
 
 - **Deploy to Dev** (`deploy-dev.yml`) — runs automatically on every push to
-  `master`. Builds and deploys a Vercel preview, then aliases it to the dev URL.
+  `master`. Deploys a Vercel preview with the Vercel CLI (`vercel deploy`),
+  aliases it to the dev URL, and posts a commit comment with the dev URL and the
+  unique deployment URL.
 - **Promote to Production** (`deploy-production.yml`) — manual
-  (`workflow_dispatch`). Takes a dev deployment URL and runs `vercel promote`
-  to make it the live production deployment (no rebuild). Requires typing
-  `deploy` to confirm.
+  (`workflow_dispatch`). Promotes a tested dev deployment to production via
+  `vercel promote` (no rebuild). Leave the deployment URL **empty** to promote
+  the current dev deployment, or pass a specific dev deployment URL to promote
+  that one. Requires typing `deploy` to confirm.
 - **Rollback Production** (`rollback.yml`) — manual (`workflow_dispatch`).
   Promotes a previous good deployment URL back to production via `vercel promote`.
   Requires typing `rollback` to confirm.
+
+Promote and rollback share their resolve-and-promote logic through a composite
+action (`.github/actions/vercel-promote`): it resolves the target deployment
+(explicit URL, or the current dev deployment when none is given), promotes it,
+and exposes both a friendly URL and the deployment id. Both workflows post a
+commit comment linking to the promoted deployment.
 
 Deployment auth is provided by the `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
 `VERCEL_PROJECT_ID` repository secrets.

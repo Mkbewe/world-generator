@@ -53,5 +53,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               commit_sha: context.sha,
-              body: `✅ Promoted to production: ${{ steps.promote.outputs.target }}`
+              body: `✅ Promoted to production\n🔗 ${{ steps.promote.outputs.url }}\n📦 Deployment: ${{ steps.promote.outputs.target }}`
             })
