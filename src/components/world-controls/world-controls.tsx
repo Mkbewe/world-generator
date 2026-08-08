@@ -140,7 +140,7 @@ export function WorldControls({ params, updateParam, generateMap }: WorldControl
         </div>
       </div>
 
-      <button onClick={generateMap} className={styles.button}>
+      <button onClick={generateMap} className={`${styles.button} ${styles.generateButton}`}>
         Generate
       </button>
     </div>
