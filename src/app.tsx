@@ -3,6 +3,7 @@ import { Theme } from '@radix-ui/themes';
 
 import { MainLayout } from './layouts/main-layout';
 import { HomePage } from './pages/home';
+import { FeatureFlagsProvider } from './feature-flags';
 
 export function App() {
   const [appearance, setAppearance] = useState<'light' | 'dark'>('dark');
@@ -12,16 +13,18 @@ export function App() {
   };
 
   return (
-    <Theme
-      appearance={appearance}
-      accentColor='violet'
-      grayColor='gray'
-      radius='large'
-      scaling='95%'
-    >
-      <MainLayout onToggleTheme={toggleTheme} currentTheme={appearance}>
-        <HomePage />
-      </MainLayout>
-    </Theme>
+    <FeatureFlagsProvider>
+      <Theme
+        appearance={appearance}
+        accentColor='violet'
+        grayColor='gray'
+        radius='large'
+        scaling='95%'
+      >
+        <MainLayout onToggleTheme={toggleTheme} currentTheme={appearance}>
+          <HomePage />
+        </MainLayout>
+      </Theme>
+    </FeatureFlagsProvider>
   );
 }
