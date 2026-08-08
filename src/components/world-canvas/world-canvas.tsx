@@ -1,66 +1,54 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 import type { Params } from '../../types/world.types';
 import { generateWorldMap } from '../../utils/world-generation/world-generation';
-import { WorldControls } from '../world-controls';
 import styles from './world-canvas.module.scss';
 
 export interface WorldCanvasRef {
+  generate: () => void;
   exportMap: () => void;
 }
 
-export const WorldCanvas = forwardRef<WorldCanvasRef>((_, ref) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [params, setParams] = useState<Params>({
-    largeCount: 3,
-    mediumCount: 5,
-    smallCount: 10,
-    islandSize: 100,
-    groupChance: 40,
-    seaLevel: 0.38,
-    roughness: 100,
-    seed: '',
-  });
+interface WorldCanvasProps {
+  params: Params;
+  onSeedGenerated: (seed: string) => void;
+}
 
-  const updateParam = <K extends keyof Params>(key: K, value: Params[K]): void => {
-    setParams(prev => ({ ...prev, [key]: value }));
-  };
+export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
+  ({ params, onSeedGenerated }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const handleGenerateMap = (): void => {
-    if (!canvasRef.current) {
-      return;
-    }
+    const generate = (): void => {
+      if (!canvasRef.current) {
+        return;
+      }
 
-    generateWorldMap(canvasRef.current, params, newSeed => {
-      setParams(prev => ({ ...prev, seed: newSeed }));
-    });
-  };
+      generateWorldMap(canvasRef.current, params, onSeedGenerated);
+    };
 
-  const handleExportMap = (): void => {
-    if (!canvasRef.current) {
-      return;
-    }
+    const exportMap = (): void => {
+      if (!canvasRef.current) {
+        return;
+      }
 
-    const canvas = canvasRef.current;
-    const link = document.createElement('a');
-    link.download = `world-map-${params.seed || Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
+      const link = document.createElement('a');
+      link.download = `world-map-${params.seed || Date.now()}.png`;
+      link.href = canvasRef.current.toDataURL('image/png');
+      link.click();
+    };
 
-  useImperativeHandle(ref, () => ({
-    exportMap: handleExportMap,
-  }));
+    useImperativeHandle(ref, () => ({ generate, exportMap }));
 
-  return (
-    <div className={styles.container}>
-      <WorldControls params={params} updateParam={updateParam} generateMap={handleGenerateMap} />
-
+    return (
       <div className={styles.canvasContainer}>
-        <canvas ref={canvasRef} className={styles.canvas} width='600' height='600' />
+        <h2 className={styles.title}>Podgląd Świata</h2>
+
+        <div className={styles.canvasWrapper}>
+          <canvas ref={canvasRef} className={styles.canvas} width='720' height='720' />
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 WorldCanvas.displayName = 'WorldCanvas';

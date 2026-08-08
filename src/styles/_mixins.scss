@@ -6,3 +6,10 @@
     @content;
   }
 }
+
+// Applies styles at the tablet breakpoint and below.
+@mixin tablet {
+  @media (max-width: $breakpoint-tablet) {
+    @content;
+  }
+}

@@ -2,51 +2,44 @@ import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 
 import { Header } from './header';
+import { HeaderActionsContext } from './header-actions-context';
+
+function renderHeader(exportMap?: () => void) {
+  return render(
+    <HeaderActionsContext.Provider value={{ exportMapRef: { current: exportMap } }}>
+      <Header />
+    </HeaderActionsContext.Provider>
+  );
+}
 
 describe('Header', () => {
   it('should render successfully', () => {
-    const { container } = render(<Header />);
+    const { container } = renderHeader();
     expect(container).toBeTruthy();
   });
 
   it('should display logo and title', () => {
-    render(<Header />);
+    renderHeader();
 
     const title = screen.getByText('World Generator');
     expect(title).toBeInTheDocument();
   });
 
-  it('should not render export button when onExportMap is not provided', () => {
-    render(<Header />);
-
-    const exportButton = screen.queryByRole('button', { name: /export png/i });
-    expect(exportButton).not.toBeInTheDocument();
-  });
-
-  it('should render export button when onExportMap is provided', () => {
-    const mockExport = vi.fn();
-    render(<Header onExportMap={mockExport} />);
+  it('should render the export button', () => {
+    renderHeader();
 
     const exportButton = screen.getByRole('button', { name: /export png/i });
     expect(exportButton).toBeInTheDocument();
   });
 
-  it('should call onExportMap when export button is clicked', async () => {
+  it('should call the export handler when the export button is clicked', async () => {
     const user = userEvent.setup();
     const mockExport = vi.fn();
-    render(<Header onExportMap={mockExport} />);
+    renderHeader(mockExport);
 
     const exportButton = screen.getByRole('button', { name: /export png/i });
     await user.click(exportButton);
 
     expect(mockExport).toHaveBeenCalledTimes(1);
-  });
-
-  it('should have export button with correct text', () => {
-    const mockExport = vi.fn();
-    render(<Header onExportMap={mockExport} />);
-
-    const exportButton = screen.getByRole('button', { name: /export png/i });
-    expect(exportButton).toBeInTheDocument();
   });
 });

@@ -3,8 +3,10 @@
 // from Radix Themes CSS custom properties (e.g. var(--gray-2)) — keep those as
 // CSS variables. Only put genuinely constant values here.
 
-// Breakpoints
-$breakpoint-mobile: 768px;
+// Breakpoints. Used as max-width upper bounds via the mixins in _mixins.scss
+// ("this width and below").
+$breakpoint-mobile: 576px;
+$breakpoint-tablet: 992px;
 
 // Brand colors outside the Radix palette
 $color-brand-teal: #64ffda;
@@ -12,4 +14,4 @@ $color-brand-teal-dark: #00bfa5;
 $color-ocean: #092560;
 
 // Layout
-$layout-max-width: 1136px;
+$layout-max-width: 1400px;

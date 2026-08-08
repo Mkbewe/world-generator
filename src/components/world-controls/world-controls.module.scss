@@ -2,10 +2,17 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  background: var(--gray-2);
+  padding: 30px;
+  border-radius: var(--radius-4);
+
+  @include mobile {
+    padding: 15px;
+  }
 }
 
 .title {
-  margin: 0 0 10px 0;
+  margin: 0 0 20px 0;
   font-size: 20px;
   color: var(--accent-9);
   border-bottom: 1px solid var(--gray-6);
@@ -71,4 +78,8 @@
 .seedButton {
   margin: 0;
   padding: 8px 16px;
+}
+
+.generateButton {
+  margin-top: auto;
 }
