@@ -1,7 +1,29 @@
 import { useEffect } from 'react';
+import { Button, Card, Flex, Heading, Separator, Slider, Text, TextField } from '@radix-ui/themes';
 
 import type { Params } from '../../types/world.types';
 import styles from './world-controls.module.scss';
+
+type NumericParamKey = Exclude<keyof Params, 'seed'>;
+
+interface SliderConfig {
+  key: NumericParamKey;
+  label: string;
+  min: number;
+  max: number;
+  step?: number;
+  suffix?: string;
+}
+
+const SLIDERS: readonly SliderConfig[] = [
+  { key: 'largeCount', label: 'Large islands count', min: 0, max: 8 },
+  { key: 'mediumCount', label: 'Medium islands count', min: 0, max: 15 },
+  { key: 'smallCount', label: 'Small islands count', min: 0, max: 25 },
+  { key: 'islandSize', label: 'Island size multiplier', min: 50, max: 150, suffix: '%' },
+  { key: 'groupChance', label: 'Grouping chance', min: 0, max: 100, suffix: '%' },
+  { key: 'seaLevel', label: 'Sea level', min: 0.25, max: 0.55, step: 0.01 },
+  { key: 'roughness', label: 'Coastline roughness (Noise)', min: 0, max: 100, suffix: '%' },
+];
 
 interface WorldControlsProps {
   params: Params;
@@ -19,130 +41,58 @@ export function WorldControls({ params, updateParam, generateMap }: WorldControl
     randomizeSeed();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   return (
-    <div className={styles.controls}>
-      <h2 className={styles.title}>Ustawienia Świata</h2>
+    <Card size={{ initial: '2', sm: '3' }} className={styles.card}>
+      <Flex direction='column' gap='4' className={styles.form}>
+        <Heading size='5' className={styles.title}>
+          World Settings
+        </Heading>
+        <Separator size='4' />
 
-      <div className={styles.controlGroup}>
-        <label className={styles.label}>
-          Liczba dużych wysp: <span className={styles.labelValue}>{params.largeCount}</span>
-        </label>
-        <input
-          type='range'
-          className={styles.rangeInput}
-          min='0'
-          max='8'
-          value={params.largeCount}
-          onChange={e => updateParam('largeCount', parseInt(e.target.value))}
-        />
-      </div>
+        {SLIDERS.map(({ key, label, min, max, step, suffix }) => (
+          <Flex key={key} direction='column' gap='2'>
+            <Flex justify='between' align='center'>
+              <Text size='2' color='gray'>
+                {label}:
+              </Text>
+              <Text size='2' weight='bold' className={styles.value}>
+                {params[key]}
+                {suffix}
+              </Text>
+            </Flex>
+            <Slider
+              value={[params[key]]}
+              min={min}
+              max={max}
+              step={step ?? 1}
+              onValueChange={([value]) => updateParam(key, value)}
+            />
+          </Flex>
+        ))}
 
-      <div className={styles.controlGroup}>
-        <label className={styles.label}>
-          Liczba średnich wysp: <span className={styles.labelValue}>{params.mediumCount}</span>
-        </label>
-        <input
-          type='range'
-          className={styles.rangeInput}
-          min='0'
-          max='15'
-          value={params.mediumCount}
-          onChange={e => updateParam('mediumCount', parseInt(e.target.value))}
-        />
-      </div>
+        <Flex direction='column' gap='2'>
+          <Text as='label' htmlFor='seed-input' size='2' color='gray'>
+            Seed:
+          </Text>
+          <Flex gap='2'>
+            <TextField.Root
+              size='3'
+              id='seed-input'
+              className={styles.seedInput}
+              value={params.seed}
+              onChange={e => updateParam('seed', e.target.value)}
+            />
+            <Button variant='soft' size='3' onClick={randomizeSeed}>
+              Randomize
+            </Button>
+          </Flex>
+        </Flex>
 
-      <div className={styles.controlGroup}>
-        <label className={styles.label}>
-          Liczba małych wysp: <span className={styles.labelValue}>{params.smallCount}</span>
-        </label>
-        <input
-          type='range'
-          className={styles.rangeInput}
-          min='0'
-          max='25'
-          value={params.smallCount}
-          onChange={e => updateParam('smallCount', parseInt(e.target.value))}
-        />
-      </div>
-
-      <div className={styles.controlGroup}>
-        <label className={styles.label}>
-          Maks. rozmiar wysp: <span className={styles.labelValue}>{params.islandSize}%</span>
-        </label>
-        <input
-          type='range'
-          className={styles.rangeInput}
-          min='50'
-          max='150'
-          value={params.islandSize}
-          onChange={e => updateParam('islandSize', parseInt(e.target.value))}
-        />
-      </div>
-
-      <div className={styles.controlGroup}>
-        <label className={styles.label}>
-          Szansa na zgrupowanie: <span className={styles.labelValue}>{params.groupChance}%</span>
-        </label>
-        <input
-          type='range'
-          className={styles.rangeInput}
-          min='0'
-          max='100'
-          value={params.groupChance}
-          onChange={e => updateParam('groupChance', parseInt(e.target.value))}
-        />
-      </div>
-
-      <div className={styles.controlGroup}>
-        <label className={styles.label}>
-          Poziom morza (rozmiar plaż): <span className={styles.labelValue}>{params.seaLevel}</span>
-        </label>
-        <input
-          type='range'
-          className={styles.rangeInput}
-          min='0.25'
-          max='0.55'
-          step='0.01'
-          value={params.seaLevel}
-          onChange={e => updateParam('seaLevel', parseFloat(e.target.value))}
-        />
-      </div>
-
-      <div className={styles.controlGroup}>
-        <label className={styles.label}>
-          Poszarpanie brzegu (Szum): <span className={styles.labelValue}>{params.roughness}%</span>
-        </label>
-        <input
-          type='range'
-          className={styles.rangeInput}
-          min='50'
-          max='200'
-          value={params.roughness}
-          onChange={e => updateParam('roughness', parseInt(e.target.value))}
-        />
-      </div>
-
-      <div className={styles.controlGroup}>
-        <label htmlFor='seed-input' className={styles.label}>
-          Seed:
-        </label>
-        <div className={styles.seedInputContainer}>
-          <input
-            id='seed-input'
-            type='text'
-            className={styles.seedInput}
-            value={params.seed}
-            onChange={e => updateParam('seed', e.target.value)}
-          />
-          <button onClick={randomizeSeed} className={`${styles.button} ${styles.seedButton}`}>
-            Losuj
-          </button>
-        </div>
-      </div>
-
-      <button onClick={generateMap} className={`${styles.button} ${styles.generateButton}`}>
-        Generate
-      </button>
-    </div>
+        <Button size='3' onClick={generateMap} className={styles.generateButton}>
+          Generate
+        </Button>
+      </Flex>
+    </Card>
   );
 }
