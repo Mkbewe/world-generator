@@ -16,7 +16,7 @@ export function HomePage() {
     islandSize: 100,
     groupChance: 40,
     seaLevel: 0.38,
-    roughness: 100,
+    roughness: 50,
     seed: '',
   });
 

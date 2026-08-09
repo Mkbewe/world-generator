@@ -1,3 +1,4 @@
+import { Theme } from '@radix-ui/themes';
 import { render } from '@testing-library/react';
 
 import { WorldControls } from './world-controls';
@@ -19,11 +20,13 @@ describe('WorldControls', () => {
 
   it('should render successfully', () => {
     const { container } = render(
-      <WorldControls
-        params={mockParams}
-        updateParam={mockUpdateParam}
-        generateMap={mockGenerateMap}
-      />
+      <Theme>
+        <WorldControls
+          params={mockParams}
+          updateParam={mockUpdateParam}
+          generateMap={mockGenerateMap}
+        />
+      </Theme>
     );
     expect(container).toBeTruthy();
   });
