@@ -3,12 +3,15 @@ import { userEvent } from '@testing-library/user-event';
 
 import { Header } from './header';
 import { HeaderActionsContext } from './header-actions-context';
+import { FeatureFlagsContext } from '../../feature-flags';
 
 function renderHeader(exportMap?: () => void) {
   return render(
-    <HeaderActionsContext.Provider value={{ exportMapRef: { current: exportMap } }}>
-      <Header />
-    </HeaderActionsContext.Provider>
+    <FeatureFlagsContext.Provider value={{ exportPng: true }}>
+      <HeaderActionsContext.Provider value={{ exportMapRef: { current: exportMap } }}>
+        <Header />
+      </HeaderActionsContext.Provider>
+    </FeatureFlagsContext.Provider>
   );
 }
 

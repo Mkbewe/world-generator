@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local feature-flag overrides served by the vite dev server
+flags.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

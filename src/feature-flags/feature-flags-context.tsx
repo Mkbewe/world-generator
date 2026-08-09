@@ -5,7 +5,7 @@ import { resolveFlags } from './resolve-flags';
 
 const STORAGE_KEY = 'feature-flags';
 
-const FeatureFlagsContext = createContext<Flags>(FLAG_DEFAULTS);
+export const FeatureFlagsContext = createContext<Flags>(FLAG_DEFAULTS);
 
 export function useFlags(): Flags {
   return useContext(FeatureFlagsContext);

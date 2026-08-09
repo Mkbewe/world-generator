@@ -2,6 +2,8 @@ import { DownloadIcon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Avatar, Button, Container, Flex, Heading, IconButton } from '@radix-ui/themes';
 
 import { useHeaderActions } from './header-actions-context';
+import { useFlag } from '../../feature-flags';
+import { MobileMenu } from '../mobile-menu';
 import styles from './header.module.scss';
 
 interface HeaderProps {
@@ -11,13 +13,14 @@ interface HeaderProps {
 
 export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
   const { exportMapRef } = useHeaderActions();
+  const showExportPng = useFlag('exportPng');
 
   return (
     <header className={styles.header}>
       <Container py='4'>
         <Flex
           justify='between'
-          px={{ initial: '4', md: '8', sm: '6' }}
+          px={{ initial: '6', md: '8', sm: '6' }}
           align='center'
           className={styles.headerContent}
         >
@@ -34,11 +37,13 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
             </Heading>
           </Flex>
 
-          <Flex gap='4' align='center'>
-            <Button onClick={() => exportMapRef.current?.()} size='3' variant='solid'>
-              <DownloadIcon />
-              Export PNG
-            </Button>
+          <Flex gap='4' align='center' display={{ initial: 'none', sm: 'flex' }}>
+            {showExportPng && (
+              <Button onClick={() => exportMapRef.current?.()} size='3' variant='solid'>
+                <DownloadIcon />
+                Export PNG
+              </Button>
+            )}
             {onToggleTheme && (
               <IconButton
                 onClick={onToggleTheme}
@@ -50,6 +55,8 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
               </IconButton>
             )}
           </Flex>
+
+          <MobileMenu onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
         </Flex>
       </Container>
     </header>
