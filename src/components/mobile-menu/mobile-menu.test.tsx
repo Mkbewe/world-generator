@@ -7,22 +7,33 @@ import { FeatureFlagsContext } from '../../feature-flags';
 import { HeaderActionsContext } from '../header/header-actions-context';
 
 interface RenderOptions {
-  exportMap?: () => void;
   onToggleTheme?: () => void;
   currentTheme?: 'light' | 'dark';
   exportPng?: boolean;
+  isMapGenerated?: boolean;
+  onOpenDialog?: () => void;
 }
 
 function renderMenu({
-  exportMap,
   onToggleTheme,
   currentTheme,
   exportPng = true,
+  isMapGenerated = true,
+  onOpenDialog = vi.fn(),
 }: RenderOptions = {}) {
   return render(
     <Theme>
       <FeatureFlagsContext.Provider value={{ exportPng }}>
-        <HeaderActionsContext.Provider value={{ exportMapRef: { current: exportMap } }}>
+        <HeaderActionsContext.Provider
+          value={{
+            exportMapRef: { current: undefined },
+            isExportDialogOpen: false,
+            setIsExportDialogOpen: onOpenDialog,
+            confirmExport: vi.fn(),
+            isMapGenerated,
+            setIsMapGenerated: vi.fn(),
+          }}
+        >
           <MobileMenu onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
         </HeaderActionsContext.Provider>
       </FeatureFlagsContext.Provider>
@@ -38,13 +49,14 @@ describe('MobileMenu', () => {
 
   it('should reveal the export action and call the handler when opened', async () => {
     const user = userEvent.setup();
-    const mockExport = vi.fn();
-    renderMenu({ exportMap: mockExport });
+    const mockOpenDialog = vi.fn();
+    renderMenu({ onOpenDialog: mockOpenDialog });
 
     await user.click(screen.getByRole('button', { name: /open menu/i }));
     await user.click(await screen.findByRole('button', { name: /export png/i }));
 
-    expect(mockExport).toHaveBeenCalledTimes(1);
+    expect(mockOpenDialog).toHaveBeenCalledTimes(1);
+    expect(mockOpenDialog).toHaveBeenCalledWith(true);
   });
 
   it('should show the theme toggle when provided and call it', async () => {
@@ -70,7 +82,7 @@ describe('MobileMenu', () => {
 
   it('should close when the close button is clicked', async () => {
     const user = userEvent.setup();
-    renderMenu({ exportMap: vi.fn() });
+    renderMenu();
 
     await user.click(screen.getByRole('button', { name: /open menu/i }));
     await user.click(await screen.findByRole('button', { name: /close menu/i }));
