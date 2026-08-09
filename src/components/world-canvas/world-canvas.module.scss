@@ -23,9 +23,11 @@
   border: 2px solid var(--gray-6);
   border-radius: 50%;
   background: $color-ocean;
+  width: 600px;
   max-width: 100%;
   height: auto;
   touch-action: none;
+  image-rendering: auto;
 
   @include mobile {
     width: 100%;

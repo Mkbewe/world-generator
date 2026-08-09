@@ -14,7 +14,7 @@ export function generateWorldMap(
 
   const width = canvas.width;
   const height = canvas.height;
-  const center = width / 2;
+  const mapScale = Math.min(width, height) / 1200;
 
   const seed = params.seed ? parseInt(params.seed) : Math.floor(Math.random() * 1000000);
   if (!params.seed && onSeedGenerated) {
@@ -30,10 +30,8 @@ export function generateWorldMap(
   const noise2D = createNoise2D(seededRandom);
   const rawIslandPositions: IslandPosition[] = [];
 
-  const clusterAngle = seededRandom() * 2 * Math.PI;
-  const clusterDist = seededRandom() * 100;
-  const clusterX = center + Math.cos(clusterAngle) * clusterDist;
-  const clusterY = center + Math.sin(clusterAngle) * clusterDist;
+  const clusterX = seededRandom() * width;
+  const clusterY = seededRandom() * height;
 
   const checkCollision = (
     x: number,
@@ -41,24 +39,23 @@ export function generateWorldMap(
     type: IslandPosition['type'],
     existingIslands: IslandPosition[]
   ): boolean => {
-    let newRadius = 25;
+    const sizeModifier = params.islandSize / 100;
+    let newRadius = 55 * mapScale;
     if (type === 'LARGE') {
-      newRadius = 80;
+      newRadius = 160 * mapScale;
     }
     if (type === 'MEDIUM') {
-      newRadius = 56;
+      newRadius = 110 * mapScale;
     }
-
-    const sizeModifier = params.islandSize / 100;
     newRadius *= sizeModifier;
 
     for (const existing of existingIslands) {
-      let existingRadius = 25;
+      let existingRadius = 55 * mapScale;
       if (existing.type === 'LARGE') {
-        existingRadius = 80;
+        existingRadius = 160 * mapScale;
       }
       if (existing.type === 'MEDIUM') {
-        existingRadius = 56;
+        existingRadius = 110 * mapScale;
       }
       existingRadius *= sizeModifier;
 
@@ -93,15 +90,16 @@ export function generateWorldMap(
       while (attempts < maxAttempts && !validPosition) {
         if (seededRandom() < groupChance) {
           const angle = seededRandom() * 2 * Math.PI;
-          const dist = seededRandom() * 130;
+          const dist = seededRandom() * (Math.min(width, height) * 0.32);
           posX = clusterX + Math.cos(angle) * dist;
           posY = clusterY + Math.sin(angle) * dist;
         } else {
-          const angle = seededRandom() * 2 * Math.PI;
-          const dist = seededRandom() * 220;
-          posX = center + Math.cos(angle) * dist;
-          posY = center + Math.sin(angle) * dist;
+          posX = seededRandom() * width;
+          posY = seededRandom() * height;
         }
+
+        posX = Math.min(width - 1, Math.max(0, posX));
+        posY = Math.min(height - 1, Math.max(0, posY));
 
         if (!checkCollision(posX, posY, t.type, rawIslandPositions)) {
           validPosition = true;
@@ -117,14 +115,14 @@ export function generateWorldMap(
 
   const sizeModifier = params.islandSize / 100;
   const islandCenters: IslandCenter[] = rawIslandPositions.map(p => {
-    let rad = 25;
+    let rad = 55 * mapScale;
     let bst = 0.5;
     if (p.type === 'LARGE') {
-      rad = 80;
+      rad = 160 * mapScale;
       bst = 0.75;
     }
     if (p.type === 'MEDIUM') {
-      rad = 56;
+      rad = 110 * mapScale;
       bst = 0.6;
     }
     return { x: p.x, y: p.y, radius: rad * sizeModifier, boost: bst };
