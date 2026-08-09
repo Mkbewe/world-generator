@@ -1,29 +1,15 @@
-.canvasContainer {
+.card.card {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  background: var(--gray-2);
-  padding: 30px;
-  border-radius: var(--radius-4);
+  flex: 1;
+}
 
-  @include mobile {
-    padding: 15px;
-  }
+.container {
+  flex: 1;
 }
 
 .title {
-  margin: 0 0 20px 0;
-  font-size: 20px;
   color: var(--accent-9);
-  border-bottom: 1px solid var(--gray-6);
-  padding-bottom: 8px;
-}
-
-.canvasWrapper {
-  display: flex;
-  flex: 1;
-  justify-content: center;
-  align-items: center;
 }
 
 .canvas {
