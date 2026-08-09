@@ -12,7 +12,7 @@ interface HeaderProps {
 }
 
 export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
-  const { exportMapRef } = useHeaderActions();
+  const { setIsExportDialogOpen, isMapGenerated } = useHeaderActions();
   const showExportPng = useFlag('exportPng');
 
   return (
@@ -39,7 +39,13 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
 
           <Flex gap='4' align='center' display={{ initial: 'none', sm: 'flex' }}>
             {showExportPng && (
-              <Button onClick={() => exportMapRef.current?.()} size='3' variant='solid'>
+              <Button
+                onClick={() => setIsExportDialogOpen(true)}
+                size='3'
+                variant='solid'
+                disabled={!isMapGenerated}
+                title={!isMapGenerated ? 'Generate a map first' : undefined}
+              >
                 <DownloadIcon />
                 Export PNG
               </Button>

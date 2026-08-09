@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 
+import { ExportDialog } from '../../components/export-dialog';
 import { Footer } from '../../components/footer';
-import { Header, HeaderActionsProvider } from '../../components/header';
+import { Header, HeaderActionsProvider, useHeaderActions } from '../../components/header';
 import styles from './main-layout.module.scss';
 
 interface MainLayoutProps {
@@ -10,14 +11,31 @@ interface MainLayoutProps {
   currentTheme?: 'light' | 'dark';
 }
 
-export function MainLayout({ children, onToggleTheme, currentTheme }: MainLayoutProps) {
+function MainLayoutContent({ children, onToggleTheme, currentTheme }: MainLayoutProps) {
+  const { isExportDialogOpen, setIsExportDialogOpen, confirmExport } = useHeaderActions();
+
   return (
-    <HeaderActionsProvider>
+    <>
       <div className={styles.layout}>
         <Header onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
         <main className={styles.main}>{children}</main>
         <Footer />
       </div>
+      <ExportDialog
+        isOpen={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        onConfirm={confirmExport}
+      />
+    </>
+  );
+}
+
+export function MainLayout({ children, onToggleTheme, currentTheme }: MainLayoutProps) {
+  return (
+    <HeaderActionsProvider>
+      <MainLayoutContent onToggleTheme={onToggleTheme} currentTheme={currentTheme}>
+        {children}
+      </MainLayoutContent>
     </HeaderActionsProvider>
   );
 }

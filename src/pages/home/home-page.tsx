@@ -8,7 +8,7 @@ import styles from './home-page.module.scss';
 
 export function HomePage() {
   const worldCanvasRef = useRef<WorldCanvasRef>(null);
-  const { exportMapRef } = useHeaderActions();
+  const { exportMapRef, setIsMapGenerated } = useHeaderActions();
   const [params, setParams] = useState<Params>({
     largeCount: 3,
     mediumCount: 5,
@@ -30,6 +30,7 @@ export function HomePage() {
 
   const handleGenerateMap = (): void => {
     worldCanvasRef.current?.generate();
+    setIsMapGenerated(true);
   };
 
   return (
