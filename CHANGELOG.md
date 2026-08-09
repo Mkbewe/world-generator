@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/Mkbewe/world-generator/compare/v0.1.0...v0.1.1) (2026-08-09)
+
+
+### Features
+
+* **71:** add mobile menu and hamburger button ([#78](https://github.com/Mkbewe/world-generator/issues/78)) ([b5741b0](https://github.com/Mkbewe/world-generator/commit/b5741b00a3a9bbe6623f762c29009363f2df3fc6))
+* **80:** confirm export map ([#83](https://github.com/Mkbewe/world-generator/issues/83)) ([c2af89a](https://github.com/Mkbewe/world-generator/commit/c2af89ab8662098facbcbee234c0d54c2851ca17))
+* add feature flag ([#55](https://github.com/Mkbewe/world-generator/issues/55)) ([04b78a2](https://github.com/Mkbewe/world-generator/commit/04b78a2d503816ef477a7745fc444e2902da43f2))
+
+
+### Code Refactoring
+
+* **73:** refactor form to use radix components ([#79](https://github.com/Mkbewe/world-generator/issues/79)) ([6e6611d](https://github.com/Mkbewe/world-generator/commit/6e6611de1ab964fbfcbe3d05ac967230152c3f6e))
+* **74:** restructure canvas component to use radix ([#81](https://github.com/Mkbewe/world-generator/issues/81)) ([d27e9d5](https://github.com/Mkbewe/world-generator/commit/d27e9d51317122060b0389353344a407900a2425))
+* change css to scss ([#53](https://github.com/Mkbewe/world-generator/issues/53)) ([fb470f8](https://github.com/Mkbewe/world-generator/commit/fb470f8812b285f8166af60c36249996b0aeba81))
+* restructure into layouts/pages and decouple canvas/controls ([#54](https://github.com/Mkbewe/world-generator/issues/54)) ([fb3575c](https://github.com/Mkbewe/world-generator/commit/fb3575c56dee7479a7343235d7e852fac3f2aead))
+
 ## [0.1.0](https://github.com/Mkbewe/world-generator/compare/v0.0.6...v0.1.0) (2026-08-07)
 
 
