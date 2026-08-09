@@ -1,6 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 
-import { useFlag } from '../../feature-flags';
 import type { Params } from '../../types/world.types';
 import { generateWorldMap } from '../../utils/world-generation/world-generation';
 import styles from './world-canvas.module.scss';
@@ -18,8 +17,6 @@ interface WorldCanvasProps {
 export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
   ({ params, onSeedGenerated }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const test = useFlag('test');
-    const mapStyle = useFlag('mapStyle');
 
     const generate = (): void => {
       if (!canvasRef.current) {
@@ -48,13 +45,6 @@ export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
 
         <div className={styles.canvasWrapper}>
           <canvas ref={canvasRef} className={styles.canvas} width='720' height='720' />
-        </div>
-
-        <div>
-          flag test: <strong>{String(test)}</strong>
-        </div>
-        <div>
-          flag mapStyle: <strong>{mapStyle}</strong>
         </div>
       </div>
     );

@@ -1,45 +1,46 @@
-import { FLAG_DEFAULTS } from './flags';
 import { resolveFlags } from './resolve-flags';
+
+const DEFAULTS = { enabled: false, mode: 'a' };
+const OPTIONS = { mode: ['a', 'b', 'c'] };
 
 describe('resolveFlags', () => {
   it('should return defaults when remote is empty', () => {
-    expect(resolveFlags({})).toEqual(FLAG_DEFAULTS);
+    expect(resolveFlags({}, DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
   });
 
   it('should override a boolean flag with a boolean value', () => {
-    const flags = resolveFlags({ test: true });
+    expect(resolveFlags({ enabled: true }, DEFAULTS, OPTIONS)).toEqual({
+      enabled: true,
+      mode: 'a',
+    });
+  });
 
-    expect(flags.test).toBe(true);
-    expect(flags.mapStyle).toBe(FLAG_DEFAULTS.mapStyle);
+  it('should ignore a boolean flag set to a non-boolean value', () => {
+    expect(resolveFlags({ enabled: 'true' }, DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
   });
 
   it('should override a string flag with an allowed value', () => {
-    const flags = resolveFlags({ mapStyle: 'fantasy' });
-
-    expect(flags.mapStyle).toBe('fantasy');
+    expect(resolveFlags({ mode: 'b' }, DEFAULTS, OPTIONS)).toEqual({
+      enabled: false,
+      mode: 'b',
+    });
   });
 
-  it('should ignore a string value that is not in the allowed options', () => {
-    const flags = resolveFlags({ mapStyle: 'watercolor' });
+  it('should ignore a string value outside the allowed options', () => {
+    expect(resolveFlags({ mode: 'z' }, DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
+  });
 
-    expect(flags.mapStyle).toBe(FLAG_DEFAULTS.mapStyle);
+  it('should ignore a string flag set to a non-string value', () => {
+    expect(resolveFlags({ mode: 1 }, DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
   });
 
   it('should ignore unknown keys', () => {
-    const flags = resolveFlags({ somethingElse: true });
-
-    expect(flags).toEqual(FLAG_DEFAULTS);
-  });
-
-  it('should ignore values of the wrong type', () => {
-    const flags = resolveFlags({ test: 'true', mapStyle: 1 });
-
-    expect(flags).toEqual(FLAG_DEFAULTS);
+    expect(resolveFlags({ somethingElse: true }, DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
   });
 
   it('should return defaults when remote is not an object', () => {
-    expect(resolveFlags(null)).toEqual(FLAG_DEFAULTS);
-    expect(resolveFlags(undefined)).toEqual(FLAG_DEFAULTS);
-    expect(resolveFlags('test')).toEqual(FLAG_DEFAULTS);
+    expect(resolveFlags(null, DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
+    expect(resolveFlags(undefined, DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
+    expect(resolveFlags('test', DEFAULTS, OPTIONS)).toEqual(DEFAULTS);
   });
 });
