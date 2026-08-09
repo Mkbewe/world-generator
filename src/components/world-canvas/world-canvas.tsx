@@ -27,12 +27,14 @@ export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
 
     const getWorldCoordinates = (event: React.PointerEvent<HTMLCanvasElement>): WorldCursor => {
       const rect = event.currentTarget.getBoundingClientRect();
-      const localX = event.clientX - rect.left;
-      const localY = event.clientY - rect.top;
+      const scaleX = event.currentTarget.width / rect.width;
+      const scaleY = event.currentTarget.height / rect.height;
+      const localX = (event.clientX - rect.left) * scaleX;
+      const localY = (event.clientY - rect.top) * scaleY;
 
       return {
-        x: localX - rect.width / 2,
-        y: rect.height / 2 - localY,
+        x: localX - event.currentTarget.width / 2,
+        y: event.currentTarget.height / 2 - localY,
       };
     };
 
@@ -77,8 +79,8 @@ export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
             <canvas
               ref={canvasRef}
               className={styles.canvas}
-              width='720'
-              height='720'
+              width='2400'
+              height='2400'
               onPointerMove={handlePointerMove}
               onPointerDown={handlePointerDown}
               onPointerLeave={() => setCursorWorld({ x: 0, y: 0 })}
