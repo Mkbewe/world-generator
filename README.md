@@ -180,6 +180,38 @@ commit comment linking to the promoted deployment.
 Deployment auth is provided by the `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
 `VERCEL_PROJECT_ID` repository secrets.
 
+## Feature flags
+
+Feature flags are resolved at runtime from **Vercel Global Config**, so they can
+be toggled from the Vercel dashboard without a redeploy.
+
+**How it works:**
+
+- `src/feature-flags/flags.ts` is the typed registry. `FLAG_DEFAULTS` holds each
+  flag's default (also the fallback when the remote store is unavailable).
+  Flags can be booleans or strings; string flags declare their allowed values in
+  `FLAG_OPTIONS`, which becomes the flag's TypeScript union type.
+- `api/flags.ts` is a Vercel Function that reads Global Config and returns the
+  flag values as JSON at `GET /api/flags`.
+- `FeatureFlagsProvider` fetches `/api/flags` on load; consume flags with
+  `useFlag('mapStyle')`. Remote values are validated against the registry —
+  unknown keys, wrong types, and string values outside `FLAG_OPTIONS` are ignored
+  and fall back to the default.
+
+**Dashboard setup (one time):**
+
+1. In the Vercel project: **Storage → Create Database → Global Config**.
+2. Under **Items**, add the flags as JSON, e.g.
+   `{ "test": false, "mapStyle": "fantasy" }`.
+3. Connecting the store to the project sets the `GLOBAL_CONFIG` environment
+   variable automatically.
+
+Change a flag by editing its item in **Items** — no redeploy needed.
+
+**Local development:** `pnpm dev` does not serve `/api/*`, so flags fall back to
+`FLAG_DEFAULTS` (the app still works). To exercise the real fetch locally, run
+`vercel env pull` then `vercel dev`.
+
 ## Notes
 
 This project includes:
