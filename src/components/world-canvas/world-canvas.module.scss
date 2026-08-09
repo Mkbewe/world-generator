@@ -12,14 +12,58 @@
   color: var(--accent-9);
 }
 
+.canvasWrapper {
+  position: relative;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
 .canvas {
   border: 2px solid var(--gray-6);
   border-radius: 50%;
   background: $color-ocean;
   max-width: 100%;
   height: auto;
+  touch-action: none;
 
   @include mobile {
     width: 100%;
   }
+}
+
+.coordsHud {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--accent-5);
+  border: 1px solid var(--accent-9);
+  color: white;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  width: 70px;
+}
+
+.coordRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.coordLabel {
+  flex: 0 0 auto;
+  text-align: left;
+}
+
+.coordValue {
+  flex: 1 1 auto;
+  text-align: right;
 }
