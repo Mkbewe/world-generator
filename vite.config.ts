@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 
-import pkg from './package.json';
+import pkg from './package.json' with { type: 'json' };
 
 // Dev-only stand-in for the Vercel `api/flags` function: `vite dev` does not run
 // serverless functions, so we serve feature-flag values from a gitignored
