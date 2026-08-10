@@ -3,11 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useHeaderActions } from '../../components/header';
 import { WorldCanvas, type WorldCanvasRef } from '../../components/world-canvas';
 import { WorldControls } from '../../components/world-controls';
+import { WorldGenerationPreview } from '../../components/world-generation-preview';
+import { useFlag } from '../../feature-flags';
 import type { Params } from '../../types/world.types';
 import styles from './home-page.module.scss';
 
 export function HomePage() {
   const worldCanvasRef = useRef<WorldCanvasRef>(null);
+  const showPipelinePreview = useFlag('pipelinePreview');
   const { exportMapRef, setIsMapGenerated } = useHeaderActions();
   const [params, setParams] = useState<Params>({
     largeCount: 3,
@@ -41,11 +44,14 @@ export function HomePage() {
     <div className={styles.container}>
       <WorldControls params={params} updateParam={updateParam} generateMap={handleGenerateMap} />
 
-      <WorldCanvas
-        ref={worldCanvasRef}
-        params={params}
-        onSeedGenerated={newSeed => updateParam('seed', newSeed)}
-      />
+      <div className={styles.maps}>
+        <WorldCanvas
+          ref={worldCanvasRef}
+          params={params}
+          onSeedGenerated={newSeed => updateParam('seed', newSeed)}
+        />
+        {showPipelinePreview && <WorldGenerationPreview />}
+      </div>
     </div>
   );
 }
