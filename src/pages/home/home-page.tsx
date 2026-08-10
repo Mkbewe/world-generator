@@ -29,8 +29,10 @@ export function HomePage() {
   };
 
   const handleGenerateMap = (): void => {
+    // eslint-disable-next-line no-console
     console.time('world-generation');
     worldCanvasRef.current?.generate();
+    // eslint-disable-next-line no-console
     console.timeEnd('world-generation');
     setIsMapGenerated(true);
   };
