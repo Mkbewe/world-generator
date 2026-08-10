@@ -29,7 +29,9 @@ export function HomePage() {
   };
 
   const handleGenerateMap = (): void => {
+    console.time('world-generation');
     worldCanvasRef.current?.generate();
+    console.timeEnd('world-generation');
     setIsMapGenerated(true);
   };
 

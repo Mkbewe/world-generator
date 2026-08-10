@@ -31,7 +31,13 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
     let ignore = false;
 
     fetch('/api/flags')
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Feature flags request failed with status ${response.status}`);
+        }
+
+        return response.json();
+      })
       .then((remote: unknown) => {
         if (ignore) {
           return;
@@ -48,9 +54,20 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         if (!ignore) {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            // Ignore storage failures.
+          }
+
           setFlags(current => current ?? FLAG_DEFAULTS);
         }
-        console.warn('Failed to load feature flags, using defaults.', error);
+
+        console.warn(
+          'Failed to load feature flags, cleared cached value and using defaults.',
+          error
+        );
+        console.warn('Default flags:', FLAG_DEFAULTS);
       });
 
     return () => {
