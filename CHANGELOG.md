@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.2](https://github.com/Mkbewe/world-generator/compare/v0.1.1...v0.1.2) (2026-08-10)
+
+
+### Features
+
+* add coordinates to map ([#87](https://github.com/Mkbewe/world-generator/issues/87)) ([56bc388](https://github.com/Mkbewe/world-generator/commit/56bc388a4d86fc15a61ecc15f9ee12ec1a7bc8c2))
+* resize map generator ([#88](https://github.com/Mkbewe/world-generator/issues/88)) ([6be6d28](https://github.com/Mkbewe/world-generator/commit/6be6d281ec50c04bdd980583d624fb329cb4e2a9))
+
+
+### Chores
+
+* fix packages version ([#86](https://github.com/Mkbewe/world-generator/issues/86)) ([56de407](https://github.com/Mkbewe/world-generator/commit/56de40771dcf596ef7f7ff6c1081c2b0d36570fc))
+
 ### [0.1.1](https://github.com/Mkbewe/world-generator/compare/v0.1.0...v0.1.1) (2026-08-09)
 
 
