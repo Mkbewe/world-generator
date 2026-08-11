@@ -12,16 +12,28 @@
 
 1. `WorldShapeStage` — wyznaczenie obszaru świata i maski kołowej.
 2. `NoiseStage` — deterministyczne warstwy szumu.
-3. `LandmassLayoutStage` — globalny układ wysp, mas lądowych i archipelagów.
-4. `IslandCharacterStage` — profile terenu wysp i ich regionów.
-5. `HeightmapStage` — rasteryzacja mas lądowych i utworzenie wysokości.
-6. `LandOceanStage` — klasyfikacja lądu, oceanu i linii brzegowej.
+3. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi.
+4. `IslandCharacterStage` — profile terenu struktur lądowych i ich regionów.
+5. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna.
+6. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych.
 7. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska.
 8. `TerrainFeaturesStage` — klify, plaże, doliny, płaskowyże i inne formacje.
 9. `BiomeStage` — biomy wynikające z warunków środowiskowych.
 10. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje.
 
 Kolejność może być później doprecyzowana, szczególnie w przypadku wzajemnego wpływu hydrologii, erozji i formacji terenu.
+
+## Odpowiedzialność etapów kształtujących wyspy
+
+Wyspa nie powinna powstawać w jednym etapie jako gotowy obiekt. Pipeline najpierw opisuje strukturę geologiczną i zamiar generatora, następnie tworzy ciągłą wysokość, a dopiero poziom morza wyznacza faktyczny podział na wyspy.
+
+- `LandmassLayoutStage` odpowiada za kształt w dużej skali: wydłużenie, orientację, szkielet, szerokość, zatoki, cieśniny, półwyspy, stopień rozwinięcia linii brzegowej i zasięg szelfu.
+- `IslandCharacterStage` przypisuje profile terenu i regiony, np. góry na zachodzie, równiny na wschodzie albo płaskowyż w centrum.
+- `HeightmapStage` płynnie łączy geometrię, profile regionalne i szum w jedną wysokość obejmującą również dno oceanu.
+- `LandOceanStage` stosuje poziom morza, wykrywa spójne wyspy i archipelagi oraz wylicza linię brzegową, głębokość wody i obszary szelfowe.
+- `BiomeStage` dopiero na podstawie faktycznej głębokości i pozostałych warunków klasyfikuje płytkie morze jako biom wodny.
+
+Przykładowo długa wyspa ze słabo rozwiniętą linią brzegową wynika z wydłużonego szkieletu i małej nieregularności. Wyspa w kształcie litery C może powstać z zakrzywionego szkieletu albo ujemnego kształtu wycinającego dużą zatokę. Informacja o górzystym zachodzie i równinnym wschodzie należy natomiast do regionalnych profili terenu, a nie do samej geometrii wyspy.
 
 ## Masy lądowe i kształty wysp
 
@@ -35,6 +47,14 @@ interface LandmassDefinition {
   irregularity: number;
   positiveShapes: LandShape[];
   negativeShapes: LandShape[];
+  shelf: ShelfDefinition;
+}
+
+interface ShelfDefinition {
+  width: number;
+  targetDepth: number;
+  falloff: number;
+  irregularity: number;
 }
 ```
 
@@ -46,16 +66,31 @@ interface LandmassDefinition {
 
 ## Archipelagi
 
-Archipelag jest grupą powiązanych, niewielkich wysp rozmieszczonych wokół wspólnego obszaru.
+Archipelag nie musi być generowany jako sztuczna lista niezależnych wysp. Naturalniejszym modelem jest jedna częściowo zatopiona struktura geologiczna ze wspólnym szelfem i kilkoma lokalnymi wyniesieniami. Po przecięciu jej poziomem morza wyższa struktura może utworzyć jedną dużą wyspę, a niższa — kilka wysp tworzących archipelag.
 
 ```ts
 interface ArchipelagoDefinition {
   id: string;
-  islands: IslandDefinition[];
+  landmassId: string;
+  shelfId: string;
+  islandIds: string[];
 }
 ```
 
-Wyspy archipelagu mogą dzielić część cech i pochodzenie losowości, ale nadal mieć indywidualny kształt oraz profil terenu.
+`ArchipelagoDefinition` jest więc wynikiem klasyfikacji po utworzeniu wysokości i zastosowaniu poziomu morza, a nie obowiązkowym wejściem generatora. Wyspy archipelagu dzielą szelf i geologiczne pochodzenie, ale mogą mieć indywidualne profile oraz kształty wynikające z lokalnych wyniesień.
+
+## Szelf kontynentalny i batymetria
+
+Większość struktur lądowych powinna mieć otaczający je szelf, czyli łagodnie opadający obszar płytkiego dna. Szelf jest częścią geometrii i wysokości świata, a nie od razu biomem. Pozwala to później klasyfikować płytkie morze na podstawie rzeczywistej głębokości oraz tworzyć wspólny szelf dla całego archipelagu.
+
+Poza szelfem dno powinno opadać w stronę głębokiego oceanu. Granica nie musi być równomiernym pierścieniem — jej szerokość, nieregularność i tempo opadania mogą zależeć od definicji struktury geologicznej oraz lokalnego szumu.
+
+Przydatne warstwy danych:
+
+- `bathymetryMap` — wysokość dna względem poziomu morza,
+- `waterDepthMap` — dodatnia głębokość wody wyliczona po zastosowaniu poziomu morza,
+- `shelfIdMap` — przypisanie płytkich obszarów do wspólnej struktury geologicznej,
+- `islandIdMap` — wynikowy podział wynurzonych, spójnych obszarów na faktyczne wyspy.
 
 ## Charakter wysp
 
