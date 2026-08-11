@@ -85,19 +85,18 @@ export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
               onPointerDown={handlePointerDown}
               onPointerLeave={() => setCursorWorld({ x: 0, y: 0 })}
             />
-
-            <Box className={styles.coordsHud} aria-live='polite'>
-              <Text as='span' size='2' weight='medium' className={styles.coordRow}>
-                <span className={styles.coordLabel}>X:</span>
-                <span className={styles.coordValue}>{cursorWorld.x.toFixed(0)}</span>
-              </Text>
-              <Text as='span' size='2' weight='medium' className={styles.coordRow}>
-                <span className={styles.coordLabel}>Y:</span>
-                <span className={styles.coordValue}>{cursorWorld.y.toFixed(0)}</span>
-              </Text>
-            </Box>
           </Flex>
         </Flex>
+        <Box className={styles.coordsHud} aria-live='polite'>
+          <Text as='span' size='2' weight='medium' className={styles.coordRow}>
+            <span className={styles.coordLabel}>X:</span>
+            <span className={styles.coordValue}>{cursorWorld.x.toFixed(0)}</span>
+          </Text>
+          <Text as='span' size='2' weight='medium' className={styles.coordRow}>
+            <span className={styles.coordLabel}>Y:</span>
+            <span className={styles.coordValue}>{cursorWorld.y.toFixed(0)}</span>
+          </Text>
+        </Box>
       </Card>
     );
   }

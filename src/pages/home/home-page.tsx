@@ -44,14 +44,12 @@ export function HomePage() {
     <div className={styles.container}>
       <WorldControls params={params} updateParam={updateParam} generateMap={handleGenerateMap} />
 
-      <div className={styles.maps}>
-        <WorldCanvas
-          ref={worldCanvasRef}
-          params={params}
-          onSeedGenerated={newSeed => updateParam('seed', newSeed)}
-        />
-        {showPipelinePreview && <WorldGenerationPreview />}
-      </div>
+      <WorldCanvas
+        ref={worldCanvasRef}
+        params={params}
+        onSeedGenerated={newSeed => updateParam('seed', newSeed)}
+      />
+      {showPipelinePreview && <WorldGenerationPreview />}
     </div>
   );
 }

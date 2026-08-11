@@ -6,22 +6,11 @@
   justify-content: space-between;
 
   @include tablet {
-    flex-direction: column-reverse;
-  }
+    flex-direction: column;
 
-  @include mobile {
-    gap: 20px;
-  }
-}
-
-.maps {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  flex: 1;
-  gap: 30px;
-
-  @include tablet {
-    grid-template-columns: minmax(0, 1fr);
+    > :first-child {
+      order: 1;
+    }
   }
 
   @include mobile {
