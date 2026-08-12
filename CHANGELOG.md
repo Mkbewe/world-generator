@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.3](https://github.com/Mkbewe/world-generator/compare/v0.1.2...v0.1.3) (2026-08-12)
+
+
+### Features
+
+* add extensible world generation pipeline ([#99](https://github.com/Mkbewe/world-generator/issues/99)) ([28efed4](https://github.com/Mkbewe/world-generator/commit/28efed4409f4e47582daf35e582d41a389db6009))
+* add worker for legacy generator for testing performance ([#102](https://github.com/Mkbewe/world-generator/issues/102)) ([8746b6b](https://github.com/Mkbewe/world-generator/commit/8746b6b7ac98dba77a3ed19ff26bb9eafc3808b0))
+
+
+### Chores
+
+* add git attributes ([#101](https://github.com/Mkbewe/world-generator/issues/101)) ([689ba32](https://github.com/Mkbewe/world-generator/commit/689ba3221fc1fb899bb50c25d6c82e6169d19369))
+* fix vercel config ([#100](https://github.com/Mkbewe/world-generator/issues/100)) ([a42b0f7](https://github.com/Mkbewe/world-generator/commit/a42b0f748b99c6314ef06da3cf298197a0fffbac))
+
 ### [0.1.2](https://github.com/Mkbewe/world-generator/compare/v0.1.1...v0.1.2) (2026-08-10)
 
 
