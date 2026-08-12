@@ -7,7 +7,7 @@ World Generator is a React + Vite application for generating procedural island a
 ### Requirements
 
 - Node.js 22
-- pnpm 9
+- pnpm 10.13.1
 
 ### Install
 

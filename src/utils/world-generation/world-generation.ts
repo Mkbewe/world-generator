@@ -2,24 +2,25 @@ import { createNoise2D } from 'simplex-noise';
 
 import type { IslandCenter, IslandPosition, Params } from '../../types/world.types';
 
-export function generateWorldMap(
-  canvas: HTMLCanvasElement,
-  params: Params,
-  onSeedGenerated?: (seed: string) => void
-): void {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
+export interface IslandCounts {
+  large: number;
+  medium: number;
+  small: number;
+}
 
-  const width = canvas.width;
-  const height = canvas.height;
+export interface GeneratedWorldPixels {
+  pixels: Uint8ClampedArray;
+  seed: string;
+  islandCounts: IslandCounts;
+}
+
+export function generateWorldPixels(
+  width: number,
+  height: number,
+  params: Params
+): GeneratedWorldPixels {
   const mapScale = Math.min(width, height) / 1200;
-
   const seed = params.seed ? parseInt(params.seed) : Math.floor(Math.random() * 1000000);
-  if (!params.seed && onSeedGenerated) {
-    onSeedGenerated(seed.toString());
-  }
 
   let seedValue = seed;
   const seededRandom = (): number => {
@@ -77,12 +78,12 @@ export function generateWorldMap(
     { type: 'SMALL', count: params.smallCount },
   ];
 
-  types.forEach(t => {
+  types.forEach(({ type, count }) => {
     const groupChance = params.groupChance / 100;
 
-    for (let i = 0; i < t.count; i++) {
-      let posX: number = 0,
-        posY: number = 0;
+    for (let index = 0; index < count; index++) {
+      let posX = 0;
+      let posY = 0;
       let attempts = 0;
       const maxAttempts = 100;
       let validPosition = false;
@@ -90,9 +91,9 @@ export function generateWorldMap(
       while (attempts < maxAttempts && !validPosition) {
         if (seededRandom() < groupChance) {
           const angle = seededRandom() * 2 * Math.PI;
-          const dist = seededRandom() * (Math.min(width, height) * 0.32);
-          posX = clusterX + Math.cos(angle) * dist;
-          posY = clusterY + Math.sin(angle) * dist;
+          const distance = seededRandom() * (Math.min(width, height) * 0.32);
+          posX = clusterX + Math.cos(angle) * distance;
+          posY = clusterY + Math.sin(angle) * distance;
         } else {
           posX = seededRandom() * width;
           posY = seededRandom() * height;
@@ -101,45 +102,42 @@ export function generateWorldMap(
         posX = Math.min(width - 1, Math.max(0, posX));
         posY = Math.min(height - 1, Math.max(0, posY));
 
-        if (!checkCollision(posX, posY, t.type, rawIslandPositions)) {
+        if (!checkCollision(posX, posY, type, rawIslandPositions)) {
           validPosition = true;
         }
         attempts++;
       }
 
       if (validPosition) {
-        rawIslandPositions.push({ x: posX, y: posY, type: t.type });
+        rawIslandPositions.push({ x: posX, y: posY, type });
       }
     }
   });
 
   const sizeModifier = params.islandSize / 100;
-  const islandCenters: IslandCenter[] = rawIslandPositions.map(p => {
-    let rad = 55 * mapScale;
-    let bst = 0.5;
-    if (p.type === 'LARGE') {
-      rad = 160 * mapScale;
-      bst = 0.75;
+  const islandCenters: IslandCenter[] = rawIslandPositions.map(position => {
+    let radius = 55 * mapScale;
+    let boost = 0.5;
+    if (position.type === 'LARGE') {
+      radius = 160 * mapScale;
+      boost = 0.75;
     }
-    if (p.type === 'MEDIUM') {
-      rad = 110 * mapScale;
-      bst = 0.6;
+    if (position.type === 'MEDIUM') {
+      radius = 110 * mapScale;
+      boost = 0.6;
     }
-    return { x: p.x, y: p.y, radius: rad * sizeModifier, boost: bst };
+    return {
+      x: position.x,
+      y: position.y,
+      radius: radius * sizeModifier,
+      boost,
+    };
   });
 
-  const largeCount = rawIslandPositions.filter(i => i.type === 'LARGE').length;
-  const mediumCount = rawIslandPositions.filter(i => i.type === 'MEDIUM').length;
-  const smallCount = rawIslandPositions.filter(i => i.type === 'SMALL').length;
-  // eslint-disable-next-line no-console
-  console.log(
-    `Wygenerowano: ${largeCount} dużych, ${mediumCount} średnich, ${smallCount} małych (razem: ${rawIslandPositions.length})`
-  );
-
   const getCircularWorldMask = (x: number, y: number): number => {
-    const nx = (2 * x) / width - 1;
-    const ny = (2 * y) / height - 1;
-    const distance = Math.sqrt(nx * nx + ny * ny);
+    const normalizedX = (2 * x) / width - 1;
+    const normalizedY = (2 * y) / height - 1;
+    const distance = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
     if (distance >= 0.98) {
       return 0;
     }
@@ -176,67 +174,88 @@ export function generateWorldMap(
     }
 
     const baseIsland = getIslandBaseElevation(x, y);
-
-    const roughMod = params.roughness / 100;
-    const scale1 = 0.05 * roughMod;
-    const scale2 = 0.18 * roughMod;
-
-    const e1 = noise2D(x * scale1, y * scale1);
-    const e2 = noise2D(x * scale2, y * scale2);
-    let noise = (1.0 * e1 + 0.35 * e2) / 1.35;
-    noise = (noise + 1) / 2;
-
-    let finalElevation = 0;
-    if (baseIsland > 0) {
-      finalElevation = baseIsland * 0.55 + noise * 0.45;
-    } else {
-      finalElevation = noise * 0.2;
-    }
+    const roughnessModifier = params.roughness / 100;
+    const firstScale = 0.05 * roughnessModifier;
+    const secondScale = 0.18 * roughnessModifier;
+    const firstNoise = noise2D(x * firstScale, y * firstScale);
+    const secondNoise = noise2D(x * secondScale, y * secondScale);
+    const noise = ((1.0 * firstNoise + 0.35 * secondNoise) / 1.35 + 1) / 2;
+    const finalElevation = baseIsland > 0 ? baseIsland * 0.55 + noise * 0.45 : noise * 0.2;
 
     return finalElevation * worldMask;
   };
 
-  const getColor = (elevation: number): string => {
+  const getColor = (elevation: number): readonly [number, number, number] => {
     const sea = params.seaLevel;
 
     if (elevation <= 0.0) {
-      return '#092560';
+      return [9, 37, 96];
     }
     if (elevation < sea) {
-      return '#1040a0';
+      return [16, 64, 160];
     }
     if (elevation < sea + 0.03) {
-      return '#2060c0';
+      return [32, 96, 192];
     }
     if (elevation < sea + 0.06) {
-      return '#e0cd90';
+      return [224, 205, 144];
     }
     if (elevation < sea + 0.16) {
-      return '#4d9030';
+      return [77, 144, 48];
     }
     if (elevation < sea + 0.3) {
-      return '#2a6010';
+      return [42, 96, 16];
     }
     if (elevation < sea + 0.42) {
-      return '#6a7065';
+      return [106, 112, 101];
     }
-    return '#ffffff';
+    return [255, 255, 255];
   };
 
-  const imgData = ctx.createImageData(width, height);
+  const pixels = new Uint8ClampedArray(width * height * 4);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const elevation = getHeight(x, y);
-      const colorHex = getColor(elevation);
-      const r = parseInt(colorHex.slice(1, 3), 16);
-      const g = parseInt(colorHex.slice(3, 5), 16);
-      const b = parseInt(colorHex.slice(5, 7), 16);
-      const index = (y * width + x) * 4;
-      imgData.data[index] = r;
-      imgData.data[index + 1] = g;
-      imgData.data[index + 2] = b;
-      imgData.data[index + 3] = 255;
+      const [red, green, blue] = getColor(elevation);
+      const pixelIndex = (y * width + x) * 4;
+      pixels[pixelIndex] = red;
+      pixels[pixelIndex + 1] = green;
+      pixels[pixelIndex + 2] = blue;
+      pixels[pixelIndex + 3] = 255;
     }
   }
-  ctx.putImageData(imgData, 0, 0);
+
+  return {
+    pixels,
+    seed: seed.toString(),
+    islandCounts: {
+      large: rawIslandPositions.filter(island => island.type === 'LARGE').length,
+      medium: rawIslandPositions.filter(island => island.type === 'MEDIUM').length,
+      small: rawIslandPositions.filter(island => island.type === 'SMALL').length,
+    },
+  };
+}
+
+export function drawWorldPixels(canvas: HTMLCanvasElement, pixels: Uint8ClampedArray): void {
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return;
+  }
+
+  const imageData = context.createImageData(canvas.width, canvas.height);
+  imageData.data.set(pixels);
+  context.putImageData(imageData, 0, 0);
+}
+
+export function generateWorldMap(
+  canvas: HTMLCanvasElement,
+  params: Params,
+  onSeedGenerated?: (seed: string) => void
+): void {
+  const result = generateWorldPixels(canvas.width, canvas.height, params);
+  drawWorldPixels(canvas, result.pixels);
+
+  if (!params.seed) {
+    onSeedGenerated?.(result.seed);
+  }
 }

@@ -1,8 +1,13 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Box, Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import type { Params } from '../../types/world.types';
-import { generateWorldMap } from '../../utils/world-generation/world-generation';
+import { LegacyWorldGenerationWorkerClient } from '../../utils/world-generation/legacy-world-generation-worker-client';
+import {
+  drawWorldPixels,
+  generateWorldPixels,
+  type IslandCounts,
+} from '../../utils/world-generation/world-generation';
 import styles from './world-canvas.module.scss';
 
 interface WorldCursor {
@@ -11,8 +16,13 @@ interface WorldCursor {
 }
 
 export interface WorldCanvasRef {
-  generate: () => void;
+  generate: (useWorker: boolean) => Promise<WorldCanvasGenerationResult>;
   exportMap: () => void;
+}
+
+export interface WorldCanvasGenerationResult {
+  computeDurationMs: number;
+  islandCounts: IslandCounts;
 }
 
 interface WorldCanvasProps {
@@ -23,7 +33,17 @@ interface WorldCanvasProps {
 export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
   ({ params, onSeedGenerated }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const workerClientRef = useRef<LegacyWorldGenerationWorkerClient | null>(null);
     const [cursorWorld, setCursorWorld] = useState<WorldCursor>({ x: 0, y: 0 });
+
+    if (!workerClientRef.current) {
+      workerClientRef.current = new LegacyWorldGenerationWorkerClient();
+    }
+
+    useEffect(() => {
+      const workerClient = workerClientRef.current;
+      return () => workerClient?.dispose();
+    }, []);
 
     const getWorldCoordinates = (event: React.PointerEvent<HTMLCanvasElement>): WorldCursor => {
       const rect = event.currentTarget.getBoundingClientRect();
@@ -46,12 +66,34 @@ export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
       setCursorWorld(getWorldCoordinates(event));
     };
 
-    const generate = (): void => {
-      if (!canvasRef.current) {
-        return;
+    const generate = async (useWorker: boolean): Promise<WorldCanvasGenerationResult> => {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        throw new Error('Canvas is not available.');
       }
 
-      generateWorldMap(canvasRef.current, params, onSeedGenerated);
+      const result = useWorker
+        ? await workerClientRef.current!.generate(canvas.width, canvas.height, params)
+        : (() => {
+            const startedAt = performance.now();
+            return {
+              type: 'result' as const,
+              requestId: 0,
+              ...generateWorldPixels(canvas.width, canvas.height, params),
+              computeDurationMs: performance.now() - startedAt,
+            };
+          })();
+
+      drawWorldPixels(canvas, result.pixels);
+
+      if (!params.seed) {
+        onSeedGenerated(result.seed);
+      }
+
+      return {
+        computeDurationMs: result.computeDurationMs,
+        islandCounts: result.islandCounts,
+      };
     };
 
     const exportMap = (): void => {
@@ -79,8 +121,8 @@ export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
             <canvas
               ref={canvasRef}
               className={styles.canvas}
-              width='2400'
-              height='2400'
+              width='4000'
+              height='4000'
               onPointerMove={handlePointerMove}
               onPointerDown={handlePointerDown}
               onPointerLeave={() => setCursorWorld({ x: 0, y: 0 })}
