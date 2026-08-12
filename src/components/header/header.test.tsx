@@ -9,7 +9,7 @@ function renderHeader(options?: { isMapGenerated?: boolean; onOpenDialog?: () =>
   const { isMapGenerated = true, onOpenDialog = vi.fn() } = options || {};
 
   return render(
-    <FeatureFlagsContext.Provider value={{ exportPng: true }}>
+    <FeatureFlagsContext.Provider value={{ exportPng: true, pipelinePreview: false }}>
       <HeaderActionsContext.Provider
         value={{
           exportMapRef: { current: undefined },

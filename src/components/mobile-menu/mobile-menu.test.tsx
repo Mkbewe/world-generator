@@ -23,7 +23,7 @@ function renderMenu({
 }: RenderOptions = {}) {
   return render(
     <Theme>
-      <FeatureFlagsContext.Provider value={{ exportPng }}>
+      <FeatureFlagsContext.Provider value={{ exportPng, pipelinePreview: false }}>
         <HeaderActionsContext.Provider
           value={{
             exportMapRef: { current: undefined },

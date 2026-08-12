@@ -6,7 +6,11 @@
   justify-content: space-between;
 
   @include tablet {
-    flex-direction: column-reverse;
+    flex-direction: column;
+
+    > :first-child {
+      order: 1;
+    }
   }
 
   @include mobile {
