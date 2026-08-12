@@ -1,1 +1,1 @@
-export { WorldControls } from './world-controls';
+export { WorldControls, type GenerationMetrics } from './world-controls';

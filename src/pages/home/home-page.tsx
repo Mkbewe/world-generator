@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useHeaderActions } from '../../components/header';
 import { WorldCanvas, type WorldCanvasRef } from '../../components/world-canvas';
-import { WorldControls } from '../../components/world-controls';
+import { type GenerationMetrics, WorldControls } from '../../components/world-controls';
 import { WorldGenerationPreview } from '../../components/world-generation-preview';
 import { useFlag } from '../../feature-flags';
 import type { Params } from '../../types/world.types';
@@ -12,6 +12,10 @@ export function HomePage() {
   const worldCanvasRef = useRef<WorldCanvasRef>(null);
   const showPipelinePreview = useFlag('pipelinePreview');
   const { exportMapRef, setIsMapGenerated } = useHeaderActions();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [useWorker, setUseWorker] = useState(false);
+  const [generationMetrics, setGenerationMetrics] = useState<GenerationMetrics>();
+  const [generationError, setGenerationError] = useState<string>();
   const [params, setParams] = useState<Params>({
     largeCount: 3,
     mediumCount: 5,
@@ -31,18 +35,44 @@ export function HomePage() {
     setParams(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleGenerateMap = (): void => {
-    // eslint-disable-next-line no-console
-    console.time('world-generation');
-    worldCanvasRef.current?.generate();
-    // eslint-disable-next-line no-console
-    console.timeEnd('world-generation');
-    setIsMapGenerated(true);
+  const handleGenerateMap = async (): Promise<void> => {
+    setIsGenerating(true);
+    setGenerationError(undefined);
+    await waitForNextPaint();
+    const startedAt = performance.now();
+
+    try {
+      const result = await worldCanvasRef.current?.generate(useWorker);
+      if (!result) {
+        throw new Error('World generator is not available.');
+      }
+
+      setGenerationMetrics({
+        mode: useWorker ? 'worker' : 'main-thread',
+        computeDurationMs: result.computeDurationMs,
+        totalDurationMs: performance.now() - startedAt,
+        islandCounts: result.islandCounts,
+      });
+      setIsMapGenerated(true);
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : 'World generation failed.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
     <div className={styles.container}>
-      <WorldControls params={params} updateParam={updateParam} generateMap={handleGenerateMap} />
+      <WorldControls
+        params={params}
+        updateParam={updateParam}
+        generateMap={handleGenerateMap}
+        isGenerating={isGenerating}
+        useWorker={useWorker}
+        onUseWorkerChange={setUseWorker}
+        generationMetrics={generationMetrics}
+        generationError={generationError}
+      />
 
       <WorldCanvas
         ref={worldCanvasRef}
@@ -52,4 +82,10 @@ export function HomePage() {
       {showPipelinePreview && <WorldGenerationPreview />}
     </div>
   );
+}
+
+function waitForNextPaint(): Promise<void> {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
 }

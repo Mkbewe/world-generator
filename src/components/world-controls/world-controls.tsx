@@ -1,7 +1,18 @@
 import { useEffect } from 'react';
-import { Button, Card, Flex, Heading, Separator, Slider, Text, TextField } from '@radix-ui/themes';
+import {
+  Button,
+  Card,
+  Flex,
+  Heading,
+  Separator,
+  Slider,
+  Switch,
+  Text,
+  TextField,
+} from '@radix-ui/themes';
 
 import type { Params } from '../../types/world.types';
+import type { IslandCounts } from '../../utils/world-generation/world-generation';
 import styles from './world-controls.module.scss';
 
 type NumericParamKey = Exclude<keyof Params, 'seed'>;
@@ -29,9 +40,30 @@ interface WorldControlsProps {
   params: Params;
   updateParam: <K extends keyof Params>(key: K, value: Params[K]) => void;
   generateMap: () => void;
+  isGenerating: boolean;
+  useWorker: boolean;
+  onUseWorkerChange: (useWorker: boolean) => void;
+  generationMetrics?: GenerationMetrics;
+  generationError?: string;
 }
 
-export function WorldControls({ params, updateParam, generateMap }: WorldControlsProps) {
+export interface GenerationMetrics {
+  mode: 'main-thread' | 'worker';
+  computeDurationMs: number;
+  totalDurationMs: number;
+  islandCounts: IslandCounts;
+}
+
+export function WorldControls({
+  params,
+  updateParam,
+  generateMap,
+  isGenerating,
+  useWorker,
+  onUseWorkerChange,
+  generationMetrics,
+  generationError,
+}: WorldControlsProps) {
   const randomizeSeed = (): void => {
     const newSeed = Math.floor(Math.random() * 1000000);
     updateParam('seed', newSeed.toString());
@@ -89,10 +121,81 @@ export function WorldControls({ params, updateParam, generateMap }: WorldControl
           </Flex>
         </Flex>
 
-        <Button size='3' onClick={generateMap} className={styles.generateButton}>
+        <Flex justify='between' align='center' gap='3'>
+          <Text as='label' htmlFor='worker-generation-switch' size='2' color='gray'>
+            Generate in Web Worker
+          </Text>
+          <Switch
+            id='worker-generation-switch'
+            checked={useWorker}
+            disabled={isGenerating}
+            onCheckedChange={onUseWorkerChange}
+          />
+        </Flex>
+
+        <Button
+          size='3'
+          onClick={generateMap}
+          loading={isGenerating}
+          className={styles.generateButton}
+        >
           Generate
         </Button>
+
+        {generationMetrics && <GenerationMetricsSummary metrics={generationMetrics} />}
+        {generationError && (
+          <Text size='2' color='red' role='alert'>
+            {generationError}
+          </Text>
+        )}
       </Flex>
     </Card>
+  );
+}
+
+function GenerationMetricsSummary({ metrics }: { metrics: GenerationMetrics }) {
+  const totalIslands =
+    metrics.islandCounts.large + metrics.islandCounts.medium + metrics.islandCounts.small;
+
+  return (
+    <Flex direction='column' gap='2' aria-live='polite' className={styles.metrics}>
+      <Separator size='4' />
+      <Text size='2' weight='bold'>
+        Last generation
+      </Text>
+      <Flex justify='between' gap='3'>
+        <Text size='2' color='gray'>
+          Mode
+        </Text>
+        <Text size='2' weight='medium'>
+          {metrics.mode === 'worker' ? 'Web Worker' : 'Main thread'}
+        </Text>
+      </Flex>
+      <Flex justify='between' gap='3'>
+        <Text size='2' color='gray'>
+          Compute
+        </Text>
+        <Text size='2' weight='medium'>
+          {metrics.computeDurationMs.toFixed(1)} ms
+        </Text>
+      </Flex>
+      <Flex justify='between' gap='3'>
+        <Text size='2' color='gray'>
+          End-to-end
+        </Text>
+        <Text size='2' weight='medium'>
+          {metrics.totalDurationMs.toFixed(1)} ms
+        </Text>
+      </Flex>
+      <Flex justify='between' gap='3'>
+        <Text size='2' color='gray'>
+          Islands
+        </Text>
+        <Text size='2' weight='medium'>
+          {metrics.islandCounts.large} large / {metrics.islandCounts.medium} medium /{' '}
+          {metrics.islandCounts.small} small ({totalIslands})
+        </Text>
+      </Flex>
+    </Flex>
   );
 }
