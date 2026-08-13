@@ -26,6 +26,6 @@
     "noUncheckedSideEffectImports": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "api"],
+  "include": ["src", "shared", "api"],
   "exclude": ["node_modules", "dist"]
 }
