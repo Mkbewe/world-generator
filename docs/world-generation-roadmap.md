@@ -157,6 +157,44 @@ interface CellEnvironment {
 
 Przykładowo bagno wymaga płaskiego, wilgotnego i nisko położonego obszaru. Profil wyspy wpływa na teren, a rzeczywisty teren określa, które biomy są możliwe.
 
+## Fizyczna skala świata
+
+Rozdzielczość danych nie powinna określać fizycznego rozmiaru świata. Generator powinien osobno przechowywać:
+
+- rozmiar świata w jednostkach gry, najlepiej w metrach,
+- rozdzielczość próbkowania warstw takich jak `heightmap` i `biomeMap`,
+- rozdzielczość podglądu lub eksportowanego obrazu,
+- przeliczenie między współrzędnymi znormalizowanymi, metrami świata i komórkami rastra.
+
+```ts
+interface WorldDimensions {
+  widthMeters: number;
+  heightMeters: number;
+  sampleWidth: number;
+  sampleHeight: number;
+}
+```
+
+Przykładowo świat `4000 × 4000 m` może mieć bazową `heightmap` o rozdzielczości `2000 × 2000`, co daje około `2 m` na komórkę. Podgląd tego samego świata może mieć tylko `512 × 512 px`, a kamera gry może wyrenderować aktualnie widoczny fragment w rozdzielczości ekranu. Zmiana rozdzielczości PNG nie zmienia wtedy wielkości wyspy w grze.
+
+PNG powinien pozostać wizualizacją albo formatem eksportu, a nie źródłem prawdy dla świata. Źródłem prawdy powinny być seed, konfiguracja oraz numeryczne warstwy generatora. W pierwszej wersji cały teren może zostać wygenerowany raz i trzymany w pamięci. Podział na kafelki lub deterministycznie odtwarzane chunki należy wprowadzić dopiero wtedy, gdy pomiary wykażą problemy z czasem generowania albo zużyciem pamięci.
+
+## Interaktywna eksploracja świata
+
+Planowana osobna podstrona, np. `/explore/:seed`, powinna pozwalać otworzyć wygenerowany świat w trybie zwiedzania z kamerą z góry. Nie jest to pełna gra: użytkownik nie zbiera zasobów, nie modyfikuje świata i nie wymaga zapisywania stanu rozgrywki. Generator pozostaje niezależny od widoku, a podstrona korzysta z jego warstw danych.
+
+Zakres pierwszej wersji:
+
+1. Przejście z generatora do podstrony eksploracji z seedem i konfiguracją świata.
+2. Jednorazowe wygenerowanie całej mapy terenu i jej numerycznych warstw.
+3. Kamera z góry śledząca postać, zoom oraz minimapa całego świata.
+4. Postać sterowana klawiaturą, poruszająca się we współrzędnych świata wyrażonych w metrach.
+5. Renderowanie tylko obszaru widocznego przez kamerę, mimo że dane całej mapy pozostają w pamięci.
+6. Podstawowa kolizja wynikająca z warstw terenu, np. woda, strome zbocza i granice świata.
+7. Punkt startowy wybrany przez `LocationStage`.
+
+Tryb eksploracji nie potrzebuje ekwipunku, zasobów, NPC, symulacji odległych obszarów ani zapisywania zmian w świecie. Kolejne iteracje mogą dodać animacje postaci, wizualne obiekty i dekoracje terenu. Chunkowanie oraz poziomy szczegółowości pozostają opcjonalną optymalizacją dla większych map. Skala postaci i kamery powinna wynikać z metrów świata oraz zoomu, a nie z liczby pikseli źródłowego obrazu.
+
 ## Wydajność — dalszy plan
 
 - Najpierw zachować prosty, jednowątkowy pipeline.

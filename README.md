@@ -191,10 +191,11 @@ be toggled from the Vercel dashboard without a redeploy.
   flag's default (also the fallback when the remote store is unavailable).
   Flags can be booleans or strings; string flags declare their allowed values in
   `FLAG_OPTIONS`, which becomes the flag's TypeScript union type.
-- `api/flags.ts` is a Vercel Function that reads Global Config and returns the
-  flag values as JSON at `GET /api/flags`.
+- `api/flags.ts` is a Vercel Function that reads only the registered flags from
+  Global Config and returns them as JSON at `GET /api/flags`. If Global Config
+  is unavailable, it returns `FLAG_DEFAULTS`.
 - `FeatureFlagsProvider` fetches `/api/flags` on load; consume flags with
-  `useFlag('mapStyle')`. Remote values are validated against the registry —
+  `useFlag('exportPng')`. Remote values are validated against the registry —
   unknown keys, wrong types, and string values outside `FLAG_OPTIONS` are ignored
   and fall back to the default.
 
@@ -202,15 +203,15 @@ be toggled from the Vercel dashboard without a redeploy.
 
 1. In the Vercel project: **Storage → Create Database → Global Config**.
 2. Under **Items**, add the flags as JSON, e.g.
-   `{ "test": false, "mapStyle": "fantasy" }`.
+   `{ "exportPng": false, "pipelinePreview": false }`.
 3. Connecting the store to the project sets the `GLOBAL_CONFIG` environment
    variable automatically.
 
 Change a flag by editing its item in **Items** — no redeploy needed.
 
-**Local development:** `pnpm dev` does not serve `/api/*`, so flags fall back to
-`FLAG_DEFAULTS` (the app still works). To exercise the real fetch locally, run
-`vercel env pull` then `vercel dev`.
+**Local development:** `pnpm dev` serves `/api/flags` from `flags.local.json`.
+Edit that file and refresh the app to test different flag values. To exercise
+the real Vercel Function locally, run `vercel env pull` and then `vercel dev`.
 
 ## Notes
 
