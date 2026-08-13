@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ExportDialog } from '../../components/export-dialog';
 import { Footer } from '../../components/footer';
 import { Header, HeaderActionsProvider, useHeaderActions } from '../../components/header';
+import { PageSection } from '../../components/page-section';
 import styles from './main-layout.module.scss';
 
 interface MainLayoutProps {
@@ -18,7 +19,9 @@ function MainLayoutContent({ children, onToggleTheme, currentTheme }: MainLayout
     <>
       <div className={styles.layout}>
         <Header onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
-        <main className={styles.main}>{children}</main>
+        <PageSection as='main' padding='large'>
+          {children}
+        </PageSection>
         <Footer />
       </div>
       <ExportDialog

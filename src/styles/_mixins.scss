@@ -2,14 +2,14 @@
 
 // Applies styles at the mobile breakpoint and below.
 @mixin mobile {
-  @media (max-width: $breakpoint-mobile) {
+  @media (max-width: calc($breakpoint-sm - 1px)) {
     @content;
   }
 }
 
 // Applies styles at the tablet breakpoint and below.
 @mixin tablet {
-  @media (max-width: $breakpoint-tablet) {
+  @media (max-width: calc($breakpoint-md - 1px)) {
     @content;
   }
 }

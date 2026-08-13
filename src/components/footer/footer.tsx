@@ -1,6 +1,7 @@
-import { Container, Flex, Text } from '@radix-ui/themes';
+import { Flex, Text } from '@radix-ui/themes';
 
 import { appConfig } from '../../config';
+import { PageSection } from '../page-section';
 import styles from './footer.module.scss';
 
 export function Footer() {
@@ -8,8 +9,8 @@ export function Footer() {
 
   return (
     <footer className={styles.footer}>
-      <Container size='4' py='6'>
-        <Flex direction='column' px={{ initial: '4', sm: '8' }} align='center' gap='2'>
+      <PageSection as='div' background='subtle' border='top' padding='medium'>
+        <Flex direction='column' align='center' gap='2'>
           <Text size='2' weight='medium'>
             {appConfig.name} v{appConfig.version}
           </Text>
@@ -20,7 +21,7 @@ export function Footer() {
             © {currentYear} {appConfig.name}
           </Text>
         </Flex>
-      </Container>
+      </PageSection>
     </footer>
   );
 }

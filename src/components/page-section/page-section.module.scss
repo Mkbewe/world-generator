@@ -1,0 +1,64 @@
+.root {
+  width: 100%;
+}
+
+.content {
+  width: 100%;
+  max-width: $layout-max-width;
+  margin-inline: auto;
+  padding-inline: 1rem;
+
+  @media (min-width: $breakpoint-sm) {
+    padding-inline: 2rem;
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    padding-inline: 3rem;
+  }
+}
+
+.root[data-background='default'] {
+  background-color: var(--gray-1);
+}
+
+.root[data-background='subtle'] {
+  background-color: var(--gray-2);
+}
+
+.root[data-border='top'] {
+  border-top: 1px solid var(--gray-6);
+}
+
+.root[data-border='bottom'] {
+  border-bottom: 1px solid var(--gray-6);
+}
+
+.root[data-border='both'] {
+  border-block: 1px solid var(--gray-6);
+}
+
+.root[data-padding='small'] .content {
+  padding-block: 0.75rem;
+}
+
+.root[data-padding='medium'] .content {
+  padding-block: 1rem;
+}
+
+.root[data-padding='large'] .content {
+  padding-block: 1.5rem;
+}
+
+@media (min-width: $breakpoint-sm) {
+  .root[data-padding='small'] .content {
+    padding-block: 1rem;
+  }
+
+  .root[data-padding='medium'] .content {
+    padding-block: 1.5rem;
+  }
+
+  .root[data-padding='large'] .content {
+    padding-block: 2rem;
+  }
+}
