@@ -10,16 +10,18 @@
 
 ## Planowany pipeline
 
-1. `WorldShapeStage` — wyznaczenie obszaru świata i maski kołowej.
-2. `NoiseStage` — deterministyczne warstwy szumu.
-3. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi.
-4. `IslandCharacterStage` — profile terenu struktur lądowych i ich regionów.
-5. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna.
-6. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych.
-7. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska.
-8. `TerrainFeaturesStage` — klify, plaże, doliny, płaskowyże i inne formacje.
-9. `BiomeStage` — biomy wynikające z warunków środowiskowych.
-10. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje.
+1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu.
+2. `MacroRegionStage` — makroregiony, pola progresji oraz narracyjne wymagania świata.
+3. `NoiseStage` — deterministyczne warstwy szumu.
+4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi.
+5. `IslandCharacterStage` — profile terenu struktur lądowych i ich regionów.
+6. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna.
+7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych.
+8. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne.
+9. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów.
+10. `TerrainFeaturesStage` — klify, plaże, doliny, płaskowyże i inne formacje.
+11. `BiomeStage` — biomy wynikające z warunków środowiskowych.
+12. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje.
 
 Kolejność może być później doprecyzowana, szczególnie w przypadku wzajemnego wpływu hydrologii, erozji i formacji terenu.
 
@@ -156,6 +158,93 @@ interface CellEnvironment {
 ```
 
 Przykładowo bagno wymaga płaskiego, wilgotnego i nisko położonego obszaru. Profil wyspy wpływa na teren, a rzeczywisty teren określa, które biomy są możliwe.
+
+## Presety świata i konfiguracja makroregionów
+
+Preset powinien być gotową konfiguracją tych samych etapów generatora, a nie osobną implementacją. Użytkownik może rozpocząć od presetu, zmienić jego parametry, a następnie zapisać wynik jako własny profil.
+
+Planowane presety:
+
+1. `Mythic Moon` — zamieszkały księżyc gazowego giganta z bezpiecznym centrum, zimną północą, wulkanicznym południem i progresją rosnącą wraz z odległością od środka. Długie dni i noce, regularne zaćmienia oraz wulkanizm pływowy wspierają fabułę, ale model może świadomie upraszczać astrofizykę na rzecz czytelnego świata.
+2. `Earth-like` — zwykła obracająca się planeta, zimne bieguny, strefy umiarkowane, gorący równik oraz normalny cykl dnia i nocy.
+3. `Engineered Rings` — sztuczny albo magiczny świat z konfigurowalnymi pierścieniami klimatycznymi wokół centralnego sanktuarium.
+
+Tryb zaawansowany może pozwalać zmieniać układ makroregionów, szerokość stref, źródła ciepła i wilgoci, obrót osi klimatu, siłę gradientów, mieszanie regionów oraz deformację granic. Makroregiony powinny być polami wpływu z płynnym przejściem, a nie rozłącznymi obszarami o ostrych krawędziach.
+
+```ts
+interface WorldPreset {
+  id: string;
+  topology: WorldTopologyConfig;
+  climate: ClimateConfig;
+  macroRegions: MacroRegionConfig[];
+  starterRegion: StarterRegionConfig;
+}
+```
+
+Podglądy koncepcyjne:
+
+- [trzy presety świata](assets/world-presets.svg).
+
+## Topologia i krawędzie świata
+
+Kształt mapy należy oddzielić od sposobu działania jej krawędzi oraz od presetu klimatu. Użytkownik może wybrać świat radialny w formie dysku albo świat cylindryczny, niezależnie od wybranego układu temperatury i wilgotności.
+
+```ts
+interface WorldTopologyConfig {
+  shape: 'disc' | 'rectangle';
+  wrapX: boolean;
+  wrapY: boolean;
+  closedEdge: 'cliff' | 'ocean' | 'ice-wall';
+  seamOffset: number;
+}
+```
+
+- Świat radialny lub ringowy może być dyskiem bez zawijania, zakończonym urwiskiem opadającym poza granicę mapy.
+- Świat cylindryczny korzysta z prostokątnej mapy zawijanej na osi X. Przejście przez zachodnią krawędź przenosi wtedy na wschodnią, natomiast północ i południe pozostają zamknięte. Taka mapa nie posiada wyróżnionego środka na osi wschód–zachód.
+- Noise, hydrologia, lądy i wszystkie inne warstwy muszą być okresowe na zawijanej osi, aby na łączeniu mapy nie powstawał szew.
+- Okrągła maska i pełne zawijanie lewo–prawo nie tworzą naturalnej geometrii, dlatego nie powinny być łączone w realistycznym presecie.
+
+### Bezszwowe łączenie cylindra
+
+Świata cylindrycznego nie należy najpierw generować jako zwykłego prostokąta, a następnie sklejać jego boków. Okresowość musi obowiązywać od początku pipeline'u:
+
+- współrzędna X jest normalizowana modulo szerokość świata,
+- odległość pozioma korzysta z krótszej drogi przez lewą albo prawą krawędź,
+- noise jest okresowy na osi X; można go próbkować po okręgu za pomocą `cos(2πx)` i `sin(2πx)`,
+- rasteryzacja lądu uwzględnia kopie struktur przesunięte o `-worldWidth` i `+worldWidth`,
+- hydrologia oraz pozostałe operacje sąsiedztwa traktują lewą i prawą kolumnę jako bezpośrednich sąsiadów,
+- wykrywanie spójnych wysp nadaje jeden identyfikator lądowi przecinającemu szew,
+- renderer normalizuje pozycję gracza i kamery oraz rysuje brakujący fragment mapy z jej przeciwnej strony.
+
+```ts
+const directDx = Math.abs(x1 - x2);
+const wrappedDx = Math.min(directDx, worldWidth - directDx);
+const wrappedX = ((x % worldWidth) + worldWidth) % worldWidth;
+```
+
+Wyspa leżąca na szwie może wyglądać jak dwie połówki na płaskim eksporcie PNG, ale w świecie i podczas eksploracji pozostaje jedną ciągłą wyspą. Dla czytelniejszej minimapy można po wygenerowaniu wybrać `seamOffset` przechodzący przez największy obszar oceanu i tylko przesunąć miejsce rozcięcia wizualizacji, bez zmiany danych świata. Prostszym wariantem pierwszej wersji jest wymuszenie oceanicznego pasa na szwie, ale docelowo generator powinien poprawnie obsługiwać przecinające go wyspy.
+
+## Klimat, wilgotność i niebezpieczeństwo
+
+`ClimateStage` powinien tworzyć ciągłe pola środowiskowe, przynajmniej `temperatureMap` i `moistureMap`. W przyszłości mogą dojść `volcanicActivityMap`, `windMap` oraz pola sezonowe. `BiomeStage` klasyfikuje biomy na podstawie kombinacji tych wartości, wysokości, nachylenia, odległości od wody i hydrologii.
+
+Przykładowe kombinacje:
+
+| Temperatura | Wilgotność | Przykładowy biom |
+| --- | --- | --- |
+| gorąco | sucho | pustynia |
+| gorąco | mokro | las deszczowy |
+| umiarkowanie | sucho | step |
+| umiarkowanie | średnio | równiny |
+| umiarkowanie | mokro | las |
+| zimno | sucho | tundra |
+| zimno | mokro | tajga, śnieg lub lodowiec |
+
+Wilgotność nie powinna być prostym podziałem na suchy zachód i mokry wschód. Kierunkowy gradient może być jedynie słabym wpływem bazowym. Na niego należy nałożyć wielkoskalowy noise, kilka suchych i mokrych centrów wpływu, odległość od oceanu, dominujące wiatry oraz cień opadowy gór. W efekcie powstaną nieregularne wyspy wilgotności i suchości, które miejscami przenikają na przeciwną stronę świata. Granice powinny być dodatkowo deformowane przez domain warping.
+
+Klimat należy oddzielić od poziomu niebezpieczeństwa i progresji. Dwie strefy umiarkowane w realistycznym świecie nie muszą być równoważne. Jedna może zawierać bezpieczne równiny i lasy, a druga niebezpieczne biomy wynikające z silnego wulkanizmu, toksycznych mokradeł, gwałtownych burz albo odmiennej geologii. Podobnie oba zimne krańce mogą różnić się charakterem, mimo podobnej temperatury.
+
+Pola progresji i narracyjne wymagania pochodzą z `MacroRegionStage`, natomiast `ClimateStage` opisuje warunki fizyczne. Dzięki temu fabuła może wymagać niebezpiecznego południowego regionu bez sztucznego zmieniania całej jego temperatury.
 
 ## Fizyczna skala świata
 

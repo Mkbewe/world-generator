@@ -5,22 +5,3 @@
   flex-direction: column;
   background: var(--gray-1);
 }
-
-.main {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  max-width: $layout-max-width;
-  margin: 0 auto;
-  padding: 2rem 3rem;
-
-  @include tablet {
-    padding: 2rem 2rem;
-  }
-
-  @include mobile {
-    padding: 2rem 1rem;
-  }
-}
