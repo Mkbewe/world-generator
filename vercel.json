@@ -10,7 +10,7 @@
     }
   },
   "functions": {
-    "api/flags.ts": {
+    "api/**/*.ts": {
       "includeFiles": "shared/**"
     }
   }
