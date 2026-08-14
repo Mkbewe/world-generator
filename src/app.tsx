@@ -20,6 +20,7 @@ export function App() {
         grayColor='gray'
         radius='large'
         scaling='95%'
+        panelBackground='solid'
       >
         <MainLayout onToggleTheme={toggleTheme} currentTheme={appearance}>
           <HomePage />
