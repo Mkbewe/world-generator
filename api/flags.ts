@@ -1,6 +1,6 @@
 import { getAll } from '@vercel/global-config';
 
-import { FLAG_DEFAULTS, type FlagName } from '../shared/feature-flags/flags.js';
+import { FLAG_DEFAULTS, type FlagName } from './_shared/flags.js';
 
 const FLAG_NAMES = Object.keys(FLAG_DEFAULTS) as FlagName[];
 
