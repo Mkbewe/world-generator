@@ -8,5 +8,10 @@
     "deploymentEnabled": {
       "master": false
     }
+  },
+  "functions": {
+    "api/flags.ts": {
+      "includeFiles": "shared/**"
+    }
   }
 }
