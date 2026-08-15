@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.4](https://github.com/Mkbewe/world-generator/compare/v0.1.3...v0.1.4) (2026-08-15)
+
+
+### Features
+
+* **107:** add page section componenet ([#109](https://github.com/Mkbewe/world-generator/issues/109)) ([5a67122](https://github.com/Mkbewe/world-generator/commit/5a6712225baa742341f752cde88a7a79a04a8f13))
+* **108:** grid component ([#114](https://github.com/Mkbewe/world-generator/issues/114)) ([b372fa3](https://github.com/Mkbewe/world-generator/commit/b372fa33bb586521f721dd5d523d23822fbd7aa5))
+
+
+### Bug Fixes
+
+* fix feature flags ([#111](https://github.com/Mkbewe/world-generator/issues/111)) ([c99fb61](https://github.com/Mkbewe/world-generator/commit/c99fb6114de0bc402a8cd0a0a9e12522d286796c))
+
+
+### Continuous Integration
+
+* clean up triggering pipeline on develop ([#110](https://github.com/Mkbewe/world-generator/issues/110)) ([026f086](https://github.com/Mkbewe/world-generator/commit/026f08693a468dac90332db20d350869a53df0c9))
+
+
+### Chores
+
+* **113:** add style lint configuration ([#115](https://github.com/Mkbewe/world-generator/issues/115)) ([ae244bd](https://github.com/Mkbewe/world-generator/commit/ae244bd706e315a5b8f427e730ffc4e0157731b4))
+* fix vercel flags ([#112](https://github.com/Mkbewe/world-generator/issues/112)) ([0344832](https://github.com/Mkbewe/world-generator/commit/0344832c0e2072f3d560528f4173a95d21ecf16a))
+* upgrade of feature flags ([#104](https://github.com/Mkbewe/world-generator/issues/104)) ([cce0b46](https://github.com/Mkbewe/world-generator/commit/cce0b46c0e8eb81fd763553385fa1160bfca7886))
+
 ### [0.1.3](https://github.com/Mkbewe/world-generator/compare/v0.1.2...v0.1.3) (2026-08-12)
 
 
