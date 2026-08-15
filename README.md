@@ -33,10 +33,14 @@ pnpm build
 ```bash
 pnpm typecheck
 pnpm lint
+pnpm lint:scss
 pnpm format
 pnpm test
 pnpm check:all
 ```
+
+Stylelint validates all SCSS files using the rules in `.stylelintrc.json`.
+Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 
 ## Branching strategy
 
@@ -83,9 +87,10 @@ CI is responsible for validating pull requests and branch updates.
 
 The workflow runs two parallel jobs:
 
-**Code Quality** (typecheck, lint, format, build)
+**Code Quality** (typecheck, ESLint, Stylelint, format, build)
 - Type safety check (`pnpm typecheck`)
-- Linting (`pnpm lint`)
+- TypeScript/React linting (`pnpm lint`)
+- SCSS linting with Stylelint (`pnpm lint:scss`)
 - Formatting validation (`pnpm format`)
 - Production build verification (`pnpm build`)
 
@@ -219,7 +224,7 @@ This project includes:
 
 - `commitlint` with conventional commit rules
 - `husky` for git hooks
-- `eslint` and `prettier`
+- `eslint`, `stylelint`, and `prettier`
 - `vitest` for testing
 - GitHub Actions CI
 - Vercel deployment for production
