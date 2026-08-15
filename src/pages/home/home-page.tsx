@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Grid } from '@radix-ui/themes';
 
 import { useHeaderActions } from '../../components/header';
 import { WorldCanvas, type WorldCanvasRef } from '../../components/world-canvas';
@@ -6,7 +7,6 @@ import { type GenerationMetrics, WorldControls } from '../../components/world-co
 import { WorldGenerationPreview } from '../../components/world-generation-preview';
 import { useFlag } from '../../feature-flags';
 import type { Params } from '../../types/world.types';
-import styles from './home-page.module.scss';
 
 export function HomePage() {
   const worldCanvasRef = useRef<WorldCanvasRef>(null);
@@ -62,7 +62,13 @@ export function HomePage() {
   };
 
   return (
-    <div className={styles.container}>
+    <Grid
+      columns={{
+        initial: '1',
+        md: showPipelinePreview ? 'minmax(280px, auto) 1fr auto' : 'minmax(280px, auto) 1fr',
+      }}
+      gap='7'
+    >
       <WorldControls
         params={params}
         updateParam={updateParam}
@@ -80,7 +86,7 @@ export function HomePage() {
         onSeedGenerated={newSeed => updateParam('seed', newSeed)}
       />
       {showPipelinePreview && <WorldGenerationPreview />}
-    </div>
+    </Grid>
   );
 }
 
