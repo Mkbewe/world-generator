@@ -1,0 +1,10 @@
+{
+  "extends": ["stylelint-config-standard-scss", "stylelint-config-prettier-scss"],
+  "rules": {
+    "no-descending-specificity": null,
+    "no-unknown-animations": null,
+    "selector-class-pattern": "^(?:[a-z][a-zA-Z0-9]*|radix-themes)$",
+    "keyframes-name-pattern": "^[a-z][a-zA-Z0-9]*$",
+    "scss/operator-no-unspaced": null
+  }
+}

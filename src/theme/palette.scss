@@ -1,18 +1,18 @@
 .radix-themes.light,
 .radix-themes[data-appearance='light'] {
-  --gray-1: hsl(40, 10%, 92%);
-  --gray-2: hsl(40, 12%, 96%);
-  --gray-3: hsl(40, 10%, 90%);
-  --gray-4: hsl(40, 8%, 85%);
-  --gray-5: hsl(40, 6%, 80%);
-  --gray-6: hsl(40, 6%, 75%);
-  --gray-11: hsl(0, 0%, 20%);
-  --gray-12: hsl(0, 0%, 10%);
+  --gray-1: hsl(40deg 10% 92%);
+  --gray-2: hsl(40deg 12% 96%);
+  --gray-3: hsl(40deg 10% 90%);
+  --gray-4: hsl(40deg 8% 85%);
+  --gray-5: hsl(40deg 6% 80%);
+  --gray-6: hsl(40deg 6% 75%);
+  --gray-11: hsl(0deg 0% 20%);
+  --gray-12: hsl(0deg 0% 10%);
 }
 
 .radix-themes.dark,
 .radix-themes[data-appearance='dark'] {
-  --gray-1: hsl(0, 0%, 12%);
-  --gray-2: hsl(0, 0%, 15%);
-  --gray-3: hsl(0, 0%, 18%);
+  --gray-1: hsl(0deg 0% 12%);
+  --gray-2: hsl(0deg 0% 15%);
+  --gray-3: hsl(0deg 0% 18%);
 }
