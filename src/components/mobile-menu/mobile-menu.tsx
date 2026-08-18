@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router';
 import {
   Cross1Icon,
   DownloadIcon,
@@ -45,7 +46,15 @@ export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
           <VisuallyHidden>
             <Dialog.Description>World Generator actions</Dialog.Description>
           </VisuallyHidden>
-          <Flex direction='column' gap='3'>
+          <Flex direction='column' gap='3' className={styles.actions}>
+            <Button asChild variant='soft' size='3'>
+              <NavLink
+                to='/legacy-generator'
+                className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
+              >
+                Legacy Generator
+              </NavLink>
+            </Button>
             {showExportPng && (
               <Button
                 onClick={() => setIsExportDialogOpen(true)}
@@ -59,7 +68,12 @@ export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
               </Button>
             )}
             {onToggleTheme && (
-              <Button onClick={onToggleTheme} size='3' variant='soft'>
+              <Button
+                onClick={onToggleTheme}
+                size='3'
+                variant='soft'
+                className={styles.themeButton}
+              >
                 {themeIcon}
                 {themeLabel}
               </Button>

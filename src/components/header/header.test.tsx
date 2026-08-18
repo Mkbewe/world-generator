@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 
@@ -9,20 +10,22 @@ function renderHeader(options?: { isMapGenerated?: boolean; onOpenDialog?: () =>
   const { isMapGenerated = true, onOpenDialog = vi.fn() } = options || {};
 
   return render(
-    <FeatureFlagsContext.Provider value={{ exportPng: true, pipelinePreview: false }}>
-      <HeaderActionsContext.Provider
-        value={{
-          exportMapRef: { current: undefined },
-          isExportDialogOpen: false,
-          setIsExportDialogOpen: onOpenDialog,
-          confirmExport: vi.fn(),
-          isMapGenerated,
-          setIsMapGenerated: vi.fn(),
-        }}
-      >
-        <Header />
-      </HeaderActionsContext.Provider>
-    </FeatureFlagsContext.Provider>
+    <MemoryRouter>
+      <FeatureFlagsContext.Provider value={{ exportPng: true, pipelinePreview: false }}>
+        <HeaderActionsContext.Provider
+          value={{
+            exportMapRef: { current: undefined },
+            isExportDialogOpen: false,
+            setIsExportDialogOpen: onOpenDialog,
+            confirmExport: vi.fn(),
+            isMapGenerated,
+            setIsMapGenerated: vi.fn(),
+          }}
+        >
+          <Header />
+        </HeaderActionsContext.Provider>
+      </FeatureFlagsContext.Provider>
+    </MemoryRouter>
   );
 }
 

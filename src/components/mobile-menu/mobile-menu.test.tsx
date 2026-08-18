@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -22,22 +23,24 @@ function renderMenu({
   onOpenDialog = vi.fn(),
 }: RenderOptions = {}) {
   return render(
-    <Theme>
-      <FeatureFlagsContext.Provider value={{ exportPng, pipelinePreview: false }}>
-        <HeaderActionsContext.Provider
-          value={{
-            exportMapRef: { current: undefined },
-            isExportDialogOpen: false,
-            setIsExportDialogOpen: onOpenDialog,
-            confirmExport: vi.fn(),
-            isMapGenerated,
-            setIsMapGenerated: vi.fn(),
-          }}
-        >
-          <MobileMenu onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
-        </HeaderActionsContext.Provider>
-      </FeatureFlagsContext.Provider>
-    </Theme>
+    <MemoryRouter>
+      <Theme>
+        <FeatureFlagsContext.Provider value={{ exportPng, pipelinePreview: false }}>
+          <HeaderActionsContext.Provider
+            value={{
+              exportMapRef: { current: undefined },
+              isExportDialogOpen: false,
+              setIsExportDialogOpen: onOpenDialog,
+              confirmExport: vi.fn(),
+              isMapGenerated,
+              setIsMapGenerated: vi.fn(),
+            }}
+          >
+            <MobileMenu onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
+          </HeaderActionsContext.Provider>
+        </FeatureFlagsContext.Provider>
+      </Theme>
+    </MemoryRouter>
   );
 }
 
