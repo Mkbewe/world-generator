@@ -1,26 +1,22 @@
-import type { ReactNode } from 'react';
+import { Outlet } from 'react-router';
 
 import { ExportDialog } from '../../components/export-dialog';
 import { Footer } from '../../components/footer';
 import { Header, HeaderActionsProvider, useHeaderActions } from '../../components/header';
 import { PageSection } from '../../components/page-section';
+import { useTheme } from '../../theme';
 import styles from './main-layout.module.scss';
 
-interface MainLayoutProps {
-  children: ReactNode;
-  onToggleTheme?: () => void;
-  currentTheme?: 'light' | 'dark';
-}
-
-function MainLayoutContent({ children, onToggleTheme, currentTheme }: MainLayoutProps) {
+function MainLayoutContent() {
   const { isExportDialogOpen, setIsExportDialogOpen, confirmExport } = useHeaderActions();
+  const { appearance, toggleTheme } = useTheme();
 
   return (
     <>
       <div className={styles.layout}>
-        <Header onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
+        <Header onToggleTheme={toggleTheme} currentTheme={appearance} />
         <PageSection as='main' padding='large'>
-          {children}
+          <Outlet />
         </PageSection>
         <Footer />
       </div>
@@ -33,12 +29,10 @@ function MainLayoutContent({ children, onToggleTheme, currentTheme }: MainLayout
   );
 }
 
-export function MainLayout({ children, onToggleTheme, currentTheme }: MainLayoutProps) {
+export function MainLayout() {
   return (
     <HeaderActionsProvider>
-      <MainLayoutContent onToggleTheme={onToggleTheme} currentTheme={currentTheme}>
-        {children}
-      </MainLayoutContent>
+      <MainLayoutContent />
     </HeaderActionsProvider>
   );
 }

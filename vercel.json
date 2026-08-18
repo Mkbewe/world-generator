@@ -13,5 +13,6 @@
     "api/**/*.ts": {
       "includeFiles": "shared/**"
     }
-  }
+  },
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
