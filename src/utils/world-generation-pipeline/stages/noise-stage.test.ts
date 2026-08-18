@@ -1,8 +1,5 @@
-import { NoiseStage } from './noise-stage';
-import { WorldShapeStage } from './world-shape-stage';
 import type { WorldGeneratorConfig } from '../world-generation-config';
-import { WorldGenerationPipeline } from '../world-generation-pipeline';
-import type { WorldGenerationState } from '../world-generation-state';
+import { createWorldGenerationPipeline } from '../world-generation-pipeline-factory';
 
 function createConfig(width = 5, height = 5, seed = 123): WorldGeneratorConfig {
   return {
@@ -12,10 +9,7 @@ function createConfig(width = 5, height = 5, seed = 123): WorldGeneratorConfig {
 }
 
 async function generateNoise(config: WorldGeneratorConfig): Promise<Float32Array> {
-  const pipeline = new WorldGenerationPipeline<WorldGeneratorConfig, WorldGenerationState>([
-    new WorldShapeStage(),
-    new NoiseStage(),
-  ]);
+  const pipeline = createWorldGenerationPipeline();
   const result = await pipeline.generate(config, {});
 
   return result.context.state.noiseMap!;

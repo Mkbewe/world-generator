@@ -26,6 +26,14 @@
   color: var(--accent-9);
 }
 
+.expandedContent {
+  display: contents;
+}
+
+.expandedContentHidden {
+  display: none;
+}
+
 .canvas {
   display: block;
   width: 100%;
