@@ -9,7 +9,7 @@ import { WorldGenerationContext } from './world-generation-context';
 import type { WorldGenerationStage } from './world-generation-stage';
 
 export class WorldGenerationPipeline<TConfig extends SeededWorldConfig, TState extends object> {
-  constructor(private readonly stages: readonly WorldGenerationStage<TConfig, TState>[]) {}
+  constructor(readonly stages: readonly WorldGenerationStage<TConfig, TState>[]) {}
 
   async generate(
     config: Readonly<TConfig>,

@@ -27,3 +27,6 @@ flags.local.json
 *.sw?
 .vercel
 .env*
+
+# opencode
+opencode.json
