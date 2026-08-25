@@ -18,7 +18,7 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
   const showExportPng = useFlag('exportPng');
 
   return (
-    <PageSection as='header' background='subtle' border='bottom' padding='small'>
+    <PageSection as='header' background='subtle' border='bottom' p='small'>
       <Flex justify='between' align='center' className={styles.headerContent}>
         <Flex align='center' gap='4' minWidth='0'>
           <Link to='/' className={styles.logoLink} aria-label='World Generator home'>

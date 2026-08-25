@@ -5,7 +5,7 @@ import styles from './page-section.module.scss';
 type PageSectionElement = 'div' | 'section' | 'header' | 'main' | 'footer';
 type PageSectionBackground = 'default' | 'subtle' | 'transparent';
 type PageSectionBorder = 'none' | 'top' | 'bottom' | 'both';
-type PageSectionPadding = 'none' | 'small' | 'medium' | 'large';
+type PaddingSize = 'none' | 'small' | 'medium' | 'large';
 
 export interface PageSectionProps extends Omit<
   HTMLAttributes<HTMLElement>,
@@ -14,7 +14,9 @@ export interface PageSectionProps extends Omit<
   as?: PageSectionElement;
   background?: PageSectionBackground;
   border?: PageSectionBorder;
-  padding?: PageSectionPadding;
+  p?: PaddingSize;
+  pt?: PaddingSize;
+  pb?: PaddingSize;
   children: ReactNode;
 }
 
@@ -22,7 +24,9 @@ export function PageSection({
   as = 'section',
   background = 'transparent',
   border = 'none',
-  padding = 'none',
+  p = 'none',
+  pt,
+  pb,
   children,
   ...htmlProps
 }: PageSectionProps) {
@@ -34,7 +38,8 @@ export function PageSection({
       className={styles.root}
       data-background={background}
       data-border={border}
-      data-padding={padding}
+      data-pt={pt ?? p}
+      data-pb={pb ?? p}
     >
       <div className={styles.content}>{children}</div>
     </Element>

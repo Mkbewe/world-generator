@@ -23,7 +23,7 @@ describe('PageSection', () => {
 
   it('should expose selected variants', () => {
     const { container } = render(
-      <PageSection background='subtle' border='both' padding='large'>
+      <PageSection background='subtle' border='both' p='large'>
         <span>Content</span>
       </PageSection>
     );
@@ -31,7 +31,40 @@ describe('PageSection', () => {
     const section = container.querySelector('section');
     expect(section).toHaveAttribute('data-background', 'subtle');
     expect(section).toHaveAttribute('data-border', 'both');
-    expect(section).toHaveAttribute('data-padding', 'large');
+    expect(section).toHaveAttribute('data-pt', 'large');
+    expect(section).toHaveAttribute('data-pb', 'large');
     expect(screen.getByText('Content').parentElement).toHaveAttribute('class');
+  });
+
+  it('should default padding to none', () => {
+    const { container } = render(<PageSection>Content</PageSection>);
+
+    const section = container.querySelector('section');
+    expect(section).toHaveAttribute('data-pt', 'none');
+    expect(section).toHaveAttribute('data-pb', 'none');
+  });
+
+  it('should let pt override p for top', () => {
+    const { container } = render(
+      <PageSection p='small' pt='large'>
+        Content
+      </PageSection>
+    );
+
+    const section = container.querySelector('section');
+    expect(section).toHaveAttribute('data-pt', 'large');
+    expect(section).toHaveAttribute('data-pb', 'small');
+  });
+
+  it('should let pb override p for bottom', () => {
+    const { container } = render(
+      <PageSection p='small' pb='large'>
+        Content
+      </PageSection>
+    );
+
+    const section = container.querySelector('section');
+    expect(section).toHaveAttribute('data-pt', 'small');
+    expect(section).toHaveAttribute('data-pb', 'large');
   });
 });
