@@ -26,7 +26,6 @@ vi.mock('../../utils/world-generation-pipeline', async importOriginal => {
 });
 
 import { WorldGenerationPreview } from './world-generation-preview';
-import styles from './world-generation-preview.module.scss';
 
 const previewSize = 300;
 
@@ -76,8 +75,6 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Expand pipeline preview' }));
-
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
@@ -117,7 +114,6 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Expand pipeline preview' }));
     await user.click(screen.getByRole('button', { name: 'Generate noise' }));
 
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
@@ -173,7 +169,6 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Expand pipeline preview' }));
     await user.click(screen.getByRole('button', { name: 'Generate noise' }));
 
     expect(await screen.findByText('20.4 ms')).toBeInTheDocument();
@@ -194,44 +189,6 @@ describe('WorldGenerationPreview', () => {
     expect(screen.getByText('Range 0.250–0.250')).toBeInTheDocument();
   });
 
-  it('keeps the preview canvas mounted while collapsed', async () => {
-    const user = userEvent.setup();
-
-    generateMock.mockResolvedValue({
-      worldMask: new Uint8Array(previewSize * previewSize).fill(1),
-      noiseMap: new Float32Array(previewSize * previewSize).fill(0.5),
-      statistics: [
-        createStatistics('world-shape', 'World shape generation'),
-        createStatistics('noise', 'Noise generation'),
-      ],
-      totalDurationMs: 20.4,
-    });
-
-    render(
-      <Theme>
-        <WorldGenerationPreview />
-      </Theme>
-    );
-
-    const canvas = screen.getByLabelText('Generated noise preview');
-
-    await user.click(screen.getByRole('button', { name: 'Expand pipeline preview' }));
-    await user.click(screen.getByRole('button', { name: 'Generate noise' }));
-
-    expect(await screen.findByText('Range 0.500–0.500')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Collapse pipeline preview' }));
-
-    expect(canvas).toBeInTheDocument();
-    expect(screen.getByRole('table').closest(`.${styles.expandedContentHidden}`)).not.toBeNull();
-    expect(screen.getByLabelText('Generated noise preview')).toBe(canvas);
-
-    await user.click(screen.getByRole('button', { name: 'Expand pipeline preview' }));
-
-    expect(screen.getByLabelText('Generated noise preview')).toBe(canvas);
-    expect(screen.getByText('Range 0.500–0.500')).toBeInTheDocument();
-  });
-
   it('reports when pipeline maps are missing', async () => {
     const user = userEvent.setup();
 
@@ -246,7 +203,6 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Expand pipeline preview' }));
     await user.click(screen.getByRole('button', { name: 'Generate noise' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -271,7 +227,6 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Expand pipeline preview' }));
     await user.click(screen.getByRole('button', { name: 'Generate noise' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Canvas is not available.');
