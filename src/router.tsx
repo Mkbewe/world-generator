@@ -1,10 +1,10 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, type RouteObject } from 'react-router';
 
 import { MainLayout } from './layouts/main-layout';
 import { HomePage } from './pages/home';
 import { LegacyGeneratorPage } from './pages/legacy-generator';
 
-export const router = createBrowserRouter([
+export const routes: RouteObject[] = [
   {
     element: <MainLayout />,
     children: [
@@ -12,4 +12,6 @@ export const router = createBrowserRouter([
       { path: 'legacy-generator', element: <LegacyGeneratorPage /> },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(routes);

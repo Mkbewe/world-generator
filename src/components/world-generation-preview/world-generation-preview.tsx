@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import {
   Button,
   Card,
   Flex,
   Heading,
-  IconButton,
   Separator,
   Switch,
   Table,
@@ -46,7 +44,6 @@ interface PreviewState {
 export function WorldGenerationPreview() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerClientRef = useRef<PipelineWorkerClient | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(true);
   const [useWorker, setUseWorker] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [seed, setSeed] = useState('12345');
@@ -158,101 +155,84 @@ export function WorldGenerationPreview() {
   };
 
   return (
-    <Card
-      size={{ initial: '2', sm: '3' }}
-      className={`${styles.card} ${isCollapsed ? styles.collapsed : ''}`}
-    >
+    <Card size={{ initial: '2', sm: '3' }} className={styles.card}>
       <Flex direction='column' gap='4' height='100%'>
-        <Flex justify={isCollapsed ? 'center' : 'between'} align='center' gap='2'>
-          {!isCollapsed && (
-            <Heading size='5' className={styles.title}>
-              Pipeline Noise Preview
-            </Heading>
-          )}
-          <IconButton
-            type='button'
-            variant='ghost'
-            color='gray'
-            aria-label={isCollapsed ? 'Expand pipeline preview' : 'Collapse pipeline preview'}
-            title={isCollapsed ? 'Expand preview' : 'Collapse preview'}
-            onClick={() => setIsCollapsed(collapsed => !collapsed)}
-          >
-            {isCollapsed ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-          </IconButton>
+        <Flex justify='between' align='center' gap='2'>
+          <Heading size='5' className={styles.title}>
+            Pipeline Noise Preview
+          </Heading>
         </Flex>
 
-        <div className={isCollapsed ? styles.expandedContentHidden : styles.expandedContent}>
-          <Separator size='4' />
+        <Separator size='4' />
 
-          <canvas
-            ref={canvasRef}
-            width={PREVIEW_SIZE}
-            height={PREVIEW_SIZE}
-            className={styles.canvas}
-            aria-label='Generated noise preview'
+        <canvas
+          ref={canvasRef}
+          width={PREVIEW_SIZE}
+          height={PREVIEW_SIZE}
+          className={styles.canvas}
+          aria-label='Generated noise preview'
+        />
+
+        <Flex direction='column' gap='2'>
+          <Text as='label' htmlFor='pipeline-seed-input' size='2' color='gray'>
+            Seed:
+          </Text>
+          <TextField.Root
+            id='pipeline-seed-input'
+            value={seed}
+            onChange={event => setSeed(event.target.value)}
           />
-
-          <Flex direction='column' gap='2'>
-            <Text as='label' htmlFor='pipeline-seed-input' size='2' color='gray'>
-              Seed:
+          <Flex align='center' justify='between' gap='2'>
+            <Text as='label' htmlFor='pipeline-use-worker' size='2'>
+              Generate in a worker
             </Text>
-            <TextField.Root
-              id='pipeline-seed-input'
-              value={seed}
-              onChange={event => setSeed(event.target.value)}
-            />
-            <Flex align='center' justify='between' gap='2'>
-              <Text as='label' htmlFor='pipeline-use-worker' size='2'>
-                Generate in a worker
-              </Text>
-              <Switch id='pipeline-use-worker' checked={useWorker} onCheckedChange={setUseWorker} />
-            </Flex>
-            <Button onClick={generate} disabled={isGenerating}>
-              {isGenerating ? 'Generating...' : 'Generate noise'}
-            </Button>
+            <Switch id='pipeline-use-worker' checked={useWorker} onCheckedChange={setUseWorker} />
           </Flex>
+          <Button onClick={generate} disabled={isGenerating}>
+            {isGenerating ? 'Generating...' : 'Generate noise'}
+          </Button>
+        </Flex>
 
-          <Table.Root size='1' variant='surface'>
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeaderCell>Stage</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Time</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Details</Table.ColumnHeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {pipeline.stages.map(stage => {
-                const statistics = preview.statistics.find(item => item.stageId === stage.id);
+        <Table.Root size='1' variant='surface'>
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeaderCell>Stage</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Time</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Details</Table.ColumnHeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {pipeline.stages.map(stage => {
+              const statistics = preview.statistics.find(item => item.stageId === stage.id);
 
-                return (
-                  <Table.Row key={stage.id}>
-                    <Table.RowHeaderCell>{stage.name}</Table.RowHeaderCell>
-                    <Table.Cell>{formatDuration(statistics?.durationMs)}</Table.Cell>
-                    <Table.Cell>
-                      {stage.id === 'noise' && preview.valueRange
-                        ? `Range ${preview.valueRange.min.toFixed(3)}–${preview.valueRange.max.toFixed(3)}`
-                        : '—'}
-                    </Table.Cell>
-                  </Table.Row>
-                );
-              })}
-              <Table.Row>
-                <Table.RowHeaderCell>
-                  <Text weight='bold'>Total</Text>
-                </Table.RowHeaderCell>
-                <Table.Cell>
-                  <Text weight='bold'>{formatDuration(preview.totalDurationMs)}</Text>
-                </Table.Cell>
-                <Table.Cell>—</Table.Cell>
-              </Table.Row>
-            </Table.Body>
-          </Table.Root>
-          {error && (
-            <Text size='2' color='red' role='alert'>
-              {error}
-            </Text>
-          )}
-        </div>
+              return (
+                <Table.Row key={stage.id}>
+                  <Table.RowHeaderCell>{stage.name}</Table.RowHeaderCell>
+                  <Table.Cell>{formatDuration(statistics?.durationMs)}</Table.Cell>
+                  <Table.Cell>
+                    {stage.id === 'noise' && preview.valueRange
+                      ? `Range ${preview.valueRange.min.toFixed(3)}–${preview.valueRange.max.toFixed(3)}`
+                      : '—'}
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
+            <Table.Row>
+              <Table.RowHeaderCell>
+                <Text weight='bold'>Total</Text>
+              </Table.RowHeaderCell>
+              <Table.Cell>
+                <Text weight='bold'>{formatDuration(preview.totalDurationMs)}</Text>
+              </Table.Cell>
+              <Table.Cell>—</Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table.Root>
+        {error && (
+          <Text size='2' color='red' role='alert'>
+            {error}
+          </Text>
+        )}
       </Flex>
     </Card>
   );
