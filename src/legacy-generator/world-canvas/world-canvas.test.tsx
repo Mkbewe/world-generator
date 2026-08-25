@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 
 import { WorldCanvas } from './world-canvas';
-import type { Params } from '../../types/world.types';
+import type { Params } from '../types';
 
 const params: Params = {
   largeCount: 3,

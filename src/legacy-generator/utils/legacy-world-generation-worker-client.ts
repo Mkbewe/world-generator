@@ -3,7 +3,7 @@ import type {
   LegacyWorldGenerationWorkerResponse,
   LegacyWorldGenerationWorkerResult,
 } from './legacy-world-generation-worker.types';
-import type { Params } from '../../types/world.types';
+import type { Params } from '../types';
 
 interface PendingRequest {
   resolve: (result: LegacyWorldGenerationWorkerResult) => void;

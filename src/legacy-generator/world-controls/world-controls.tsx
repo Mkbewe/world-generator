@@ -11,8 +11,8 @@ import {
   TextField,
 } from '@radix-ui/themes';
 
-import type { Params } from '../../types/world.types';
-import type { IslandCounts } from '../../utils/world-generation/world-generation';
+import type { Params } from '../types';
+import type { IslandCounts } from '../utils/world-generation';
 import styles from './world-controls.module.scss';
 
 type NumericParamKey = Exclude<keyof Params, 'seed'>;

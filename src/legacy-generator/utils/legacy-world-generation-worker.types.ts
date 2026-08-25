@@ -1,5 +1,5 @@
 import type { IslandCounts } from './world-generation';
-import type { Params } from '../../types/world.types';
+import type { Params } from '../types';
 
 export interface LegacyWorldGenerationWorkerRequest {
   type: 'generate';
