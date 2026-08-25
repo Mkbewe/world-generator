@@ -1,0 +1,15 @@
+.previewWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas {
+  display: block;
+  max-height: 100%;
+  aspect-ratio: 1;
+  border: 2px solid var(--gray-6);
+  border-radius: var(--radius-3);
+  background: var(--gray-3);
+  image-rendering: auto;
+}

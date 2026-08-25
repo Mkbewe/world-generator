@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
+import { Flex, Grid, Text } from '@radix-ui/themes';
 
-import { GenerationForm } from './generation-form';
-import { GenerationStatistics } from './generation-statistics';
-import { PreviewMap } from './preview-map';
 import {
   createWorldGenerationPipeline,
   type GenerationEvent,
@@ -11,7 +8,9 @@ import {
   type StageStatistics,
   type WorldGeneratorConfig,
 } from '../../utils/world-generation-pipeline';
-import styles from './world-generation-preview.module.scss';
+import { GenerationForm } from '../generation-form';
+import { GenerationStatistics } from '../generation-statistics';
+import { PreviewMap } from '../preview-map';
 
 const PREVIEW_SIZE = 300;
 
@@ -144,23 +143,8 @@ export function WorldGenerationPreview() {
   };
 
   return (
-    <Card size={{ initial: '2', sm: '3' }} className={styles.card}>
-      <Flex direction='column' gap='4' height='100%'>
-        <Flex justify='between' align='center' gap='2'>
-          <Heading size='5' className={styles.title}>
-            Pipeline Noise Preview
-          </Heading>
-        </Flex>
-
-        <Separator size='4' />
-
-        <PreviewMap
-          width={PREVIEW_SIZE}
-          height={PREVIEW_SIZE}
-          canvasRef={canvasRef}
-          label='Generated noise preview'
-        />
-
+    <>
+      <Grid columns={{ initial: '1', md: '3fr 6fr 3fr' }} gap='7'>
         <GenerationForm
           seed={seed}
           onSeedChange={setSeed}
@@ -170,19 +154,28 @@ export function WorldGenerationPreview() {
           onGenerate={generate}
         />
 
+        <PreviewMap
+          width={PREVIEW_SIZE}
+          height={PREVIEW_SIZE}
+          canvasRef={canvasRef}
+          label='Generated noise preview'
+        />
+
         <GenerationStatistics
           stages={pipeline.stages}
           statistics={preview.statistics}
           totalDurationMs={preview.totalDurationMs}
           valueRange={preview.valueRange}
         />
+      </Grid>
 
-        {error && (
+      {error && (
+        <Flex justify='center'>
           <Text size='2' color='red' role='alert'>
             {error}
           </Text>
-        )}
-      </Flex>
-    </Card>
+        </Flex>
+      )}
+    </>
   );
 }
