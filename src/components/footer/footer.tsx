@@ -9,7 +9,7 @@ export function Footer() {
 
   return (
     <footer className={styles.footer}>
-      <PageSection as='div' background='subtle' border='top' padding='medium'>
+      <PageSection as='div' background='subtle' border='top' p='medium'>
         <Flex direction='column' align='center' gap='2'>
           <Text size='2' weight='medium'>
             {appConfig.name} v{appConfig.version}

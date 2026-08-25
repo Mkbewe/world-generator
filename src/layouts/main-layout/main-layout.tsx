@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router';
 
+import { Breadcrumbs } from '../../components/breadcrumbs';
 import { ExportDialog } from '../../components/export-dialog';
 import { Footer } from '../../components/footer';
 import { Header, HeaderActionsProvider, useHeaderActions } from '../../components/header';
@@ -15,7 +16,10 @@ function MainLayoutContent() {
     <>
       <div className={styles.layout}>
         <Header onToggleTheme={toggleTheme} currentTheme={appearance} />
-        <PageSection as='main' padding='large'>
+        <PageSection p='small' pb='none'>
+          <Breadcrumbs />
+        </PageSection>
+        <PageSection as='main' p='large' pt='small'>
           <Outlet />
         </PageSection>
         <Footer />
