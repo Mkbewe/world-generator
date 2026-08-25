@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Grid } from '@radix-ui/themes';
 
 import { useHeaderActions } from '../../components/header';
-import { WorldCanvas, type WorldCanvasRef } from '../../components/world-canvas';
-import { type GenerationMetrics, WorldControls } from '../../components/world-controls';
-import type { Params } from '../../types/world.types';
+import type { Params } from '../../legacy-generator/types';
+import { WorldCanvas, type WorldCanvasRef } from '../../legacy-generator/world-canvas';
+import { type GenerationMetrics, WorldControls } from '../../legacy-generator/world-controls';
 
 export function LegacyGeneratorPage() {
   const worldCanvasRef = useRef<WorldCanvasRef>(null);

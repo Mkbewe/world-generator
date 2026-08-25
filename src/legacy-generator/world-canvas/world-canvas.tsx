@@ -1,13 +1,9 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Box, Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
-import type { Params } from '../../types/world.types';
-import { LegacyWorldGenerationWorkerClient } from '../../utils/world-generation/legacy-world-generation-worker-client';
-import {
-  drawWorldPixels,
-  generateWorldPixels,
-  type IslandCounts,
-} from '../../utils/world-generation/world-generation';
+import type { Params } from '../types';
+import { LegacyWorldGenerationWorkerClient } from '../utils/legacy-world-generation-worker-client';
+import { drawWorldPixels, generateWorldPixels, type IslandCounts } from '../utils/world-generation';
 import styles from './world-canvas.module.scss';
 
 interface WorldCursor {

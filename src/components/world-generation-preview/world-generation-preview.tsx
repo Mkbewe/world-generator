@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Button,
-  Card,
-  Flex,
-  Heading,
-  Separator,
-  Switch,
-  Table,
-  Text,
-  TextField,
-} from '@radix-ui/themes';
+import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
+import { GenerationForm } from './generation-form';
+import { GenerationStatistics } from './generation-statistics';
+import { PreviewMap } from './preview-map';
 import {
   createWorldGenerationPipeline,
   type GenerationEvent,
@@ -23,10 +16,6 @@ import styles from './world-generation-preview.module.scss';
 const PREVIEW_SIZE = 300;
 
 const pipeline = createWorldGenerationPipeline();
-
-function formatDuration(durationMs: number | undefined): string {
-  return durationMs === undefined ? '—' : `${durationMs.toFixed(1)} ms`;
-}
 
 interface PreviewGenerationResult {
   worldMask?: Uint8Array;
@@ -165,69 +154,29 @@ export function WorldGenerationPreview() {
 
         <Separator size='4' />
 
-        <canvas
-          ref={canvasRef}
+        <PreviewMap
           width={PREVIEW_SIZE}
           height={PREVIEW_SIZE}
-          className={styles.canvas}
-          aria-label='Generated noise preview'
+          canvasRef={canvasRef}
+          label='Generated noise preview'
         />
 
-        <Flex direction='column' gap='2'>
-          <Text as='label' htmlFor='pipeline-seed-input' size='2' color='gray'>
-            Seed:
-          </Text>
-          <TextField.Root
-            id='pipeline-seed-input'
-            value={seed}
-            onChange={event => setSeed(event.target.value)}
-          />
-          <Flex align='center' justify='between' gap='2'>
-            <Text as='label' htmlFor='pipeline-use-worker' size='2'>
-              Generate in a worker
-            </Text>
-            <Switch id='pipeline-use-worker' checked={useWorker} onCheckedChange={setUseWorker} />
-          </Flex>
-          <Button onClick={generate} disabled={isGenerating}>
-            {isGenerating ? 'Generating...' : 'Generate noise'}
-          </Button>
-        </Flex>
+        <GenerationForm
+          seed={seed}
+          onSeedChange={setSeed}
+          useWorker={useWorker}
+          onUseWorkerChange={setUseWorker}
+          isGenerating={isGenerating}
+          onGenerate={generate}
+        />
 
-        <Table.Root size='1' variant='surface'>
-          <Table.Header>
-            <Table.Row>
-              <Table.ColumnHeaderCell>Stage</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Time</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Details</Table.ColumnHeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {pipeline.stages.map(stage => {
-              const statistics = preview.statistics.find(item => item.stageId === stage.id);
+        <GenerationStatistics
+          stages={pipeline.stages}
+          statistics={preview.statistics}
+          totalDurationMs={preview.totalDurationMs}
+          valueRange={preview.valueRange}
+        />
 
-              return (
-                <Table.Row key={stage.id}>
-                  <Table.RowHeaderCell>{stage.name}</Table.RowHeaderCell>
-                  <Table.Cell>{formatDuration(statistics?.durationMs)}</Table.Cell>
-                  <Table.Cell>
-                    {stage.id === 'noise' && preview.valueRange
-                      ? `Range ${preview.valueRange.min.toFixed(3)}–${preview.valueRange.max.toFixed(3)}`
-                      : '—'}
-                  </Table.Cell>
-                </Table.Row>
-              );
-            })}
-            <Table.Row>
-              <Table.RowHeaderCell>
-                <Text weight='bold'>Total</Text>
-              </Table.RowHeaderCell>
-              <Table.Cell>
-                <Text weight='bold'>{formatDuration(preview.totalDurationMs)}</Text>
-              </Table.Cell>
-              <Table.Cell>—</Table.Cell>
-            </Table.Row>
-          </Table.Body>
-        </Table.Root>
         {error && (
           <Text size='2' color='red' role='alert'>
             {error}
