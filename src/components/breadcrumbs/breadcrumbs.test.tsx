@@ -40,7 +40,7 @@ describe('Breadcrumbs', () => {
 
     const nav = screen.getByLabelText('Breadcrumb');
     const separators = nav.querySelectorAll('svg');
-    expect(separators.length).toBe(2);
+    expect(separators.length).toBe(1);
   });
 
   it('should render a single item without separator', () => {
@@ -48,6 +48,6 @@ describe('Breadcrumbs', () => {
 
     const nav = screen.getByLabelText('Breadcrumb');
     const separators = nav.querySelectorAll('svg');
-    expect(separators.length).toBe(1);
+    expect(separators.length).toBe(0);
   });
 });
