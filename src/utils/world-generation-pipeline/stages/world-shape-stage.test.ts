@@ -1,7 +1,6 @@
 import { WorldShapeStage } from './world-shape-stage';
-import type { WorldGeneratorConfig } from '../world-generation-config';
-import { WorldGenerationPipeline } from '../world-generation-pipeline';
-import type { WorldGenerationState } from '../world-generation-state';
+import { WorldGenerationPipeline } from '../pipeline';
+import type { WorldGenerationState, WorldGeneratorConfig } from '../types';
 
 describe('WorldShapeStage', () => {
   it('creates a circular mask within the rectangular data grid', async () => {

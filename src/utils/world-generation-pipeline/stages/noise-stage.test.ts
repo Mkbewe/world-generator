@@ -1,5 +1,5 @@
-import type { WorldGeneratorConfig } from '../world-generation-config';
-import { createWorldGenerationPipeline } from '../world-generation-pipeline-factory';
+import { createWorldGenerationPipeline } from '../pipeline-factory';
+import type { WorldGeneratorConfig } from '../types';
 
 function createConfig(width = 5, height = 5, seed = 123): WorldGeneratorConfig {
   return {

@@ -1,5 +1,4 @@
-import type { StageStatistics } from './world-generation.types';
-import type { WorldGeneratorConfig } from './world-generation-config';
+import type { StageStatistics, WorldGeneratorConfig } from '../types';
 
 export interface PipelineWorkerGenerateRequest {
   type: 'generate';

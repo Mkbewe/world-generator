@@ -21,7 +21,7 @@ export function BreadcrumbItem({ label, to, isLast = false }: BreadcrumbItemProp
           {label}
         </span>
       )}
-      {!isLast && <ChevronRightIcon className={styles.separator} />}
+      {!isLast && <ChevronRightIcon className={styles.separator} aria-hidden />}
     </li>
   );
 }

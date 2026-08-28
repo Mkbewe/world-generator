@@ -1,10 +1,9 @@
 import { createNoise2D } from 'simplex-noise';
 
-import { GenerationCancelledError } from '../world-generation.errors';
-import type { WorldGeneratorConfig } from '../world-generation-config';
-import type { WorldGenerationContext } from '../world-generation-context';
-import type { WorldGenerationStage } from '../world-generation-stage';
-import type { WorldGenerationState } from '../world-generation-state';
+import type { WorldGenerationContext } from '../context';
+import { GenerationCancelledError } from '../errors';
+import type { WorldGenerationStage } from '../stage';
+import type { WorldGenerationState, WorldGeneratorConfig } from '../types';
 
 export class NoiseStage implements WorldGenerationStage<
   WorldGeneratorConfig,

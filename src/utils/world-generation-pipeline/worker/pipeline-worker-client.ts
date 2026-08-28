@@ -3,8 +3,7 @@ import type {
   PipelineWorkerRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
-import type { GenerationOptions } from './world-generation.types';
-import type { WorldGeneratorConfig } from './world-generation-config';
+import type { GenerationOptions, WorldGeneratorConfig } from '../types';
 
 interface PendingRequest {
   resolve: (result: PipelineWorkerGenerationResult) => void;

@@ -40,14 +40,14 @@ describe('Breadcrumbs', () => {
 
     const nav = screen.getByLabelText('Breadcrumb');
     const separators = nav.querySelectorAll('svg');
-    expect(separators.length).toBe(1);
+    expect(separators).toHaveLength(1);
+    expect(separators[0]).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('should render a single item without separator', () => {
     renderBreadcrumbs([{ label: 'Home' }]);
 
     const nav = screen.getByLabelText('Breadcrumb');
-    const separators = nav.querySelectorAll('svg');
-    expect(separators.length).toBe(0);
+    expect(nav.querySelectorAll('svg')).toHaveLength(0);
   });
 });

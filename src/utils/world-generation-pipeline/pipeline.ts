@@ -1,12 +1,12 @@
-import { GenerationCancelledError, GenerationStageError } from './world-generation.errors';
+import { WorldGenerationContext } from './context';
+import { GenerationCancelledError, GenerationStageError } from './errors';
+import type { WorldGenerationStage } from './stage';
 import type {
   GenerationOptions,
   GenerationResult,
+  SeededWorldConfig,
   StageStatistics,
-} from './world-generation.types';
-import type { SeededWorldConfig } from './world-generation-config';
-import { WorldGenerationContext } from './world-generation-context';
-import type { WorldGenerationStage } from './world-generation-stage';
+} from './types';
 
 export class WorldGenerationPipeline<TConfig extends SeededWorldConfig, TState extends object> {
   constructor(readonly stages: readonly WorldGenerationStage<TConfig, TState>[]) {}

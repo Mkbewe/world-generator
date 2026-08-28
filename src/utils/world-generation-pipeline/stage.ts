@@ -1,5 +1,5 @@
-import type { SeededWorldConfig } from './world-generation-config';
-import type { WorldGenerationContext } from './world-generation-context';
+import type { WorldGenerationContext } from './context';
+import type { SeededWorldConfig } from './types';
 
 export interface WorldGenerationStage<TConfig extends SeededWorldConfig, TState extends object> {
   readonly id: string;

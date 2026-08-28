@@ -1,11 +1,4 @@
-import type { StageStatistics } from './world-generation.types';
-
-export class GenerationCancelledError extends Error {
-  constructor() {
-    super('World generation was cancelled.');
-    this.name = 'GenerationCancelledError';
-  }
-}
+import type { StageStatistics } from '../types';
 
 export class GenerationStageError extends Error {
   constructor(

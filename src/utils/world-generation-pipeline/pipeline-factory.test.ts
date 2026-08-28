@@ -1,5 +1,5 @@
-import type { WorldGeneratorConfig } from './world-generation-config';
-import { createWorldGenerationPipeline } from './world-generation-pipeline-factory';
+import { createWorldGenerationPipeline } from './pipeline-factory';
+import type { WorldGeneratorConfig } from './types';
 
 describe('createWorldGenerationPipeline', () => {
   it('creates the current world-generation stages in order', async () => {

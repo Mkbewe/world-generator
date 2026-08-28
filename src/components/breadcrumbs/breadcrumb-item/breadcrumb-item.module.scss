@@ -17,12 +17,13 @@
   font-weight: 500;
 
   &:hover {
-    color: var(--violet-9);
+    color: var(--accent-11);
+    text-decoration: underline;
   }
 }
 
 .active {
-  color: var(--violet-11);
+  color: var(--accent-11);
   font-weight: 600;
   font-size: 0.875rem;
 }
