@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/Mkbewe/world-generator/compare/v0.1.4...v0.2.0) (2026-08-28)
+
+
+### Features
+
+* **117:** add router ([#122](https://github.com/Mkbewe/world-generator/issues/122)) ([0ddf99d](https://github.com/Mkbewe/world-generator/commit/0ddf99d77abdc6db7cfe95b9e921489191205aaf))
+* **121:** breadcrumps component ([#125](https://github.com/Mkbewe/world-generator/issues/125)) ([de7d874](https://github.com/Mkbewe/world-generator/commit/de7d874085dfd3b311a92aa5c0bc152a06e21923))
+* **92:** implement worker to pipline generator ([#120](https://github.com/Mkbewe/world-generator/issues/120)) ([eabcf5c](https://github.com/Mkbewe/world-generator/commit/eabcf5cda6dea02cdc28f08e2eace7d747d504ef))
+
+
+### Code Refactoring
+
+* **123:** move legacy generator to own route ([#124](https://github.com/Mkbewe/world-generator/issues/124)) ([7f28a51](https://github.com/Mkbewe/world-generator/commit/7f28a51641c777868399a98363d282886f5eff6c))
+* **126:** move legacy generator outside components ([#128](https://github.com/Mkbewe/world-generator/issues/128)) ([5623057](https://github.com/Mkbewe/world-generator/commit/5623057f601aa0d9f1b7aef44d415186e116959b))
+* **129:** split generator design ([#130](https://github.com/Mkbewe/world-generator/issues/130)) ([1b67fe4](https://github.com/Mkbewe/world-generator/commit/1b67fe46404f680e8fabbf50745547c95c65c6ab))
+* breadcrumps fixes ([#131](https://github.com/Mkbewe/world-generator/issues/131)) ([363fd46](https://github.com/Mkbewe/world-generator/commit/363fd46582ffe0425fd1e51b1cdd358cab8a273a))
+* clean up world generation pipeline ([#132](https://github.com/Mkbewe/world-generator/issues/132)) ([aace84d](https://github.com/Mkbewe/world-generator/commit/aace84d00680db14cd7fde7628319bf910c7430b))
+
 ### [0.1.4](https://github.com/Mkbewe/world-generator/compare/v0.1.3...v0.1.4) (2026-08-15)
 
 
