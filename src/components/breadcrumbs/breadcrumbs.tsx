@@ -9,19 +9,35 @@ export interface BreadcrumbsItem {
   to?: string;
 }
 
+export interface RouteHandle {
+  breadcrumb?: string;
+}
+
 interface BreadcrumbsProps {
   items?: BreadcrumbsItem[];
 }
 
-type MatchWithBreadcrumb = UIMatch<unknown, { breadcrumb?: string }>;
+function getBreadcrumb(handle: unknown): string | undefined {
+  if (
+    typeof handle === 'object' &&
+    handle !== null &&
+    'breadcrumb' in handle &&
+    typeof handle.breadcrumb === 'string' &&
+    handle.breadcrumb.length > 0
+  ) {
+    return handle.breadcrumb;
+  }
+}
 
-function getBreadcrumbsFromMatches(matches: MatchWithBreadcrumb[]): BreadcrumbsItem[] {
+function getBreadcrumbsFromMatches(matches: UIMatch[]): BreadcrumbsItem[] {
   const crumbs: BreadcrumbsItem[] = [];
 
   for (const match of matches) {
-    if (match.handle?.breadcrumb) {
+    const breadcrumb = getBreadcrumb(match.handle);
+
+    if (breadcrumb) {
       crumbs.push({
-        label: match.handle.breadcrumb,
+        label: breadcrumb,
         to: match.pathname,
       });
     }
@@ -52,8 +68,7 @@ function renderBreadcrumbs(breadcrumbs: BreadcrumbsItem[]) {
 }
 
 function BreadcrumbsFromRouter() {
-  const matches = useMatches() as MatchWithBreadcrumb[];
-  const breadcrumbs = getBreadcrumbsFromMatches(matches);
+  const breadcrumbs = getBreadcrumbsFromMatches(useMatches());
 
   return renderBreadcrumbs(breadcrumbs);
 }

@@ -1,6 +1,5 @@
 import { RandomFactory } from './random/random-factory';
-import type { StageStatistics } from './world-generation.types';
-import type { SeededWorldConfig } from './world-generation-config';
+import type { SeededWorldConfig, StageStatistics } from './types';
 
 /**
  * Shared state passed through all generation stages.

@@ -2,7 +2,7 @@ import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
-import { createWorldGenerationPipeline } from './world-generation-pipeline-factory';
+import { createWorldGenerationPipeline } from '../pipeline-factory';
 
 interface WorkerScope {
   onmessage: ((event: MessageEvent<PipelineWorkerGenerateRequest>) => void) | null;
