@@ -1,7 +1,7 @@
 .root {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  flex-grow: 1;
+  align-items: stretch;
 }
 
 .root[data-side='right'] {
@@ -9,13 +9,19 @@
 }
 
 .root .list {
-  align-self: flex-start;
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.25rem;
-  border-radius: var(--radius-3);
   background: var(--gray-a3);
   box-shadow: none;
+}
+
+.root[data-side='left'] .list {
+  border-radius: var(--radius-3) 0 0 var(--radius-3);
+}
+
+.root[data-side='right'] .list {
+  border-radius: 0 var(--radius-3) var(--radius-3) 0;
 }
 
 .root .trigger {
@@ -74,6 +80,16 @@
 .root .content {
   flex: 1;
   min-width: 0;
+  padding: 0.75rem 1rem;
+  background: var(--gray-a2);
+}
+
+.root[data-side='left'] .content {
+  border-radius: 0 var(--radius-3) var(--radius-3) 0;
+}
+
+.root[data-side='right'] .content {
+  border-radius: var(--radius-3) 0 0 var(--radius-3);
 }
 
 .root .iconWrapper {

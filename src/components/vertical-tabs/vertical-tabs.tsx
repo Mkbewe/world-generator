@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Flex, Heading, Tabs, Tooltip } from '@radix-ui/themes';
+import { Flex, Heading, Separator, Tabs, Tooltip } from '@radix-ui/themes';
 
 import styles from './vertical-tabs.module.scss';
 
@@ -62,6 +62,7 @@ export function VerticalTabs({
             <Heading size='4' color='violet'>
               {item.label}
             </Heading>
+            <Separator size='4' />
             {item.content}
           </Flex>
         </Tabs.Content>
