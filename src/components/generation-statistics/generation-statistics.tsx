@@ -1,6 +1,6 @@
 import { Card, Flex, Heading, Separator, Table, Text } from '@radix-ui/themes';
 
-import type { StageStatistics } from '../../utils/world-generation-pipeline';
+import type { StageStatistics } from '../../utils/map-generator';
 
 function formatDuration(durationMs: number | undefined): string {
   return durationMs === undefined ? '—' : `${durationMs.toFixed(1)} ms`;

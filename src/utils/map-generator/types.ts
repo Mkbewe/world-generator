@@ -18,12 +18,12 @@ export interface NoiseConfig {
   lacunarity: number;
 }
 
-export interface WorldGeneratorConfig extends SeededWorldConfig {
+export interface MapConfig extends SeededWorldConfig {
   world: WorldConfig;
   noise: NoiseConfig;
 }
 
-export interface WorldGenerationState {
+export interface MapState {
   worldMask?: Uint8Array;
   noiseMap?: Float32Array;
 }

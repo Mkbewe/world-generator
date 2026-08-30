@@ -8,7 +8,7 @@ export class GenerationStageError extends Error {
     readonly generationStatistics: readonly StageStatistics[],
     options?: ErrorOptions
   ) {
-    super(`World generation failed during stage "${stageName}" (${stageId}).`, options);
+    super(`Map generation failed during stage "${stageName}" (${stageId}).`, options);
     this.name = 'GenerationStageError';
   }
 }

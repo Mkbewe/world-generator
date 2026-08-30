@@ -1,19 +1,13 @@
-import type { WorldGenerationContext } from '../context';
+import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import type { WorldGenerationStage } from '../stage';
-import type { WorldGenerationState, WorldGeneratorConfig } from '../types';
+import type { MapStage } from '../stage';
+import type { MapConfig, MapState } from '../types';
 
-export class WorldShapeStage implements WorldGenerationStage<
-  WorldGeneratorConfig,
-  WorldGenerationState
-> {
+export class WorldShapeStage implements MapStage<MapConfig, MapState> {
   readonly id = 'world-shape';
   readonly name = 'World shape generation';
 
-  async execute(
-    context: WorldGenerationContext<WorldGeneratorConfig, WorldGenerationState>,
-    signal: AbortSignal
-  ): Promise<void> {
+  async execute(context: MapContext<MapConfig, MapState>, signal: AbortSignal): Promise<void> {
     const { width, height } = context.config.world;
 
     if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) {

@@ -20,9 +20,9 @@
     "prepare": "husky",
     "check:all": "pnpm run typecheck && pnpm run lint && pnpm run lint:scss && pnpm run format && pnpm run test",
     "release": "standard-version --skip.tag",
-    "release:patch": "standard-version --release-as patch --skip.tag",
-    "release:minor": "standard-version --release-as minor --skip.tag",
-    "release:major": "standard-version --release-as major --skip.tag"
+    "release:patch": "standard-version --release-as patch --skip.tag && git checkout -b release/v$(node -p \"require('./package.json').version\")",
+    "release:minor": "standard-version --release-as minor --skip.tag && git checkout -b release/v$(node -p \"require('./package.json').version\")",
+    "release:major": "standard-version --release-as major --skip.tag && git checkout -b release/v$(node -p \"require('./package.json').version\")"
   },
   "lint-staged": {
     "*": [

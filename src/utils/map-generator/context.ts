@@ -7,7 +7,7 @@ import type { SeededWorldConfig, StageStatistics } from './types';
  * Configuration is immutable for a generation run and may contain nested,
  * stage-specific sections. State contains the data produced by stages.
  */
-export class WorldGenerationContext<TConfig extends SeededWorldConfig, TState extends object> {
+export class MapContext<TConfig extends SeededWorldConfig, TState extends object> {
   readonly statistics: StageStatistics[] = [];
   readonly random: RandomFactory;
 

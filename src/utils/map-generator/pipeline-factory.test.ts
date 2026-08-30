@@ -1,13 +1,13 @@
-import { createWorldGenerationPipeline } from './pipeline-factory';
-import type { WorldGeneratorConfig } from './types';
+import { createMapGenerator } from './pipeline-factory';
+import type { MapConfig } from './types';
 
-describe('createWorldGenerationPipeline', () => {
+describe('createMapGenerator', () => {
   it('creates the current world-generation stages in order', async () => {
-    const pipeline = createWorldGenerationPipeline();
+    const pipeline = createMapGenerator();
 
     expect(pipeline.stages.map(stage => stage.id)).toEqual(['world-shape', 'noise']);
 
-    const config: WorldGeneratorConfig = {
+    const config: MapConfig = {
       world: { width: 5, height: 5, seed: 123 },
       noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };

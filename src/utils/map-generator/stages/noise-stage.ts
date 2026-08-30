@@ -1,21 +1,15 @@
 import { createNoise2D } from 'simplex-noise';
 
-import type { WorldGenerationContext } from '../context';
+import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import type { WorldGenerationStage } from '../stage';
-import type { WorldGenerationState, WorldGeneratorConfig } from '../types';
+import type { MapStage } from '../stage';
+import type { MapConfig, MapState } from '../types';
 
-export class NoiseStage implements WorldGenerationStage<
-  WorldGeneratorConfig,
-  WorldGenerationState
-> {
+export class NoiseStage implements MapStage<MapConfig, MapState> {
   readonly id = 'noise';
   readonly name = 'Noise generation';
 
-  async execute(
-    context: WorldGenerationContext<WorldGeneratorConfig, WorldGenerationState>,
-    signal: AbortSignal
-  ): Promise<void> {
+  async execute(context: MapContext<MapConfig, MapState>, signal: AbortSignal): Promise<void> {
     const { width, height } = context.config.world;
     const { frequency, octaves, persistence, lacunarity } = context.config.noise;
     const worldMask = context.state.worldMask;
@@ -67,7 +61,7 @@ export class NoiseStage implements WorldGenerationStage<
     context.state.noiseMap = noiseMap;
   }
 
-  private validateConfig(config: WorldGeneratorConfig): void {
+  private validateConfig(config: MapConfig): void {
     const { width, height, seed } = config.world;
     const { frequency, octaves, persistence, lacunarity } = config.noise;
 

@@ -1,15 +1,15 @@
-import { createWorldGenerationPipeline } from '../pipeline-factory';
-import type { WorldGeneratorConfig } from '../types';
+import { createMapGenerator } from '../pipeline-factory';
+import type { MapConfig } from '../types';
 
-function createConfig(width = 5, height = 5, seed = 123): WorldGeneratorConfig {
+function createConfig(width = 5, height = 5, seed = 123): MapConfig {
   return {
     world: { width, height, seed },
     noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
   };
 }
 
-async function generateNoise(config: WorldGeneratorConfig): Promise<Float32Array> {
-  const pipeline = createWorldGenerationPipeline();
+async function generateNoise(config: MapConfig): Promise<Float32Array> {
+  const pipeline = createMapGenerator();
   const result = await pipeline.generate(config, {});
 
   return result.context.state.noiseMap!;
