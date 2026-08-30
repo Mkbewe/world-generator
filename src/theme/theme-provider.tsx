@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         accentColor='violet'
         grayColor='gray'
         radius='large'
-        scaling='95%'
+        scaling='100%'
         panelBackground='solid'
       >
         {children}

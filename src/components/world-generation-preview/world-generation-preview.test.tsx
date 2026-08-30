@@ -80,7 +80,7 @@ describe('WorldGenerationPreview', () => {
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
     expect(screen.getByText('Total')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Generate noise' }));
+    await user.click(screen.getByTestId('generate-map-button'));
 
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
@@ -114,7 +114,7 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Generate noise' }));
+    await user.click(screen.getByTestId('generate-map-button'));
 
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
@@ -169,12 +169,12 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Generate noise' }));
+    await user.click(screen.getByTestId('generate-map-button'));
 
     expect(await screen.findByText('20.4 ms')).toBeInTheDocument();
     expect(screen.getByText('Range 0.500–0.500')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Generate noise' }));
+    await user.click(screen.getByTestId('generate-map-button'));
 
     expect(screen.getByText('20.4 ms')).toBeInTheDocument();
     expect(screen.getByText('Range 0.500–0.500')).toBeInTheDocument();
@@ -203,7 +203,7 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Generate noise' }));
+    await user.click(screen.getByTestId('generate-map-button'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Pipeline completed without world mask or noise map.'
@@ -227,7 +227,7 @@ describe('WorldGenerationPreview', () => {
       </Theme>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Generate noise' }));
+    await user.click(screen.getByTestId('generate-map-button'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Canvas is not available.');
   });

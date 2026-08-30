@@ -8,9 +8,9 @@ import {
   PipelineWorkerClient,
   type StageStatistics,
 } from '../../utils/map-generator';
-import { GenerationForm } from '../generation-form';
 import { GenerationStatistics } from '../generation-statistics';
 import { PreviewMap } from '../preview-map';
+import { SettingsPanel } from '../settings-panel';
 
 const PREVIEW_SIZE = 300;
 
@@ -144,8 +144,8 @@ export function WorldGenerationPreview() {
 
   return (
     <>
-      <Grid columns={{ initial: '1', md: '3fr 6fr 3fr' }} gap='7'>
-        <GenerationForm
+      <Grid columns={{ initial: '1', md: '4fr 5fr 3fr' }} gap='7'>
+        <SettingsPanel
           seed={seed}
           onSeedChange={setSeed}
           useWorker={useWorker}
