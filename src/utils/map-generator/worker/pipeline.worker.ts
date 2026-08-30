@@ -2,7 +2,7 @@ import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
-import { createWorldGenerationPipeline } from '../pipeline-factory';
+import { createMapGenerator } from '../pipeline-factory';
 
 interface WorkerScope {
   onmessage: ((event: MessageEvent<PipelineWorkerGenerateRequest>) => void) | null;
@@ -17,7 +17,7 @@ workerScope.onmessage = event => {
 
 async function generate(request: PipelineWorkerGenerateRequest): Promise<void> {
   try {
-    const pipeline = createWorldGenerationPipeline();
+    const pipeline = createMapGenerator();
     const generation = await pipeline.generate(
       request.config,
       {},

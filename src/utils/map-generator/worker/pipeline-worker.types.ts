@@ -1,9 +1,9 @@
-import type { StageStatistics, WorldGeneratorConfig } from '../types';
+import type { MapConfig, StageStatistics } from '../types';
 
 export interface PipelineWorkerGenerateRequest {
   type: 'generate';
   requestId: number;
-  config: WorldGeneratorConfig;
+  config: MapConfig;
 }
 
 export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;

@@ -1,9 +1,6 @@
-import {
-  GenerationCancelledError,
-  GenerationStageError,
-  WorldGenerationPipeline,
-  type WorldGenerationStage,
-} from '.';
+import { GenerationCancelledError, GenerationStageError } from './errors';
+import { MapGenerator } from './pipeline';
+import type { MapStage } from './stage';
 
 interface TestConfig {
   world: { seed: number };
@@ -15,13 +12,13 @@ interface TestState {
   values: string[];
 }
 
-type TestStage = WorldGenerationStage<TestConfig, TestState>;
+type TestStage = MapStage<TestConfig, TestState>;
 
 function createStage(id: string, execute: TestStage['execute']): TestStage {
   return { id, name: `${id} stage`, execute };
 }
 
-describe('WorldGenerationPipeline', () => {
+describe('MapGenerator', () => {
   it('runs stages in order using shared typed configuration and state', async () => {
     const stages = [
       createStage('terrain', async context => {
@@ -31,7 +28,7 @@ describe('WorldGenerationPipeline', () => {
         context.state.values.push(`resources:${context.config.resources.amount}`);
       }),
     ];
-    const pipeline = new WorldGenerationPipeline(stages);
+    const pipeline = new MapGenerator(stages);
 
     const result = await pipeline.generate(
       { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
@@ -45,7 +42,7 @@ describe('WorldGenerationPipeline', () => {
 
   it('reports stage lifecycle events', async () => {
     const events: string[] = [];
-    const pipeline = new WorldGenerationPipeline([createStage('noise', async () => {})]);
+    const pipeline = new MapGenerator([createStage('noise', async () => {})]);
 
     await pipeline.generate(
       { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
@@ -58,7 +55,7 @@ describe('WorldGenerationPipeline', () => {
 
   it('wraps a stage failure with stage information', async () => {
     const failure = new Error('failure');
-    const pipeline = new WorldGenerationPipeline([
+    const pipeline = new MapGenerator([
       createStage('heightmap', async () => {
         throw failure;
       }),
@@ -90,7 +87,7 @@ describe('WorldGenerationPipeline', () => {
 
   it('does not start generation when it was cancelled', async () => {
     const execute = vi.fn<TestStage['execute']>();
-    const pipeline = new WorldGenerationPipeline([createStage('noise', execute)]);
+    const pipeline = new MapGenerator([createStage('noise', execute)]);
     const controller = new AbortController();
     controller.abort();
 

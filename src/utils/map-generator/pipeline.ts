@@ -1,6 +1,6 @@
-import { WorldGenerationContext } from './context';
+import { MapContext } from './context';
 import { GenerationCancelledError, GenerationStageError } from './errors';
-import type { WorldGenerationStage } from './stage';
+import type { MapStage } from './stage';
 import type {
   GenerationOptions,
   GenerationResult,
@@ -8,15 +8,15 @@ import type {
   StageStatistics,
 } from './types';
 
-export class WorldGenerationPipeline<TConfig extends SeededWorldConfig, TState extends object> {
-  constructor(readonly stages: readonly WorldGenerationStage<TConfig, TState>[]) {}
+export class MapGenerator<TConfig extends SeededWorldConfig, TState extends object> {
+  constructor(readonly stages: readonly MapStage<TConfig, TState>[]) {}
 
   async generate(
     config: Readonly<TConfig>,
     initialState: TState,
     options: GenerationOptions = {}
-  ): Promise<GenerationResult<WorldGenerationContext<TConfig, TState>>> {
-    const context = new WorldGenerationContext(config, initialState);
+  ): Promise<GenerationResult<MapContext<TConfig, TState>>> {
+    const context = new MapContext(config, initialState);
     const signal = options.signal ?? new AbortController().signal;
     const generationStartedAt = performance.now();
 
@@ -84,7 +84,7 @@ export class WorldGenerationPipeline<TConfig extends SeededWorldConfig, TState e
   }
 
   private createStatistics(
-    stage: WorldGenerationStage<TConfig, TState>,
+    stage: MapStage<TConfig, TState>,
     startedAt: number,
     status: StageStatistics['status']
   ): StageStatistics {

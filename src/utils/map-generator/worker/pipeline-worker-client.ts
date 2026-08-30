@@ -3,7 +3,7 @@ import type {
   PipelineWorkerRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
-import type { GenerationOptions, WorldGeneratorConfig } from '../types';
+import type { GenerationOptions, MapConfig } from '../types';
 
 interface PendingRequest {
   resolve: (result: PipelineWorkerGenerationResult) => void;
@@ -17,7 +17,7 @@ export class PipelineWorkerClient {
   private readonly pendingRequests = new Map<number, PendingRequest>();
 
   generate(
-    config: WorldGeneratorConfig,
+    config: MapConfig,
     options: Pick<GenerationOptions, 'onEvent'> = {}
   ): Promise<PipelineWorkerGenerationResult> {
     const requestId = this.nextRequestId++;

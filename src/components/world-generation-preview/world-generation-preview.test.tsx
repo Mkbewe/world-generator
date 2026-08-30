@@ -2,21 +2,21 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import type * as WorldGenerationPipeline from '../../utils/world-generation-pipeline';
-import type { GenerationEvent, StageStatistics } from '../../utils/world-generation-pipeline';
+import type * as WorldGenerationPipeline from '../../utils/map-generator';
+import type { GenerationEvent, StageStatistics } from '../../utils/map-generator';
 
 const { generateMock } = vi.hoisted(() => ({
   generateMock: vi.fn(),
 }));
 
-vi.mock('../../utils/world-generation-pipeline', async importOriginal => {
+vi.mock('../../utils/map-generator', async importOriginal => {
   const actual = await importOriginal<typeof WorldGenerationPipeline>();
 
   return {
     ...actual,
-    createWorldGenerationPipeline: () => ({
+    createMapGenerator: () => ({
       generate: generateMock,
-      stages: actual.createWorldGenerationPipeline().stages,
+      stages: actual.createMapGenerator().stages,
     }),
     PipelineWorkerClient: class {
       generate = generateMock;

@@ -2,19 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import {
-  createWorldGenerationPipeline,
+  createMapGenerator,
   type GenerationEvent,
+  type MapConfig,
   PipelineWorkerClient,
   type StageStatistics,
-  type WorldGeneratorConfig,
-} from '../../utils/world-generation-pipeline';
+} from '../../utils/map-generator';
 import { GenerationForm } from '../generation-form';
 import { GenerationStatistics } from '../generation-statistics';
 import { PreviewMap } from '../preview-map';
 
 const PREVIEW_SIZE = 300;
 
-const pipeline = createWorldGenerationPipeline();
+const pipeline = createMapGenerator();
 
 interface PreviewGenerationResult {
   worldMask?: Uint8Array;
@@ -75,7 +75,7 @@ export function WorldGenerationPreview() {
     setError(undefined);
     setIsGenerating(true);
 
-    const config: WorldGeneratorConfig = {
+    const config: MapConfig = {
       world: { width: PREVIEW_SIZE, height: PREVIEW_SIZE, seed: parsedSeed },
       noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
     };
