@@ -8,9 +8,114 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>World Generator</title>
+    <style>
+      /* Styles for the last-resort error page below. Kept inline and free of
+         Radix CSS variables, which only exist inside the mounted app. */
+      body {
+        margin: 0;
+      }
+
+      #boot-error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 1.5rem;
+        background: hsl(0deg 0% 12%);
+        color: hsl(0deg 0% 92%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.5;
+      }
+
+      #boot-error[hidden] {
+        display: none;
+      }
+
+      #boot-error .card {
+        width: 100%;
+        max-width: 720px;
+        padding: 2.5rem;
+        border: 1px solid hsl(0deg 0% 25%);
+        border-radius: 12px;
+        background: hsl(0deg 0% 15%);
+        text-align: center;
+      }
+
+      #boot-error .code {
+        margin-bottom: 0.5rem;
+        color: #6e56cf;
+        font-size: 2.1875rem;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+
+      #boot-error h1 {
+        margin-bottom: 0.75rem;
+        font-size: 1.5rem;
+      }
+
+      #boot-error p {
+        margin-bottom: 1.25rem;
+        color: hsl(0deg 0% 70%);
+        font-size: 1rem;
+      }
+
+      #boot-error a {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        background: #6e56cf;
+        color: #fff;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Shown only when the app itself fails to start or unmounts after a
+         crash. React Router's errorElement cannot cover this, because it lives
+         inside the app that never rendered. -->
+    <div id="boot-error" hidden>
+      <div class="card">
+        <p class="code">Error 500</p>
+        <h1>The world generator ran aground</h1>
+        <p>The app failed to start. Reloading the page usually gets it back afloat.</p>
+        <a href="/">Back to home</a>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var reported = false;
+
+        function showBootError() {
+          if (reported) {
+            return;
+          }
+
+          // Let React finish rendering (or let the router's errorElement catch
+          // the error) before deciding that the page is really broken.
+          setTimeout(function () {
+            var root = document.getElementById('root');
+            var fallback = document.getElementById('boot-error');
+
+            if (!root || !fallback || root.childElementCount > 0) {
+              return;
+            }
+
+            reported = true;
+            root.hidden = true;
+            fallback.hidden = false;
+          }, 0);
+        }
+
+        window.addEventListener('error', showBootError);
+        window.addEventListener('unhandledrejection', showBootError);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

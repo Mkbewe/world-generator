@@ -1,0 +1,16 @@
+.root {
+  min-height: 100vh;
+  padding: 1.5rem;
+  background: var(--gray-1);
+}
+
+.card {
+  width: 100%;
+  max-width: 720px;
+}
+
+.icon {
+  width: 4rem;
+  height: 4rem;
+  color: var(--violet-9);
+}
