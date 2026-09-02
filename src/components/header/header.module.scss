@@ -10,15 +10,6 @@
   text-decoration: none;
 }
 
-.navLink {
-  color: var(--gray-12);
-}
-
-.navLinkActive {
-  color: var(--accent-contrast);
-  background-color: var(--accent-9);
-}
-
 .title {
   background: linear-gradient(135deg, $color-brand-teal 0%, $color-brand-teal-dark 100%);
   -webkit-text-fill-color: transparent;

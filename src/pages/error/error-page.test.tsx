@@ -22,6 +22,14 @@ function renderPage() {
 }
 
 describe('ErrorPage', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('renders the 500 message and the route error details', () => {
     renderPage();
 

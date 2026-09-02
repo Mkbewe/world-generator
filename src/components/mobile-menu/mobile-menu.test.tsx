@@ -8,11 +8,12 @@ import { MobileMenu } from './mobile-menu';
 interface RenderOptions {
   onToggleTheme?: () => void;
   currentTheme?: 'light' | 'dark';
+  initialEntries?: string[];
 }
 
-function renderMenu({ onToggleTheme, currentTheme }: RenderOptions = {}) {
+function renderMenu({ onToggleTheme, currentTheme, initialEntries }: RenderOptions = {}) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={initialEntries}>
       <Theme>
         <MobileMenu onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
       </Theme>
@@ -26,28 +27,32 @@ describe('MobileMenu', () => {
     expect(screen.getByRole('button', { name: /open menu/i })).toBeInTheDocument();
   });
 
-  it('should reveal the statistics link when opened', async () => {
+  it('should reveal the navigation links when opened', async () => {
     const user = userEvent.setup();
     renderMenu();
 
     await user.click(screen.getByRole('button', { name: /open menu/i }));
 
-    expect(await screen.findByRole('link', { name: 'Statistics' })).toHaveAttribute(
-      'href',
-      '/statistics'
-    );
-  });
-
-  it('should reveal the legacy generator link when opened', async () => {
-    const user = userEvent.setup();
-    renderMenu();
-
-    await user.click(screen.getByRole('button', { name: /open menu/i }));
-
-    expect(await screen.findByRole('link', { name: 'Legacy Generator' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute('href', '/statistics');
+    expect(screen.getByRole('link', { name: 'Legacy Generator' })).toHaveAttribute(
       'href',
       '/legacy-generator'
     );
+  });
+
+  it('should mark the current route link as active', async () => {
+    const user = userEvent.setup();
+    renderMenu({ initialEntries: ['/statistics'] });
+
+    await user.click(screen.getByRole('button', { name: /open menu/i }));
+    await screen.findByRole('heading', { name: 'Menu' });
+
+    expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
   });
 
   it('should show the theme toggle when provided and call it', async () => {
@@ -66,18 +71,18 @@ describe('MobileMenu', () => {
     renderMenu();
 
     await user.click(screen.getByRole('button', { name: /open menu/i }));
-    await screen.findByRole('link', { name: 'Statistics' });
+    await screen.findByRole('heading', { name: 'Menu' });
 
     expect(screen.queryByRole('button', { name: /switch to/i })).not.toBeInTheDocument();
   });
 
   it('should close when the close button is clicked', async () => {
     const user = userEvent.setup();
-    renderMenu();
+    renderMenu({ onToggleTheme: () => {}, currentTheme: 'light' });
 
     await user.click(screen.getByRole('button', { name: /open menu/i }));
     await user.click(await screen.findByRole('button', { name: /close menu/i }));
 
-    expect(screen.queryByRole('link', { name: 'Statistics' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /switch to dark mode/i })).not.toBeInTheDocument();
   });
 });
