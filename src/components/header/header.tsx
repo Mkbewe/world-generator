@@ -1,9 +1,7 @@
 import { Link, NavLink } from 'react-router';
-import { DownloadIcon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
+import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Avatar, Button, Flex, Heading, IconButton } from '@radix-ui/themes';
 
-import { useHeaderActions } from './header-actions-context';
-import { useFlag } from '../../feature-flags';
 import { MobileMenu } from '../mobile-menu';
 import { PageSection } from '../page-section';
 import styles from './header.module.scss';
@@ -14,9 +12,6 @@ interface HeaderProps {
 }
 
 export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
-  const { setIsExportDialogOpen, isMapGenerated } = useHeaderActions();
-  const showExportPng = useFlag('exportPng');
-
   return (
     <PageSection as='header' background='subtle' border='bottom' p='small'>
       <Flex justify='between' align='center' className={styles.headerContent}>
@@ -52,18 +47,6 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
               Statistics
             </NavLink>
           </Button>
-          {showExportPng && (
-            <Button
-              onClick={() => setIsExportDialogOpen(true)}
-              size='3'
-              variant='solid'
-              disabled={!isMapGenerated}
-              title={!isMapGenerated ? 'Generate a map first' : undefined}
-            >
-              <DownloadIcon />
-              Export PNG
-            </Button>
-          )}
           {onToggleTheme && (
             <IconButton
               onClick={onToggleTheme}

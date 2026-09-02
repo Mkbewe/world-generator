@@ -8,7 +8,8 @@ import { type GenerationMetrics, WorldControls } from '../../legacy-generator/wo
 
 export function LegacyGeneratorPage() {
   const worldCanvasRef = useRef<WorldCanvasRef>(null);
-  const { exportMapRef, setIsMapGenerated } = useHeaderActions();
+  const { exportMapRef, setIsMapGenerated, setIsExportDialogOpen, isMapGenerated } =
+    useHeaderActions();
   const [isGenerating, setIsGenerating] = useState(false);
   const [useWorker, setUseWorker] = useState(false);
   const [generationMetrics, setGenerationMetrics] = useState<GenerationMetrics>();
@@ -72,6 +73,8 @@ export function LegacyGeneratorPage() {
         isGenerating={isGenerating}
         useWorker={useWorker}
         onUseWorkerChange={setUseWorker}
+        onExport={() => setIsExportDialogOpen(true)}
+        canExport={isMapGenerated}
         generationMetrics={generationMetrics}
         generationError={generationError}
       />

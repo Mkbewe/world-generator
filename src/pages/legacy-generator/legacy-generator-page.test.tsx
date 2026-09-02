@@ -17,5 +17,6 @@ describe('LegacyGeneratorPage', () => {
     expect(screen.getByRole('heading', { name: 'World Settings' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'World Preview' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Generate' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export PNG' })).toBeDisabled();
   });
 });

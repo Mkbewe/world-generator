@@ -1,15 +1,7 @@
 import { NavLink } from 'react-router';
-import {
-  Cross1Icon,
-  DownloadIcon,
-  HamburgerMenuIcon,
-  MoonIcon,
-  SunIcon,
-} from '@radix-ui/react-icons';
+import { Cross1Icon, HamburgerMenuIcon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Button, Dialog, Flex, IconButton, VisuallyHidden } from '@radix-ui/themes';
 
-import { useFlag } from '../../feature-flags';
-import { useHeaderActions } from '../header/header-actions-context';
 import styles from './mobile-menu.module.scss';
 
 interface MobileMenuProps {
@@ -18,9 +10,6 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
-  const { setIsExportDialogOpen, isMapGenerated } = useHeaderActions();
-  const showExportPng = useFlag('exportPng');
-
   const themeLabel = `Switch to ${currentTheme === 'light' ? 'dark' : 'light'} mode`;
   const themeIcon = currentTheme === 'light' ? <MoonIcon /> : <SunIcon />;
 
@@ -63,18 +52,6 @@ export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
                 Statistics
               </NavLink>
             </Button>
-            {showExportPng && (
-              <Button
-                onClick={() => setIsExportDialogOpen(true)}
-                size='3'
-                variant='solid'
-                disabled={!isMapGenerated}
-                title={!isMapGenerated ? 'Generate a map first' : undefined}
-              >
-                <DownloadIcon />
-                Export PNG
-              </Button>
-            )}
             {onToggleTheme && (
               <Button
                 onClick={onToggleTheme}

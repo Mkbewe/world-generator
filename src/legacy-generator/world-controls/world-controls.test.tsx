@@ -102,4 +102,83 @@ describe('WorldControls', () => {
     expect(screen.getByText('145.7 ms')).toBeInTheDocument();
     expect(screen.getByText('3 large / 5 medium / 10 small (18)')).toBeInTheDocument();
   });
+
+  it('renders the export button when an export handler is provided', () => {
+    render(
+      <Theme>
+        <WorldControls
+          params={mockParams}
+          updateParam={mockUpdateParam}
+          generateMap={mockGenerateMap}
+          isGenerating={false}
+          useWorker
+          onUseWorkerChange={vi.fn()}
+          onExport={vi.fn()}
+          canExport
+        />
+      </Theme>
+    );
+
+    expect(screen.getByRole('button', { name: 'Export PNG' })).toBeInTheDocument();
+  });
+
+  it('disables the export button until a map is generated', () => {
+    render(
+      <Theme>
+        <WorldControls
+          params={mockParams}
+          updateParam={mockUpdateParam}
+          generateMap={mockGenerateMap}
+          isGenerating={false}
+          useWorker
+          onUseWorkerChange={vi.fn()}
+          onExport={vi.fn()}
+          canExport={false}
+        />
+      </Theme>
+    );
+
+    expect(screen.getByRole('button', { name: 'Export PNG' })).toBeDisabled();
+  });
+
+  it('calls the export handler when the export button is clicked', async () => {
+    const user = userEvent.setup();
+    const onExport = vi.fn();
+
+    render(
+      <Theme>
+        <WorldControls
+          params={mockParams}
+          updateParam={mockUpdateParam}
+          generateMap={mockGenerateMap}
+          isGenerating={false}
+          useWorker
+          onUseWorkerChange={vi.fn()}
+          onExport={onExport}
+          canExport
+        />
+      </Theme>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Export PNG' }));
+
+    expect(onExport).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render the export button without an export handler', () => {
+    render(
+      <Theme>
+        <WorldControls
+          params={mockParams}
+          updateParam={mockUpdateParam}
+          generateMap={mockGenerateMap}
+          isGenerating={false}
+          useWorker
+          onUseWorkerChange={vi.fn()}
+        />
+      </Theme>
+    );
+
+    expect(screen.queryByRole('button', { name: 'Export PNG' })).not.toBeInTheDocument();
+  });
 });
