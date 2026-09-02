@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { DownloadIcon } from '@radix-ui/react-icons';
 import {
   Button,
   Card,
@@ -43,6 +44,8 @@ interface WorldControlsProps {
   isGenerating: boolean;
   useWorker: boolean;
   onUseWorkerChange: (useWorker: boolean) => void;
+  onExport?: () => void;
+  canExport?: boolean;
   generationMetrics?: GenerationMetrics;
   generationError?: string;
 }
@@ -61,6 +64,8 @@ export function WorldControls({
   isGenerating,
   useWorker,
   onUseWorkerChange,
+  onExport,
+  canExport,
   generationMetrics,
   generationError,
 }: WorldControlsProps) {
@@ -141,6 +146,19 @@ export function WorldControls({
         >
           Generate
         </Button>
+
+        {onExport && (
+          <Button
+            size='3'
+            variant='soft'
+            onClick={onExport}
+            disabled={!canExport}
+            title={!canExport ? 'Generate a map first' : undefined}
+          >
+            <DownloadIcon />
+            Export PNG
+          </Button>
+        )}
 
         {generationMetrics && <GenerationMetricsSummary metrics={generationMetrics} />}
         {generationError && (
