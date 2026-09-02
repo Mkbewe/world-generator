@@ -47,7 +47,6 @@ export function VerticalTabs({
             value={item.value}
             className={styles.trigger}
             aria-label={item.label}
-            tabIndex={0}
           >
             <Tooltip content={item.label} delayDuration={500}>
               <span className={styles.iconWrapper}>{item.icon}</span>
