@@ -18,6 +18,14 @@ function renderRoute(path: string) {
 }
 
 describe('router', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('renders the legacy generator on /legacy-generator', () => {
     renderRoute('/legacy-generator');
 

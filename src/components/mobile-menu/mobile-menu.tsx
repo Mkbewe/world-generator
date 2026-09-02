@@ -1,7 +1,8 @@
-import { NavLink } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 import { Cross1Icon, HamburgerMenuIcon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Button, Dialog, Flex, IconButton, VisuallyHidden } from '@radix-ui/themes';
 
+import { isActivePath, NAVIGATION_ITEMS } from '../navigation';
 import styles from './mobile-menu.module.scss';
 
 interface MobileMenuProps {
@@ -10,6 +11,7 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
+  const { pathname } = useLocation();
   const themeLabel = `Switch to ${currentTheme === 'light' ? 'dark' : 'light'} mode`;
   const themeIcon = currentTheme === 'light' ? <MoonIcon /> : <SunIcon />;
 
@@ -35,23 +37,20 @@ export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
           <VisuallyHidden>
             <Dialog.Description>World Generator actions</Dialog.Description>
           </VisuallyHidden>
-          <Flex direction='column' gap='3' className={styles.actions}>
-            <Button asChild variant='soft' size='3'>
+          <Flex direction='column' className={styles.actions}>
+            {NAVIGATION_ITEMS.map(item => (
               <NavLink
-                to='/legacy-generator'
-                className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
+                key={item.to}
+                to={item.to}
+                className={
+                  isActivePath(pathname, item.to)
+                    ? `${styles.navLink} ${styles.navLinkActive}`
+                    : styles.navLink
+                }
               >
-                Legacy Generator
+                {item.label}
               </NavLink>
-            </Button>
-            <Button asChild variant='soft' size='3'>
-              <NavLink
-                to='/statistics'
-                className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
-              >
-                Statistics
-              </NavLink>
-            </Button>
+            ))}
             {onToggleTheme && (
               <Button
                 onClick={onToggleTheme}

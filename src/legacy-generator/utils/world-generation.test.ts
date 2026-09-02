@@ -1,8 +1,21 @@
-import { describe, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 
 import { generateWorldMap, generateWorldPixels } from './world-generation';
 
 describe('generateWorldMap', () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('should generate world map without errors', () => {
     const mockCanvas = document.createElement('canvas');
     mockCanvas.width = 600;

@@ -1,6 +1,6 @@
-import { Link, NavLink } from 'react-router';
+import { Link } from 'react-router';
 import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
-import { Avatar, Button, Flex, Heading, IconButton } from '@radix-ui/themes';
+import { Avatar, Flex, Heading, IconButton } from '@radix-ui/themes';
 
 import { MobileMenu } from '../mobile-menu';
 import { PageSection } from '../page-section';
@@ -31,22 +31,6 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
         </Flex>
 
         <Flex gap='4' align='center' display={{ initial: 'none', sm: 'flex' }}>
-          <Button asChild variant='soft' size='3'>
-            <NavLink
-              to='/legacy-generator'
-              className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
-            >
-              Legacy Generator
-            </NavLink>
-          </Button>
-          <Button asChild variant='soft' size='3'>
-            <NavLink
-              to='/statistics'
-              className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
-            >
-              Statistics
-            </NavLink>
-          </Button>
           {onToggleTheme && (
             <IconButton
               onClick={onToggleTheme}
