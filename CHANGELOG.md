@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/Mkbewe/world-generator/compare/v0.2.0...v0.2.1) (2026-09-02)
+
+
+### Features
+
+* **118:**  add vertical tabs component ([#137](https://github.com/Mkbewe/world-generator/issues/137)) ([c6901d2](https://github.com/Mkbewe/world-generator/commit/c6901d21c8bafe2202bf3201369b11f07e90f08d))
+* **119:** add statistic page and conect it to state ([#142](https://github.com/Mkbewe/world-generator/issues/142)) ([21509de](https://github.com/Mkbewe/world-generator/commit/21509def35396edacc388c868cdca57a92bc5616))
+* **127:** add errors pages ([#135](https://github.com/Mkbewe/world-generator/issues/135)) ([8f7daf7](https://github.com/Mkbewe/world-generator/commit/8f7daf7e816ff120cac1f9ec52fe3bc4c22e5471))
+* **136:** rebuild form using vertical tab ([#138](https://github.com/Mkbewe/world-generator/issues/138)) ([7732748](https://github.com/Mkbewe/world-generator/commit/773274821f04f55779144f8827c33040cd52406c))
+* **139:** add global state ([#140](https://github.com/Mkbewe/world-generator/issues/140)) ([29589d4](https://github.com/Mkbewe/world-generator/commit/29589d4469f802ccb86800353af2603033fdfda7))
+* **144:** create navigation menu ([#145](https://github.com/Mkbewe/world-generator/issues/145)) ([78cf485](https://github.com/Mkbewe/world-generator/commit/78cf485101069389205628ce3b6a2df972778bbc))
+
+
+### Code Refactoring
+
+* **141:** move export png button to legacy generator ([#143](https://github.com/Mkbewe/world-generator/issues/143)) ([f262051](https://github.com/Mkbewe/world-generator/commit/f2620514ca63d3149815e982a298c8074cee8e8c))
+* refactor map generator ([#134](https://github.com/Mkbewe/world-generator/issues/134)) ([7de2aaf](https://github.com/Mkbewe/world-generator/commit/7de2aaf0e43d311e8db9505cdb00a5a8efcb5400))
+
 ## [0.2.0](https://github.com/Mkbewe/world-generator/compare/v0.1.4...v0.2.0) (2026-08-28)
 
 
