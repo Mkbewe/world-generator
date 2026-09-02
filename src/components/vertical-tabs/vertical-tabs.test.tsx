@@ -85,12 +85,22 @@ describe('VerticalTabs', () => {
     expect(onValueChange).toHaveBeenCalledWith('export');
   });
 
-  it('keeps every trigger in the natural tab order', () => {
+  it('moves the tab stop to the active trigger', async () => {
+    const user = userEvent.setup();
     renderTabs();
 
-    for (const trigger of screen.getAllByRole('tab')) {
-      expect(trigger).toHaveAttribute('tabindex', '0');
-    }
+    expect(screen.getByRole('tablist')).toHaveAttribute('tabindex', '0');
+
+    await user.click(screen.getByRole('tab', { name: 'World shape' }));
+
+    expect(screen.getByRole('tab', { name: 'World shape' })).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('tab', { name: 'Noise' })).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('tab', { name: 'Export' })).toHaveAttribute('tabindex', '-1');
+
+    await user.click(screen.getByRole('tab', { name: 'Noise' }));
+
+    expect(screen.getByRole('tab', { name: 'Noise' })).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('tab', { name: 'World shape' })).toHaveAttribute('tabindex', '-1');
   });
 
   it('moves through tabs with the up and down arrow keys', async () => {

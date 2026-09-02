@@ -144,7 +144,7 @@ export function WorldGenerationPreview() {
 
   return (
     <>
-      <Grid columns={{ initial: '1', md: '4fr 5fr 3fr' }} gap='7'>
+      <Grid columns={{ initial: '1', md: '3fr 6fr 3fr' }} gap='7'>
         <SettingsPanel
           seed={seed}
           onSeedChange={setSeed}
