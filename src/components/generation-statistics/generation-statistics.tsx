@@ -6,24 +6,30 @@ function formatDuration(durationMs: number | undefined): string {
   return durationMs === undefined ? '—' : `${durationMs.toFixed(1)} ms`;
 }
 
-interface Stage {
-  id: string;
-  name: string;
+function formatDetailValue(value: string | number): string {
+  return typeof value === 'number' ? value.toFixed(3) : value;
+}
+
+function formatDetails(details: StageStatistics['details']): string {
+  if (!details) {
+    return '—';
+  }
+
+  const entries = Object.entries(details);
+
+  if (entries.length === 0) {
+    return '—';
+  }
+
+  return entries.map(([key, value]) => `${key} ${formatDetailValue(value)}`).join(', ');
 }
 
 interface GenerationStatisticsProps {
-  stages: readonly Stage[];
   statistics: readonly StageStatistics[];
   totalDurationMs?: number;
-  valueRange?: { min: number; max: number };
 }
 
-export function GenerationStatistics({
-  stages,
-  statistics,
-  totalDurationMs,
-  valueRange,
-}: GenerationStatisticsProps) {
+export function GenerationStatistics({ statistics, totalDurationMs }: GenerationStatisticsProps) {
   return (
     <Card size={{ initial: '2', sm: '3' }}>
       <Flex direction='column' gap='4'>
@@ -40,21 +46,13 @@ export function GenerationStatistics({
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {stages.map(stage => {
-              const stageStatistics = statistics.find(item => item.stageId === stage.id);
-
-              return (
-                <Table.Row key={stage.id}>
-                  <Table.RowHeaderCell>{stage.name}</Table.RowHeaderCell>
-                  <Table.Cell>{formatDuration(stageStatistics?.durationMs)}</Table.Cell>
-                  <Table.Cell>
-                    {stage.id === 'noise' && valueRange
-                      ? `Range ${valueRange.min.toFixed(3)}–${valueRange.max.toFixed(3)}`
-                      : '—'}
-                  </Table.Cell>
-                </Table.Row>
-              );
-            })}
+            {statistics.map(stageStatistics => (
+              <Table.Row key={stageStatistics.stageId}>
+                <Table.RowHeaderCell>{stageStatistics.stageName}</Table.RowHeaderCell>
+                <Table.Cell>{formatDuration(stageStatistics.durationMs)}</Table.Cell>
+                <Table.Cell>{formatDetails(stageStatistics.details)}</Table.Cell>
+              </Table.Row>
+            ))}
             <Table.Row>
               <Table.RowHeaderCell>
                 <Text weight='bold'>Total</Text>

@@ -35,6 +35,7 @@ export interface StageStatistics {
   startedAt: number;
   finishedAt: number;
   durationMs: number;
+  details?: Record<string, string | number>;
 }
 
 interface StageEventBase {

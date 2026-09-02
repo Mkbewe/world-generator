@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
+import { useGenerationStatisticsStore } from '../../stores';
 import {
   createMapGenerator,
-  type GenerationEvent,
   type MapConfig,
   PipelineWorkerClient,
   type StageStatistics,
 } from '../../utils/map-generator';
-import { GenerationStatistics } from '../generation-statistics';
 import { PreviewMap } from '../preview-map';
 import { SettingsPanel } from '../settings-panel';
 
 const PREVIEW_SIZE = 300;
+const NOISE_STAGE_ID = 'noise';
 
 const pipeline = createMapGenerator();
 
@@ -23,19 +23,28 @@ interface PreviewGenerationResult {
   totalDurationMs: number;
 }
 
-interface PreviewState {
-  statistics: readonly StageStatistics[];
-  totalDurationMs?: number;
-  valueRange?: { min: number; max: number };
+function withNoiseDetails(
+  statistics: readonly StageStatistics[],
+  valueRange: { min: number; max: number } | undefined
+): readonly StageStatistics[] {
+  if (!valueRange) {
+    return statistics;
+  }
+
+  return statistics.map(item =>
+    item.stageId === NOISE_STAGE_ID
+      ? { ...item, details: { min: valueRange.min, max: valueRange.max } }
+      : item
+  );
 }
 
 export function WorldGenerationPreview() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerClientRef = useRef<PipelineWorkerClient | null>(null);
+  const setResult = useGenerationStatisticsStore(state => state.setResult);
   const [useWorker, setUseWorker] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [seed, setSeed] = useState('12345');
-  const [preview, setPreview] = useState<PreviewState>({ statistics: [] });
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -48,20 +57,6 @@ export function WorldGenerationPreview() {
     }
 
     return workerClientRef.current;
-  };
-
-  const handleGenerationEvent = (event: GenerationEvent): void => {
-    if (event.type !== 'stage-completed') {
-      return;
-    }
-
-    setPreview(current => {
-      const statistics = current.statistics.filter(
-        item => item.stageId !== event.statistics.stageId
-      );
-      statistics.push(event.statistics);
-      return { ...current, statistics };
-    });
   };
 
   const generate = async (): Promise<void> => {
@@ -82,15 +77,13 @@ export function WorldGenerationPreview() {
 
     try {
       const result: PreviewGenerationResult = useWorker
-        ? await getWorkerClient().generate(config, { onEvent: handleGenerationEvent })
-        : await pipeline
-            .generate(config, {}, { onEvent: handleGenerationEvent })
-            .then(generation => ({
-              worldMask: generation.context.state.worldMask,
-              noiseMap: generation.context.state.noiseMap,
-              statistics: generation.statistics,
-              totalDurationMs: generation.totalDurationMs,
-            }));
+        ? await getWorkerClient().generate(config)
+        : await pipeline.generate(config, {}).then(generation => ({
+            worldMask: generation.context.state.worldMask,
+            noiseMap: generation.context.state.noiseMap,
+            statistics: generation.statistics,
+            totalDurationMs: generation.totalDurationMs,
+          }));
 
       const { noiseMap, worldMask } = result;
       const canvas = canvasRef.current;
@@ -128,10 +121,12 @@ export function WorldGenerationPreview() {
       }
 
       context.putImageData(imageData, 0, 0);
-      setPreview({
-        statistics: result.statistics,
+      setResult({
+        statistics: withNoiseDetails(
+          result.statistics,
+          Number.isFinite(min) ? { min, max } : undefined
+        ),
         totalDurationMs: result.totalDurationMs,
-        valueRange: Number.isFinite(min) ? { min, max } : undefined,
       });
     } catch (generationError) {
       setError(
@@ -144,7 +139,7 @@ export function WorldGenerationPreview() {
 
   return (
     <>
-      <Grid columns={{ initial: '1', md: '3fr 6fr 3fr' }} gap='7'>
+      <Grid columns={{ initial: '1', md: '3fr 9fr' }} gap='7'>
         <SettingsPanel
           seed={seed}
           onSeedChange={setSeed}
@@ -159,13 +154,6 @@ export function WorldGenerationPreview() {
           height={PREVIEW_SIZE}
           canvasRef={canvasRef}
           label='Generated noise preview'
-        />
-
-        <GenerationStatistics
-          stages={pipeline.stages}
-          statistics={preview.statistics}
-          totalDurationMs={preview.totalDurationMs}
-          valueRange={preview.valueRange}
         />
       </Grid>
 

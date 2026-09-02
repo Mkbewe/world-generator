@@ -25,6 +25,12 @@ describe('router', () => {
     expect(screen.getByRole('heading', { name: 'World Preview' })).toBeInTheDocument();
   });
 
+  it('renders the statistics page on /statistics', () => {
+    renderRoute('/statistics');
+
+    expect(screen.getByRole('heading', { name: 'No statistics yet' })).toBeInTheDocument();
+  });
+
   it('renders the 404 page for unknown routes', () => {
     renderRoute('/uncharted-waters');
 

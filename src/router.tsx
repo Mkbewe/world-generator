@@ -6,6 +6,7 @@ import { ErrorPage } from './pages/error';
 import { HomePage } from './pages/home';
 import { LegacyGeneratorPage } from './pages/legacy-generator';
 import { NotFoundPage } from './pages/not-found';
+import { StatisticsPage } from './pages/statistics';
 
 function CrashTestTrigger(): never {
   throw new Error('Intentional crash to preview the 500 error page.');
@@ -22,6 +23,11 @@ export const routes: RouteObject[] = [
         path: 'legacy-generator',
         element: <LegacyGeneratorPage />,
         handle: { breadcrumb: 'Legacy Generator' } satisfies RouteHandle,
+      },
+      {
+        path: 'statistics',
+        element: <StatisticsPage />,
+        handle: { breadcrumb: 'Statistics' } satisfies RouteHandle,
       },
       // Dev-only: visit /__crash to preview the 500 error page.
       ...(import.meta.env.DEV
