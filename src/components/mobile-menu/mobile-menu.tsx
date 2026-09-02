@@ -55,6 +55,14 @@ export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
                 Legacy Generator
               </NavLink>
             </Button>
+            <Button asChild variant='soft' size='3'>
+              <NavLink
+                to='/statistics'
+                className={({ isActive }) => (isActive ? styles.navLinkActive : styles.navLink)}
+              >
+                Statistics
+              </NavLink>
+            </Button>
             {showExportPng && (
               <Button
                 onClick={() => setIsExportDialogOpen(true)}

@@ -62,6 +62,18 @@ describe('MobileMenu', () => {
     expect(mockOpenDialog).toHaveBeenCalledWith(true);
   });
 
+  it('should reveal the statistics link when opened', async () => {
+    const user = userEvent.setup();
+    renderMenu();
+
+    await user.click(screen.getByRole('button', { name: /open menu/i }));
+
+    expect(await screen.findByRole('link', { name: 'Statistics' })).toHaveAttribute(
+      'href',
+      '/statistics'
+    );
+  });
+
   it('should show the theme toggle when provided and call it', async () => {
     const user = userEvent.setup();
     const mockToggle = vi.fn();
