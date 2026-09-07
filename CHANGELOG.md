@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/Mkbewe/world-generator/compare/v0.2.2...v0.2.3) (2026-09-07)
+
+
+### Features
+
+* **67:** add map layers ([#154](https://github.com/Mkbewe/world-generator/issues/154)) ([8f3b6c0](https://github.com/Mkbewe/world-generator/commit/8f3b6c0c4a5953f012ea56b5187733237eab5dfa))
+* **69:** add generation progress bar ([#152](https://github.com/Mkbewe/world-generator/issues/152)) ([504f05f](https://github.com/Mkbewe/world-generator/commit/504f05ff15b35d50974eacea5419c6defae0d371))
+
 ### [0.2.2](https://github.com/Mkbewe/world-generator/compare/v0.2.1...v0.2.2) (2026-09-07)
 
 
