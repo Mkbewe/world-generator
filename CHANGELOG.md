@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/Mkbewe/world-generator/compare/v0.2.1...v0.2.2) (2026-09-07)
+
+
+### Bug Fixes
+
+* fix scroll bar issue and fix drawer ([#149](https://github.com/Mkbewe/world-generator/issues/149)) ([88b87f2](https://github.com/Mkbewe/world-generator/commit/88b87f27dabd60cc75de204593e93b158c784155))
+* view-port-fix ([#148](https://github.com/Mkbewe/world-generator/issues/148)) ([197ccc5](https://github.com/Mkbewe/world-generator/commit/197ccc57d98356a042c85d510bf09d5306ed3250))
+
+
+### Chores
+
+* update release scripts ([#147](https://github.com/Mkbewe/world-generator/issues/147)) ([4201adc](https://github.com/Mkbewe/world-generator/commit/4201adc8e426e34e32398406e92dc9403668b1f6))
+
 ### [0.2.1](https://github.com/Mkbewe/world-generator/compare/v0.2.0...v0.2.1) (2026-09-02)
 
 
