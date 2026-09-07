@@ -61,6 +61,10 @@ export interface GenerationOptions {
   onEvent?: (event: GenerationEvent) => void;
 }
 
+export interface MapGeneratorOptions {
+  stageDelayMs?: number;
+}
+
 export interface GenerationResult<TContext> {
   context: TContext;
   statistics: readonly StageStatistics[];

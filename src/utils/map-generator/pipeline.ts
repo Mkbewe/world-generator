@@ -4,12 +4,16 @@ import type { MapStage } from './stage';
 import type {
   GenerationOptions,
   GenerationResult,
+  MapGeneratorOptions,
   SeededWorldConfig,
   StageStatistics,
 } from './types';
 
 export class MapGenerator<TConfig extends SeededWorldConfig, TState extends object> {
-  constructor(readonly stages: readonly MapStage<TConfig, TState>[]) {}
+  constructor(
+    readonly stages: readonly MapStage<TConfig, TState>[],
+    private readonly options: MapGeneratorOptions = {}
+  ) {}
 
   async generate(
     config: Readonly<TConfig>,
@@ -30,6 +34,7 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
         stageIndex,
         stageCount: this.stages.length,
       });
+      await this.delay(this.options.stageDelayMs);
 
       const startedAt = performance.now();
 
@@ -68,6 +73,7 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
         stageCount: this.stages.length,
         statistics,
       });
+      await this.delay(this.options.stageDelayMs);
     }
 
     return {
@@ -75,6 +81,14 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
       statistics: context.statistics,
       totalDurationMs: performance.now() - generationStartedAt,
     };
+  }
+
+  private async delay(durationMs = 0): Promise<void> {
+    if (durationMs <= 0) {
+      return;
+    }
+
+    await new Promise(resolve => globalThis.setTimeout(resolve, durationMs));
   }
 
   private throwIfCancelled(signal: AbortSignal): void {
