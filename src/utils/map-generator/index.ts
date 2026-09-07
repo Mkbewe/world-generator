@@ -5,6 +5,7 @@ export type {
   GenerationEvent,
   GenerationOptions,
   GenerationResult,
+  MapGeneratorOptions,
   MapConfig,
   StageStatistics,
 } from './types';

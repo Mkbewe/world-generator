@@ -4,10 +4,12 @@ import { Flex, Grid, Text } from '@radix-ui/themes';
 import { useGenerationStatisticsStore } from '../../stores';
 import {
   createMapGenerator,
+  type GenerationEvent,
   type MapConfig,
   PipelineWorkerClient,
   type StageStatistics,
 } from '../../utils/map-generator';
+import type { GenerationProgressState } from '../generation-progress';
 import { PreviewMap } from '../preview-map';
 import { SettingsPanel } from '../settings-panel';
 
@@ -44,6 +46,7 @@ export function WorldGenerationPreview() {
   const setResult = useGenerationStatisticsStore(state => state.setResult);
   const [useWorker, setUseWorker] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState<GenerationProgressState>();
   const [seed, setSeed] = useState('12345');
   const [error, setError] = useState<string>();
 
@@ -69,6 +72,25 @@ export function WorldGenerationPreview() {
 
     setError(undefined);
     setIsGenerating(true);
+    setProgress({
+      stageName: 'Preparing generation...',
+      stageIndex: 0,
+      stageCount: 0,
+      percentage: 0,
+      status: 'running',
+    });
+
+    await waitForNextPaint();
+
+    const onGenerationEvent = (event: GenerationEvent): void => {
+      setProgress({
+        stageName: event.stageName,
+        stageIndex: event.stageIndex,
+        stageCount: event.stageCount,
+        percentage: event.type === 'stage-completed' ? 100 : 0,
+        status: 'running',
+      });
+    };
 
     const config: MapConfig = {
       world: { width: PREVIEW_SIZE, height: PREVIEW_SIZE, seed: parsedSeed },
@@ -77,8 +99,8 @@ export function WorldGenerationPreview() {
 
     try {
       const result: PreviewGenerationResult = useWorker
-        ? await getWorkerClient().generate(config)
-        : await pipeline.generate(config, {}).then(generation => ({
+        ? await getWorkerClient().generate(config, { onEvent: onGenerationEvent })
+        : await pipeline.generate(config, {}, { onEvent: onGenerationEvent }).then(generation => ({
             worldMask: generation.context.state.worldMask,
             noiseMap: generation.context.state.noiseMap,
             statistics: generation.statistics,
@@ -128,7 +150,24 @@ export function WorldGenerationPreview() {
         ),
         totalDurationMs: result.totalDurationMs,
       });
+      setProgress(currentProgress =>
+        currentProgress
+          ? {
+              ...currentProgress,
+              stageName: 'Generation complete',
+              percentage: 100,
+              status: 'completed',
+            }
+          : undefined
+      );
     } catch (generationError) {
+      setProgress(currentProgress => ({
+        stageName: 'Generation failed',
+        stageIndex: currentProgress?.stageIndex ?? 0,
+        stageCount: currentProgress?.stageCount ?? 0,
+        percentage: currentProgress?.percentage ?? 0,
+        status: 'failed',
+      }));
       setError(
         generationError instanceof Error ? generationError.message : 'World generation failed.'
       );
@@ -154,6 +193,7 @@ export function WorldGenerationPreview() {
           height={PREVIEW_SIZE}
           canvasRef={canvasRef}
           label='Generated noise preview'
+          progress={progress}
         />
       </Grid>
 
@@ -166,4 +206,8 @@ export function WorldGenerationPreview() {
       )}
     </>
   );
+}
+
+function waitForNextPaint(): Promise<void> {
+  return new Promise(resolve => requestAnimationFrame(() => resolve()));
 }
