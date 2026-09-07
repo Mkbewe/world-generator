@@ -85,4 +85,19 @@ describe('MobileMenu', () => {
 
     expect(screen.queryByRole('button', { name: /switch to dark mode/i })).not.toBeInTheDocument();
   });
+
+  it('should close after navigating through a menu link', async () => {
+    const user = userEvent.setup();
+    renderMenu();
+
+    await user.click(screen.getByRole('button', { name: /open menu/i }));
+    await user.click(await screen.findByRole('link', { name: 'Statistics' }));
+
+    expect(screen.queryByRole('heading', { name: 'Menu' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Home' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open menu/i })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+  });
 });
