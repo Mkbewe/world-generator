@@ -29,7 +29,7 @@ describe('generateWorldMap', () => {
       groupChance: 40,
       seaLevel: 0.38,
       roughness: 100,
-      seed: '12345',
+      seed: '123456',
     };
 
     expect(() => generateWorldMap(mockCanvas, mockParams)).not.toThrow();
@@ -44,7 +44,7 @@ describe('generateWorldMap', () => {
       groupChance: 40,
       seaLevel: 0.38,
       roughness: 100,
-      seed: '12345',
+      seed: '123456',
     };
 
     const first = generateWorldPixels(20, 10, params);
@@ -52,6 +52,6 @@ describe('generateWorldMap', () => {
 
     expect(first.pixels).toHaveLength(20 * 10 * 4);
     expect(first.pixels).toEqual(second.pixels);
-    expect(first.seed).toBe('12345');
+    expect(first.seed).toBe('123456');
   });
 });

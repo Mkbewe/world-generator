@@ -13,7 +13,7 @@ describe('WorldControls', () => {
     groupChance: 40,
     seaLevel: 0.38,
     roughness: 100,
-    seed: '12345',
+    seed: '123456',
   };
 
   const mockUpdateParam = vi.fn();

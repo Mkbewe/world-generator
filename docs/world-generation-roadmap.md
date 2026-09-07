@@ -8,6 +8,68 @@
 - Etapy zapisują osobne warstwy danych, które w przyszłości będzie można analizować i wyświetlać.
 - Najpierw może powstawać podgląd w niskiej rozdzielczości, a następnie dokładniejsza wersja tego samego świata.
 
+## Stan implementacji
+
+Aktualny generator jest działającym szkieletem pipeline'u, a nie pełną
+implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane są:
+
+- `WorldShapeStage` — tworzy kołową maskę świata w `worldMask`.
+- `NoiseStage` — tworzy deterministyczną mapę szumu w `noiseMap`.
+- `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia rozpoczęcia
+  oraz zakończenia etapu.
+- `PipelineWorkerClient` — uruchamia ten sam pipeline w Web Workerze i przekazuje
+  zdarzenia etapów do UI.
+- podgląd mapy — pozwala przełączać bazową warstwę `World shape`/`Noise` oraz
+  włączać nakładkę `World boundary`.
+- progres generowania — pokazuje aktualny etap, numer etapu i procent. Procent
+  jest obecnie raportowany na granicach etapów; raportowanie postępu z pętli i
+  chunków pozostaje zadaniem przyszłego API.
+
+Warstwy `Temperature`, `Moisture`, wysokość, batymetria, hydrologia, biomy i
+lokacje są jeszcze planowane. Kontrolki temperatury i wilgotności są już
+zarezerwowane w podglądzie, ale pozostają wyłączone do czasu pojawienia się
+odpowiednich danych.
+
+Opcjonalne opóźnienie etapów do ręcznego testowania podglądu jest konfigurowane
+wewnątrz generatora przez zmienną `VITE_GENERATION_STAGE_DELAY_MS`. Nie jest to
+część docelowego czasu generowania i powinno pozostać wyłączone w produkcji.
+
+## Podgląd warstw i nakładek
+
+Podgląd mapy rozdziela warstwę bazową od nakładek. Warstwa bazowa zajmuje cały
+canvas, natomiast nakładki są kompozycją renderowaną nad nią. UI powinien
+utrzymywać jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
+traktować każdą kombinację jako osobny typ mapy.
+
+Docelowy model danych może wyglądać następująco:
+
+```ts
+interface MapLayers {
+  worldMask?: Uint8Array;
+  noiseMap?: Float32Array;
+  heightmap?: Float32Array;
+  bathymetryMap?: Float32Array;
+  temperatureMap?: Float32Array;
+  moistureMap?: Float32Array;
+  biomeMap?: Uint8Array;
+}
+```
+
+Generator powinien zwracać surowe dane numeryczne, a renderer podglądu powinien
+odpowiadać za palety, normalizację, alpha blending i kolejność rysowania. Dzięki
+temu ta sama warstwa może być użyta jako baza, nakładka, źródło statystyk albo
+wejście kolejnego etapu.
+
+Warstwy powinny mieć rejestr metadanych obejmujący identyfikator, nazwę, typ
+danych, dostępność jako warstwa bazowa oraz dostępność jako nakładka. UI może
+wtedy pokazywać przyszłe warstwy jako wyłączone bez udawania, że generator już
+je produkuje.
+
+Pierwszy działający wariant używa poziomych tabów dla warstw bazowych i
+checkboxów dla nakładek. W przyszłości nakładki numeryczne, takie jak
+temperatura i wilgotność, powinny otrzymać także kontrolę przezroczystości oraz
+ustaloną paletę kolorów.
+
 ## Planowany pipeline
 
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu.

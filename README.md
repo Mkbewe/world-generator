@@ -42,6 +42,48 @@ pnpm check:all
 Stylelint validates all SCSS files using the rules in `.stylelintrc.json`.
 Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 
+## Generation preview
+
+The home page uses the map generation pipeline and can run it either on the main
+thread or in a Web Worker. The current pipeline contains two implemented stages:
+
+1. `WorldShapeStage` creates the circular `worldMask`.
+2. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
+
+The preview exposes these results as base map layers. The `World boundary`
+overlay is currently implemented as well. Temperature and moisture are shown in
+the layer controls as reserved future overlays and remain disabled until their
+generation stages produce data.
+
+The map viewer keeps raw numeric layers separate from rendering. This allows
+future stages such as height, temperature, moisture, hydrology and biomes to be
+displayed or composited without changing the generator result format again.
+
+Generation stages emit lifecycle events used by the progress indicator below the
+map. The current events report stage boundaries (`0%` and `100%`); chunk-level
+progress can be added later without changing the preview component API.
+
+For local visual testing, an optional delay can be enabled between stages:
+
+```env
+VITE_GENERATION_STAGE_DELAY_MS=500
+```
+
+The value is in milliseconds. Restart the Vite server after changing the value.
+Leave it unset, or set it to `0`, for normal generation speed.
+
+## Project structure
+
+- `src/utils/map-generator` contains the stage pipeline, stage events and worker
+  transport.
+- `src/components/world-generation-preview` coordinates generation state and
+  sends raw results to the UI.
+- `src/components/preview-map` contains the map canvas, base-layer tabs,
+  overlay controls and layer renderer.
+- `src/components/generation-progress` renders the current stage and progress.
+- `docs/world-generation-roadmap.md` describes planned stages and future layer
+  contracts beyond the currently implemented shape and noise stages.
+
 ## Branching strategy
 
 The repository uses a simplified GitHub Flow:
