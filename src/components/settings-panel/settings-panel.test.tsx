@@ -11,7 +11,7 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
   render(
     <Theme>
       <SettingsPanel
-        seed='12345'
+        seed='123456'
         onSeedChange={() => {}}
         useWorker
         onUseWorkerChange={() => {}}
@@ -28,7 +28,7 @@ describe('SettingsPanel', () => {
 
     expect(screen.getByRole('heading', { name: 'Map Settings' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Basic' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Seed:')).toHaveValue('12345');
+    expect(screen.getByLabelText('Seed:')).toHaveValue('123456');
     expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generate Map');
   });
 

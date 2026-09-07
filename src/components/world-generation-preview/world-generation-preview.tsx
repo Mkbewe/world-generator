@@ -11,6 +11,7 @@ import {
 } from '../../utils/map-generator';
 import type { GenerationProgressState } from '../generation-progress';
 import { PreviewMap } from '../preview-map';
+import type { PreviewMapLayers } from '../preview-map/map-layers';
 import { SettingsPanel } from '../settings-panel';
 
 const PREVIEW_SIZE = 300;
@@ -47,7 +48,8 @@ export function WorldGenerationPreview() {
   const [useWorker, setUseWorker] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<GenerationProgressState>();
-  const [seed, setSeed] = useState('12345');
+  const [layers, setLayers] = useState<PreviewMapLayers>({});
+  const [seed, setSeed] = useState('123456');
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -109,19 +111,17 @@ export function WorldGenerationPreview() {
 
       const { noiseMap, worldMask } = result;
       const canvas = canvasRef.current;
-      const context = canvas?.getContext('2d');
 
       if (!noiseMap || !worldMask) {
         setError('Pipeline completed without world mask or noise map.');
         return;
       }
 
-      if (!context) {
+      if (!canvas?.getContext('2d')) {
         setError('Canvas is not available.');
         return;
       }
 
-      const imageData = context.createImageData(PREVIEW_SIZE, PREVIEW_SIZE);
       let min = Number.POSITIVE_INFINITY;
       let max = Number.NEGATIVE_INFINITY;
 
@@ -131,18 +131,11 @@ export function WorldGenerationPreview() {
         }
 
         const value = noiseMap[index];
-        const color = Math.round(value * 255);
-        const pixelIndex = index * 4;
-
-        imageData.data[pixelIndex] = color;
-        imageData.data[pixelIndex + 1] = color;
-        imageData.data[pixelIndex + 2] = color;
-        imageData.data[pixelIndex + 3] = 255;
         min = Math.min(min, value);
         max = Math.max(max, value);
       }
 
-      context.putImageData(imageData, 0, 0);
+      setLayers({ worldMask, noiseMap });
       setResult({
         statistics: withNoiseDetails(
           result.statistics,
@@ -193,6 +186,7 @@ export function WorldGenerationPreview() {
           height={PREVIEW_SIZE}
           canvasRef={canvasRef}
           label='Generated noise preview'
+          layers={layers}
           progress={progress}
         />
       </Grid>
