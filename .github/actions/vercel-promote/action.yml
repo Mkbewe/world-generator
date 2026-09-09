@@ -35,20 +35,28 @@ runs:
       id: resolve
       shell: bash
       env:
+        DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+        DEV_ALIAS: ${{ inputs.dev_alias }}
+        VERCEL_TOKEN: ${{ inputs.vercel_token }}
         VERCEL_ORG_ID: ${{ inputs.vercel_org_id }}
         VERCEL_PROJECT_ID: ${{ inputs.vercel_project_id }}
       run: |
-        if [ -n "${{ inputs.deployment_url }}" ]; then
-          TARGET="${{ inputs.deployment_url }}"
-          DISPLAY="${{ inputs.deployment_url }}"
+        if [[ "$DEPLOYMENT_URL" == *$'\n'* || "$DEPLOYMENT_URL" == *$'\r'* ]]; then
+          echo "Deployment URL must be a single line."
+          exit 1
+        fi
+
+        if [ -n "$DEPLOYMENT_URL" ]; then
+          TARGET="$DEPLOYMENT_URL"
+          DISPLAY="$DEPLOYMENT_URL"
           echo "Using provided deployment: $TARGET"
         else
           echo "No URL provided — resolving current dev deployment..."
-          INSPECT=$(npx vercel@latest inspect "${{ inputs.dev_alias }}" \
-            --token=${{ inputs.vercel_token }} 2>&1)
+          INSPECT=$(npx vercel@latest inspect "$DEV_ALIAS" \
+            --token="$VERCEL_TOKEN" 2>&1)
           TARGET=$(echo "$INSPECT" | grep -oiE 'dpl_[A-Za-z0-9]+' | head -1)
           DISPLAY=$(echo "$INSPECT" | grep -oiE 'https://[a-z0-9.-]+\.vercel\.app' \
-            | grep -v "${{ inputs.dev_alias }}" | head -1)
+            | grep -Fv "$DEV_ALIAS" | head -1)
           echo "Resolved dev deployment id: $TARGET"
           echo "Resolved dev deployment url: $DISPLAY"
         fi
@@ -65,9 +73,11 @@ runs:
     - name: Promote deployment to production
       shell: bash
       env:
+        DEPLOYMENT_TARGET: ${{ steps.resolve.outputs.target }}
+        VERCEL_TOKEN: ${{ inputs.vercel_token }}
         VERCEL_ORG_ID: ${{ inputs.vercel_org_id }}
         VERCEL_PROJECT_ID: ${{ inputs.vercel_project_id }}
       run: |
-        npx vercel@latest promote "${{ steps.resolve.outputs.target }}" \
+        npx vercel@latest promote "$DEPLOYMENT_TARGET" \
           --yes \
-          --token=${{ inputs.vercel_token }}
+          --token="$VERCEL_TOKEN"

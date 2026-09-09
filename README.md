@@ -242,15 +242,14 @@ be toggled from the Vercel dashboard without a redeploy.
   Global Config and returns them as JSON at `GET /api/flags`. If Global Config
   is unavailable, it returns `FLAG_DEFAULTS`.
 - `FeatureFlagsProvider` fetches `/api/flags` on load; consume flags with
-  `useFlag('exportPng')`. Remote values are validated against the registry —
+  `useFlag('breadcrumbs')`. Remote values are validated against the registry —
   unknown keys, wrong types, and string values outside `FLAG_OPTIONS` are ignored
   and fall back to the default.
 
 **Dashboard setup (one time):**
 
 1. In the Vercel project: **Storage → Create Database → Global Config**.
-2. Under **Items**, add the flags as JSON, e.g.
-   `{ "exportPng": false, "pipelinePreview": false }`.
+2. Under **Items**, add the flags as JSON, e.g. `{ "breadcrumbs": false }`.
 3. Connecting the store to the project sets the `GLOBAL_CONFIG` environment
    variable automatically.
 
