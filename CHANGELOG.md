@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/Mkbewe/world-generator/compare/v0.2.3...v0.2.4) (2026-09-09)
+
+
+### Bug Fixes
+
+* quality-fix ([#156](https://github.com/Mkbewe/world-generator/issues/156)) ([6216257](https://github.com/Mkbewe/world-generator/commit/62162579937d3d0843603129d492b0c8afc0c654))
+
 ### [0.2.3](https://github.com/Mkbewe/world-generator/compare/v0.2.2...v0.2.3) (2026-09-07)
 
 
