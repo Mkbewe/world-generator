@@ -44,10 +44,10 @@ Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 
 ## Generation preview
 
-The home page uses the map generation pipeline and can run it either on the main
-thread or in a Web Worker. The current pipeline contains two implemented stages:
+The home page runs the map generation pipeline in a Web Worker. The current
+pipeline contains two implemented stages:
 
-1. `WorldShapeStage` creates the circular `worldMask`.
+1. `WorldShapeStage` creates a disc or rectangular `worldMask`.
 2. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
 
 The preview exposes these results as base map layers. The `World boundary`
@@ -60,8 +60,11 @@ future stages such as height, temperature, moisture, hydrology and biomes to be
 displayed or composited without changing the generator result format again.
 
 Generation stages emit lifecycle events used by the progress indicator below the
-map. The current events report stage boundaries (`0%` and `100%`); chunk-level
-progress can be added later without changing the preview component API.
+map. Every completed stage reports its output data together with its statistics.
+Generation always runs in a worker. Stage data is copied before its buffers are
+transferred so subsequent stages can continue using the pipeline state. The
+current events report stage boundaries (`0%` and `100%`); chunk-level progress can
+be added later without changing the preview component API.
 
 For local visual testing, an optional delay can be enabled between stages:
 
@@ -72,14 +75,47 @@ VITE_GENERATION_STAGE_DELAY_MS=500
 The value is in milliseconds. Restart the Vite server after changing the value.
 Leave it unset, or set it to `0`, for normal generation speed.
 
+### Preview rendering statistics
+
+`MapPreviewRenderer.showLayer()` resolves to a `PreviewRenderResult` containing
+`status`, `layer`, `revision`, `statistics` and `totalDurationMs`. Each operation
+reports `stageId`, `stageName`, `startedAt`, `finishedAt` and `durationMs`, together
+with its layer, source revision, buffer dimensions and `cacheHit`. The target is
+`display` for the visible base layer and overlays, or `cache` for background layer
+preparation. The base-layer duration includes rasterization (on a cache miss) and
+copying to the display canvas; an overlay has its own operation.
+
+```ts
+const renderer = new MapPreviewRenderer(elements, {
+  onStatistics: statistics => {
+    // Store this operation for a future statistics panel.
+    // Also receives overlay redraws triggered by resize, setSource or setOverlays.
+  },
+});
+renderer.setSource(source);
+const result = await renderer.showLayer('noise');
+// result.statistics contains only operations belonging to this showLayer call.
+```
+
+Use either the callback or the returned list when accumulating statistics; the
+same operation is available through both. Durations measure elapsed wall-clock
+time, including browser yields, rather than CPU time or GPU presentation time.
+The total also includes preparation of other layers after the active layer is
+shown. Canvas errors resolve as `failed` with an `error` message on the affected
+operation; a background failure does not hide an already displayed layer.
+Superseded calls resolve as `cancelled`, and unavailable layers as `skipped`.
+Filter by source revision when presenting results for the current map.
+
 ## Project structure
 
 - `src/utils/map-generator` contains the stage pipeline, stage events and worker
   transport.
 - `src/components/world-generation-preview` coordinates generation state and
   sends raw results to the UI.
-- `src/components/preview-map` contains the map canvas, base-layer tabs,
-  overlay controls and layer renderer.
+- `src/components/preview-map` contains the map canvas and React controls for
+  base layers and overlays.
+- `src/utils/map-preview` contains the object-oriented preview renderer,
+  responsive viewport, surface cache, raster rendering and overlay rendering.
 - `src/components/generation-progress` renders the current stage and progress.
 - `docs/world-generation-roadmap.md` describes planned stages and future layer
   contracts beyond the currently implemented shape and noise stages.

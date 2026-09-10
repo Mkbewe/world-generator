@@ -1,13 +1,11 @@
-import { Button, Flex, Switch, Text, TextField } from '@radix-ui/themes';
+import { Button, Flex, Text, TextField } from '@radix-ui/themes';
 
 interface BasicFormProps {
   seed: string;
   onSeedChange: (seed: string) => void;
-  useWorker: boolean;
-  onUseWorkerChange: (useWorker: boolean) => void;
 }
 
-export function BasicForm({ seed, onSeedChange, useWorker, onUseWorkerChange }: BasicFormProps) {
+export function BasicForm({ seed, onSeedChange }: BasicFormProps) {
   const randomizeSeed = (): void => {
     onSeedChange(
       Math.floor(Math.random() * 1_000_000)
@@ -32,16 +30,6 @@ export function BasicForm({ seed, onSeedChange, useWorker, onUseWorkerChange }: 
         <Button variant='soft' size='3' onClick={randomizeSeed}>
           Randomize
         </Button>
-      </Flex>
-      <Flex align='center' justify='between' gap='2'>
-        <Text as='label' htmlFor='basic-form-use-worker' size='2'>
-          Generate in a worker
-        </Text>
-        <Switch
-          id='basic-form-use-worker'
-          checked={useWorker}
-          onCheckedChange={onUseWorkerChange}
-        />
       </Flex>
     </Flex>
   );

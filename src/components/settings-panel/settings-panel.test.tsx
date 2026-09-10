@@ -13,10 +13,12 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
       <SettingsPanel
         seed='123456'
         onSeedChange={() => {}}
-        useWorker
-        onUseWorkerChange={() => {}}
         isGenerating={isGenerating}
         onGenerate={() => {}}
+        shape='disc'
+        size={300}
+        onShapeChange={() => {}}
+        onSizeChange={() => {}}
       />
     </Theme>
   );

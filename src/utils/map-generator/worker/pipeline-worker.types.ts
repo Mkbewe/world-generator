@@ -1,4 +1,4 @@
-import type { MapConfig, StageStatistics } from '../types';
+import type { GenerationEvent, MapConfig, StageStatistics } from '../types';
 
 export interface PipelineWorkerGenerateRequest {
   type: 'generate';
@@ -8,22 +8,7 @@ export interface PipelineWorkerGenerateRequest {
 
 export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;
 
-interface PipelineWorkerStageEventBase {
-  requestId: number;
-  stageId: string;
-  stageName: string;
-  stageIndex: number;
-  stageCount: number;
-}
-
-export interface PipelineWorkerStageStartedEvent extends PipelineWorkerStageEventBase {
-  type: 'stage-started';
-}
-
-export interface PipelineWorkerStageCompletedEvent extends PipelineWorkerStageEventBase {
-  type: 'stage-completed';
-  statistics: StageStatistics;
-}
+export type PipelineWorkerStageEvent = GenerationEvent & { requestId: number };
 
 export interface PipelineWorkerGenerationResult {
   worldMask: Uint8Array;
@@ -45,7 +30,4 @@ export interface PipelineWorkerErrorResponse {
 }
 
 export type PipelineWorkerResponse =
-  | PipelineWorkerStageStartedEvent
-  | PipelineWorkerStageCompletedEvent
-  | PipelineWorkerResultResponse
-  | PipelineWorkerErrorResponse;
+  PipelineWorkerStageEvent | PipelineWorkerResultResponse | PipelineWorkerErrorResponse;

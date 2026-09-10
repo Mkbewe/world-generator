@@ -3,21 +3,27 @@ import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import { useGenerationStatisticsStore } from '../../stores';
 import {
-  createMapGenerator,
   type GenerationEvent,
   type MapConfig,
   PipelineWorkerClient,
   type StageStatistics,
 } from '../../utils/map-generator';
+import {
+  type AvailablePreviewMapLayers,
+  cacheGeneratedMap,
+  createMapRevision,
+  getGeneratedMapSnapshot,
+  type MapBaseLayerId,
+  type PreviewMapLayers,
+} from '../../utils/map-preview';
 import type { GenerationProgressState } from '../generation-progress';
 import { PreviewMap } from '../preview-map';
-import type { PreviewMapLayers } from '../preview-map/map-layers';
 import { SettingsPanel } from '../settings-panel';
+import type { WorldShape, WorldSize } from '../settings-panel/forms';
 
-const PREVIEW_SIZE = 300;
+const DEFAULT_WORLD_SIZE = 1000;
 const NOISE_STAGE_ID = 'noise';
-
-const pipeline = createMapGenerator();
+const MIN_STAGE_LAYER_VISIBILITY_MS = 200;
 
 interface PreviewGenerationResult {
   worldMask?: Uint8Array;
@@ -42,18 +48,34 @@ function withNoiseDetails(
 }
 
 export function WorldGenerationPreview() {
+  const restoredMap = getGeneratedMapSnapshot();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerClientRef = useRef<PipelineWorkerClient | null>(null);
+  const automaticLayerTimerRef = useRef<number | undefined>(undefined);
+  const worldShapeSelectedAtRef = useRef(0);
+  const layersRef = useRef<PreviewMapLayers>(restoredMap?.layers ?? {});
   const setResult = useGenerationStatisticsStore(state => state.setResult);
-  const [useWorker, setUseWorker] = useState(true);
+  const [shape, setShape] = useState<WorldShape>(restoredMap?.shape ?? 'disc');
+  const [size, setSize] = useState<WorldSize>(restoredMap?.size ?? DEFAULT_WORLD_SIZE);
+  const [renderedSize, setRenderedSize] = useState(restoredMap?.size ?? DEFAULT_WORLD_SIZE);
+  const [layerRevision, setLayerRevision] = useState(restoredMap?.revision ?? 0);
+  const [availableLayers, setAvailableLayers] = useState<AvailablePreviewMapLayers>(
+    restoredMap ? { worldMask: true, noiseMap: true } : {}
+  );
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationRun, setGenerationRun] = useState(0);
+  const [selectedBaseLayer, setSelectedBaseLayer] = useState<MapBaseLayerId>('world-shape');
   const [progress, setProgress] = useState<GenerationProgressState>();
-  const [layers, setLayers] = useState<PreviewMapLayers>({});
-  const [seed, setSeed] = useState('123456');
+  const [seed, setSeed] = useState(restoredMap?.seed ?? '123456');
   const [error, setError] = useState<string>();
 
   useEffect(() => {
-    return () => workerClientRef.current?.dispose();
+    return () => {
+      workerClientRef.current?.dispose();
+      if (automaticLayerTimerRef.current !== undefined) {
+        clearTimeout(automaticLayerTimerRef.current);
+      }
+    };
   }, []);
 
   const getWorkerClient = (): PipelineWorkerClient => {
@@ -74,6 +96,15 @@ export function WorldGenerationPreview() {
 
     setError(undefined);
     setIsGenerating(true);
+    setGenerationRun(run => run + 1);
+    if (automaticLayerTimerRef.current !== undefined) {
+      clearTimeout(automaticLayerTimerRef.current);
+      automaticLayerTimerRef.current = undefined;
+    }
+    layersRef.current = {};
+    setAvailableLayers({});
+    worldShapeSelectedAtRef.current = performance.now();
+    setSelectedBaseLayer('world-shape');
     setProgress({
       stageName: 'Preparing generation...',
       stageIndex: 0,
@@ -85,6 +116,35 @@ export function WorldGenerationPreview() {
     await waitForNextPaint();
 
     const onGenerationEvent = (event: GenerationEvent): void => {
+      if (event.type === 'stage-completed' && event.stageId === 'world-shape') {
+        const worldMask = event.data.worldMask;
+        if (worldMask instanceof Uint8Array) {
+          layersRef.current = { worldMask };
+          setAvailableLayers({ worldMask: true });
+          setRenderedSize(size);
+          setLayerRevision(createMapRevision());
+        }
+        worldShapeSelectedAtRef.current = performance.now();
+        setSelectedBaseLayer('world-shape');
+      }
+
+      if (event.type === 'stage-completed' && event.stageId === 'noise') {
+        const noiseMap = event.data.noiseMap;
+        if (noiseMap instanceof Float32Array && layersRef.current.worldMask) {
+          layersRef.current = { ...layersRef.current, noiseMap };
+          setAvailableLayers({ worldMask: true, noiseMap: true });
+          setLayerRevision(createMapRevision());
+        }
+
+        const visibleForMs = performance.now() - worldShapeSelectedAtRef.current;
+        const remainingMs = Math.max(0, MIN_STAGE_LAYER_VISIBILITY_MS - visibleForMs);
+
+        automaticLayerTimerRef.current = window.setTimeout(() => {
+          automaticLayerTimerRef.current = undefined;
+          setSelectedBaseLayer('noise');
+        }, remainingMs);
+      }
+
       setProgress({
         stageName: event.stageName,
         stageIndex: event.stageIndex,
@@ -95,20 +155,19 @@ export function WorldGenerationPreview() {
     };
 
     const config: MapConfig = {
-      world: { width: PREVIEW_SIZE, height: PREVIEW_SIZE, seed: parsedSeed },
+      world: {
+        width: size,
+        height: size,
+        seed: parsedSeed,
+        shape,
+      },
       noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
     };
 
     try {
-      const result: PreviewGenerationResult = useWorker
-        ? await getWorkerClient().generate(config, { onEvent: onGenerationEvent })
-        : await pipeline.generate(config, {}, { onEvent: onGenerationEvent }).then(generation => ({
-            worldMask: generation.context.state.worldMask,
-            noiseMap: generation.context.state.noiseMap,
-            statistics: generation.statistics,
-            totalDurationMs: generation.totalDurationMs,
-          }));
-
+      const result: PreviewGenerationResult = await getWorkerClient().generate(config, {
+        onEvent: onGenerationEvent,
+      });
       const { noiseMap, worldMask } = result;
       const canvas = canvasRef.current;
 
@@ -135,7 +194,18 @@ export function WorldGenerationPreview() {
         max = Math.max(max, value);
       }
 
-      setLayers({ worldMask, noiseMap });
+      const cachedMap = cacheGeneratedMap({
+        layers: { worldMask, noiseMap },
+        width: size,
+        height: size,
+        seed,
+        shape,
+        size,
+      });
+      layersRef.current = cachedMap.layers;
+      setAvailableLayers({ worldMask: true, noiseMap: true });
+      setRenderedSize(size);
+      setLayerRevision(cachedMap.revision);
       setResult({
         statistics: withNoiseDetails(
           result.statistics,
@@ -175,19 +245,26 @@ export function WorldGenerationPreview() {
         <SettingsPanel
           seed={seed}
           onSeedChange={setSeed}
-          useWorker={useWorker}
-          onUseWorkerChange={setUseWorker}
           isGenerating={isGenerating}
           onGenerate={generate}
+          shape={shape}
+          size={size}
+          onShapeChange={setShape}
+          onSizeChange={setSize}
         />
 
         <PreviewMap
-          width={PREVIEW_SIZE}
-          height={PREVIEW_SIZE}
+          width={renderedSize}
+          height={renderedSize}
           canvasRef={canvasRef}
           label='Generated noise preview'
-          layers={layers}
+          layersRef={layersRef}
+          availableLayers={availableLayers}
+          layerRevision={layerRevision}
+          baseLayer={selectedBaseLayer}
+          onBaseLayerChange={setSelectedBaseLayer}
           progress={progress}
+          progressKey={generationRun}
         />
       </Grid>
 

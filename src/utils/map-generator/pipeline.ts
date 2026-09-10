@@ -38,8 +38,9 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
 
       const startedAt = performance.now();
 
+      let data;
       try {
-        await stage.execute(context, signal);
+        data = await stage.execute(context, signal);
         this.throwIfCancelled(signal);
       } catch (error) {
         if (error instanceof GenerationCancelledError || signal.aborted) {
@@ -72,6 +73,7 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
         stageIndex,
         stageCount: this.stages.length,
         statistics,
+        data,
       });
       await this.delay(this.options.stageDelayMs);
     }

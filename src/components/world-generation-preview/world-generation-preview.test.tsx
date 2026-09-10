@@ -13,10 +13,6 @@ vi.mock('../../utils/map-generator', async importOriginal => {
 
   return {
     ...actual,
-    createMapGenerator: () => ({
-      generate: generateMock,
-      stages: actual.createMapGenerator().stages,
-    }),
     PipelineWorkerClient: class {
       generate = generateMock;
       dispose = vi.fn();
@@ -34,6 +30,8 @@ describe('WorldGenerationPreview', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       createImageData: () => ({ data: new Uint8ClampedArray(previewSize * previewSize * 4) }),
       putImageData: vi.fn(),
+      clearRect: vi.fn(),
+      drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
   });
 

@@ -24,28 +24,20 @@ async function generate(request: PipelineWorkerGenerateRequest): Promise<void> {
       {
         onEvent: event => {
           if (event.type === 'stage-started') {
-            workerScope.postMessage({
-              type: 'stage-started',
-              requestId: request.requestId,
-              stageId: event.stageId,
-              stageName: event.stageName,
-              stageIndex: event.stageIndex,
-              stageCount: event.stageCount,
-            });
+            workerScope.postMessage({ ...event, requestId: request.requestId });
             return;
           }
 
           if (event.type === 'stage-completed') {
-            workerScope.postMessage({
-              type: 'stage-completed',
-              requestId: request.requestId,
-              stageId: event.stageId,
-              stageName: event.stageName,
-              stageIndex: event.stageIndex,
-              stageCount: event.stageCount,
-              statistics: event.statistics,
-            });
+            const data = structuredClone(event.data);
+            workerScope.postMessage(
+              { ...event, requestId: request.requestId, data },
+              collectTransferables(data)
+            );
+            return;
           }
+
+          workerScope.postMessage({ ...event, requestId: request.requestId });
         },
       }
     );
@@ -75,4 +67,33 @@ async function generate(request: PipelineWorkerGenerateRequest): Promise<void> {
       message: error instanceof Error ? error.message : 'Pipeline generation failed.',
     });
   }
+}
+
+function collectTransferables(value: unknown): Transferable[] {
+  const transferables = new Set<Transferable>();
+  const visited = new WeakSet<object>();
+
+  const visit = (current: unknown): void => {
+    if (current instanceof ArrayBuffer) {
+      transferables.add(current);
+      return;
+    }
+    if (ArrayBuffer.isView(current)) {
+      if (current.buffer instanceof ArrayBuffer) {
+        transferables.add(current.buffer);
+      }
+      return;
+    }
+    if (typeof current !== 'object' || current === null || visited.has(current)) {
+      return;
+    }
+
+    visited.add(current);
+    for (const nested of Object.values(current)) {
+      visit(nested);
+    }
+  };
+
+  visit(value);
+  return [...transferables];
 }

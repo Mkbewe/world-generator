@@ -9,7 +9,10 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
   readonly id = 'noise';
   readonly name = 'Noise generation';
 
-  async execute(context: MapContext<MapConfig, MapState>, signal: AbortSignal): Promise<void> {
+  async execute(
+    context: MapContext<MapConfig, MapState>,
+    signal: AbortSignal
+  ): Promise<{ noiseMap: Float32Array }> {
     const { width, height } = context.config.world;
     const { frequency, octaves, persistence, lacunarity } = context.config.noise;
     const worldMask = context.state.worldMask;
@@ -59,6 +62,7 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
     }
 
     context.state.noiseMap = noiseMap;
+    return { noiseMap };
   }
 
   private validateConfig(config: MapConfig): void {

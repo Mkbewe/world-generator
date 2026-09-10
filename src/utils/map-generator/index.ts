@@ -7,5 +7,6 @@ export type {
   GenerationResult,
   MapGeneratorOptions,
   MapConfig,
+  MapState,
   StageStatistics,
 } from './types';

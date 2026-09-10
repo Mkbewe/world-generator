@@ -1,47 +1,63 @@
-import { GearIcon, MagicWandIcon } from '@radix-ui/react-icons';
+import { useState } from 'react';
+import { GearIcon, GlobeIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
-import { BasicForm, DummyForm } from './forms';
+import { BasicForm, type WorldShape, WorldShapeForm, type WorldSize } from './forms';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
+
+type SettingsTab = 'basic' | 'world-shape';
+
+let activeSettingsTab: SettingsTab = 'basic';
 
 interface SettingsPanelProps {
   seed: string;
   onSeedChange: (seed: string) => void;
-  useWorker: boolean;
-  onUseWorkerChange: (useWorker: boolean) => void;
   isGenerating: boolean;
   onGenerate: () => void;
+  shape: WorldShape;
+  size: WorldSize;
+  onShapeChange: (shape: WorldShape) => void;
+  onSizeChange: (size: WorldSize) => void;
 }
 
 export function SettingsPanel({
   seed,
   onSeedChange,
-  useWorker,
-  onUseWorkerChange,
   isGenerating,
   onGenerate,
+  shape,
+  size,
+  onShapeChange,
+  onSizeChange,
 }: SettingsPanelProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>(activeSettingsTab);
   const tabs: readonly VerticalTabItem[] = [
     {
       value: 'basic',
       label: 'Basic',
       icon: <GearIcon />,
+      content: <BasicForm seed={seed} onSeedChange={onSeedChange} />,
+    },
+    {
+      value: 'world-shape',
+      label: 'World shape',
+      icon: <GlobeIcon />,
       content: (
-        <BasicForm
-          seed={seed}
-          onSeedChange={onSeedChange}
-          useWorker={useWorker}
-          onUseWorkerChange={onUseWorkerChange}
+        <WorldShapeForm
+          shape={shape}
+          size={size}
+          onShapeChange={onShapeChange}
+          onSizeChange={onSizeChange}
         />
       ),
     },
-    {
-      value: 'dummy',
-      label: 'Dummy',
-      icon: <MagicWandIcon />,
-      content: <DummyForm />,
-    },
   ];
+
+  const handleTabChange = (value: string): void => {
+    const nextTab = value as SettingsTab;
+    activeSettingsTab = nextTab;
+    setActiveTab(nextTab);
+  };
 
   return (
     <Card size={{ initial: '2', sm: '3' }}>
@@ -51,7 +67,12 @@ export function SettingsPanel({
         </Heading>
         <Separator size='4' />
         <Flex direction='column' flexGrow='1'>
-          <VerticalTabs items={tabs} ariaLabel='Generation settings' />
+          <VerticalTabs
+            items={tabs}
+            ariaLabel='Generation settings'
+            value={activeTab}
+            onValueChange={handleTabChange}
+          />
         </Flex>
         <Flex direction='column' gap='4'>
           <Separator size='4' />

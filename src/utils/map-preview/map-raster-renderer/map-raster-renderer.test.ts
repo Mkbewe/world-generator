@@ -1,7 +1,7 @@
-import { renderMapLayers } from './map-layer-renderer';
+import { MapRasterRenderer } from './map-raster-renderer';
 
-describe('renderMapLayers', () => {
-  it('renders a base layer and its boundary overlay', () => {
+describe('MapRasterRenderer', () => {
+  it('renders a base layer', async () => {
     const data = new Uint8ClampedArray(4 * 4 * 4);
     const context = {
       createImageData: vi.fn(() => ({ data })),
@@ -13,14 +13,14 @@ describe('renderMapLayers', () => {
       getContext: vi.fn(() => context),
     } as unknown as HTMLCanvasElement;
 
-    renderMapLayers(
+    const rendered = await new MapRasterRenderer().render(
       canvas,
       { worldMask: new Uint8Array([0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0]) },
-      'world-shape',
-      ['world-boundary']
+      'world-shape'
     );
 
+    expect(rendered).toBe(true);
     expect(context.putImageData).toHaveBeenCalledOnce();
-    expect(data[5 * 4 + 3]).toBe(230);
+    expect(data[5 * 4 + 3]).toBe(255);
   });
 });
