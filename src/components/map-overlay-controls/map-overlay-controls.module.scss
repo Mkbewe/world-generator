@@ -1,0 +1,14 @@
+.overlays {
+  flex: 0 0 10rem;
+  padding: var(--space-3);
+  border-left: 1px solid var(--gray-6);
+}
+
+@include mobile {
+  .overlays {
+    flex: 0 0 auto;
+    order: -1;
+    border-left: 0;
+    border-bottom: 1px solid var(--gray-6);
+  }
+}

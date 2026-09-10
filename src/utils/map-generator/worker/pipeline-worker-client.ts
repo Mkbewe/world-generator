@@ -3,12 +3,12 @@ import type {
   PipelineWorkerRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
-import type { GenerationOptions, MapConfig } from '../types';
+import type { GenerationEvent, MapConfig } from '../types';
 
 interface PendingRequest {
   resolve: (result: PipelineWorkerGenerationResult) => void;
   reject: (error: Error) => void;
-  onEvent?: GenerationOptions['onEvent'];
+  onEvent?: (event: GenerationEvent) => void;
 }
 
 export class PipelineWorkerClient {
@@ -18,7 +18,7 @@ export class PipelineWorkerClient {
 
   generate(
     config: MapConfig,
-    options: Pick<GenerationOptions, 'onEvent'> = {}
+    options: { onEvent?: (event: GenerationEvent) => void } = {}
   ): Promise<PipelineWorkerGenerationResult> {
     const requestId = this.nextRequestId++;
     const request: PipelineWorkerRequest = {
@@ -62,7 +62,11 @@ export class PipelineWorkerClient {
       return;
     }
 
-    if (response.type === 'stage-started' || response.type === 'stage-completed') {
+    if (
+      response.type === 'stage-started' ||
+      response.type === 'stage-completed' ||
+      response.type === 'stage-failed'
+    ) {
       pendingRequest.onEvent?.(response);
       return;
     }

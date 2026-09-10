@@ -2,17 +2,17 @@ import type { ReactNode } from 'react';
 import { Flex, Tabs } from '@radix-ui/themes';
 
 import {
+  type AvailablePreviewMapLayers,
   BASE_LAYER_OPTIONS,
   isBaseLayerAvailable,
   type MapBaseLayerId,
   type MapOverlayId,
-  type PreviewMapLayers,
-} from './map-layers';
-import { MapOverlayControls } from './map-overlay-controls';
+} from '../../utils/map-preview';
+import { MapOverlayControls } from '../map-overlay-controls';
 import styles from './map-layer-controls.module.scss';
 
 interface MapLayerControlsProps {
-  layers: PreviewMapLayers;
+  layers: AvailablePreviewMapLayers;
   baseLayer: MapBaseLayerId;
   overlays: readonly MapOverlayId[];
   children: ReactNode;

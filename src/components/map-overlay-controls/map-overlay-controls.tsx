@@ -1,15 +1,15 @@
 import { Flex, Switch, Text } from '@radix-ui/themes';
 
 import {
+  type AvailablePreviewMapLayers,
   isOverlayAvailable,
   type MapOverlayId,
   OVERLAY_OPTIONS,
-  type PreviewMapLayers,
-} from './map-layers';
-import styles from './map-layer-controls.module.scss';
+} from '../../utils/map-preview';
+import styles from './map-overlay-controls.module.scss';
 
 interface MapOverlayControlsProps {
-  layers: PreviewMapLayers;
+  layers: AvailablePreviewMapLayers;
   overlays: readonly MapOverlayId[];
   onOverlayToggle: (layer: MapOverlayId, checked: boolean) => void;
 }

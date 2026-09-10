@@ -23,9 +23,11 @@ describe('MapGenerator', () => {
     const stages = [
       createStage('terrain', async context => {
         context.state.values.push(`sea:${context.config.terrain.seaLevel}`);
+        return { terrain: context.config.terrain.seaLevel };
       }),
       createStage('resources', async context => {
         context.state.values.push(`resources:${context.config.resources.amount}`);
+        return { resources: context.config.resources.amount };
       }),
     ];
     const pipeline = new MapGenerator(stages);
@@ -42,15 +44,24 @@ describe('MapGenerator', () => {
 
   it('reports stage lifecycle events', async () => {
     const events: string[] = [];
-    const pipeline = new MapGenerator([createStage('noise', async () => {})]);
+    let completedData: Record<string, unknown> | undefined;
+    const pipeline = new MapGenerator([createStage('noise', async () => ({ noise: 0.5 }))]);
 
     await pipeline.generate(
       { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
       { values: [] },
-      { onEvent: event => events.push(`${event.type}:${event.stageId}`) }
+      {
+        onEvent: event => {
+          events.push(`${event.type}:${event.stageId}`);
+          if (event.type === 'stage-completed') {
+            completedData = event.data;
+          }
+        },
+      }
     );
 
     expect(events).toEqual(['stage-started:noise', 'stage-completed:noise']);
+    expect(completedData).toEqual({ noise: 0.5 });
   });
 
   it('wraps a stage failure with stage information', async () => {
@@ -86,7 +97,7 @@ describe('MapGenerator', () => {
   });
 
   it('does not start generation when it was cancelled', async () => {
-    const execute = vi.fn<TestStage['execute']>();
+    const execute = vi.fn<TestStage['execute']>(async () => ({}));
     const pipeline = new MapGenerator([createStage('noise', execute)]);
     const controller = new AbortController();
     controller.abort();

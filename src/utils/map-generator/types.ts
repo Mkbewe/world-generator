@@ -2,6 +2,7 @@ export interface WorldConfig {
   width: number;
   height: number;
   seed: number;
+  shape?: 'disc' | 'rectangle';
 }
 
 export interface SeededWorldConfig {
@@ -38,6 +39,8 @@ export interface StageStatistics {
   details?: Record<string, string | number>;
 }
 
+export type StageData = Record<string, unknown>;
+
 interface StageEventBase {
   stageId: string;
   stageName: string;
@@ -49,12 +52,18 @@ type StageStartedEvent = StageEventBase & {
   type: 'stage-started';
 };
 
-type StageFinishedEvent = StageEventBase & {
-  type: 'stage-completed' | 'stage-failed';
+type StageCompletedEvent = StageEventBase & {
+  type: 'stage-completed';
+  statistics: StageStatistics;
+  data: StageData;
+};
+
+type StageFailedEvent = StageEventBase & {
+  type: 'stage-failed';
   statistics: StageStatistics;
 };
 
-export type GenerationEvent = StageStartedEvent | StageFinishedEvent;
+export type GenerationEvent = StageStartedEvent | StageCompletedEvent | StageFailedEvent;
 
 export interface GenerationOptions {
   signal?: AbortSignal;

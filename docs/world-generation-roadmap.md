@@ -5,22 +5,43 @@
 - Generator działa jako rozszerzalny pipeline niezależny od renderowania i UI.
 - Świat korzysta ze znormalizowanych współrzędnych, aby zachować układ przy różnych rozdzielczościach.
 - Jeden seed świata tworzy niezależne, nazwane strumienie losowości dla poszczególnych etapów.
-- Etapy zapisują osobne warstwy danych, które w przyszłości będzie można analizować i wyświetlać.
-- Najpierw może powstawać podgląd w niskiej rozdzielczości, a następnie dokładniejsza wersja tego samego świata.
+- Etapy zapisują osobne warstwy danych; obecnie można wyświetlać maskę świata i szum.
+- Docelowo najpierw może powstawać podgląd w niskiej rozdzielczości, a następnie dokładniejsza wersja tego samego świata. Ten tryb nie jest jeszcze zaimplementowany.
 
 ## Stan implementacji
+
+Stan na 2026-09-10, uwzględniający lokalne zmiany w katalogu roboczym.
 
 Aktualny generator jest działającym szkieletem pipeline'u, a nie pełną
 implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane są:
 
-- `WorldShapeStage` — tworzy kołową maskę świata w `worldMask`.
+- `WorldShapeStage` — tworzy maskę świata w `worldMask`: dysk (`disc`) albo
+  prostokąt (`rectangle`). Nie implementuje jeszcze zawijania krawędzi.
 - `NoiseStage` — tworzy deterministyczną mapę szumu w `noiseMap`.
 - `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia rozpoczęcia
-  oraz zakończenia etapu.
-- `PipelineWorkerClient` — uruchamia ten sam pipeline w Web Workerze i przekazuje
-  zdarzenia etapów do UI.
+  etapu, jego zakończenia lub błędu. Zakończony etap przekazuje dane wynikowe
+  i statystyki; wynik całego pipeline'u zawiera statystyki oraz łączny czas.
+- `PipelineWorkerClient` — aplikacja zawsze uruchamia generowanie w Web Workerze.
+  Klient przekazuje zdarzenia etapów do UI, a worker kopiuje dane zakończonych
+  etapów przed transferem buforów, aby zachować dane potrzebne dalszym etapom.
+- ustawienia świata — wybór kształtu, presety rozdzielczości 600, 2400 i 5000
+  oraz własny rozmiar od 100 do 5000. UI generuje kwadratową siatkę `size × size`;
+  rozmiar oznacza liczbę próbek, a nie metry świata.
 - podgląd mapy — pozwala przełączać bazową warstwę `World shape`/`Noise` oraz
-  włączać nakładkę `World boundary`.
+  włączać nakładkę `World boundary`. Dane etapów udostępniają kolejne warstwy
+  jeszcze przed otrzymaniem końcowego wyniku generowania.
+- `utils/map-preview` — osobny moduł renderowania z cache powierzchni,
+  przygotowaniem nieaktywnych warstw w tle i anulowaniem nieaktualnego renderowania.
+  Granica świata jest rysowana na osobnym canvasie w rozdzielczości viewportu
+  z DPR ograniczonym do 2; bazowe warstwy nadal używają pełnej rozdzielczości danych.
+- odtwarzanie podglądu — ostatnia ukończona mapa i jej konfiguracja są zachowywane
+  w pamięci na czas działania aplikacji i odtwarzane po ponownym zamontowaniu widoku.
+  Nie jest to trwały zapis po odświeżeniu strony.
+- statystyki renderowania — `showLayer()` zwraca status, listę operacji i łączny
+  czas, a `onStatistics` raportuje również osobne przerysowania nakładek.
+  Operacje zawierają czasy, warstwę, rewizję, wymiary bufora, trafienie w cache
+  oraz cel `display`/`cache`. Obsługiwane są błędy i anulowanie; panel UI tych
+  statystyk oraz pomiary pamięci pozostają do zrobienia.
 - progres generowania — pokazuje aktualny etap, numer etapu i procent. Procent
   jest obecnie raportowany na granicach etapów; raportowanie postępu z pętli i
   chunków pozostaje zadaniem przyszłego API.
@@ -37,8 +58,8 @@ część docelowego czasu generowania i powinno pozostać wyłączone w produkcj
 ## Podgląd warstw i nakładek
 
 Podgląd mapy rozdziela warstwę bazową od nakładek. Warstwa bazowa zajmuje cały
-canvas, natomiast nakładki są kompozycją renderowaną nad nią. UI powinien
-utrzymywać jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
+canvas, natomiast granica świata jest rysowana na drugim canvasie nad nią. UI
+utrzymuje jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
 traktować każdą kombinację jako osobny typ mapy.
 
 Docelowy model danych może wyglądać następująco:
@@ -65,12 +86,17 @@ danych, dostępność jako warstwa bazowa oraz dostępność jako nakładka. UI 
 wtedy pokazywać przyszłe warstwy jako wyłączone bez udawania, że generator już
 je produkuje.
 
-Pierwszy działający wariant używa poziomych tabów dla warstw bazowych i
-checkboxów dla nakładek. W przyszłości nakładki numeryczne, takie jak
+Obecny wariant używa poziomych tabów dla warstw bazowych i przełączników
+(`Switch`) dla nakładek, wydzielonych do komponentów `MapLayerControls`
+i `MapOverlayControls`. W przyszłości nakładki numeryczne, takie jak
 temperatura i wilgotność, powinny otrzymać także kontrolę przezroczystości oraz
 ustaloną paletę kolorów.
 
 ## Planowany pipeline
+
+Poniżej opisano docelowy pipeline. Aktualna fabryka uruchamia wyłącznie
+`WorldShapeStage` → `NoiseStage`; pozostałe etapy i rozszerzenia ich kontraktów
+nie są jeszcze zaimplementowane.
 
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu.
 2. `MacroRegionStage` — makroregiony, pola progresji oraz narracyjne wymagania świata.
@@ -245,11 +271,15 @@ interface WorldPreset {
 
 Podglądy koncepcyjne:
 
-- [trzy presety świata](assets/world-presets.svg).
+- [trzy presety świata](world-presets.jpg).
 
 ## Topologia i krawędzie świata
 
-Kształt mapy należy oddzielić od sposobu działania jej krawędzi oraz od presetu klimatu. Użytkownik może wybrać świat radialny w formie dysku albo świat cylindryczny, niezależnie od wybranego układu temperatury i wilgotności.
+Kształt mapy należy oddzielić od sposobu działania jej krawędzi oraz od presetu klimatu. Docelowo użytkownik będzie mógł wybrać świat radialny w formie dysku albo świat cylindryczny, niezależnie od wybranego układu temperatury i wilgotności.
+
+Obecnie dostępny jest tylko wybór maski `disc`/`rectangle`. Prostokąt nie zawija
+się na osi X ani Y; `WorldTopologyConfig`, okresowy szum i reguły krawędzi opisane
+poniżej są planowane.
 
 ```ts
 interface WorldTopologyConfig {
@@ -310,6 +340,9 @@ Pola progresji i narracyjne wymagania pochodzą z `MacroRegionStage`, natomiast 
 
 ## Fizyczna skala świata
 
+Obecne `WorldConfig.width` i `height` określają wymiary siatki danych.
+Osobne jednostki fizyczne i poniższy kontrakt `WorldDimensions` są planowane.
+
 Rozdzielczość danych nie powinna określać fizycznego rozmiaru świata. Generator powinien osobno przechowywać:
 
 - rozmiar świata w jednostkach gry, najlepiej w metrach,
@@ -348,10 +381,31 @@ Tryb eksploracji nie potrzebuje ekwipunku, zasobów, NPC, symulacji odległych o
 
 ## Wydajność — dalszy plan
 
-- Najpierw zachować prosty, jednowątkowy pipeline.
-- Dane rastrowe przechowywać w typed arrays.
-- Później przenieść pipeline do Web Workera.
-- Etapy łatwe do podziału wykonywać pasami lub kafelkami w puli workerów.
-- Hydrologię i inne globalnie zależne etapy dzielić dopiero po zaprojektowaniu ich przepływu danych.
-- Przekazywać bufory jako transferable, raportować postęp i umożliwić anulowanie.
+Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
+transfer buforów, postęp na granicach etapów i statystyki generowania oraz
+renderowania. Rasteryzacja podglądu działa na głównym wątku, oddając sterowanie
+przeglądarce co 128 wierszy. Rdzeń generatora przyjmuje `AbortSignal`, ale klient
+workera nie obsługuje jeszcze anulowania pojedynczego żądania; `dispose()` kończy
+cały worker. Renderer anuluje nieaktualne zadania przy zmianie źródła lub warstwy.
+
+Pozostałe zadania:
+
+- Rasteryzować warstwy bazowe bezpośrednio do rozdzielczości viewportu × DPR
+  (z limitem DPR 2), zachowując pełne dane generatora. Dla widoku 600 × 600 CSS px
+  przy DPR 2 bufor RGBA 1200 × 1200 zajmuje około 5,76 MB zamiast 100 MB dla
+  mapy 5000 × 5000. Nie tworzyć pośrednich obrazów w pełnej rozdzielczości.
+- Dobrać próbkowanie maski i filtrowanie szumu; zachować zgodność warstw z granicą
+  świata po zmianie rozmiaru viewportu lub DPR.
+- Powiązać cache z tożsamością danych warstwy i rozdzielczością podglądu, zachować
+  powierzchnie niezmienionych warstw między etapami i zabezpieczyć współdzielenie
+  cache przez wiele rendererów. Obecnie zmiana rewizji czyści cały cache.
+- Wprowadzić budżet pamięci cache i uzależnić przygotowanie nieaktywnych warstw
+  od dostępnego budżetu.
+- Rozszerzyć statystyki o rozdzielczość źródłową i wynikową oraz szacowany rozmiar
+  buforów i cache; podłączyć statystyki renderowania do panelu UI.
+- Dodać postęp wewnątrz etapów oraz anulowanie pojedynczego generowania przez
+  protokół workera i UI.
+- Po pomiarach rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami
+  w puli workerów. Hydrologię i inne globalnie zależne etapy dzielić dopiero po
+  zaprojektowaniu ich przepływu danych.
 - Rozważyć WebGL lub WebGPU dopiero wtedy, gdy pomiary wykażą taką potrzebę.

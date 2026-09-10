@@ -7,7 +7,10 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
   readonly id = 'world-shape';
   readonly name = 'World shape generation';
 
-  async execute(context: MapContext<MapConfig, MapState>, signal: AbortSignal): Promise<void> {
+  async execute(
+    context: MapContext<MapConfig, MapState>,
+    signal: AbortSignal
+  ): Promise<{ worldMask: Uint8Array }> {
     const { width, height } = context.config.world;
 
     if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) {
@@ -17,6 +20,7 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
     const worldMask = new Uint8Array(width * height);
     const xDivisor = Math.max(1, width - 1);
     const yDivisor = Math.max(1, height - 1);
+    const shape = context.config.world.shape ?? 'disc';
 
     for (let y = 0; y < height; y++) {
       if (signal.aborted) {
@@ -27,11 +31,15 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
 
       for (let x = 0; x < width; x++) {
         const normalizedX = (2 * x) / xDivisor - 1;
-        const isInsideWorld = normalizedX * normalizedX + normalizedY * normalizedY <= 1;
+        const isInsideWorld =
+          shape === 'rectangle'
+            ? Math.abs(normalizedX) <= 1 && Math.abs(normalizedY) <= 1
+            : normalizedX * normalizedX + normalizedY * normalizedY <= 1;
         worldMask[y * width + x] = isInsideWorld ? 1 : 0;
       }
     }
 
     context.state.worldMask = worldMask;
+    return { worldMask };
   }
 }
