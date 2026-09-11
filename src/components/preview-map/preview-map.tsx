@@ -1,102 +1,55 @@
-import { type RefObject, useLayoutEffect, useRef, useState } from 'react';
-import { Card, Flex, Heading, Separator } from '@radix-ui/themes';
+﻿import { useLayoutEffect, useRef, useState } from 'react';
+import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import {
-  type AvailablePreviewMapLayers,
-  getLayerLabel,
-  isBaseLayerAvailable,
+  EMPTY_RENDER_STATE,
   type MapBaseLayerId,
-  type MapOverlayId,
-  MapPreviewRenderer,
-  type PreviewMapLayers,
-} from '../../utils/map-preview';
+  MapRenderer,
+  type MapRendererState,
+} from '../../utils/map-renderer';
 import { GenerationProgress, type GenerationProgressState } from '../generation-progress';
 import { MapLayerControls } from '../map-layer-controls';
 import styles from './preview-map.module.scss';
 
+let activeBaseLayer: MapBaseLayerId | undefined;
+
 interface PreviewMapProps {
-  width: number;
-  height: number;
-  canvasRef: RefObject<HTMLCanvasElement | null>;
-  label: string;
-  layersRef: RefObject<PreviewMapLayers>;
-  availableLayers: AvailablePreviewMapLayers;
-  layerRevision: number;
-  baseLayer: MapBaseLayerId;
-  onBaseLayerChange: (layer: MapBaseLayerId) => void;
+  onReady: (renderer: MapRenderer | undefined) => void;
   progress?: GenerationProgressState;
   progressKey: number;
 }
 
-export function PreviewMap({
-  width,
-  height,
-  canvasRef,
-  label,
-  layersRef,
-  availableLayers,
-  layerRevision,
-  baseLayer,
-  onBaseLayerChange,
-  progress,
-  progressKey,
-}: PreviewMapProps) {
-  const [overlays, setOverlays] = useState<readonly MapOverlayId[]>(['world-boundary']);
-  const [renderingLayer, setRenderingLayer] = useState<MapBaseLayerId>();
-  const previewWrapperRef = useRef<HTMLDivElement>(null);
-  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<MapPreviewRenderer | undefined>(undefined);
-  const hasLayers = Boolean(availableLayers.worldMask || availableLayers.noiseMap);
-  const activeBaseLayer = !hasLayers
-    ? baseLayer
-    : isBaseLayerAvailable(baseLayer, availableLayers)
-      ? baseLayer
-      : availableLayers.worldMask
-        ? 'world-shape'
-        : 'noise';
+export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) {
+  const [preview, setPreview] = useState<MapRendererState>(EMPTY_RENDER_STATE);
+  const instanceRef = useRef<MapRenderer | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLCanvasElement>(null);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
-    const overlayCanvas = overlayCanvasRef.current;
-    const viewportElement = previewWrapperRef.current;
+    const overlayCanvas = overlayRef.current;
+    const viewportElement = wrapperRef.current;
     if (!canvas || !overlayCanvas || !viewportElement) {
       return;
     }
 
-    const renderer = new MapPreviewRenderer(
-      { canvas, overlayCanvas, viewportElement },
-      { onRenderingChange: setRenderingLayer }
-    );
-    rendererRef.current = renderer;
+    const renderer = new MapRenderer({ canvas, overlayCanvas, viewportElement }, setPreview, {
+      selectedLayer: activeBaseLayer,
+    });
+    instanceRef.current = renderer;
+    onReady(renderer);
 
     return () => {
+      instanceRef.current = null;
+      onReady(undefined);
       renderer.dispose();
-      rendererRef.current = undefined;
     };
-  }, [canvasRef]);
+  }, [onReady]);
 
-  useLayoutEffect(() => {
-    const renderer = rendererRef.current;
-    if (!renderer) {
-      return;
-    }
-
-    const layers = layersRef.current;
-    const hasSource = Boolean(layers.worldMask || layers.noiseMap);
-    renderer.setSource(hasSource ? { width, height, revision: layerRevision, layers } : undefined);
-    if (hasSource) {
-      void renderer.showLayer(activeBaseLayer);
-    }
-  }, [activeBaseLayer, availableLayers, height, layerRevision, layersRef, width]);
-
-  useLayoutEffect(() => {
-    rendererRef.current?.setOverlays(overlays);
-  }, [overlays]);
-
-  const handleOverlayToggle = (layer: MapOverlayId, checked: boolean): void => {
-    setOverlays(current =>
-      checked ? [...current, layer] : current.filter(currentLayer => currentLayer !== layer)
-    );
+  const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
+    activeBaseLayer = layer;
+    instanceRef.current?.select(layer);
   };
 
   return (
@@ -107,26 +60,32 @@ export function PreviewMap({
         </Heading>
         <Separator size='4' />
         <MapLayerControls
-          layers={availableLayers}
-          baseLayer={activeBaseLayer}
-          overlays={overlays}
-          onBaseLayerChange={onBaseLayerChange}
-          onOverlayToggle={handleOverlayToggle}
+          preview={preview}
+          onBaseLayerChange={handleBaseLayerChange}
+          onOverlayChange={(id, visible) => instanceRef.current?.setOverlay(id, visible)}
         >
-          <div ref={previewWrapperRef} className={styles.previewWrapper}>
+          <div ref={wrapperRef} className={styles.previewWrapper}>
             <canvas
               ref={canvasRef}
-              width={width}
-              height={height}
+              width={0}
+              height={0}
               className={styles.canvas}
-              aria-label={label}
+              aria-label='Generated map preview'
             />
-            <canvas ref={overlayCanvasRef} className={styles.overlayCanvas} aria-hidden='true' />
-            <div className={styles.renderingStatus} role='status' hidden={!renderingLayer}>
-              {renderingLayer && `Rendering ${getLayerLabel(renderingLayer)}...`}
-            </div>
+            <canvas
+              ref={overlayRef}
+              width={0}
+              height={0}
+              className={styles.overlayCanvas}
+              aria-hidden='true'
+            />
           </div>
         </MapLayerControls>
+        {preview.error && (
+          <Text size='2' color='red' role='alert'>
+            {preview.error}
+          </Text>
+        )}
         {progress && <GenerationProgress key={progressKey} progress={progress} />}
       </Flex>
     </Card>

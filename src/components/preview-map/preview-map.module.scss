@@ -23,16 +23,3 @@
 .overlayCanvas {
   pointer-events: none;
 }
-
-.renderingStatus {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: var(--gray-11);
-  background: var(--gray-3);
-}
-
-.renderingStatus[hidden] {
-  display: none;
-}

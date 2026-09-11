@@ -11,8 +11,6 @@ export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;
 export type PipelineWorkerStageEvent = GenerationEvent & { requestId: number };
 
 export interface PipelineWorkerGenerationResult {
-  worldMask: Uint8Array;
-  noiseMap: Float32Array;
   statistics: readonly StageStatistics[];
   totalDurationMs: number;
 }

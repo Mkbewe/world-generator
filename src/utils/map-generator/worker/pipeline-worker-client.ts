@@ -67,7 +67,12 @@ export class PipelineWorkerClient {
       response.type === 'stage-completed' ||
       response.type === 'stage-failed'
     ) {
-      pendingRequest.onEvent?.(response);
+      try {
+        pendingRequest.onEvent?.(response);
+      } catch (error) {
+        this.pendingRequests.delete(response.requestId);
+        pendingRequest.reject(error instanceof Error ? error : new Error(String(error)));
+      }
       return;
     }
 
