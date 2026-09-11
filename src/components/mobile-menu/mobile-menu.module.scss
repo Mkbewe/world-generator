@@ -43,7 +43,12 @@
   transition: color 120ms ease;
 
   &:hover {
-    color: var(--gray-12);
+    color: var(--violet-11);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--violet-8);
+    outline-offset: -2px;
   }
 }
 
@@ -52,8 +57,9 @@
 }
 
 .navLinkActive {
-  color: var(--violet-9);
+  color: var(--violet-11);
   font-weight: var(--font-weight-bold);
+  box-shadow: inset 0 -2px var(--violet-9);
 }
 
 .themeButton.themeButton {
