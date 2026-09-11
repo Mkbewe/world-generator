@@ -56,7 +56,7 @@ describe('WorldGenerationPreview', () => {
     await user.click(screen.getByTestId('generate-map-button'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Pipeline completed without world mask or noise map.'
+      'Pipeline completed without all required map layers.'
     );
   });
 
@@ -64,11 +64,27 @@ describe('WorldGenerationPreview', () => {
     const user = userEvent.setup();
 
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-    generateMock.mockResolvedValue({
-      worldMask: new Uint8Array(previewSize * previewSize).fill(1),
-      noiseMap: new Float32Array(previewSize * previewSize).fill(0.5),
-      statistics: [],
-      totalDurationMs: 1,
+    generateMock.mockImplementation((config, options) => {
+      const count = config.world.width * config.world.height;
+      options.onEvent({
+        type: 'stage-completed',
+        stageId: 'world-shape',
+        stageName: 'World shape',
+        stageIndex: 0,
+        stageCount: 2,
+        statistics: {},
+        data: { worldMask: new Uint8Array(count).fill(1) },
+      });
+      options.onEvent({
+        type: 'stage-completed',
+        stageId: 'noise',
+        stageName: 'Noise',
+        stageIndex: 1,
+        stageCount: 2,
+        statistics: {},
+        data: { noiseMap: new Float32Array(count).fill(0.5) },
+      });
+      return Promise.resolve({ statistics: [], totalDurationMs: 1 });
     });
 
     render(

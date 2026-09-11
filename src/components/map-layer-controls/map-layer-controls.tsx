@@ -1,56 +1,45 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import { Flex, Tabs } from '@radix-ui/themes';
 
-import {
-  type AvailablePreviewMapLayers,
-  BASE_LAYER_OPTIONS,
-  isBaseLayerAvailable,
-  type MapBaseLayerId,
-  type MapOverlayId,
-} from '../../utils/map-preview';
+import type { MapBaseLayerId, MapOverlayId, MapRendererState } from '../../utils/map-renderer';
 import { MapOverlayControls } from '../map-overlay-controls';
 import styles from './map-layer-controls.module.scss';
 
 interface MapLayerControlsProps {
-  layers: AvailablePreviewMapLayers;
-  baseLayer: MapBaseLayerId;
-  overlays: readonly MapOverlayId[];
+  preview: MapRendererState;
   children: ReactNode;
   onBaseLayerChange: (layer: MapBaseLayerId) => void;
-  onOverlayToggle: (layer: MapOverlayId, checked: boolean) => void;
+  onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
 }
 
 export function MapLayerControls({
-  layers,
-  baseLayer,
-  overlays,
+  preview,
   children,
   onBaseLayerChange,
-  onOverlayToggle,
+  onOverlayChange,
 }: MapLayerControlsProps) {
   return (
     <Flex direction='column' gap='3'>
       <Tabs.Root
-        value={baseLayer}
+        value={preview.displayedLayer ?? ''}
         onValueChange={value => onBaseLayerChange(value as MapBaseLayerId)}
       >
         <Tabs.List aria-label='Map layers' className={styles.tabsList}>
-          {BASE_LAYER_OPTIONS.map(option => (
+          {preview.layers.map(layer => (
             <Tabs.Trigger
-              key={option.id}
-              value={option.id}
-              disabled={!isBaseLayerAvailable(option.id, layers)}
+              key={layer.id}
+              value={layer.id}
+              disabled={!layer.available}
               className={styles.tabTrigger}
             >
-              {option.label}
+              {layer.label}
             </Tabs.Trigger>
           ))}
         </Tabs.List>
       </Tabs.Root>
-
       <Flex align='stretch' gap='4' className={styles.mapArea}>
         <div className={styles.canvasArea}>{children}</div>
-        <MapOverlayControls layers={layers} overlays={overlays} onOverlayToggle={onOverlayToggle} />
+        <MapOverlayControls preview={preview} onOverlayChange={onOverlayChange} />
       </Flex>
     </Flex>
   );

@@ -1,16 +1,16 @@
-export interface PreviewViewportSize {
+export interface ViewportSize {
   width: number;
   height: number;
   devicePixelRatio: number;
 }
 
-export class PreviewViewport {
+export class Viewport {
   private animationFrame?: number;
   private resizeObserver?: ResizeObserver;
 
   constructor(
     private readonly element: HTMLElement,
-    private readonly onResize: (size: PreviewViewportSize) => void
+    private readonly onResize: (size: ViewportSize) => void
   ) {}
 
   start(): void {
@@ -28,7 +28,7 @@ export class PreviewViewport {
     }
   }
 
-  measure(): PreviewViewportSize | undefined {
+  measure(): ViewportSize | undefined {
     const rect = this.element.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) {
       return undefined;

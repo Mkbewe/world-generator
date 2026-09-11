@@ -34,10 +34,11 @@ describe('SettingsPanel', () => {
     expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generate Map');
   });
 
-  it('disables the generate action while generating', () => {
+  it('shows the normal label with a loader and disables the action while generating', () => {
     renderPanel({ isGenerating: true });
 
-    expect(screen.getByTestId('generate-map-button')).toBeDisabled();
-    expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generating...');
+    const button = screen.getByTestId('generate-map-button');
+    expect(button).toBeDisabled();
+    expect(button).toHaveTextContent('Generate Map');
   });
 });

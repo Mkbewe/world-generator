@@ -3,7 +3,7 @@ import type { StageStatistics } from '../utils/map-generator';
 
 interface GenerationStatisticsResult {
   statistics: readonly StageStatistics[];
-  totalDurationMs: number;
+  totalDurationMs?: number;
 }
 
 interface GenerationStatisticsState {

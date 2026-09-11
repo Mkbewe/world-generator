@@ -76,8 +76,8 @@ export function SettingsPanel({
         </Flex>
         <Flex direction='column' gap='4'>
           <Separator size='4' />
-          <Button onClick={onGenerate} disabled={isGenerating} data-testid='generate-map-button'>
-            {isGenerating ? 'Generating...' : 'Generate Map'}
+          <Button onClick={onGenerate} loading={isGenerating} data-testid='generate-map-button'>
+            Generate Map
           </Button>
         </Flex>
       </Flex>
