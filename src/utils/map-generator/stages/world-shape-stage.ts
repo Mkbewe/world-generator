@@ -1,11 +1,12 @@
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import type { MapStage } from '../stage';
+import { WORLD_SHAPE_STAGE } from '../stage-definitions';
 import type { MapConfig, MapState } from '../types';
 
 export class WorldShapeStage implements MapStage<MapConfig, MapState> {
-  readonly id = 'world-shape';
-  readonly name = 'World shape generation';
+  readonly id = WORLD_SHAPE_STAGE.id;
+  readonly name = WORLD_SHAPE_STAGE.name;
 
   async execute(
     context: MapContext<MapConfig, MapState>,

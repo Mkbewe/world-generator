@@ -52,7 +52,6 @@ export function WorldGenerationPreview() {
     clearGeneratedMap();
     setResult({ statistics: [], totalDurationMs: undefined });
     setGenerationRun(current => current + 1);
-    setProgress(undefined);
     setError(undefined);
     setIsGenerating(true);
 
@@ -62,13 +61,6 @@ export function WorldGenerationPreview() {
     };
 
     preview.start(config.world);
-    setProgress({
-      stageName: 'Preparing generation...',
-      stageIndex: 0,
-      stageCount: 0,
-      percentage: 0,
-      status: 'running',
-    });
 
     void generateMap(config, preview, setProgress)
       .then(result => {
@@ -76,26 +68,13 @@ export function WorldGenerationPreview() {
           return;
         }
         setResult({ statistics: result.statistics, totalDurationMs: result.totalDurationMs });
-        setProgress({
-          stageName: 'Generation complete',
-          stageIndex: Math.max(0, result.statistics.length - 1),
-          stageCount: result.statistics.length,
-          percentage: 100,
-          status: 'completed',
-        });
         setIsGenerating(false);
       })
       .catch((generationError: unknown) => {
         if (runRef.current !== run) {
           return;
         }
-        setProgress(current => ({
-          stageName: 'Generation failed',
-          stageIndex: current?.stageIndex ?? 0,
-          stageCount: current?.stageCount ?? 0,
-          percentage: current?.percentage ?? 0,
-          status: 'failed',
-        }));
+        setProgress(current => (current ? { ...current, status: 'failed' } : undefined));
         setError(
           generationError instanceof Error ? generationError.message : 'World generation failed.'
         );

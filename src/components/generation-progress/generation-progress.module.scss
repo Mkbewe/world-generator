@@ -1,3 +1,101 @@
 .root {
   width: 100%;
 }
+
+.bars {
+  display: flex;
+  overflow: hidden;
+  height: 21px;
+  background: var(--gray-a4);
+}
+
+.bar {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.bar + .bar::before {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: -2px;
+  width: 4px;
+  background: var(--gray-12);
+  content: '';
+}
+
+.barFill {
+  height: 100%;
+  background: var(--gray-a8);
+  transition: width 0.25s ease;
+}
+
+.bar[data-status='pending'] .barFill {
+  background: var(--yellow-9);
+}
+
+.bar[data-status='running'] .barFill {
+  background: linear-gradient(90deg, var(--violet-9), var(--violet-10));
+}
+
+.bar[data-status='completed'] .barFill {
+  background: var(--green-9);
+}
+
+.bar[data-status='failed'] .barFill {
+  background: var(--red-9);
+}
+
+.barFill[data-indeterminate='true'] {
+  width: 100%;
+  background: linear-gradient(90deg, var(--violet-a7), var(--violet-9), var(--violet-a7));
+  background-size: 200% 100%;
+  animation: sweep 1.1s linear infinite;
+}
+
+.root[data-status='completed'] .barFill {
+  background: linear-gradient(90deg, var(--green-9), var(--green-10));
+  box-shadow: 0 0 10px var(--green-a5);
+}
+
+.labels {
+  display: flex;
+}
+
+.label {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.labelName {
+  overflow: hidden;
+  color: var(--gray-11);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.label[data-status='completed'] .labelName {
+  color: var(--green-11);
+}
+
+.label[data-status='failed'] .labelName {
+  color: var(--red-11);
+}
+
+.labelTime {
+  color: var(--gray-9);
+}
+
+@keyframes sweep {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
