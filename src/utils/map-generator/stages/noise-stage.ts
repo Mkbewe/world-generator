@@ -4,7 +4,7 @@ import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import type { MapStage } from '../stage';
 import { NOISE_STAGE } from '../stage-definitions';
-import type { MapConfig, MapState, StageProgressReporter } from '../types';
+import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
 
 export class NoiseStage implements MapStage<MapConfig, MapState> {
   readonly id = NOISE_STAGE.id;
@@ -68,6 +68,52 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
 
     context.state.noiseMap = noiseMap;
     return { noiseMap };
+  }
+
+  summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {
+    const noiseMap = data.noiseMap;
+    if (!(noiseMap instanceof Float32Array)) {
+      return undefined;
+    }
+
+    const worldMask = context.state.worldMask;
+    const { frequency, octaves, persistence, lacunarity } = context.config.noise;
+    let samples = 0;
+    let min = Infinity;
+    let max = -Infinity;
+    let sum = 0;
+    let sumSquares = 0;
+
+    for (let index = 0; index < noiseMap.length; index++) {
+      if (worldMask && worldMask[index] === 0) {
+        continue;
+      }
+      const value = noiseMap[index];
+      samples++;
+      min = Math.min(min, value);
+      max = Math.max(max, value);
+      sum += value;
+      sumSquares += value * value;
+    }
+
+    if (samples === 0) {
+      return undefined;
+    }
+
+    const mean = sum / samples;
+    const variance = Math.max(0, sumSquares / samples - mean * mean);
+
+    return {
+      frequency,
+      octaves,
+      persistence,
+      lacunarity,
+      samples,
+      min,
+      max,
+      mean,
+      stdDev: Math.sqrt(variance),
+    };
   }
 
   private validateConfig(config: MapConfig): void {

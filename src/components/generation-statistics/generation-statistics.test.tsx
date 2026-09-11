@@ -2,6 +2,7 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { GenerationStatistics } from './generation-statistics';
+import type { GenerationSummary } from '../../stores';
 import type { StageStatistics } from '../../utils/map-generator';
 
 function createStatistics(overrides: Partial<StageStatistics> = {}): StageStatistics {
@@ -16,27 +17,45 @@ function createStatistics(overrides: Partial<StageStatistics> = {}): StageStatis
   };
 }
 
-function renderStatistics(statistics: readonly StageStatistics[], totalDurationMs?: number) {
+const summary: GenerationSummary = {
+  seed: '123456',
+  width: 100,
+  height: 100,
+  shape: 'disc',
+  cells: 10000,
+  bytes: 50000,
+};
+
+function renderStatistics(
+  statistics: readonly StageStatistics[],
+  options: { totalDurationMs?: number; summary?: GenerationSummary } = {}
+) {
   return render(
     <Theme>
-      <GenerationStatistics statistics={statistics} totalDurationMs={totalDurationMs} />
+      <GenerationStatistics statistics={statistics} {...options} />
     </Theme>
   );
 }
 
 describe('GenerationStatistics', () => {
-  it('renders an empty table with a total row', () => {
+  it('always shows the heading', () => {
     renderStatistics([]);
 
     expect(screen.getByRole('heading', { name: 'Statistics' })).toBeInTheDocument();
-    expect(screen.getByRole('table')).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Stage' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Time' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Details' })).toBeInTheDocument();
-    expect(screen.getByText('Total')).toBeInTheDocument();
   });
 
-  it('renders stage rows with their names and durations', () => {
+  it('renders the generation summary', () => {
+    renderStatistics([createStatistics()], { summary, totalDurationMs: 42 });
+
+    expect(screen.getByText('123456')).toBeInTheDocument();
+    expect(screen.getByText('100 × 100')).toBeInTheDocument();
+    expect(screen.getByText('disc')).toBeInTheDocument();
+    expect(screen.getByText('10,000')).toBeInTheDocument();
+    expect(screen.getByText('48.8 KB')).toBeInTheDocument();
+    expect(screen.getByText('42.0 ms')).toBeInTheDocument();
+  });
+
+  it('renders stage names and durations', () => {
     renderStatistics([
       createStatistics({ stageId: 'world-shape', stageName: 'World shape generation' }),
       createStatistics({ stageId: 'noise', stageName: 'Noise generation', durationMs: 20.4 }),
@@ -48,57 +67,18 @@ describe('GenerationStatistics', () => {
     expect(screen.getByText('20.4 ms')).toBeInTheDocument();
   });
 
-  it('shows a dash for an undefined duration', () => {
-    renderStatistics([createStatistics({ durationMs: undefined })]);
-
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('formats numeric details with three decimals', () => {
+  it('formats metrics using their descriptors', () => {
     renderStatistics([
       createStatistics({
-        details: { min: 0.5, max: 0.75 },
+        details: { coverage: 0.785, filledCells: 7850, mean: 0.5 },
       }),
     ]);
 
-    expect(screen.getByText('min 0.500, max 0.750')).toBeInTheDocument();
-  });
-
-  it('renders string details as-is', () => {
-    renderStatistics([
-      createStatistics({
-        details: { method: 'simplex' },
-      }),
-    ]);
-
-    expect(screen.getByText('method simplex')).toBeInTheDocument();
-  });
-
-  it('shows a dash when details are missing or empty', () => {
-    const { rerender } = renderStatistics([
-      createStatistics(), // no details
-    ]);
-
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
-
-    rerender(
-      <Theme>
-        <GenerationStatistics statistics={[createStatistics({ details: {} })]} />
-      </Theme>
-    );
-
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders the total duration', () => {
-    renderStatistics([createStatistics()], 20.4);
-
-    expect(screen.getByText('20.4 ms')).toBeInTheDocument();
-  });
-
-  it('shows a dash for an undefined total duration', () => {
-    renderStatistics([createStatistics()]);
-
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Coverage')).toBeInTheDocument();
+    expect(screen.getByText('78.5%')).toBeInTheDocument();
+    expect(screen.getByText('Filled cells')).toBeInTheDocument();
+    expect(screen.getByText('7,850')).toBeInTheDocument();
+    expect(screen.getByText('Mean')).toBeInTheDocument();
+    expect(screen.getByText('0.500')).toBeInTheDocument();
   });
 });

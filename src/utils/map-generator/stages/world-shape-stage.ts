@@ -2,7 +2,7 @@ import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import type { MapStage } from '../stage';
 import { WORLD_SHAPE_STAGE } from '../stage-definitions';
-import type { MapConfig, MapState, StageProgressReporter } from '../types';
+import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
 
 export class WorldShapeStage implements MapStage<MapConfig, MapState> {
   readonly id = WORLD_SHAPE_STAGE.id;
@@ -46,5 +46,54 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
 
     context.state.worldMask = worldMask;
     return { worldMask };
+  }
+
+  summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {
+    const mask = data.worldMask;
+    if (!(mask instanceof Uint8Array)) {
+      return undefined;
+    }
+
+    const { width, height } = context.config.world;
+    const cells = width * height;
+    let filledCells = 0;
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (mask[y * width + x] !== 1) {
+          continue;
+        }
+        filledCells++;
+        if (x < minX) {
+          minX = x;
+        }
+        if (x > maxX) {
+          maxX = x;
+        }
+        if (y < minY) {
+          minY = y;
+        }
+        if (y > maxY) {
+          maxY = y;
+        }
+      }
+    }
+
+    return {
+      shape: context.config.world.shape ?? 'disc',
+      width,
+      height,
+      cells,
+      filledCells,
+      coverage: cells === 0 ? 0 : filledCells / cells,
+      minX: filledCells === 0 ? 0 : minX,
+      minY: filledCells === 0 ? 0 : minY,
+      maxX: filledCells === 0 ? 0 : maxX,
+      maxY: filledCells === 0 ? 0 : maxY,
+    };
   }
 }

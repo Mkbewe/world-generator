@@ -62,4 +62,21 @@ describe('NoiseStage', () => {
       cause: expect.any(RangeError),
     });
   });
+
+  it('summarizes the generated noise', async () => {
+    const pipeline = createMapGenerator();
+
+    const result = await pipeline.generate(createConfig(8, 6), {});
+    const details = result.statistics[1].details;
+
+    expect(details).toMatchObject({
+      frequency: 4,
+      octaves: 3,
+      persistence: 0.5,
+      lacunarity: 2,
+    });
+    expect(details?.samples).toBeGreaterThan(0);
+    expect(details?.min).toBeGreaterThanOrEqual(0);
+    expect(details?.max).toBeLessThanOrEqual(1);
+  });
 });

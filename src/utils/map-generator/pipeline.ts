@@ -7,6 +7,7 @@ import type {
   GenerationResult,
   MapGeneratorOptions,
   SeededWorldConfig,
+  StageMetrics,
   StageProgressReporter,
   StageStatistics,
 } from './types';
@@ -76,7 +77,12 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
         });
       }
 
-      const statistics = this.createStatistics(stage, startedAt, 'completed');
+      const statistics = this.createStatistics(
+        stage,
+        startedAt,
+        'completed',
+        stage.summarize?.(context, data)
+      );
 
       context.statistics.push(statistics);
       options.onEvent?.({
@@ -115,7 +121,8 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
   private createStatistics(
     stage: MapStage<TConfig, TState>,
     startedAt: number,
-    status: StageStatistics['status']
+    status: StageStatistics['status'],
+    details?: StageMetrics
   ): StageStatistics {
     const finishedAt = performance.now();
 
@@ -126,6 +133,7 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
       startedAt,
       finishedAt,
       durationMs: finishedAt - startedAt,
+      ...(details ? { details } : {}),
     };
   }
 }

@@ -67,7 +67,11 @@ export function WorldGenerationPreview() {
         if (runRef.current !== run) {
           return;
         }
-        setResult({ statistics: result.statistics, totalDurationMs: result.totalDurationMs });
+        setResult({
+          statistics: result.statistics,
+          totalDurationMs: result.totalDurationMs,
+          summary: result.summary,
+        });
         setIsGenerating(false);
       })
       .catch((generationError: unknown) => {
