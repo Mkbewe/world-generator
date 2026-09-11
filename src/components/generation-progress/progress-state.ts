@@ -35,6 +35,14 @@ function applyStageEvent(
   if (event.type === 'stage-started') {
     return { ...stage, name: event.stageName, status: 'running' };
   }
+  if (event.type === 'stage-progress') {
+    return {
+      ...stage,
+      name: event.stageName,
+      status: 'running',
+      percentage: Math.round(event.progress * 100),
+    };
+  }
   if (event.type === 'stage-completed') {
     return {
       ...stage,

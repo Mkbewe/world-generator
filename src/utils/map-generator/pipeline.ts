@@ -2,10 +2,12 @@ import { MapContext } from './context';
 import { GenerationCancelledError, GenerationStageError } from './errors';
 import type { MapStage } from './stage';
 import type {
+  GenerationEvent,
   GenerationOptions,
   GenerationResult,
   MapGeneratorOptions,
   SeededWorldConfig,
+  StageProgressReporter,
   StageStatistics,
 } from './types';
 
@@ -38,9 +40,20 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
 
       const startedAt = performance.now();
 
+      const report = createProgressReporter(
+        {
+          stageId: stage.id,
+          stageName: stage.name,
+          stageIndex,
+          stageCount: this.stages.length,
+        },
+        stage.progressStep ?? 0.01,
+        options.onEvent
+      );
+
       let data;
       try {
-        data = await stage.execute(context, signal);
+        data = await stage.execute(context, signal, report);
         this.throwIfCancelled(signal);
       } catch (error) {
         if (error instanceof GenerationCancelledError || signal.aborted) {
@@ -115,4 +128,22 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
       durationMs: finishedAt - startedAt,
     };
   }
+}
+
+function createProgressReporter(
+  base: { stageId: string; stageName: string; stageIndex: number; stageCount: number },
+  step: number,
+  onEvent?: (event: GenerationEvent) => void
+): StageProgressReporter {
+  const size = step > 0 && step <= 1 ? step : 0.01;
+  let lastBucket = -1;
+  return progress => {
+    const clamped = Math.min(1, Math.max(0, progress));
+    const bucket = Math.floor(clamped / size);
+    if (bucket === lastBucket) {
+      return;
+    }
+    lastBucket = bucket;
+    onEvent?.({ type: 'stage-progress', ...base, progress: Math.min(1, bucket * size) });
+  };
 }

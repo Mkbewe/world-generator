@@ -64,6 +64,20 @@ describe('generation progress state', () => {
     });
   });
 
+  it('tracks real per-stage progress', () => {
+    const progress = applyGenerationEvent(createGenerationProgress(stageInfos), {
+      type: 'stage-progress',
+      stageId: 'noise',
+      stageName: 'Noise generation',
+      stageIndex: 1,
+      stageCount: 2,
+      progress: 0.42,
+    });
+
+    expect(progress.status).toBe('running');
+    expect(progress.stages[1]).toMatchObject({ status: 'running', percentage: 42 });
+  });
+
   it('marks the whole run failed when a stage fails', () => {
     const progress = applyGenerationEvent(createGenerationProgress(stageInfos), {
       type: 'stage-failed',

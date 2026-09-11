@@ -52,6 +52,12 @@ type StageStartedEvent = StageEventBase & {
   type: 'stage-started';
 };
 
+type StageProgressEvent = StageEventBase & {
+  type: 'stage-progress';
+  /** Completion of the stage in the 0..1 range. */
+  progress: number;
+};
+
 type StageCompletedEvent = StageEventBase & {
   type: 'stage-completed';
   statistics: StageStatistics;
@@ -63,7 +69,10 @@ type StageFailedEvent = StageEventBase & {
   statistics: StageStatistics;
 };
 
-export type GenerationEvent = StageStartedEvent | StageCompletedEvent | StageFailedEvent;
+export type GenerationEvent =
+  StageStartedEvent | StageProgressEvent | StageCompletedEvent | StageFailedEvent;
+
+export type StageProgressReporter = (progress: number) => void;
 
 export interface GenerationOptions {
   signal?: AbortSignal;

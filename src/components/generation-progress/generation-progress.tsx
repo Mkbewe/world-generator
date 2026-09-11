@@ -59,15 +59,15 @@ export function GenerationProgress({ progress }: GenerationProgressProps) {
       </Flex>
       <div className={styles.bars}>
         {progress.stages.map(stage => {
-          const indeterminate = stage.status === 'running' && stage.percentage === 0;
-          const width = stage.status === 'running' ? `${stage.percentage}%` : '100%';
+          const width =
+            stage.status === 'pending'
+              ? '0%'
+              : stage.status === 'running'
+                ? `${stage.percentage}%`
+                : '100%';
           return (
             <div key={stage.id} className={styles.bar} data-status={stage.status}>
-              <div
-                className={styles.barFill}
-                data-indeterminate={indeterminate}
-                style={indeterminate ? undefined : { width }}
-              />
+              <div className={styles.barFill} style={{ width }} />
             </div>
           );
         })}
