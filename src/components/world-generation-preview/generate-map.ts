@@ -1,5 +1,6 @@
 import {
   type GenerationEvent,
+  MAP_STAGES,
   type MapConfig,
   PipelineWorkerClient,
   type StageStatistics,
@@ -11,7 +12,12 @@ import {
   type MapRenderer,
   sourceOf,
 } from '../../utils/map-renderer';
-import type { GenerationProgressState } from '../generation-progress';
+import {
+  applyGenerationEvent,
+  completeGenerationProgress,
+  createGenerationProgress,
+  type GenerationProgressState,
+} from '../generation-progress';
 
 export interface GenerationResult {
   statistics: readonly StageStatistics[];
@@ -28,12 +34,16 @@ export async function generateMap(
   const abort = (): void => worker.dispose();
   signal.addEventListener('abort', abort, { once: true });
 
+  let progress = createGenerationProgress(MAP_STAGES);
+  onProgress(progress);
+
   try {
     const result = await worker.generate(config, {
       onEvent(event) {
         signal.throwIfAborted();
         applyStage(event, preview);
-        onProgress(toProgress(event));
+        progress = applyGenerationEvent(progress, event);
+        onProgress(progress);
       },
     });
 
@@ -51,6 +61,8 @@ export async function generateMap(
       size: config.world.width,
       layers,
     });
+
+    onProgress(completeGenerationProgress(progress, result.totalDurationMs));
 
     return {
       statistics: result.statistics.map(stage =>
@@ -75,14 +87,4 @@ function withRange(
   range: { min: number; max: number } | undefined
 ): StageStatistics {
   return range ? { ...stage, details: { min: range.min, max: range.max } } : stage;
-}
-
-function toProgress(event: GenerationEvent): GenerationProgressState {
-  return {
-    stageName: event.stageName,
-    stageIndex: event.stageIndex,
-    stageCount: event.stageCount,
-    percentage: event.type === 'stage-completed' ? 100 : 0,
-    status: event.type === 'stage-failed' ? 'failed' : 'running',
-  };
 }

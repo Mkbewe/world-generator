@@ -3,11 +3,12 @@ import { createNoise2D } from 'simplex-noise';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import type { MapStage } from '../stage';
+import { NOISE_STAGE } from '../stage-definitions';
 import type { MapConfig, MapState } from '../types';
 
 export class NoiseStage implements MapStage<MapConfig, MapState> {
-  readonly id = 'noise';
-  readonly name = 'Noise generation';
+  readonly id = NOISE_STAGE.id;
+  readonly name = NOISE_STAGE.name;
 
   async execute(
     context: MapContext<MapConfig, MapState>,
