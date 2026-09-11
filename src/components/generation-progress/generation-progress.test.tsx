@@ -55,7 +55,7 @@ describe('GenerationProgress', () => {
     expect(screen.getByText('1.5 s')).toBeInTheDocument();
   });
 
-  it('shows live progress and failure state', () => {
+  it('shows the failure state', () => {
     renderProgress({
       status: 'failed',
       stages: [

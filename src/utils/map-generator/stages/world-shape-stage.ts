@@ -2,15 +2,17 @@ import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import type { MapStage } from '../stage';
 import { WORLD_SHAPE_STAGE } from '../stage-definitions';
-import type { MapConfig, MapState } from '../types';
+import type { MapConfig, MapState, StageProgressReporter } from '../types';
 
 export class WorldShapeStage implements MapStage<MapConfig, MapState> {
   readonly id = WORLD_SHAPE_STAGE.id;
   readonly name = WORLD_SHAPE_STAGE.name;
+  readonly progressStep = 0.5;
 
   async execute(
     context: MapContext<MapConfig, MapState>,
-    signal: AbortSignal
+    signal: AbortSignal,
+    report: StageProgressReporter
   ): Promise<{ worldMask: Uint8Array }> {
     const { width, height } = context.config.world;
 
@@ -38,6 +40,8 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
             : normalizedX * normalizedX + normalizedY * normalizedY <= 1;
         worldMask[y * width + x] = isInsideWorld ? 1 : 0;
       }
+
+      report((y + 1) / height);
     }
 
     context.state.worldMask = worldMask;

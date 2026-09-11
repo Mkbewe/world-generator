@@ -4,15 +4,17 @@ import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import type { MapStage } from '../stage';
 import { NOISE_STAGE } from '../stage-definitions';
-import type { MapConfig, MapState } from '../types';
+import type { MapConfig, MapState, StageProgressReporter } from '../types';
 
 export class NoiseStage implements MapStage<MapConfig, MapState> {
   readonly id = NOISE_STAGE.id;
   readonly name = NOISE_STAGE.name;
+  readonly progressStep = 0.1;
 
   async execute(
     context: MapContext<MapConfig, MapState>,
-    signal: AbortSignal
+    signal: AbortSignal,
+    report: StageProgressReporter
   ): Promise<{ noiseMap: Float32Array }> {
     const { width, height } = context.config.world;
     const { frequency, octaves, persistence, lacunarity } = context.config.noise;
@@ -60,6 +62,8 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
         const normalizedNoise = noiseValue / amplitudeSum;
         noiseMap[index] = (normalizedNoise + 1) / 2;
       }
+
+      report((y + 1) / height);
     }
 
     context.state.noiseMap = noiseMap;

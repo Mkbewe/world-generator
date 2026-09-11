@@ -64,6 +64,7 @@ export class PipelineWorkerClient {
 
     if (
       response.type === 'stage-started' ||
+      response.type === 'stage-progress' ||
       response.type === 'stage-completed' ||
       response.type === 'stage-failed'
     ) {

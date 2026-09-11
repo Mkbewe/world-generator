@@ -64,6 +64,65 @@ describe('MapGenerator', () => {
     expect(completedData).toEqual({ noise: 0.5 });
   });
 
+  it('reports throttled stage progress ending at 1', async () => {
+    const reported: number[] = [];
+    const pipeline = new MapGenerator([
+      createStage('heightmap', async (_context, _signal, report) => {
+        report(0);
+        report(0.5);
+        report(0.5);
+        report(0.501);
+        report(1);
+        return {};
+      }),
+    ]);
+
+    await pipeline.generate(
+      { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
+      { values: [] },
+      {
+        onEvent: event => {
+          if (event.type === 'stage-progress') {
+            reported.push(event.progress);
+          }
+        },
+      }
+    );
+
+    expect(reported).toEqual([0, 0.5, 1]);
+  });
+
+  it('quantizes progress by the stage step', async () => {
+    const reported: number[] = [];
+    const pipeline = new MapGenerator([
+      {
+        ...createStage('heightmap', async (_context, _signal, report) => {
+          report(0.1);
+          report(0.4);
+          report(0.6);
+          report(0.9);
+          report(1);
+          return {};
+        }),
+        progressStep: 0.5,
+      },
+    ]);
+
+    await pipeline.generate(
+      { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
+      { values: [] },
+      {
+        onEvent: event => {
+          if (event.type === 'stage-progress') {
+            reported.push(event.progress);
+          }
+        },
+      }
+    );
+
+    expect(reported).toEqual([0, 0.5, 1]);
+  });
+
   it('wraps a stage failure with stage information', async () => {
     const failure = new Error('failure');
     const pipeline = new MapGenerator([
