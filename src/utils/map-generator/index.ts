@@ -10,5 +10,7 @@ export type {
   MapGeneratorOptions,
   MapConfig,
   MapState,
+  StageMetric,
+  StageMetrics,
   StageStatistics,
 } from './types';

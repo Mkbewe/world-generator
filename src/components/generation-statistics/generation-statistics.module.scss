@@ -1,0 +1,80 @@
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--gray-a3);
+}
+
+.timeline {
+  display: flex;
+  overflow: hidden;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--gray-a4);
+}
+
+.timelineSegment[data-index='0'],
+.timelineDot[data-index='0'] {
+  background: var(--violet-9);
+}
+
+.timelineSegment[data-index='1'],
+.timelineDot[data-index='1'] {
+  background: var(--cyan-9);
+}
+
+.timelineSegment[data-index='2'],
+.timelineDot[data-index='2'] {
+  background: var(--amber-9);
+}
+
+.timelineSegment[data-index='3'],
+.timelineDot[data-index='3'] {
+  background: var(--green-9);
+}
+
+.timelineOverhead,
+.timelineDot[data-index='overhead'] {
+  background: var(--gray-a7);
+}
+
+.timelineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--gray-a2);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.help {
+  display: inline-flex;
+  align-items: center;
+  color: var(--gray-9);
+  cursor: help;
+}

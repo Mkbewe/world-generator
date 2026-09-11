@@ -29,6 +29,9 @@ export interface MapState {
   noiseMap?: Float32Array;
 }
 
+export type StageMetric = number | string;
+export type StageMetrics = Record<string, StageMetric>;
+
 export interface StageStatistics {
   stageId: string;
   stageName: string;
@@ -36,7 +39,7 @@ export interface StageStatistics {
   startedAt: number;
   finishedAt: number;
   durationMs: number;
-  details?: Record<string, string | number>;
+  details?: StageMetrics;
 }
 
 export type StageData = Record<string, unknown>;

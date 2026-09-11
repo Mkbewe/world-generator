@@ -1,5 +1,5 @@
 import type { MapContext } from './context';
-import type { SeededWorldConfig, StageData, StageProgressReporter } from './types';
+import type { SeededWorldConfig, StageData, StageMetrics, StageProgressReporter } from './types';
 
 export interface MapStage<TConfig extends SeededWorldConfig, TState extends object> {
   readonly id: string;
@@ -12,4 +12,7 @@ export interface MapStage<TConfig extends SeededWorldConfig, TState extends obje
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<StageData>;
+
+  /** Optional metrics derived from the produced data and exposed in the statistics. */
+  summarize?(context: MapContext<TConfig, TState>, data: StageData): StageMetrics | undefined;
 }

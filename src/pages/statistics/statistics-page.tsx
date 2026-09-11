@@ -7,6 +7,7 @@ import { useGenerationStatisticsStore } from '../../stores';
 export function StatisticsPage() {
   const statistics = useGenerationStatisticsStore(state => state.statistics);
   const totalDurationMs = useGenerationStatisticsStore(state => state.totalDurationMs);
+  const summary = useGenerationStatisticsStore(state => state.summary);
 
   if (statistics.length === 0) {
     return (
@@ -26,5 +27,11 @@ export function StatisticsPage() {
     );
   }
 
-  return <GenerationStatistics statistics={statistics} totalDurationMs={totalDurationMs} />;
+  return (
+    <GenerationStatistics
+      statistics={statistics}
+      totalDurationMs={totalDurationMs}
+      summary={summary}
+    />
+  );
 }

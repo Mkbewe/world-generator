@@ -30,7 +30,11 @@ function renderPage() {
 
 describe('StatisticsPage', () => {
   beforeEach(() => {
-    useGenerationStatisticsStore.setState({ statistics: [], totalDurationMs: undefined });
+    useGenerationStatisticsStore.setState({
+      statistics: [],
+      totalDurationMs: undefined,
+      summary: undefined,
+    });
   });
 
   it('renders an empty state when there are no statistics yet', () => {
@@ -41,7 +45,7 @@ describe('StatisticsPage', () => {
     expect(screen.getByRole('link', { name: 'Back to generator' })).toHaveAttribute('href', '/');
   });
 
-  it('renders the statistics table when statistics are present', () => {
+  it('renders the statistics when present', () => {
     useGenerationStatisticsStore.setState({
       statistics: [
         createStatistics({
@@ -51,18 +55,24 @@ describe('StatisticsPage', () => {
         }),
         createStatistics(),
       ],
-      totalDurationMs: 30.0,
+      totalDurationMs: 40,
+      summary: {
+        seed: '123456',
+        width: 10,
+        height: 10,
+        shape: 'disc',
+        cells: 100,
+        bytes: 2048,
+      },
     });
 
     renderPage();
 
     expect(screen.getByRole('heading', { name: 'Statistics' })).toBeInTheDocument();
-    expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();
-    expect(screen.getByText('30.0 ms')).toBeInTheDocument();
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getByText('40.0 ms')).toBeInTheDocument();
     expect(screen.queryByText('No statistics yet')).not.toBeInTheDocument();
   });
 });

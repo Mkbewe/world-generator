@@ -1,3 +1,4 @@
+import type { GenerationSummary } from '../../stores';
 import {
   type GenerationEvent,
   MAP_STAGES,
@@ -22,6 +23,7 @@ import {
 export interface GenerationResult {
   statistics: readonly StageStatistics[];
   totalDurationMs: number;
+  summary: GenerationSummary;
 }
 
 export async function generateMap(
@@ -65,10 +67,16 @@ export async function generateMap(
     onProgress(completeGenerationProgress(progress, result.totalDurationMs));
 
     return {
-      statistics: result.statistics.map(stage =>
-        isBaseLayerId(stage.stageId) ? withRange(stage, preview.range(stage.stageId)) : stage
-      ),
+      statistics: result.statistics,
       totalDurationMs: result.totalDurationMs,
+      summary: {
+        seed: String(config.world.seed),
+        width: config.world.width,
+        height: config.world.height,
+        shape: config.world.shape ?? 'disc',
+        cells: config.world.width * config.world.height,
+        bytes: (layers.worldMask?.byteLength ?? 0) + (layers.noiseMap?.byteLength ?? 0),
+      },
     };
   } finally {
     signal.removeEventListener('abort', abort);
@@ -80,11 +88,4 @@ function applyStage(event: GenerationEvent, preview: MapRenderer): void {
   if (event.type === 'stage-completed' && isBaseLayerId(event.stageId)) {
     preview.add(event.stageId, event.data[sourceOf(event.stageId)]);
   }
-}
-
-function withRange(
-  stage: StageStatistics,
-  range: { min: number; max: number } | undefined
-): StageStatistics {
-  return range ? { ...stage, details: { min: range.min, max: range.max } } : stage;
 }
