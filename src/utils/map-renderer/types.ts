@@ -8,6 +8,7 @@ export interface SpatialMask {
 }
 
 export interface MapLayers {
+  [source: string]: unknown;
   worldMask?: Uint8Array;
   noiseMap?: Float32Array;
 }
@@ -18,10 +19,11 @@ export interface MapMetadata {
 }
 
 export const OVERLAY_LAYERS = {
-  'world-boundary': { label: 'World boundary' },
+  'world-boundary': { label: 'World boundary', source: 'world-shape' },
 } as const;
 
-export type MapBaseLayerId = 'world-shape' | 'noise';
+/** IDs are supplied and validated by the layer registry. */
+export type MapBaseLayerId = string;
 export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
 
 /** ID in declaration order, for iteration. */

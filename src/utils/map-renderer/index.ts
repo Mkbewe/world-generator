@@ -1,9 +1,16 @@
-﻿export { EMPTY_RENDER_STATE, MapRenderer } from './renderer';
+export { EMPTY_RENDER_STATE, MapRenderer } from './renderer';
 export type { MapRendererOptions, MapRendererState } from './renderer';
+export { MapPersistence, mapPersistence } from './persistence';
 export { mapRepository, MapRepository } from './repository';
 export type { GeneratedMapSnapshot } from './repository';
-export { hasAllBaseLayers, isBaseLayerId, sourceOf } from './base-layers';
-export type { MapSize } from './layer';
+export {
+  hasAllBaseLayers,
+  isBaseLayerId,
+  LAYER_DEFINITIONS,
+  LayerRegistry,
+  sourceOf,
+} from './layer';
+export type { LayerDefinition, MapSize } from './layer';
 export type {
   MapBaseLayerId,
   MapLayers,
@@ -11,4 +18,5 @@ export type {
   MapOverlayId,
   RenderLayerStatistics,
   RenderStatistics,
+  SpatialMask,
 } from './types';

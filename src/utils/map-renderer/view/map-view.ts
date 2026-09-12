@@ -1,13 +1,13 @@
-import type { MapLayer, MapSize, TileReporter } from './layer';
 import { OverlayController } from './overlay-controller';
-import type { RenderMetrics } from './render-metrics';
+import type { MapLayer, MapSize, TileReporter } from '../layer';
+import type { RenderMetrics } from '../metrics';
 import {
   type MapBaseLayerId,
   type MapOverlayId,
   OVERLAY_IDS,
   OVERLAY_LAYERS,
   type SpatialMask,
-} from './types';
+} from '../types';
 
 export interface MapViewElements {
   canvas: HTMLCanvasElement;
@@ -26,7 +26,8 @@ export class MapView {
   constructor(
     private readonly elements: MapViewElements,
     private readonly metrics: RenderMetrics,
-    selectedLayer?: MapBaseLayerId
+    selectedLayer?: MapBaseLayerId,
+    private readonly boundarySource: MapBaseLayerId = OVERLAY_LAYERS['world-boundary'].source
   ) {
     this.selectedLayer = selectedLayer;
     this.overlays = new OverlayController(elements.overlayCanvas, elements.viewportElement, () =>
@@ -64,9 +65,9 @@ export class MapView {
     this.selectedLayer ??= fallback;
   }
 
-  setMask(mask: SpatialMask | undefined): void {
-    this.mask = mask;
-    this.overlays.render(mask);
+  setMasks(masks: ReadonlyMap<MapBaseLayerId, SpatialMask>): void {
+    this.mask = masks.get(this.boundarySource);
+    this.overlays.render(this.mask);
   }
 
   present(layer: MapLayer): void {

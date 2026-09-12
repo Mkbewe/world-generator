@@ -1,4 +1,4 @@
-﻿import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { useRenderStatisticsStore } from '../../stores';

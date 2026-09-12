@@ -1,6 +1,6 @@
-import type { MapOverlayId, SpatialMask } from './types';
-import { Viewport, type ViewportSize } from './viewport';
-import { WorldBoundaryRenderer } from './world-boundary-renderer';
+import type { MapOverlayId, SpatialMask } from '../types';
+import { Viewport, type ViewportSize } from '../viewport';
+import { WorldBoundaryRenderer } from '../world-boundary-renderer';
 
 const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = { 'world-boundary': true };
 

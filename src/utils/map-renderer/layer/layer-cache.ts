@@ -1,28 +1,27 @@
-import { type MapLayer, type MapSize, NoiseLayer, WorldShapeLayer } from './layer';
+import type { MapLayer } from './layer';
 import type { MapBaseLayerId } from '../types';
 
+interface CacheEntry {
+  inputs: readonly unknown[];
+  layer: MapLayer;
+}
+
+/** Caches one layer per ID, comparing all immutable inputs supplied by the scene. */
 export class LayerCache {
-  private readonly layers = new Map<MapBaseLayerId, MapLayer>();
+  private readonly layers = new Map<MapBaseLayerId, CacheEntry>();
 
-  world(size: MapSize, mask: Uint8Array): WorldShapeLayer {
-    const cached = this.layers.get('world-shape');
-    if (cached instanceof WorldShapeLayer && cached.mask === mask) {
-      return cached;
+  getOrCreate(id: MapBaseLayerId, inputs: readonly unknown[], create: () => MapLayer): MapLayer {
+    const cached = this.layers.get(id);
+    if (
+      cached &&
+      cached.inputs.length === inputs.length &&
+      cached.inputs.every((input, index) => input === inputs[index])
+    ) {
+      return cached.layer;
     }
-    return this.store(new WorldShapeLayer(size, mask));
-  }
-
-  noise(world: WorldShapeLayer, noise: Float32Array): NoiseLayer {
-    const cached = this.layers.get('noise');
-    if (cached instanceof NoiseLayer && cached.noise === noise) {
-      return cached;
-    }
-    return this.store(new NoiseLayer(world, noise));
-  }
-
-  private store<T extends MapLayer>(layer: T): T {
-    this.layers.get(layer.id)?.dispose();
-    this.layers.set(layer.id, layer);
+    const layer = create();
+    cached?.layer.dispose();
+    this.layers.set(id, { inputs: [...inputs], layer });
     return layer;
   }
 }

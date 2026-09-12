@@ -1,23 +1,35 @@
+import { WorldShapeLayer } from './layer';
 import { LayerCache } from './layer-cache';
 
 describe('LayerCache', () => {
-  it('reuses the rendered layer for the same data', () => {
+  it('reuses a layer only when all inputs match', () => {
     const cache = new LayerCache();
-    const mask = new Uint8Array(16).fill(1);
-    const noise = new Float32Array(16);
-    const world = cache.world({ width: 4, height: 4 }, mask);
-    expect(cache.world({ width: 4, height: 4 }, mask)).toBe(world);
-    const noiseLayer = cache.noise(world, noise);
-    expect(cache.noise(world, noise)).toBe(noiseLayer);
+    const mask = new Uint8Array(4);
+    const definition = {};
+    const dependency = {};
+    const create = vi.fn(() => new WorldShapeLayer({ width: 2, height: 2 }, mask));
+    const inputs = [definition, mask, 2, 2, dependency];
+    const first = cache.getOrCreate('world-shape', inputs, create);
+    expect(cache.getOrCreate('world-shape', [...inputs], create)).toBe(first);
+    expect(create).toHaveBeenCalledOnce();
+
+    const dispose = vi.spyOn(first, 'dispose');
+    const next = cache.getOrCreate('world-shape', [definition, mask, 1, 4, dependency], create);
+    expect(next).not.toBe(first);
+    expect(dispose).toHaveBeenCalledOnce();
   });
 
-  it('replaces and disposes the previous layer when the data changes', () => {
+  it('preserves the previous entry if creating the replacement fails', () => {
     const cache = new LayerCache();
-    const size = { width: 4, height: 4 };
-    const first = cache.world(size, new Uint8Array(16).fill(1));
+    const create = () => new WorldShapeLayer({ width: 1, height: 1 }, new Uint8Array(1));
+    const first = cache.getOrCreate('world-shape', [1], create);
     const dispose = vi.spyOn(first, 'dispose');
-    const second = cache.world(size, new Uint8Array(16).fill(1));
-    expect(second).not.toBe(first);
-    expect(dispose).toHaveBeenCalledOnce();
+    expect(() =>
+      cache.getOrCreate('world-shape', [2], () => {
+        throw new Error('Invalid data');
+      })
+    ).toThrow('Invalid data');
+    expect(cache.getOrCreate('world-shape', [1], create)).toBe(first);
+    expect(dispose).not.toHaveBeenCalled();
   });
 });

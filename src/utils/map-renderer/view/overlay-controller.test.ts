@@ -1,7 +1,7 @@
-import type { WorldShapeLayer } from './layer';
 import { OverlayController } from './overlay-controller';
-import { Viewport } from './viewport';
-import { WorldBoundaryRenderer } from './world-boundary-renderer';
+import type { WorldShapeLayer } from '../layer';
+import { Viewport } from '../viewport';
+import { WorldBoundaryRenderer } from '../world-boundary-renderer';
 
 function setup() {
   return new OverlayController(

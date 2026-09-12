@@ -1,4 +1,4 @@
-import type { GenerationEvent, MapConfig, StageStatistics } from '../types';
+import type { GenerationEvent, MapConfig, MapState, StageStatistics } from '../types';
 
 export interface PipelineWorkerGenerateRequest {
   type: 'generate';
@@ -11,6 +11,7 @@ export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;
 export type PipelineWorkerStageEvent = GenerationEvent & { requestId: number };
 
 export interface PipelineWorkerGenerationResult {
+  layers: Required<MapState>;
   statistics: readonly StageStatistics[];
   totalDurationMs: number;
 }

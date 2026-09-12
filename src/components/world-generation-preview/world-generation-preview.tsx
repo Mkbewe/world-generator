@@ -1,7 +1,7 @@
-﻿import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
-import { generateMap } from './generate-map';
+import { MapGenerationSession } from './map-generation-session';
 import { useGenerationStatisticsStore, useMapConfigStore } from '../../stores';
 import type { NoiseConfig } from '../../utils/map-generator';
 import { type MapRenderer, mapRepository } from '../../utils/map-renderer';
@@ -15,7 +15,7 @@ const DEFAULT_NOISE: NoiseConfig = { frequency: 4, octaves: 4, persistence: 0.5,
 
 export function WorldGenerationPreview() {
   const restoredMap = mapRepository.get();
-  const rendererRef = useRef<MapRenderer | null>(null);
+  const sessionRef = useRef<MapGenerationSession | null>(null);
   const setResult = useGenerationStatisticsStore(state => state.setResult);
   const setConfig = useMapConfigStore(state => state.setConfig);
   const [shape, setShape] = useState<WorldShape>(restoredMap?.shape ?? 'disc');
@@ -28,8 +28,9 @@ export function WorldGenerationPreview() {
   const [error, setError] = useState<string>();
 
   const handleReady = useCallback((renderer: MapRenderer | undefined) => {
-    rendererRef.current = renderer ?? null;
-    renderer?.restore();
+    sessionRef.current?.cancel();
+    sessionRef.current = renderer ? new MapGenerationSession(renderer) : null;
+    sessionRef.current?.restore();
   }, []);
 
   const generate = async (): Promise<void> => {
@@ -38,13 +39,12 @@ export function WorldGenerationPreview() {
       setError('Seed must be an integer.');
       return;
     }
-    const renderer = rendererRef.current;
-    if (!renderer) {
+    const session = sessionRef.current;
+    if (!session) {
       setError('Preview is not available.');
       return;
     }
 
-    mapRepository.clear();
     setResult(undefined);
     setGenerationRun(current => current + 1);
     setError(undefined);
@@ -55,18 +55,15 @@ export function WorldGenerationPreview() {
       noise,
     };
 
-    renderer.start(config.world, { seed: String(parsedSeed), shape });
-    const signal = renderer.signal;
-
     try {
-      const result = await generateMap(config, renderer, setProgress);
+      const result = await session.generate(config, setProgress);
+      if (!result) {
+        return;
+      }
       setConfig(config);
       setResult(result);
       setIsGenerating(false);
     } catch (generationError) {
-      if (signal.aborted) {
-        return;
-      }
       setProgress(current => (current ? { ...current, status: 'failed' } : undefined));
       setError(
         generationError instanceof Error ? generationError.message : 'World generation failed.'

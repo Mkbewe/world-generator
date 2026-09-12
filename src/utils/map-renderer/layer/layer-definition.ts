@@ -1,53 +1,52 @@
-import { type MapLayer, type MapSize, type NoiseLayer, type WorldShapeLayer } from './layer';
-import type { LayerCache } from './layer-cache';
-import type { MapBaseLayerId, MapLayers } from '../types';
+import { type MapLayer, type MapSize, NoiseLayer, WorldShapeLayer } from './layer';
+import type { MapBaseLayerId, SpatialMask } from '../types';
 
 export interface LayerBuildContext {
   size: MapSize;
-  cache: LayerCache;
   built: ReadonlyMap<MapBaseLayerId, MapLayer>;
 }
 
 export interface LayerDefinition {
-  label: string;
-  source: keyof MapLayers;
-  /** Builds the layer from its raw data; may depend on already built layers. */
+  readonly label: string;
+  readonly source: string;
+  readonly requires?: readonly MapBaseLayerId[];
+  /** Validates the raw data and builds its visual representation. */
   build(context: LayerBuildContext, value: unknown): MapLayer;
-  /** Writes the layer's raw data into a snapshot. */
-  write(target: MapLayers, layer: MapLayer): void;
-  /** Layers that must be built first. */
-  requires?: readonly MapBaseLayerId[];
+  /** Raw data saved under this definition's source key. */
+  read(layer: MapLayer): unknown;
+  /** Spatial data available to overlays, if this layer provides a mask. */
+  mask?(layer: MapLayer): SpatialMask;
 }
 
-export const LAYER_DEFINITIONS: Record<MapBaseLayerId, LayerDefinition> = {
+export const LAYER_DEFINITIONS = {
   'world-shape': {
     label: 'World shape',
     source: 'worldMask',
-    build: ({ size, cache }, value) => {
+    build: ({ size }, value) => {
       if (!(value instanceof Uint8Array)) {
         throw new Error('Invalid world mask.');
       }
-      return cache.world(size, value);
+      if (value.length !== size.width * size.height) {
+        throw new Error('Invalid "world-shape" data size.');
+      }
+      return new WorldShapeLayer(size, value);
     },
-    write: (target, layer) => {
-      target.worldMask = (layer as WorldShapeLayer).mask;
-    },
+    read: layer => (layer as WorldShapeLayer).mask,
+    mask: layer => layer as WorldShapeLayer,
   },
   noise: {
     label: 'Noise',
     source: 'noiseMap',
     requires: ['world-shape'],
-    build: ({ cache, built }, value) => {
+    build: ({ size, built }, value) => {
       if (!(value instanceof Float32Array)) {
         throw new Error('Invalid noise map.');
       }
-      return cache.noise(built.get('world-shape') as WorldShapeLayer, value);
+      if (value.length !== size.width * size.height) {
+        throw new Error('Invalid "noise" data size.');
+      }
+      return new NoiseLayer(built.get('world-shape') as WorldShapeLayer, value);
     },
-    write: (target, layer) => {
-      target.noiseMap = (layer as NoiseLayer).noise;
-    },
+    read: layer => (layer as NoiseLayer).noise,
   },
-};
-
-/** Layer IDs in dependency order. */
-export const BASE_LAYER_IDS = Object.keys(LAYER_DEFINITIONS) as MapBaseLayerId[];
+} as const satisfies Readonly<Record<string, LayerDefinition>>;
