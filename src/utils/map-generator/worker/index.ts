@@ -1,4 +1,5 @@
-export { PipelineWorkerClient } from './pipeline-worker-client';
+export { runGeneration } from './run-generation';
+export type { GenerationWorkerOptions, RunGeneration } from './run-generation';
 export type {
   PipelineWorkerGenerationResult,
   PipelineWorkerResponse,

@@ -1,9 +1,9 @@
 import type { GenerationStatistics } from '../../stores';
 import {
   type GenerationEvent,
-  MAP_STAGES,
   type MapConfig,
-  PipelineWorkerClient,
+  type RunGeneration,
+  runGeneration as runGenerationInWorker,
 } from '../../utils/map-generator';
 import {
   type MapLayers,
@@ -17,7 +17,10 @@ import { type GenerationProgressState, ProgressTracker } from '../generation-pro
 export class WorldGenerationSession {
   private generation?: AbortController;
 
-  constructor(private readonly renderer: MapRenderer) {}
+  constructor(
+    private readonly renderer: MapRenderer,
+    private readonly runGeneration: RunGeneration = runGenerationInWorker
+  ) {}
 
   /** Stops generation; already queued rendering can finish. */
   cancel(): void {
@@ -37,19 +40,20 @@ export class WorldGenerationSession {
     const generation = new AbortController();
     this.generation = generation;
     const signal = generation.signal;
-    const worker = new PipelineWorkerClient();
-    const abort = (): void => worker.dispose();
-    signal.addEventListener('abort', abort, { once: true });
-    const progress = new ProgressTracker(MAP_STAGES, onProgress);
     const layers: MapLayers = {};
+    let progress: ProgressTracker | undefined;
 
     try {
       this.renderer.start(config.world);
       const renderSignal = this.renderer.signal;
       mapRepository.clear();
-      progress.start();
       signal.throwIfAborted();
-      const result = await worker.generate(config, {
+      const result = await this.runGeneration(config, {
+        signal,
+        onStages: stages => {
+          progress = new ProgressTracker(stages, onProgress);
+          progress.start();
+        },
         onEvent: event => {
           signal.throwIfAborted();
           if (event.type === 'stage-completed') {
@@ -58,7 +62,7 @@ export class WorldGenerationSession {
           if (!renderSignal.aborted) {
             this.applyStage(event);
           }
-          progress.handle(event);
+          progress?.handle(event);
         },
       });
 
@@ -70,7 +74,7 @@ export class WorldGenerationSession {
         shape: config.world.shape ?? 'disc',
         layers,
       });
-      progress.complete(result.totalDurationMs);
+      progress?.complete(result.totalDurationMs);
       return {
         statistics: result.statistics,
         totalDurationMs: result.totalDurationMs,
@@ -81,8 +85,6 @@ export class WorldGenerationSession {
       }
       throw error;
     } finally {
-      signal.removeEventListener('abort', abort);
-      worker.dispose();
       if (this.generation === generation) {
         this.generation = undefined;
       }

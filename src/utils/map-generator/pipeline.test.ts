@@ -1,6 +1,8 @@
 import { GenerationCancelledError, GenerationStageError } from './errors';
 import { MapGenerator } from './pipeline';
+import { createMapGenerator } from './pipeline-factory';
 import type { MapStage } from './stage';
+import type { MapConfig, StageData } from './types';
 
 interface TestConfig {
   world: { seed: number };
@@ -40,6 +42,12 @@ describe('MapGenerator', () => {
     expect(result.context.state.values).toEqual(['sea:0.4', 'resources:12']);
     expect(result.statistics.map(statistic => statistic.stageId)).toEqual(['terrain', 'resources']);
     expect(result.totalDurationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('rejects duplicate stage ids', () => {
+    const create = (): TestStage => createStage('noise', async () => ({}));
+
+    expect(() => new MapGenerator([create(), create()])).toThrow('Duplicate stage id: "noise".');
   });
 
   it('reports stage lifecycle events', async () => {
@@ -152,6 +160,86 @@ describe('MapGenerator', () => {
           durationMs: expect.any(Number),
         },
       ],
+    });
+  });
+
+  it('fails a stage whose output validation rejects the shared state', async () => {
+    const failure = new Error('incomplete output');
+    const events: string[] = [];
+    const stage: TestStage = {
+      ...createStage('heightmap', async () => ({ heightmap: new Float32Array(1) })),
+      validate: () => {
+        throw failure;
+      },
+    };
+    const pipeline = new MapGenerator([stage]);
+
+    const generation = pipeline.generate(
+      { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
+      { values: [] },
+      {
+        onEvent: event => {
+          events.push(`${event.type}:${event.stageId}`);
+        },
+      }
+    );
+
+    await expect(generation).rejects.toMatchObject({
+      name: GenerationStageError.name,
+      stageId: 'heightmap',
+      cause: failure,
+    });
+    expect(events).toEqual(['stage-started:heightmap', 'stage-failed:heightmap']);
+  });
+
+  it('hands out a read-only snapshot of the completed stage data', async () => {
+    const config: MapConfig = {
+      world: { width: 2, height: 2, seed: 7 },
+      noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
+    };
+    let eventData: Readonly<StageData> | undefined;
+    const pipeline = createMapGenerator();
+
+    const result = await pipeline.generate(
+      config,
+      {},
+      {
+        onEvent: event => {
+          if (event.type === 'stage-completed' && !eventData) {
+            eventData = event.data;
+          }
+        },
+      }
+    );
+
+    expect(Object.isFrozen(eventData)).toBe(true);
+    expect(eventData?.worldMask).toBe(result.context.state.worldMask);
+    expect(() => {
+      (eventData as StageData).worldMask = undefined;
+    }).toThrow();
+    expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
+  });
+
+  it('reports a real stage error even when the signal was aborted meanwhile', async () => {
+    const controller = new AbortController();
+    const failure = new Error('real failure');
+    const pipeline = new MapGenerator([
+      createStage('heightmap', async () => {
+        controller.abort();
+        throw failure;
+      }),
+    ]);
+
+    const generation = pipeline.generate(
+      { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
+      { values: [] },
+      { signal: controller.signal }
+    );
+
+    await expect(generation).rejects.toMatchObject({
+      name: GenerationStageError.name,
+      stageId: 'heightmap',
+      cause: failure,
     });
   });
 

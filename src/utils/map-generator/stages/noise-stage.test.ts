@@ -1,3 +1,4 @@
+import { NoiseStage } from './noise-stage';
 import { createMapGenerator } from '../pipeline-factory';
 import type { MapConfig } from '../types';
 
@@ -61,6 +62,17 @@ describe('NoiseStage', () => {
       stageId: 'noise',
       cause: expect.any(RangeError),
     });
+  });
+
+  it('validates the noise map output type and size', () => {
+    const stage = new NoiseStage();
+    const config = createConfig();
+
+    expect(() => stage.validate({}, config)).toThrow('required map data');
+    expect(() => stage.validate({ noiseMap: new Float32Array(3) }, config)).toThrow(
+      'required map data'
+    );
+    expect(() => stage.validate({ noiseMap: new Float32Array(25) }, config)).not.toThrow();
   });
 
   it('summarizes the generated noise', async () => {

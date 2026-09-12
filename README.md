@@ -55,10 +55,11 @@ overlay. The map viewer keeps raw numeric layers separate from rendering, so
 future stages such as height, temperature, moisture, hydrology and biomes can be
 added without changing the rendering layer.
 
-Generation always runs in a Web Worker. Stages emit lifecycle events carrying
-their output data and progress, which drive the indicator below the map. The
-final result carries generation statistics only; generated layers are persisted
-from the stage events so the last map can be restored after navigation.
+Generation always runs in a Web Worker, which announces its stages up front and
+then streams lifecycle events with each stage's output data and progress; these
+drive the indicator below the map. The final result carries generation statistics
+only — generated layers are persisted from the stage events so the last map can
+be restored after navigation.
 
 For local visual testing, an optional delay can be enabled between stages:
 

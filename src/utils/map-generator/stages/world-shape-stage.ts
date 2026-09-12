@@ -1,6 +1,6 @@
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import type { MapStage } from '../stage';
+import { assertStageOutput, type MapStage } from '../stage';
 import { WORLD_SHAPE_STAGE } from '../stage-definitions';
 import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
 
@@ -46,6 +46,11 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
 
     context.state.worldMask = worldMask;
     return { worldMask };
+  }
+
+  validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
+    const { width, height } = config.world;
+    assertStageOutput(state.worldMask, 'uint8', width * height);
   }
 
   summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {

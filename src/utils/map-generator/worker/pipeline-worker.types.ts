@@ -1,14 +1,17 @@
+import type { StageInfo } from '../stage-definitions';
 import type { GenerationEvent, MapConfig, StageStatistics } from '../types';
 
 export interface PipelineWorkerGenerateRequest {
   type: 'generate';
-  requestId: number;
   config: MapConfig;
 }
 
 export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;
 
-export type PipelineWorkerStageEvent = GenerationEvent & { requestId: number };
+export interface PipelineWorkerStagesResponse {
+  type: 'stages';
+  stages: readonly StageInfo[];
+}
 
 export interface PipelineWorkerGenerationResult {
   statistics: readonly StageStatistics[];
@@ -17,15 +20,16 @@ export interface PipelineWorkerGenerationResult {
 
 export interface PipelineWorkerResultResponse {
   type: 'result';
-  requestId: number;
   result: PipelineWorkerGenerationResult;
 }
 
 export interface PipelineWorkerErrorResponse {
   type: 'error';
-  requestId: number;
   message: string;
 }
 
 export type PipelineWorkerResponse =
-  PipelineWorkerStageEvent | PipelineWorkerResultResponse | PipelineWorkerErrorResponse;
+  | GenerationEvent
+  | PipelineWorkerStagesResponse
+  | PipelineWorkerResultResponse
+  | PipelineWorkerErrorResponse;

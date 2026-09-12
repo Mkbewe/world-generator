@@ -18,6 +18,20 @@ describe('WorldShapeStage', () => {
     expect([mask[2], mask[12], mask[22]]).toEqual([1, 1, 1]);
   });
 
+  it('validates the world mask output type and size', () => {
+    const stage = new WorldShapeStage();
+    const config: MapConfig = {
+      world: { width: 5, height: 5, seed: 123 },
+      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
+    };
+
+    expect(() => stage.validate({}, config)).toThrow('required map data');
+    expect(() => stage.validate({ worldMask: new Uint8Array(3) }, config)).toThrow(
+      'required map data'
+    );
+    expect(() => stage.validate({ worldMask: new Uint8Array(25) }, config)).not.toThrow();
+  });
+
   it('summarizes the generated world shape', async () => {
     const config: MapConfig = {
       world: { width: 5, height: 5, seed: 123 },

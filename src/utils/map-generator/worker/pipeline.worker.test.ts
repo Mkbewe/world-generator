@@ -1,3 +1,4 @@
+import type { GenerationWorkerScope } from './generation-worker';
 import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerResponse,
@@ -5,23 +6,26 @@ import type {
 
 const request: PipelineWorkerGenerateRequest = {
   type: 'generate',
-  requestId: 1,
   config: {
     world: { width: 2, height: 2, seed: 7, shape: 'rectangle' },
     noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   },
 };
 
-describe('pipeline worker result', () => {
+describe('generation worker', () => {
   const messages: PipelineWorkerResponse[] = [];
+  let scope!: GenerationWorkerScope;
 
   beforeEach(async () => {
     vi.resetModules();
     messages.length = 0;
     vi.stubEnv('VITE_GENERATION_STAGE_DELAY_MS', '0');
-    vi.stubGlobal('onmessage', null);
-    vi.stubGlobal('postMessage', (message: PipelineWorkerResponse) => messages.push(message));
-    await import('./pipeline.worker');
+    scope = {
+      onmessage: null,
+      postMessage: message => messages.push(message),
+    };
+    const { startGenerationWorker } = await import('./generation-worker');
+    startGenerationWorker(scope);
   });
 
   afterEach(() => {
@@ -31,7 +35,7 @@ describe('pipeline worker result', () => {
   });
 
   async function generate() {
-    globalThis.onmessage?.call(window, new MessageEvent('message', { data: request }));
+    scope.onmessage?.(new MessageEvent('message', { data: request }));
     await vi.waitFor(() => {
       expect(messages.some(message => message.type === 'result' || message.type === 'error')).toBe(
         true
@@ -40,8 +44,16 @@ describe('pipeline worker result', () => {
     return messages.at(-1);
   }
 
-  it('returns generation statistics once the map data is complete', async () => {
+  it('announces its stages and returns generation statistics once the map data is complete', async () => {
     const message = await generate();
+
+    expect(messages[0]).toEqual({
+      type: 'stages',
+      stages: [
+        { id: 'world-shape', name: 'World shape generation' },
+        { id: 'noise', name: 'Noise generation' },
+      ],
+    });
     expect(message?.type).toBe('result');
     if (message?.type !== 'result') {
       throw new Error('Expected a generation result.');
@@ -66,7 +78,6 @@ describe('pipeline worker result', () => {
     const message = await generate();
     expect(message).toEqual({
       type: 'error',
-      requestId: 1,
       message: 'Pipeline completed without all required map data.',
     });
     expect(messages.some(message => message.type === 'result')).toBe(false);
