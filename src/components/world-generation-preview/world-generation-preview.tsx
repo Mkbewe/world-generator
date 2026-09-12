@@ -3,6 +3,7 @@ import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import { generateMap } from './generate-map';
 import { useGenerationStatisticsStore, useMapConfigStore } from '../../stores';
+import type { NoiseConfig } from '../../utils/map-generator';
 import { type MapRenderer, mapRepository } from '../../utils/map-renderer';
 import type { GenerationProgressState } from '../generation-progress';
 import { PreviewMap } from '../preview-map';
@@ -10,6 +11,7 @@ import { SettingsPanel } from '../settings-panel';
 import type { WorldShape, WorldSize } from '../settings-panel/forms';
 
 const DEFAULT_WORLD_SIZE = 1000;
+const DEFAULT_NOISE: NoiseConfig = { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 };
 
 export function WorldGenerationPreview() {
   const restoredMap = mapRepository.get();
@@ -19,6 +21,7 @@ export function WorldGenerationPreview() {
   const [shape, setShape] = useState<WorldShape>(restoredMap?.shape ?? 'disc');
   const [size, setSize] = useState<WorldSize>(restoredMap?.size ?? DEFAULT_WORLD_SIZE);
   const [seed, setSeed] = useState(restoredMap?.seed ?? '123456');
+  const [noise, setNoise] = useState<NoiseConfig>(DEFAULT_NOISE);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationRun, setGenerationRun] = useState(0);
   const [progress, setProgress] = useState<GenerationProgressState>();
@@ -49,7 +52,7 @@ export function WorldGenerationPreview() {
 
     const config = {
       world: { width: size, height: size, seed: parsedSeed, shape },
-      noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
+      noise,
     };
 
     renderer.start(config.world, { seed: String(parsedSeed), shape });
@@ -84,6 +87,8 @@ export function WorldGenerationPreview() {
           size={size}
           onShapeChange={setShape}
           onSizeChange={setSize}
+          noise={noise}
+          onNoiseChange={setNoise}
         />
         <PreviewMap onReady={handleReady} progress={progress} progressKey={generationRun} />
       </Grid>

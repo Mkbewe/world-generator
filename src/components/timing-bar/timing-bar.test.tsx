@@ -21,6 +21,24 @@ describe('TimingBar', () => {
     expect(screen.getByText('Alpha · 30.0 ms')).toBeInTheDocument();
     expect(screen.getByText('Overhead · 20.0 ms')).toBeInTheDocument();
     expect(screen.queryByText('Beta · 0.0 ms')).not.toBeInTheDocument();
+    expect(screen.getByText('60%')).toBeInTheDocument();
+    expect(screen.getByText('40%')).toBeInTheDocument();
+  });
+
+  it('hides the percentage when a segment is too narrow', () => {
+    render(
+      <Theme>
+        <TimingBar
+          segments={[
+            { key: 'a', label: 'Alpha', durationMs: 99 },
+            { key: 'b', label: 'Beta', durationMs: 1 },
+          ]}
+        />
+      </Theme>
+    );
+
+    expect(screen.getByText('99%')).toBeInTheDocument();
+    expect(screen.queryByText('1%')).not.toBeInTheDocument();
   });
 
   it('renders nothing without durations', () => {

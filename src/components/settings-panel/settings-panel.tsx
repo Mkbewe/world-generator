@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { GearIcon, GlobeIcon } from '@radix-ui/react-icons';
+import { GearIcon, GlobeIcon, MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
-import { BasicForm, type WorldShape, WorldShapeForm, type WorldSize } from './forms';
+import { BasicForm, NoiseForm, type WorldShape, WorldShapeForm, type WorldSize } from './forms';
+import type { NoiseConfig } from '../../utils/map-generator';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
 
-type SettingsTab = 'basic' | 'world-shape';
+type SettingsTab = 'basic' | 'world-shape' | 'noise';
 
 let activeSettingsTab: SettingsTab = 'basic';
 
@@ -18,6 +19,8 @@ interface SettingsPanelProps {
   size: WorldSize;
   onShapeChange: (shape: WorldShape) => void;
   onSizeChange: (size: WorldSize) => void;
+  noise: NoiseConfig;
+  onNoiseChange: (noise: NoiseConfig) => void;
 }
 
 export function SettingsPanel({
@@ -29,6 +32,8 @@ export function SettingsPanel({
   size,
   onShapeChange,
   onSizeChange,
+  noise,
+  onNoiseChange,
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(activeSettingsTab);
   const tabs: readonly VerticalTabItem[] = [
@@ -50,6 +55,12 @@ export function SettingsPanel({
           onSizeChange={onSizeChange}
         />
       ),
+    },
+    {
+      value: 'noise',
+      label: 'Noise',
+      icon: <MixerHorizontalIcon />,
+      content: <NoiseForm noise={noise} onNoiseChange={onNoiseChange} />,
     },
   ];
 
