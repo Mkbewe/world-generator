@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.1](https://github.com/Mkbewe/world-generator/compare/v0.3.0...v0.3.1) (2026-09-12)
+
+
+### Code Refactoring
+
+* **179:** code quality ([#186](https://github.com/Mkbewe/world-generator/issues/186)) ([1c40a2d](https://github.com/Mkbewe/world-generator/commit/1c40a2de0a23b33be23f47c377971483e45bfa70))
+* **180:** world generator previev ([#190](https://github.com/Mkbewe/world-generator/issues/190)) ([a3b73f7](https://github.com/Mkbewe/world-generator/commit/a3b73f764408064210ad4ae8fa33c05cfe1963eb))
+* **182:** progess bar is disapera after change route ([#189](https://github.com/Mkbewe/world-generator/issues/189)) ([ae6fae9](https://github.com/Mkbewe/world-generator/commit/ae6fae9a001b0922cc3e8407b2a8795fe3eb22f6))
+
+
+### Chores
+
+* **185:** fix generating changelog ([#187](https://github.com/Mkbewe/world-generator/issues/187)) ([64ce646](https://github.com/Mkbewe/world-generator/commit/64ce646fe5e51f339a318ae9cf4e7705e9c9129c))
+* add auto detect release version ([#191](https://github.com/Mkbewe/world-generator/issues/191)) ([e934828](https://github.com/Mkbewe/world-generator/commit/e934828da5722333a6bd54c3e2786b1ea66aebdc))
+* remove repai release notes ([#188](https://github.com/Mkbewe/world-generator/issues/188)) ([3e0d336](https://github.com/Mkbewe/world-generator/commit/3e0d3363f03b5206985c9180aa4f7b887855684c))
+
 ## [0.3.0](https://github.com/Mkbewe/world-generator/compare/v0.2.4...v0.3.0) (2026-09-12)
 
 
