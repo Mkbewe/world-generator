@@ -1,4 +1,4 @@
-﻿import type { WorldShapeLayer } from '../layer';
+import type { SpatialMask } from '../types';
 import type { ViewportSize } from '../viewport';
 
 const MAX_DEVICE_PIXEL_RATIO = 2;
@@ -14,7 +14,7 @@ export class WorldBoundaryRenderer {
     this.canvas.width = this.canvas.height = 0;
   }
 
-  render(world: WorldShapeLayer, viewport: ViewportSize): void {
+  render(world: SpatialMask, viewport: ViewportSize): void {
     const context = this.canvas.getContext('2d');
     if (!context) {
       throw new Error('Overlay canvas is not available.');

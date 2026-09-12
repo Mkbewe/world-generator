@@ -1,4 +1,4 @@
-import type { MapBaseLayerId } from '../types';
+import type { MapBaseLayerId, SpatialMask } from '../types';
 
 export interface MapSize {
   width: number;
@@ -114,7 +114,7 @@ export abstract class MapLayer {
   }
 }
 
-export class WorldShapeLayer extends MapLayer {
+export class WorldShapeLayer extends MapLayer implements SpatialMask {
   constructor(
     size: MapSize,
     readonly mask: Uint8Array
@@ -147,7 +147,7 @@ export class WorldShapeLayer extends MapLayer {
 
 export class NoiseLayer extends MapLayer {
   constructor(
-    readonly world: WorldShapeLayer,
+    readonly world: SpatialMask,
     readonly noise: Float32Array
   ) {
     super('noise', world.size);

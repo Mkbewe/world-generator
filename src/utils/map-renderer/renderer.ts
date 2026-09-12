@@ -5,13 +5,12 @@ import {
   type LayerCache,
   layerCache,
   LayerQueue,
-  type LayerRenderStatistics,
   type MapLayer,
   type MapSize,
-  type TileReporter,
   WorldShapeLayer,
 } from './layer';
-import { OverlayController } from './overlay-controller';
+import { MapView, type MapViewElements } from './map-view';
+import { RenderMetrics } from './render-metrics';
 import { type GeneratedMapSnapshot, type MapRepository, mapRepository } from './repository';
 import {
   type MapBaseLayerId,
@@ -24,12 +23,6 @@ import {
   OVERLAY_LAYERS,
   type RenderStatistics,
 } from './types';
-
-interface MapRendererElements {
-  canvas: HTMLCanvasElement;
-  overlayCanvas: HTMLCanvasElement;
-  viewportElement: HTMLElement;
-}
 
 export interface MapRendererState {
   layers: readonly MapLayerOption<MapBaseLayerId>[];
@@ -69,47 +62,28 @@ function isPixelData(value: unknown): value is Uint8Array | Float32Array {
 export class MapRenderer {
   private readonly cache: LayerCache;
   private readonly repository: MapRepository;
-  private readonly overlays: OverlayController;
+  private readonly view: MapView;
   private readonly queue: LayerQueue;
-  private readonly onRenderStatistics?: (statistics: RenderStatistics) => void;
+  private readonly metrics: RenderMetrics;
   private lifetime = new AbortController();
   private readonly layerMap = new Map<MapBaseLayerId, MapLayer>();
   private available = new Set<MapBaseLayerId>();
-  private displayedLayer?: MapBaseLayerId;
-  private auto = true;
   private error?: string;
   private size?: MapSize;
   private metadata?: MapMetadata;
-  private selectedLayer?: MapBaseLayerId;
-  private renderStartedAt?: number;
-  private firstTileDurationMs?: number;
-  private presentationDurationMs = 0;
-  private readonly layerStatistics = new Map<MapBaseLayerId, LayerRenderStatistics>();
 
   constructor(
-    private readonly elements: MapRendererElements,
+    elements: MapViewElements,
     private readonly onChange: (state: MapRendererState) => void,
     options: MapRendererOptions = {}
   ) {
     this.cache = options.cache ?? layerCache;
     this.repository = options.repository ?? mapRepository;
-    this.selectedLayer = options.selectedLayer;
-    this.onRenderStatistics = options.onRenderStatistics;
-    this.overlays = new OverlayController(elements.overlayCanvas, elements.viewportElement, () =>
-      this.overlays.render(this.boundaryLayer())
-    );
+    this.metrics = new RenderMetrics(options.onRenderStatistics);
+    this.view = new MapView(elements, this.metrics, options.selectedLayer);
     this.queue = new LayerQueue({
       signal: () => this.lifetime.signal,
-      load: async (layer, signal) => {
-        const previous = layer.statistics;
-        try {
-          await layer.prepare(signal, this.auto ? this.tilePainter(layer) : undefined);
-        } finally {
-          if (!signal.aborted && layer.statistics && layer.statistics !== previous) {
-            this.layerStatistics.set(layer.id, { ...layer.statistics });
-          }
-        }
-      },
+      load: (layer, signal) => this.metrics.prepare(layer, signal, this.view.tilePainter(layer)),
       present: layer => this.present(layer),
       fail: (layer, error) => {
         layer.dispose();
@@ -135,26 +109,19 @@ export class MapRenderer {
         label: LAYER_DEFINITIONS[id].label,
         available: this.available.has(id),
       })),
-      overlays: OVERLAY_IDS.map(id => ({
-        id,
-        label: OVERLAY_LAYERS[id].label,
-        available: this.boundaryLayer() !== undefined,
-        visible: this.overlays.isVisible(id),
-      })),
-      displayedLayer: this.displayedLayer,
+      overlays: this.view.overlayOptions,
+      displayedLayer: this.view.displayedLayer,
       error: this.error,
     };
   }
 
   start(size: MapSize, metadata?: MapMetadata): void {
     this.reset();
-    this.auto = true;
     this.lifetime = new AbortController();
     this.size = size;
     this.metadata = metadata;
-    this.renderStartedAt = performance.now();
-    this.elements.canvas.width = size.width;
-    this.elements.canvas.height = size.height;
+    this.metrics.start();
+    this.view.start(size);
   }
 
   restore(): void {
@@ -163,8 +130,8 @@ export class MapRenderer {
       return;
     }
     this.start(snapshot, { seed: snapshot.seed, shape: snapshot.shape });
-    this.auto = false;
-    this.selectedLayer ??= lastPresentLayer(snapshot.layers);
+    this.metrics.reset();
+    this.view.restoreSelection(lastPresentLayer(snapshot.layers));
     for (const id of BASE_LAYER_IDS) {
       const value = snapshot.layers[sourceOf(id)];
       if (value) {
@@ -234,17 +201,16 @@ export class MapRenderer {
     if (!layer || !this.available.has(id)) {
       return;
     }
-    this.selectedLayer = id;
     try {
-      this.show(layer);
+      this.view.select(layer);
+      this.emitState();
     } catch (error) {
       this.reportError(error);
     }
   }
 
   setOverlay(id: MapOverlayId, visible: boolean): void {
-    this.overlays.setVisible(id, visible);
-    this.overlays.render(this.boundaryLayer());
+    this.view.setOverlay(id, visible);
     this.emitState();
   }
 
@@ -253,16 +219,11 @@ export class MapRenderer {
     this.queue.reset();
     this.layerMap.clear();
     this.available.clear();
-    this.displayedLayer = undefined;
     this.error = undefined;
     this.size = undefined;
     this.metadata = undefined;
-    this.renderStartedAt = undefined;
-    this.firstTileDurationMs = undefined;
-    this.presentationDurationMs = 0;
-    this.layerStatistics.clear();
-    this.elements.canvas.width = this.elements.canvas.height = 0;
-    this.overlays.reset();
+    this.metrics.reset();
+    this.view.reset();
     if (emit) {
       this.onChange(EMPTY_RENDER_STATE);
     }
@@ -270,7 +231,7 @@ export class MapRenderer {
 
   dispose(): void {
     this.reset(false);
-    this.overlays.dispose();
+    this.view.dispose();
   }
 
   private requireSize(): MapSize {
@@ -293,60 +254,14 @@ export class MapRenderer {
 
   private present(layer: MapLayer): void {
     this.available.add(layer.id);
-    this.overlays.render(this.boundaryLayer());
-    if (this.auto || layer.id === this.selectedLayer) {
-      this.show(layer);
-    } else {
-      this.emitState();
-    }
+    this.view.setMask(this.boundaryLayer());
+    this.view.present(layer);
+    this.emitState();
     this.emitRenderStatistics();
   }
 
   private emitRenderStatistics(): void {
-    if (!this.onRenderStatistics || this.renderStartedAt === undefined || !this.auto) {
-      return;
-    }
-    const startedAt = this.renderStartedAt;
-    this.onRenderStatistics({
-      elapsedDurationMs: performance.now() - startedAt,
-      firstTileDurationMs: this.firstTileDurationMs,
-      viewport: this.overlays.size(),
-      overlayDurationMs: this.overlays.renderDurationMs,
-      presentationDurationMs: this.presentationDurationMs,
-      layers: [...this.layerMap.values()].map(layer => ({
-        id: layer.id,
-        name: LAYER_DEFINITIONS[layer.id].label,
-        durationMs: this.layerStatistics.get(layer.id)?.durationMs ?? 0,
-        tiles: this.layerStatistics.get(layer.id)?.tiles ?? 0,
-        pixels: this.layerStatistics.get(layer.id)?.pixels ?? 0,
-        bytes: layer.canvas.width * layer.canvas.height * 4,
-      })),
-    });
-  }
-
-  private tilePainter(layer: MapLayer): TileReporter {
-    const context = this.elements.canvas.getContext('2d');
-    return (x, y, width, height) => {
-      if (!context) {
-        return;
-      }
-      context.drawImage(layer.canvas, x, y, width, height, x, y, width, height);
-      if (this.firstTileDurationMs === undefined && this.renderStartedAt !== undefined) {
-        this.firstTileDurationMs = performance.now() - this.renderStartedAt;
-      }
-    };
-  }
-
-  private show(layer: MapLayer): void {
-    const startedAt = performance.now();
-    try {
-      layer.show(this.elements.canvas);
-    } finally {
-      this.presentationDurationMs += performance.now() - startedAt;
-    }
-    this.available.add(layer.id);
-    this.displayedLayer = layer.id;
-    this.emitState();
+    this.metrics.report(this.layerMap.values(), this.view.overlayDurationMs, this.view.viewport);
   }
 
   private reportError(error: unknown): void {
