@@ -2,29 +2,34 @@ import { useCallback, useRef, useState } from 'react';
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import { MapGenerationSession } from './map-generation-session';
-import { useGenerationStatisticsStore, useMapConfigStore } from '../../stores';
-import type { NoiseConfig } from '../../utils/map-generator';
-import { type MapRenderer, mapRepository } from '../../utils/map-renderer';
-import type { GenerationProgressState } from '../generation-progress';
+import {
+  useBasicFormStore,
+  useGenerationProgressStore,
+  useGenerationStatisticsStore,
+  useMapConfigStore,
+  useNoiseFormStore,
+  useWorldShapeFormStore,
+} from '../../stores';
+import type { MapRenderer } from '../../utils/map-renderer';
 import { PreviewMap } from '../preview-map';
 import { SettingsPanel } from '../settings-panel';
-import type { WorldShape, WorldSize } from '../settings-panel/forms';
-
-const DEFAULT_WORLD_SIZE = 1000;
-const DEFAULT_NOISE: NoiseConfig = { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 };
 
 export function WorldGenerationPreview() {
-  const restoredMap = mapRepository.get();
-  const sessionRef = useRef<MapGenerationSession | null>(null);
+  const seed = useBasicFormStore(state => state.seed);
+  const setSeed = useBasicFormStore(state => state.setSeed);
+  const shape = useWorldShapeFormStore(state => state.shape);
+  const size = useWorldShapeFormStore(state => state.size);
+  const setShape = useWorldShapeFormStore(state => state.setShape);
+  const setSize = useWorldShapeFormStore(state => state.setSize);
+  const noise = useNoiseFormStore(state => state.noise);
+  const setNoise = useNoiseFormStore(state => state.setNoise);
+  const progress = useGenerationProgressStore(state => state.progress);
+  const setProgress = useGenerationProgressStore(state => state.setProgress);
   const setResult = useGenerationStatisticsStore(state => state.setResult);
   const setConfig = useMapConfigStore(state => state.setConfig);
-  const [shape, setShape] = useState<WorldShape>(restoredMap?.shape ?? 'disc');
-  const [size, setSize] = useState<WorldSize>(restoredMap?.width ?? DEFAULT_WORLD_SIZE);
-  const [seed, setSeed] = useState(restoredMap?.seed ?? '123456');
-  const [noise, setNoise] = useState<NoiseConfig>(DEFAULT_NOISE);
+  const sessionRef = useRef<MapGenerationSession | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationRun, setGenerationRun] = useState(0);
-  const [progress, setProgress] = useState<GenerationProgressState>();
   const [error, setError] = useState<string>();
 
   const handleReady = useCallback((renderer: MapRenderer | undefined) => {
@@ -58,12 +63,14 @@ export function WorldGenerationPreview() {
     try {
       const result = await session.generate(config, setProgress);
       if (!result) {
+        setProgress(undefined);
         return;
       }
       setConfig(config);
       setResult(result);
     } catch (generationError) {
-      setProgress(current => (current ? { ...current, status: 'failed' } : undefined));
+      const current = useGenerationProgressStore.getState().progress;
+      setProgress(current ? { ...current, status: 'failed' } : undefined);
       setError(
         generationError instanceof Error ? generationError.message : 'World generation failed.'
       );

@@ -2,6 +2,18 @@ import { Theme } from '@radix-ui/themes';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {
+  BASIC_FORM_DEFAULTS,
+  NOISE_FORM_DEFAULTS,
+  PREVIEW_DEFAULTS,
+  useBasicFormStore,
+  useGenerationProgressStore,
+  useGenerationStatisticsStore,
+  useNoiseFormStore,
+  usePreviewStore,
+  useWorldShapeFormStore,
+  WORLD_SHAPE_FORM_DEFAULTS,
+} from '../../stores';
 import type * as WorldGenerationPipeline from '../../utils/map-generator';
 import { MapRenderer, mapRepository } from '../../utils/map-renderer';
 
@@ -31,6 +43,12 @@ describe('WorldGenerationPreview', () => {
     generateMock.mockReset();
     disposeMock.mockReset();
     mapRepository.clear();
+    useBasicFormStore.setState({ ...BASIC_FORM_DEFAULTS });
+    useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
+    useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
+    useGenerationProgressStore.getState().setProgress(undefined);
+    useGenerationStatisticsStore.getState().setResult(undefined);
+    usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       createImageData: () => ({ data: new Uint8ClampedArray(previewSize * previewSize * 4) }),
       putImageData: vi.fn(),
@@ -41,6 +59,12 @@ describe('WorldGenerationPreview', () => {
 
   afterEach(() => {
     mapRepository.clear();
+    useBasicFormStore.setState({ ...BASIC_FORM_DEFAULTS });
+    useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
+    useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
+    useGenerationProgressStore.getState().setProgress(undefined);
+    useGenerationStatisticsStore.getState().setResult(undefined);
+    usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
     vi.restoreAllMocks();
   });
 
@@ -128,5 +152,47 @@ describe('WorldGenerationPreview', () => {
     await user.click(screen.getByTestId('generate-map-button'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Canvas is not available.');
+    expect(useGenerationProgressStore.getState().progress?.status).toBe('completed');
+  });
+
+  it('keeps the stored progress after the preview is remounted', async () => {
+    useGenerationProgressStore.getState().setProgress({
+      status: 'completed',
+      totalDurationMs: 3,
+      stages: [
+        {
+          id: 'world-shape',
+          name: 'World shape generation',
+          status: 'completed',
+          percentage: 100,
+          durationMs: 1,
+        },
+        {
+          id: 'noise',
+          name: 'Noise generation',
+          status: 'completed',
+          percentage: 100,
+          durationMs: 2,
+        },
+      ],
+    });
+
+    const { unmount } = render(
+      <Theme>
+        <WorldGenerationPreview />
+      </Theme>
+    );
+    expect(screen.getByText('Complete')).toBeInTheDocument();
+
+    await act(async () => {
+      unmount();
+    });
+    render(
+      <Theme>
+        <WorldGenerationPreview />
+      </Theme>
+    );
+
+    expect(screen.getByText('Complete')).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
-import { createStore } from './create-store';
-import type { MapConfig } from '../utils/map-generator';
+import type { MapConfig } from '../../utils/map-generator';
+import { createStore } from '../create-store';
 
 interface MapConfigState {
   config?: MapConfig;

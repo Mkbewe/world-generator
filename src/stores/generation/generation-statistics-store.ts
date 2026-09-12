@@ -1,5 +1,5 @@
-import { createStore } from './create-store';
-import type { StageStatistics } from '../utils/map-generator';
+import type { StageStatistics } from '../../utils/map-generator';
+import { createStore } from '../create-store';
 
 export interface GenerationStatistics {
   statistics: readonly StageStatistics[];

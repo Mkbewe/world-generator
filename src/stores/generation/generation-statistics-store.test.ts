@@ -2,7 +2,7 @@ import {
   type GenerationStatistics,
   useGenerationStatisticsStore,
 } from './generation-statistics-store';
-import type { StageStatistics } from '../utils/map-generator';
+import type { StageStatistics } from '../../utils/map-generator';
 
 function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
