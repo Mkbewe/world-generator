@@ -1,8 +1,13 @@
 import { MapScene } from './map-scene';
 import { LAYER_DEFINITIONS, LayerCache, LayerRegistry, MapLayer, type NoiseLayer } from '../layer';
 
+const BASE_DEFINITIONS = {
+  'world-shape': LAYER_DEFINITIONS['world-shape'],
+  noise: LAYER_DEFINITIONS.noise,
+};
+
 function setup() {
-  const scene = new MapScene(new LayerCache());
+  const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_DEFINITIONS));
   scene.start({ width: 2, height: 2 });
   return scene;
 }

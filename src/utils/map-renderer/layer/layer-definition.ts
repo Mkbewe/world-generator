@@ -1,4 +1,6 @@
 import { type MapLayer, type MapSize, NoiseLayer, WorldShapeLayer } from './layer';
+import { MacroRegionLayer } from './macro-region-layer';
+import { ProgressionLayer } from './progression-layer';
 import type { MapBaseLayerId, SpatialMask } from '../types';
 
 export interface LayerBuildContext {
@@ -33,6 +35,36 @@ export const LAYER_DEFINITIONS = {
     },
     read: layer => (layer as WorldShapeLayer).mask,
     mask: layer => layer as WorldShapeLayer,
+  },
+  progression: {
+    label: 'Progression',
+    source: 'progressionMap',
+    requires: ['world-shape'],
+    build: ({ size, built }, value) => {
+      if (!(value instanceof Float32Array)) {
+        throw new Error('Invalid progression map.');
+      }
+      if (value.length !== size.width * size.height) {
+        throw new Error('Invalid "progression" data size.');
+      }
+      return new ProgressionLayer(built.get('world-shape') as WorldShapeLayer, value);
+    },
+    read: layer => (layer as ProgressionLayer).progression,
+  },
+  'macro-region': {
+    label: 'Macro regions',
+    source: 'macroRegionIdMap',
+    requires: ['world-shape'],
+    build: ({ size, built }, value) => {
+      if (!(value instanceof Uint8Array)) {
+        throw new Error('Invalid macro region map.');
+      }
+      if (value.length !== size.width * size.height) {
+        throw new Error('Invalid "macro-region" data size.');
+      }
+      return new MacroRegionLayer(built.get('world-shape') as WorldShapeLayer, value);
+    },
+    read: layer => (layer as MacroRegionLayer).regions,
   },
   noise: {
     label: 'Noise',

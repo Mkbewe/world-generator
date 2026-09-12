@@ -91,10 +91,14 @@ export class WorldGenerationSession {
     }
   }
 
+  /** Maps every layer source present in a stage event, so stages may produce any number of layers. */
   private applyStage(event: GenerationEvent): void {
+    if (event.type !== 'stage-completed') {
+      return;
+    }
     const { registry } = this.renderer;
-    if (event.type === 'stage-completed' && registry.has(event.stageId)) {
-      this.renderer.add(event.stageId, event.data[registry.get(event.stageId).source]);
+    for (const id of registry.presentIn(event.data)) {
+      this.renderer.add(id, event.data[registry.get(id).source]);
     }
   }
 }

@@ -11,6 +11,8 @@ export interface MapLayers {
   [source: string]: unknown;
   worldMask?: Uint8Array;
   noiseMap?: Float32Array;
+  progressionMap?: Float32Array;
+  macroRegionIdMap?: Uint8Array;
 }
 
 export interface MapMetadata {

@@ -99,7 +99,7 @@ describe('WorldGenerationSession', () => {
         stageCount: 2,
       });
       options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('statistics-only', { elevation }));
+      options?.onEvent?.(completed('statistics-only', { unknown: elevation }));
       options?.onEvent?.(completed('noise', { elevation }));
       return result;
     });
@@ -128,7 +128,7 @@ describe('WorldGenerationSession', () => {
   it('rejects missing stage data without saving an incomplete map', async () => {
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages);
-      options?.onEvent?.(completed('world-shape', {}));
+      options?.onEvent?.(completed('world-shape', { worldMask: 'nope' }));
       return {
         statistics: [],
         totalDurationMs: 1,
@@ -137,6 +137,33 @@ describe('WorldGenerationSession', () => {
 
     await expect(session.generate(config, vi.fn())).rejects.toThrow('Invalid world mask.');
     expect(mapRepository.get()).toBeUndefined();
+  });
+
+  it('registers every layer source produced by a single stage', async () => {
+    const progression = new Float32Array(4);
+    const regionIds = new Uint8Array(4);
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      options?.onEvent?.(
+        completed('macro-region', {
+          progressionMap: progression,
+          macroRegionIdMap: regionIds,
+        })
+      );
+      return {
+        statistics: [],
+        totalDurationMs: 1,
+      };
+    });
+
+    await expect(session.generate(config, vi.fn())).resolves.toMatchObject({ totalDurationMs: 1 });
+    await renderer.ready;
+
+    expect(renderer.state.layers.find(layer => layer.id === 'progression')?.available).toBe(true);
+    expect(renderer.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
+    expect(mapRepository.get()?.layers.progressionMap).toBe(progression);
+    expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regionIds);
   });
 
   it('saves generated stage data even when the preview is cancelled', async () => {
