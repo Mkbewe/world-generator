@@ -1,7 +1,10 @@
-import { useGenerationStatisticsStore } from './generation-statistics-store';
+import {
+  type GenerationStatistics,
+  useGenerationStatisticsStore,
+} from './generation-statistics-store';
 import type { StageStatistics } from '../utils/map-generator';
 
-function createStatistics(overrides: Partial<StageStatistics> = {}): StageStatistics {
+function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'noise',
     stageName: 'Noise generation',
@@ -13,36 +16,36 @@ function createStatistics(overrides: Partial<StageStatistics> = {}): StageStatis
   };
 }
 
+function createResult(overrides: Partial<GenerationStatistics> = {}): GenerationStatistics {
+  return {
+    statistics: [createStage()],
+    totalDurationMs: 20.4,
+    ...overrides,
+  };
+}
+
 describe('useGenerationStatisticsStore', () => {
   beforeEach(() => {
-    useGenerationStatisticsStore.setState({ statistics: [], totalDurationMs: undefined });
+    useGenerationStatisticsStore.setState({ result: undefined });
   });
 
-  it('starts with an empty statistics list', () => {
-    const state = useGenerationStatisticsStore.getState();
-
-    expect(state.statistics).toEqual([]);
-    expect(state.totalDurationMs).toBeUndefined();
+  it('starts without a result', () => {
+    expect(useGenerationStatisticsStore.getState().result).toBeUndefined();
   });
 
-  it('stores the statistics and total duration through setResult', () => {
-    const statistics = [createStatistics()];
+  it('stores the result through setResult', () => {
+    const result = createResult();
 
-    useGenerationStatisticsStore.getState().setResult({ statistics, totalDurationMs: 20.4 });
+    useGenerationStatisticsStore.getState().setResult(result);
 
-    const state = useGenerationStatisticsStore.getState();
-    expect(state.statistics).toBe(statistics);
-    expect(state.totalDurationMs).toBe(20.4);
+    expect(useGenerationStatisticsStore.getState().result).toBe(result);
   });
 
   it('notifies subscribers when the result is updated', () => {
     const listener = vi.fn();
     const unsubscribe = useGenerationStatisticsStore.subscribe(listener);
 
-    useGenerationStatisticsStore.getState().setResult({
-      statistics: [createStatistics()],
-      totalDurationMs: 20.4,
-    });
+    useGenerationStatisticsStore.getState().setResult(createResult());
 
     unsubscribe();
 

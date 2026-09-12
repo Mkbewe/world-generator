@@ -1,0 +1,38 @@
+.timeline {
+  display: flex;
+  overflow: hidden;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--gray-a4);
+}
+
+.timelineSegment[data-index='0'],
+.timelineDot[data-index='0'] {
+  background: var(--violet-9);
+}
+
+.timelineSegment[data-index='1'],
+.timelineDot[data-index='1'] {
+  background: var(--cyan-9);
+}
+
+.timelineSegment[data-index='2'],
+.timelineDot[data-index='2'] {
+  background: var(--amber-9);
+}
+
+.timelineSegment[data-index='3'],
+.timelineDot[data-index='3'] {
+  background: var(--green-9);
+}
+
+.timelineSegment[data-muted='true'],
+.timelineDot[data-muted='true'] {
+  background: var(--gray-a7);
+}
+
+.timelineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

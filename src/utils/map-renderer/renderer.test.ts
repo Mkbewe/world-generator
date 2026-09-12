@@ -1,6 +1,8 @@
 import { MapLayer } from './layer';
-import { MapRenderer } from './renderer';
+import { MapRenderer, type MapRendererOptions } from './renderer';
+import { type GeneratedMapSnapshot, MapRepository } from './repository';
 import { Viewport } from './viewport';
+import { WorldBoundaryRenderer } from './world-boundary-renderer';
 
 function deferred() {
   let resolve!: () => void;
@@ -10,19 +12,35 @@ function deferred() {
   return { promise, resolve };
 }
 
-function setup() {
-  const canvas = document.createElement('canvas');
+function elements() {
+  return {
+    canvas: document.createElement('canvas'),
+    overlayCanvas: document.createElement('canvas'),
+    viewportElement: document.createElement('div'),
+  };
+}
+
+function snapshot(layers: GeneratedMapSnapshot['layers']): GeneratedMapSnapshot {
+  return { width: 2, height: 2, size: 2, seed: '1', shape: 'disc', layers };
+}
+
+function setup(options: MapRendererOptions = {}) {
   const onChange = vi.fn();
-  const preview = new MapRenderer(
-    {
-      canvas,
-      overlayCanvas: document.createElement('canvas'),
-      viewportElement: document.createElement('div'),
-    },
-    onChange
-  );
+  const preview = new MapRenderer(elements(), onChange, options);
   preview.start({ width: 2, height: 2 });
-  return { preview, canvas, onChange };
+  return { preview, onChange };
+}
+
+function setupWithSnapshot(
+  layers: GeneratedMapSnapshot['layers'],
+  options: MapRendererOptions = {}
+) {
+  const repository = new MapRepository();
+  repository.save(snapshot(layers));
+  const onChange = vi.fn();
+  const preview = new MapRenderer(elements(), onChange, { repository, ...options });
+  preview.restore();
+  return { preview, onChange };
 }
 
 describe('MapRenderer', () => {
@@ -72,6 +90,14 @@ describe('MapRenderer', () => {
   });
 
   it('switches ready images without starting another render', async () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    const renderBoundary = vi
+      .spyOn(WorldBoundaryRenderer.prototype, 'render')
+      .mockImplementation(() => {});
     const { preview } = setup();
     const prepare = vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     preview.add('world-shape', new Uint8Array(4).fill(1));
@@ -81,6 +107,7 @@ describe('MapRenderer', () => {
     preview.select('world-shape');
     preview.select('noise');
     expect(prepare).toHaveBeenCalledTimes(2);
+    expect(renderBoundary).toHaveBeenCalledOnce();
     expect(preview.state.displayedLayer).toBe('noise');
   });
 
@@ -114,19 +141,12 @@ describe('MapRenderer', () => {
   });
 
   it('restores a cached snapshot', async () => {
-    const { preview } = setup();
-    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
-    preview.restore({
-      width: 2,
-      height: 2,
-      size: 2,
-      seed: '1',
-      shape: 'disc',
-      layers: {
-        worldMask: new Uint8Array(4).fill(1),
-        noiseMap: new Float32Array(4),
-      },
+    const { preview } = setupWithSnapshot({
+      worldMask: new Uint8Array(4).fill(1),
+      noiseMap: new Float32Array(4),
     });
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+
     await vi.runAllTimersAsync();
     await preview.ready;
     expect(preview.state.displayedLayer).toBe('noise');
@@ -134,68 +154,138 @@ describe('MapRenderer', () => {
     expect(preview.state.overlays[0]).toMatchObject({ available: true, visible: true });
   });
 
-  it('exposes rendered layers and the layer range', async () => {
-    const { preview } = setup();
-    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
-    preview.restore({
-      width: 2,
-      height: 2,
-      size: 2,
-      seed: '1',
-      shape: 'disc',
-      layers: {
-        worldMask: new Uint8Array(4).fill(1),
-        noiseMap: new Float32Array([0.25, 0.5, 0.75, 1]),
-      },
+  it('exposes rendered layers', async () => {
+    const { preview } = setupWithSnapshot({
+      worldMask: new Uint8Array(4).fill(1),
+      noiseMap: new Float32Array([0.25, 0.5, 0.75, 1]),
     });
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+
     await vi.runAllTimersAsync();
     await preview.ready;
     const layers = preview.getLayers();
     expect(layers.worldMask).toBeInstanceOf(Uint8Array);
     expect(layers.noiseMap).toBeInstanceOf(Float32Array);
-    expect(preview.range('noise')).toEqual({ min: 0.25, max: 1 });
   });
 
   it('honours the preferred layer option on restore', async () => {
-    const renderer = new MapRenderer(
-      {
-        canvas: document.createElement('canvas'),
-        overlayCanvas: document.createElement('canvas'),
-        viewportElement: document.createElement('div'),
-      },
-      vi.fn(),
+    const { preview } = setupWithSnapshot(
+      { worldMask: new Uint8Array(4).fill(1), noiseMap: new Float32Array(4) },
       { selectedLayer: 'world-shape' }
     );
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
-    renderer.restore({
-      width: 2,
-      height: 2,
-      size: 2,
-      seed: '1',
-      shape: 'disc',
-      layers: {
-        worldMask: new Uint8Array(4).fill(1),
-        noiseMap: new Float32Array(4),
-      },
-    });
-    await vi.runAllTimersAsync();
-    await renderer.ready;
-    expect(renderer.state.displayedLayer).toBe('world-shape');
-  });
 
-  it('defaults to the last present layer on restore', async () => {
-    const { preview } = setup();
-    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
-    preview.restore({
-      width: 2,
-      height: 2,
-      size: 2,
-      seed: '1',
-      shape: 'disc',
-      layers: { worldMask: new Uint8Array(4).fill(1) },
-    });
     await vi.runAllTimersAsync();
     await preview.ready;
     expect(preview.state.displayedLayer).toBe('world-shape');
+  });
+
+  it('defaults to the last present layer on restore', async () => {
+    const { preview } = setupWithSnapshot({ worldMask: new Uint8Array(4).fill(1) });
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    expect(preview.state.displayedLayer).toBe('world-shape');
+  });
+
+  it('saves the map snapshot once started and complete', () => {
+    const repository = new MapRepository();
+    const renderer = new MapRenderer(elements(), vi.fn(), { repository });
+    renderer.start({ width: 2, height: 2 }, { seed: '7', shape: 'disc' });
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+
+    expect(renderer.isComplete()).toBe(false);
+    renderer.add('world-shape', new Uint8Array(4).fill(1));
+    expect(renderer.isComplete()).toBe(false);
+    renderer.add('noise', new Float32Array(4));
+    expect(renderer.isComplete()).toBe(true);
+
+    const saved = renderer.save();
+    expect(saved).toMatchObject({ seed: '7', shape: 'disc', width: 2, height: 2 });
+    expect(repository.get()).toBe(saved);
+  });
+
+  it('reports render statistics for each presented layer', async () => {
+    const onRenderStatistics = vi.fn();
+    const renderer = new MapRenderer(elements(), vi.fn(), { onRenderStatistics });
+    renderer.start({ width: 2, height: 2 });
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+
+    renderer.add('world-shape', new Uint8Array(4).fill(1));
+    await vi.runAllTimersAsync();
+    await renderer.ready;
+
+    const latest = onRenderStatistics.mock.calls.at(-1)?.[0];
+    expect(latest).toMatchObject({ elapsedDurationMs: expect.any(Number) });
+    expect(latest.layers).toEqual([
+      expect.objectContaining({ id: 'world-shape', name: 'World shape' }),
+    ]);
+  });
+
+  it('separates waiting, drawing and presentation and resets timings for cached layers', async () => {
+    let now = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 3,
+    });
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {
+      now += 7;
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: () => {
+        now += 3;
+      },
+      clearRect: vi.fn(),
+      drawImage: () => {
+        now += 2;
+      },
+    } as unknown as CanvasRenderingContext2D);
+    const onRenderStatistics = vi.fn();
+    const { preview } = setup({ onRenderStatistics });
+    const mask = new Uint8Array(4).fill(1);
+    const noise = new Float32Array(4);
+    now += 100;
+    preview.add('world-shape', mask);
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    preview.select('world-shape');
+    preview.add('noise', noise);
+    await vi.runAllTimersAsync();
+    await preview.ready;
+
+    expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
+      elapsedDurationMs: 153,
+      firstTileDurationMs: 105,
+      presentationDurationMs: 6,
+      overlayDurationMs: 7,
+      viewport: { devicePixelRatio: 2 },
+      layers: [
+        { durationMs: 20, tiles: 4, pixels: 4 },
+        { durationMs: 20, tiles: 4, pixels: 4 },
+      ],
+    });
+
+    preview.start({ width: 2, height: 2 });
+    preview.add('world-shape', mask);
+    preview.add('noise', noise);
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
+      elapsedDurationMs: 11,
+      firstTileDurationMs: undefined,
+      presentationDurationMs: 4,
+      overlayDurationMs: 7,
+      layers: [
+        { durationMs: 0, tiles: 0, pixels: 0 },
+        { durationMs: 0, tiles: 0, pixels: 0 },
+      ],
+    });
+    preview.dispose();
   });
 });

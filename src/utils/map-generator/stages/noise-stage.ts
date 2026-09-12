@@ -113,6 +113,7 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
       max,
       mean,
       stdDev: Math.sqrt(variance),
+      bytes: noiseMap.byteLength,
     };
   }
 

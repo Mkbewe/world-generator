@@ -1,11 +1,4 @@
-export type MetricKind = 'number' | 'ratio' | 'bytes' | 'duration' | 'text';
-
-export interface MetricDescriptor {
-  label: string;
-  kind: MetricKind;
-  description: string;
-  precision?: number;
-}
+import type { MetricDescriptor } from '../../utils/format';
 
 export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
   shape: {
@@ -26,10 +19,6 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'ratio',
     description: 'Share of the grid that lies inside the world shape.',
   },
-  minX: { label: 'Min X', kind: 'number', description: 'Left edge of the world shape bounds.' },
-  minY: { label: 'Min Y', kind: 'number', description: 'Top edge of the world shape bounds.' },
-  maxX: { label: 'Max X', kind: 'number', description: 'Right edge of the world shape bounds.' },
-  maxY: { label: 'Max Y', kind: 'number', description: 'Bottom edge of the world shape bounds.' },
   frequency: {
     label: 'Frequency',
     kind: 'number',
@@ -66,6 +55,11 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'number',
     precision: 3,
     description: 'Standard deviation — how spread out the noise values are.',
+  },
+  bytes: {
+    label: 'Data',
+    kind: 'bytes',
+    description: 'Size of the layer data produced by this stage.',
   },
 };
 

@@ -1,6 +1,7 @@
 ﻿import { useLayoutEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
+import { useRenderStatisticsStore } from '../../stores';
 import {
   EMPTY_RENDER_STATE,
   type MapBaseLayerId,
@@ -21,7 +22,8 @@ interface PreviewMapProps {
 
 export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) {
   const [preview, setPreview] = useState<MapRendererState>(EMPTY_RENDER_STATE);
-  const instanceRef = useRef<MapRenderer | null>(null);
+  const setRenderStatistics = useRenderStatisticsStore(state => state.setResult);
+  const rendererRef = useRef<MapRenderer | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -36,20 +38,21 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
 
     const renderer = new MapRenderer({ canvas, overlayCanvas, viewportElement }, setPreview, {
       selectedLayer: activeBaseLayer,
+      onRenderStatistics: setRenderStatistics,
     });
-    instanceRef.current = renderer;
+    rendererRef.current = renderer;
     onReady(renderer);
 
     return () => {
-      instanceRef.current = null;
+      rendererRef.current = null;
       onReady(undefined);
       renderer.dispose();
     };
-  }, [onReady]);
+  }, [onReady, setRenderStatistics]);
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
     activeBaseLayer = layer;
-    instanceRef.current?.select(layer);
+    rendererRef.current?.select(layer);
   };
 
   return (
@@ -62,7 +65,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
         <MapLayerControls
           preview={preview}
           onBaseLayerChange={handleBaseLayerChange}
-          onOverlayChange={(id, visible) => instanceRef.current?.setOverlay(id, visible)}
+          onOverlayChange={(id, visible) => rendererRef.current?.setOverlay(id, visible)}
         >
           <div ref={wrapperRef} className={styles.previewWrapper}>
             <canvas

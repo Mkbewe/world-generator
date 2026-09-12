@@ -57,29 +57,10 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
     const { width, height } = context.config.world;
     const cells = width * height;
     let filledCells = 0;
-    let minX = width;
-    let minY = height;
-    let maxX = -1;
-    let maxY = -1;
 
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (mask[y * width + x] !== 1) {
-          continue;
-        }
+    for (let index = 0; index < mask.length; index++) {
+      if (mask[index] === 1) {
         filledCells++;
-        if (x < minX) {
-          minX = x;
-        }
-        if (x > maxX) {
-          maxX = x;
-        }
-        if (y < minY) {
-          minY = y;
-        }
-        if (y > maxY) {
-          maxY = y;
-        }
       }
     }
 
@@ -90,10 +71,7 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
       cells,
       filledCells,
       coverage: cells === 0 ? 0 : filledCells / cells,
-      minX: filledCells === 0 ? 0 : minX,
-      minY: filledCells === 0 ? 0 : minY,
-      maxX: filledCells === 0 ? 0 : maxX,
-      maxY: filledCells === 0 ? 0 : maxY,
+      bytes: mask.byteLength,
     };
   }
 }

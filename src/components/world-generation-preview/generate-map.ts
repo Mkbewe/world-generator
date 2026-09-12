@@ -1,82 +1,46 @@
-import type { GenerationSummary } from '../../stores';
+﻿import type { GenerationStatistics } from '../../stores';
 import {
   type GenerationEvent,
   MAP_STAGES,
   type MapConfig,
   PipelineWorkerClient,
-  type StageStatistics,
 } from '../../utils/map-generator';
-import {
-  cacheGeneratedMap,
-  hasAllBaseLayers,
-  isBaseLayerId,
-  type MapRenderer,
-  sourceOf,
-} from '../../utils/map-renderer';
-import {
-  applyGenerationEvent,
-  completeGenerationProgress,
-  createGenerationProgress,
-  type GenerationProgressState,
-} from '../generation-progress';
-
-export interface GenerationResult {
-  statistics: readonly StageStatistics[];
-  totalDurationMs: number;
-  summary: GenerationSummary;
-}
+import type { MapRenderer } from '../../utils/map-renderer';
+import { type GenerationProgressState, ProgressTracker } from '../generation-progress';
 
 export async function generateMap(
   config: MapConfig,
-  preview: MapRenderer,
+  renderer: MapRenderer,
   onProgress: (progress: GenerationProgressState) => void
-): Promise<GenerationResult> {
+): Promise<GenerationStatistics> {
   const worker = new PipelineWorkerClient();
-  const signal = preview.signal;
+  const signal = renderer.signal;
   const abort = (): void => worker.dispose();
   signal.addEventListener('abort', abort, { once: true });
 
-  let progress = createGenerationProgress(MAP_STAGES);
-  onProgress(progress);
+  const progress = new ProgressTracker(MAP_STAGES, onProgress);
+  progress.start();
 
   try {
     const result = await worker.generate(config, {
       onEvent(event) {
         signal.throwIfAborted();
-        applyStage(event, preview);
-        progress = applyGenerationEvent(progress, event);
-        onProgress(progress);
+        applyStage(event, renderer);
+        progress.handle(event);
       },
     });
 
     signal.throwIfAborted();
-    const layers = preview.getLayers();
-    if (!hasAllBaseLayers(layers)) {
+    if (!renderer.isComplete()) {
       throw new Error('Pipeline completed without all required map layers.');
     }
+    renderer.save();
 
-    cacheGeneratedMap({
-      width: config.world.width,
-      height: config.world.height,
-      seed: String(config.world.seed),
-      shape: config.world.shape ?? 'disc',
-      size: config.world.width,
-      layers,
-    });
-
-    onProgress(completeGenerationProgress(progress, result.totalDurationMs));
+    progress.complete(result.totalDurationMs);
 
     return {
       statistics: result.statistics,
       totalDurationMs: result.totalDurationMs,
-      summary: {
-        seed: String(config.world.seed),
-        width: config.world.width,
-        height: config.world.height,
-        shape: config.world.shape ?? 'disc',
-        cells: config.world.width * config.world.height,
-        bytes: (layers.worldMask?.byteLength ?? 0) + (layers.noiseMap?.byteLength ?? 0),
-      },
     };
   } finally {
     signal.removeEventListener('abort', abort);
@@ -84,8 +48,8 @@ export async function generateMap(
   }
 }
 
-function applyStage(event: GenerationEvent, preview: MapRenderer): void {
-  if (event.type === 'stage-completed' && isBaseLayerId(event.stageId)) {
-    preview.add(event.stageId, event.data[sourceOf(event.stageId)]);
+function applyStage(event: GenerationEvent, renderer: MapRenderer): void {
+  if (event.type === 'stage-completed') {
+    renderer.addStageData(event.stageId, event.data);
   }
 }

@@ -1,6 +1,6 @@
 import type { WorldShapeLayer } from './layer';
 import type { MapOverlayId } from './types';
-import { Viewport } from './viewport';
+import { Viewport, type ViewportSize } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
 
 const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = { 'world-boundary': true };
@@ -9,6 +9,8 @@ export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly viewport: Viewport;
   private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
+  private rendered?: { world: WorldShapeLayer; viewport: ViewportSize };
+  renderDurationMs = 0;
 
   constructor(
     overlayCanvas: HTMLCanvasElement,
@@ -28,20 +30,52 @@ export class OverlayController {
     this.visible[id] = visible;
   }
 
-  render(world: WorldShapeLayer | undefined): void {
+  size(): ViewportSize | undefined {
     const viewport = this.viewport.measure();
-    try {
-      if (viewport && world && this.visible['world-boundary']) {
-        this.boundary.render(world, viewport);
-      } else {
+    return viewport
+      ? {
+          ...viewport,
+          devicePixelRatio: WorldBoundaryRenderer.pixelRatio(viewport.devicePixelRatio),
+        }
+      : undefined;
+  }
+
+  render(world: WorldShapeLayer | undefined): void {
+    const viewport = this.size();
+    if (!viewport || !world || !this.visible['world-boundary']) {
+      if (this.rendered) {
+        const startedAt = performance.now();
         this.boundary.clear();
+        this.rendered = undefined;
+        this.renderDurationMs += performance.now() - startedAt;
       }
+      return;
+    }
+    if (
+      this.rendered?.world === world &&
+      this.rendered.viewport.width === viewport.width &&
+      this.rendered.viewport.height === viewport.height &&
+      this.rendered.viewport.devicePixelRatio === viewport.devicePixelRatio
+    ) {
+      return;
+    }
+
+    const startedAt = performance.now();
+    this.rendered = undefined;
+    try {
+      this.boundary.render(world, viewport);
+      this.rendered = { world, viewport };
     } catch {
       // The boundary is a best-effort overlay; base layer errors are reported elsewhere.
+      this.boundary.clear();
+    } finally {
+      this.renderDurationMs += performance.now() - startedAt;
     }
   }
 
   reset(): void {
+    this.rendered = undefined;
+    this.renderDurationMs = 0;
     this.visible = { ...DEFAULT_VISIBLE };
     this.boundary.clear();
   }

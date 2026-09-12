@@ -1,14 +1,35 @@
 import type { GenerationProgressState, GenerationStageProgress } from './generation-progress';
 import type { GenerationEvent, StageInfo } from '../../utils/map-generator';
 
-export function createGenerationProgress(stages: readonly StageInfo[]): GenerationProgressState {
-  return {
-    stages: stages.map(({ id, name }) => ({ id, name, status: 'pending', percentage: 0 })),
-    status: 'running',
-  };
+export class ProgressTracker {
+  private state: GenerationProgressState;
+
+  constructor(
+    stages: readonly StageInfo[],
+    private readonly emit: (state: GenerationProgressState) => void
+  ) {
+    this.state = {
+      stages: stages.map(({ id, name }) => ({ id, name, status: 'pending', percentage: 0 })),
+      status: 'running',
+    };
+  }
+
+  start(): void {
+    this.emit(this.state);
+  }
+
+  handle(event: GenerationEvent): void {
+    this.state = applyEvent(this.state, event);
+    this.emit(this.state);
+  }
+
+  complete(totalDurationMs: number): void {
+    this.state = { ...this.state, status: 'completed', totalDurationMs };
+    this.emit(this.state);
+  }
 }
 
-export function applyGenerationEvent(
+function applyEvent(
   current: GenerationProgressState,
   event: GenerationEvent
 ): GenerationProgressState {
@@ -19,13 +40,6 @@ export function applyGenerationEvent(
       index === event.stageIndex ? applyStageEvent(stage, event) : stage
     ),
   };
-}
-
-export function completeGenerationProgress(
-  current: GenerationProgressState,
-  totalDurationMs: number
-): GenerationProgressState {
-  return { ...current, status: 'completed', totalDurationMs };
 }
 
 function applyStageEvent(

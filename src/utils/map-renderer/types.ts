@@ -1,17 +1,24 @@
+import type { ViewportSize } from './viewport';
+
 export interface MapLayers {
   worldMask?: Uint8Array;
   noiseMap?: Float32Array;
 }
 
-export const BASE_LAYERS = [
-  { id: 'world-shape', label: 'World shape', source: 'worldMask' },
-  { id: 'noise', label: 'Noise', source: 'noiseMap' },
-] as const satisfies readonly { id: string; label: string; source: keyof MapLayers }[];
+export interface MapMetadata {
+  seed: string;
+  shape: 'disc' | 'rectangle';
+}
 
-export const OVERLAY_LAYERS = [{ id: 'world-boundary', label: 'World boundary' }] as const;
+export const OVERLAY_LAYERS = {
+  'world-boundary': { label: 'World boundary' },
+} as const;
 
-export type MapBaseLayerId = (typeof BASE_LAYERS)[number]['id'];
-export type MapOverlayId = (typeof OVERLAY_LAYERS)[number]['id'];
+export type MapBaseLayerId = 'world-shape' | 'noise';
+export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
+
+/** ID in declaration order, for iteration. */
+export const OVERLAY_IDS = Object.keys(OVERLAY_LAYERS) as MapOverlayId[];
 
 export interface MapLayerOption<TId extends string> {
   id: TId;
@@ -23,28 +30,26 @@ export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
   visible: boolean;
 }
 
-export function isBaseLayerId(value: string): value is MapBaseLayerId {
-  return BASE_LAYERS.some(layer => layer.id === value);
+export interface RenderLayerStatistics {
+  id: MapBaseLayerId;
+  name: string;
+  /** Synchronous preparation and tile drawing time, excluding browser yields. */
+  durationMs: number;
+  tiles: number;
+  /** Pixels drawn in this run, including transparent pixels. */
+  pixels: number;
+  bytes: number;
 }
 
-export function sourceOf(id: MapBaseLayerId): keyof MapLayers {
-  const layer = BASE_LAYERS.find(entry => entry.id === id);
-  if (!layer) {
-    throw new Error(`Unknown layer: ${id}`);
-  }
-  return layer.source;
-}
-
-/** Last defined layer whose data is present; the natural default to display. */
-export function lastPresentLayer(layers: MapLayers): MapBaseLayerId | undefined {
-  for (const layer of [...BASE_LAYERS].reverse()) {
-    if (layers[layer.source]) {
-      return layer.id;
-    }
-  }
-  return undefined;
-}
-
-export function hasAllBaseLayers(layers: MapLayers): boolean {
-  return BASE_LAYERS.every(({ source }) => Boolean(layers[source]));
+export interface RenderStatistics {
+  /** Wall-clock time from starting the run to this report, including waiting. */
+  elapsedDurationMs: number;
+  /** Time from starting the run to the first tile copied to the preview canvas. */
+  firstTileDurationMs?: number;
+  viewport?: ViewportSize;
+  /** Cumulative synchronous overlay work in this run. */
+  overlayDurationMs: number;
+  /** Cumulative time copying complete layers to the preview canvas. */
+  presentationDurationMs: number;
+  layers: readonly RenderLayerStatistics[];
 }

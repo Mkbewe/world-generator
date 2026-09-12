@@ -1,24 +1,25 @@
 ﻿import type { MapSize } from '../layer';
-import type { MapLayers } from '../types';
+import type { MapLayers, MapMetadata } from '../types';
 
-export interface GeneratedMapSnapshot extends MapSize {
+export interface GeneratedMapSnapshot extends MapSize, MapMetadata {
   layers: MapLayers;
-  seed: string;
-  shape: 'disc' | 'rectangle';
   size: number;
 }
 
-let snapshot: GeneratedMapSnapshot | undefined;
+export class MapRepository {
+  private snapshot?: GeneratedMapSnapshot;
 
-export function clearGeneratedMap(): void {
-  snapshot = undefined;
+  get(): GeneratedMapSnapshot | undefined {
+    return this.snapshot;
+  }
+
+  save(snapshot: GeneratedMapSnapshot): void {
+    this.snapshot = snapshot;
+  }
+
+  clear(): void {
+    this.snapshot = undefined;
+  }
 }
 
-export function getGeneratedMapSnapshot(): GeneratedMapSnapshot | undefined {
-  return snapshot;
-}
-
-export function cacheGeneratedMap(value: GeneratedMapSnapshot): GeneratedMapSnapshot {
-  snapshot = value;
-  return snapshot;
-}
+export const mapRepository = new MapRepository();

@@ -1,11 +1,11 @@
-import { Theme } from '@radix-ui/themes';
+﻿import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
-import { GenerationStatistics } from './generation-statistics';
-import type { GenerationSummary } from '../../stores';
+import { GenerationStatisticsPanel } from './generation-statistics';
+import type { GenerationStatistics } from '../../stores';
 import type { StageStatistics } from '../../utils/map-generator';
 
-function createStatistics(overrides: Partial<StageStatistics> = {}): StageStatistics {
+function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'world-shape',
     stageName: 'World shape generation',
@@ -17,49 +17,44 @@ function createStatistics(overrides: Partial<StageStatistics> = {}): StageStatis
   };
 }
 
-const summary: GenerationSummary = {
-  seed: '123456',
-  width: 100,
-  height: 100,
-  shape: 'disc',
-  cells: 10000,
-  bytes: 50000,
-};
-
-function renderStatistics(
-  statistics: readonly StageStatistics[],
-  options: { totalDurationMs?: number; summary?: GenerationSummary } = {}
-) {
+function renderPanel(result: GenerationStatistics) {
   return render(
     <Theme>
-      <GenerationStatistics statistics={statistics} {...options} />
+      <GenerationStatisticsPanel statistics={result} />
     </Theme>
   );
 }
 
-describe('GenerationStatistics', () => {
-  it('always shows the heading', () => {
-    renderStatistics([]);
+describe('GenerationStatisticsPanel', () => {
+  it('shows the heading and the total time', () => {
+    renderPanel({ statistics: [createStage()], totalDurationMs: 42 });
 
-    expect(screen.getByRole('heading', { name: 'Statistics' })).toBeInTheDocument();
-  });
-
-  it('renders the generation summary', () => {
-    renderStatistics([createStatistics()], { summary, totalDurationMs: 42 });
-
-    expect(screen.getByText('123456')).toBeInTheDocument();
-    expect(screen.getByText('100 × 100')).toBeInTheDocument();
-    expect(screen.getByText('disc')).toBeInTheDocument();
-    expect(screen.getByText('10,000')).toBeInTheDocument();
-    expect(screen.getByText('48.8 KB')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Generation' })).toBeInTheDocument();
     expect(screen.getByText('42.0 ms')).toBeInTheDocument();
   });
 
+  it('sums the data produced by all stages', () => {
+    renderPanel({
+      statistics: [
+        createStage({ stageId: 'world-shape', details: { bytes: 1024 } }),
+        createStage({ stageId: 'noise', details: { bytes: 4096 } }),
+        createStage({ stageId: 'other', details: { samples: 123 } }),
+      ],
+      totalDurationMs: 40,
+    });
+
+    expect(screen.getByText('Total data')).toBeInTheDocument();
+    expect(screen.getByText('5.0 KB')).toBeInTheDocument();
+  });
+
   it('renders stage names and durations', () => {
-    renderStatistics([
-      createStatistics({ stageId: 'world-shape', stageName: 'World shape generation' }),
-      createStatistics({ stageId: 'noise', stageName: 'Noise generation', durationMs: 20.4 }),
-    ]);
+    renderPanel({
+      statistics: [
+        createStage({ stageId: 'world-shape', stageName: 'World shape generation' }),
+        createStage({ stageId: 'noise', stageName: 'Noise generation', durationMs: 20.4 }),
+      ],
+      totalDurationMs: 40,
+    });
 
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
@@ -68,11 +63,10 @@ describe('GenerationStatistics', () => {
   });
 
   it('formats metrics using their descriptors', () => {
-    renderStatistics([
-      createStatistics({
-        details: { coverage: 0.785, filledCells: 7850, mean: 0.5 },
-      }),
-    ]);
+    renderPanel({
+      statistics: [createStage({ details: { coverage: 0.785, filledCells: 7850, mean: 0.5 } })],
+      totalDurationMs: 40,
+    });
 
     expect(screen.getByText('Coverage')).toBeInTheDocument();
     expect(screen.getByText('78.5%')).toBeInTheDocument();

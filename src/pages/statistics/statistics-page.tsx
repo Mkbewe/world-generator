@@ -1,15 +1,21 @@
 import { Link } from 'react-router';
 import { Button, Card, Flex, Heading, Text } from '@radix-ui/themes';
 
-import { GenerationStatistics } from '../../components/generation-statistics';
-import { useGenerationStatisticsStore } from '../../stores';
+import { GenerationStatisticsPanel } from '../../components/generation-statistics';
+import { MapStatisticsPanel } from '../../components/map-statistics';
+import { RenderStatisticsPanel } from '../../components/render-statistics';
+import {
+  useGenerationStatisticsStore,
+  useMapConfigStore,
+  useRenderStatisticsStore,
+} from '../../stores';
 
 export function StatisticsPage() {
-  const statistics = useGenerationStatisticsStore(state => state.statistics);
-  const totalDurationMs = useGenerationStatisticsStore(state => state.totalDurationMs);
-  const summary = useGenerationStatisticsStore(state => state.summary);
+  const generation = useGenerationStatisticsStore(state => state.result);
+  const config = useMapConfigStore(state => state.config);
+  const renderStatistics = useRenderStatisticsStore(state => state.statistics);
 
-  if (statistics.length === 0) {
+  if (!generation || generation.statistics.length === 0) {
     return (
       <Card size={{ initial: '2', sm: '3' }}>
         <Flex direction='column' align='center' gap='4'>
@@ -28,10 +34,10 @@ export function StatisticsPage() {
   }
 
   return (
-    <GenerationStatistics
-      statistics={statistics}
-      totalDurationMs={totalDurationMs}
-      summary={summary}
-    />
+    <Flex direction='column' gap='5'>
+      {config && <MapStatisticsPanel world={config.world} />}
+      <GenerationStatisticsPanel statistics={generation} />
+      {renderStatistics && <RenderStatisticsPanel statistics={renderStatistics} />}
+    </Flex>
   );
 }

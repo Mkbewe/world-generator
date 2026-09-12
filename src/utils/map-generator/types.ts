@@ -30,7 +30,10 @@ export interface MapState {
 }
 
 export type StageMetric = number | string;
-export type StageMetrics = Record<string, StageMetric>;
+export type StageMetrics = Record<string, StageMetric> & {
+  /** Size of the data produced by this stage, in bytes. */
+  bytes?: number;
+};
 
 export interface StageStatistics {
   stageId: string;

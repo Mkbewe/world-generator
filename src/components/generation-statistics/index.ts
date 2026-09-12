@@ -1,1 +1,1 @@
-export { GenerationStatistics } from './generation-statistics';
+export { GenerationStatisticsPanel } from './generation-statistics';
