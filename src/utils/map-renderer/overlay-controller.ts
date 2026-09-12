@@ -1,5 +1,4 @@
-import type { WorldShapeLayer } from './layer';
-import type { MapOverlayId } from './types';
+import type { MapOverlayId, SpatialMask } from './types';
 import { Viewport, type ViewportSize } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
 
@@ -9,7 +8,7 @@ export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly viewport: Viewport;
   private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
-  private rendered?: { world: WorldShapeLayer; viewport: ViewportSize };
+  private rendered?: { world: SpatialMask; viewport: ViewportSize };
   renderDurationMs = 0;
 
   constructor(
@@ -40,7 +39,7 @@ export class OverlayController {
       : undefined;
   }
 
-  render(world: WorldShapeLayer | undefined): void {
+  render(world: SpatialMask | undefined): void {
     const viewport = this.size();
     if (!viewport || !world || !this.visible['world-boundary']) {
       if (this.rendered) {

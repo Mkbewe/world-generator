@@ -1,4 +1,11 @@
+import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
+
+/** Immutable spatial data usable by layers and overlays. */
+export interface SpatialMask {
+  readonly size: MapSize;
+  contains(x: number, y: number): boolean;
+}
 
 export interface MapLayers {
   worldMask?: Uint8Array;
