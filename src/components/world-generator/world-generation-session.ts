@@ -14,7 +14,7 @@ import {
 import { type GenerationProgressState, ProgressTracker } from '../generation-progress';
 
 /** Coordinates generation and preview, with independent cancellation for each. */
-export class MapGenerationSession {
+export class WorldGenerationSession {
   private generation?: AbortController;
 
   constructor(private readonly renderer: MapRenderer) {}

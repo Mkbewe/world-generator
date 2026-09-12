@@ -1,4 +1,4 @@
-import { MapGenerationSession } from './map-generation-session';
+import { WorldGenerationSession } from './world-generation-session';
 import {
   type GenerationEvent,
   type MapConfig,
@@ -38,9 +38,9 @@ function completed(stageId: string, data: Record<string, unknown>): GenerationEv
   };
 }
 
-describe('MapGenerationSession', () => {
+describe('WorldGenerationSession', () => {
   let renderer: MapRenderer;
-  let session: MapGenerationSession;
+  let session: WorldGenerationSession;
   const registry = new LayerRegistry({
     ...LAYER_DEFINITIONS,
     noise: { ...LAYER_DEFINITIONS.noise, source: 'elevation' },
@@ -64,7 +64,7 @@ describe('MapGenerationSession', () => {
       vi.fn(),
       { cache: new LayerCache(), registry }
     );
-    session = new MapGenerationSession(renderer);
+    session = new WorldGenerationSession(renderer);
   });
 
   afterEach(() => {
