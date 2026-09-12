@@ -43,17 +43,21 @@ jobs:
 
           # Extract changelog section for this version
           if [ -f "CHANGELOG.md" ]; then
-            # Get content between version header and next version header or end of file
-            CHANGELOG_CONTENT=$(sed -n "/^## \[${VERSION#v}\]/,/^## \[/p" CHANGELOG.md | sed '$d')
+            # Patches use "### [x]" and minor/major releases use "## [x]".
+            # Capture only the requested version, stopping at the next version header.
+            awk -v version="${VERSION#v}" '
+              /^## \[/ || /^### \[/ {
+                if (inside) exit
+                if (index($0, "[" version "]") > 0) { inside = 1; next }
+              }
+              inside { print }
+            ' CHANGELOG.md > /tmp/release_notes.md
 
-            # If empty, use the whole latest section
-            if [ -z "$CHANGELOG_CONTENT" ]; then
-              CHANGELOG_CONTENT=$(sed -n '/^## /,/^## /p' CHANGELOG.md | sed '$d')
+            if [ -s /tmp/release_notes.md ]; then
+              echo "has_changelog=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_changelog=false" >> $GITHUB_OUTPUT
             fi
-
-            # Save to file for GitHub Release
-            echo "$CHANGELOG_CONTENT" > /tmp/release_notes.md
-            echo "has_changelog=true" >> $GITHUB_OUTPUT
           else
             echo "No CHANGELOG.md found"
             echo "has_changelog=false" >> $GITHUB_OUTPUT
