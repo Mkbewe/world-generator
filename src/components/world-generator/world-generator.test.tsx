@@ -34,11 +34,11 @@ vi.mock('../../utils/map-generator', async importOriginal => {
   };
 });
 
-import { WorldGenerationPreview } from './world-generation-preview';
+import { WorldGenerator } from './world-generator';
 
 const previewSize = 300;
 
-describe('WorldGenerationPreview', () => {
+describe('WorldGenerator', () => {
   beforeEach(() => {
     generateMock.mockReset();
     disposeMock.mockReset();
@@ -80,7 +80,7 @@ describe('WorldGenerationPreview', () => {
     const disposeRenderer = vi.spyOn(MapRenderer.prototype, 'dispose');
     const { unmount } = render(
       <Theme>
-        <WorldGenerationPreview />
+        <WorldGenerator />
       </Theme>
     );
     await userEvent.setup().click(screen.getByTestId('generate-map-button'));
@@ -102,7 +102,7 @@ describe('WorldGenerationPreview', () => {
 
     render(
       <Theme>
-        <WorldGenerationPreview />
+        <WorldGenerator />
       </Theme>
     );
 
@@ -145,7 +145,7 @@ describe('WorldGenerationPreview', () => {
 
     render(
       <Theme>
-        <WorldGenerationPreview />
+        <WorldGenerator />
       </Theme>
     );
 
@@ -179,7 +179,7 @@ describe('WorldGenerationPreview', () => {
 
     const { unmount } = render(
       <Theme>
-        <WorldGenerationPreview />
+        <WorldGenerator />
       </Theme>
     );
     expect(screen.getByText('Complete')).toBeInTheDocument();
@@ -189,7 +189,7 @@ describe('WorldGenerationPreview', () => {
     });
     render(
       <Theme>
-        <WorldGenerationPreview />
+        <WorldGenerator />
       </Theme>
     );
 

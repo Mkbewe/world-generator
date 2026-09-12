@@ -1,5 +1,5 @@
-import { WorldGenerationPreview } from '../../components/world-generation-preview';
+import { WorldGenerator } from '../../components/world-generator';
 
 export function HomePage() {
-  return <WorldGenerationPreview />;
+  return <WorldGenerator />;
 }
