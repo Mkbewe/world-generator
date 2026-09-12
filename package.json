@@ -19,7 +19,7 @@
     "preview": "vite preview",
     "prepare": "husky",
     "check:all": "pnpm run typecheck && pnpm run lint && pnpm run lint:scss && pnpm run format && pnpm run test",
-    "release": "standard-version --skip.tag",
+    "release": "node scripts/release.mjs",
     "release:patch": "node scripts/release.mjs patch",
     "release:minor": "node scripts/release.mjs minor",
     "release:major": "node scripts/release.mjs major"
