@@ -1,18 +1,17 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
-import { useRenderStatisticsStore } from '../../stores';
+import { usePreviewStore, useRenderStatisticsStore } from '../../stores';
 import {
   emptyRenderState,
   type MapBaseLayerId,
+  type MapOverlayId,
   MapRenderer,
   type MapRendererState,
 } from '../../utils/map-renderer';
 import { GenerationProgress, type GenerationProgressState } from '../generation-progress';
 import { MapLayerControls } from '../map-layer-controls';
 import styles from './preview-map.module.scss';
-
-let activeBaseLayer: MapBaseLayerId | undefined;
 
 interface PreviewMapProps {
   onReady: (renderer: MapRenderer | undefined) => void;
@@ -36,10 +35,16 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
       return;
     }
 
+    const { baseLayer, overlays } = usePreviewStore.getState();
     const renderer = new MapRenderer({ canvas, overlayCanvas, viewportElement }, setPreview, {
-      selectedLayer: activeBaseLayer,
+      selectedLayer: baseLayer,
       onRenderStatistics: setRenderStatistics,
     });
+    for (const [id, visible] of Object.entries(overlays)) {
+      if (visible !== undefined) {
+        renderer.setOverlay(id as MapOverlayId, visible);
+      }
+    }
     rendererRef.current = renderer;
     setPreview(renderer.state);
     onReady(renderer);
@@ -52,8 +57,13 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
   }, [onReady, setRenderStatistics]);
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
-    activeBaseLayer = layer;
+    usePreviewStore.getState().setBaseLayer(layer);
     rendererRef.current?.select(layer);
+  };
+
+  const handleOverlayChange = (id: MapOverlayId, visible: boolean): void => {
+    usePreviewStore.getState().setOverlay(id, visible);
+    rendererRef.current?.setOverlay(id, visible);
   };
 
   return (
@@ -66,7 +76,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
         <MapLayerControls
           preview={preview}
           onBaseLayerChange={handleBaseLayerChange}
-          onOverlayChange={(id, visible) => rendererRef.current?.setOverlay(id, visible)}
+          onOverlayChange={handleOverlayChange}
         >
           <div ref={wrapperRef} className={styles.previewWrapper}>
             <canvas

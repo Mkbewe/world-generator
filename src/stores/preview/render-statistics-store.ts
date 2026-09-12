@@ -1,5 +1,5 @@
-import { createStore } from './create-store';
-import type { RenderStatistics } from '../utils/map-renderer';
+import type { RenderStatistics } from '../../utils/map-renderer';
+import { createStore } from '../create-store';
 
 interface RenderStatisticsState {
   statistics?: RenderStatistics;
