@@ -1,9 +1,16 @@
 .timeline {
   display: flex;
   overflow: hidden;
-  height: 14px;
+  height: 18px;
   border-radius: 999px;
   background: var(--gray-a4);
+}
+
+.timelineSegment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .timelineSegment[data-index='0'],
@@ -35,4 +42,12 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+}
+
+.timelineLabel {
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 0 2px rgb(0 0 0 / 60%);
 }

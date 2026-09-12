@@ -10,6 +10,7 @@ export type {
   MapGeneratorOptions,
   MapConfig,
   MapState,
+  NoiseConfig,
   StageMetric,
   StageMetrics,
   StageStatistics,

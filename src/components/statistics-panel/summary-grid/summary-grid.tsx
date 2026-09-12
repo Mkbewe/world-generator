@@ -1,6 +1,6 @@
 import { Text } from '@radix-ui/themes';
 
-import { StatLabel } from '../../stat-label';
+import { InfoLabel } from '../../info-label';
 import type { StatisticsMetric } from '../types';
 import styles from './summary-grid.module.scss';
 
@@ -13,7 +13,7 @@ export function SummaryGrid({ items }: SummaryGridProps) {
     <div className={styles.summary}>
       {items.map(item => (
         <div key={item.label} className={styles.summaryItem}>
-          <StatLabel label={item.label} description={item.description} />
+          <InfoLabel label={item.label} description={item.description} />
           <Text size='3' weight='bold'>
             {item.value}
           </Text>

@@ -1,13 +1,13 @@
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
-import { StatLabel } from './stat-label';
+import { InfoLabel } from './info-label';
 
-describe('StatLabel', () => {
+describe('InfoLabel', () => {
   it('renders the label text', () => {
     render(
       <Theme>
-        <StatLabel label='Coverage' description='Share of the grid.' />
+        <InfoLabel label='Coverage' description='Share of the grid.' />
       </Theme>
     );
 

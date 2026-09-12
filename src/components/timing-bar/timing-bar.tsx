@@ -3,6 +3,8 @@ import { Flex, Text } from '@radix-ui/themes';
 import { formatDuration } from '../../utils/format';
 import styles from './timing-bar.module.scss';
 
+const MIN_LABEL_PERCENT = 6;
+
 export interface TimingSegment {
   key: string;
   label: string;
@@ -27,16 +29,23 @@ export function TimingBar({ segments }: TimingBarProps) {
         Timing
       </Text>
       <div className={styles.timeline}>
-        {visible.map((segment, index) => (
-          <div
-            key={segment.key}
-            className={styles.timelineSegment}
-            data-index={index % 4}
-            data-muted={segment.muted}
-            style={{ width: `${(segment.durationMs / total) * 100}%` }}
-            title={`${segment.label}: ${formatDuration(segment.durationMs)}`}
-          />
-        ))}
+        {visible.map((segment, index) => {
+          const percent = (segment.durationMs / total) * 100;
+          return (
+            <div
+              key={segment.key}
+              className={styles.timelineSegment}
+              data-index={index % 4}
+              data-muted={segment.muted}
+              style={{ width: `${percent}%` }}
+              title={`${segment.label}: ${formatDuration(segment.durationMs)}`}
+            >
+              {percent >= MIN_LABEL_PERCENT && (
+                <span className={styles.timelineLabel}>{Math.round(percent)}%</span>
+              )}
+            </div>
+          );
+        })}
       </div>
       <Flex gap='3' wrap='wrap'>
         {visible.map((segment, index) => (

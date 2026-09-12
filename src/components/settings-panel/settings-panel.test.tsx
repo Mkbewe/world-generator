@@ -19,6 +19,8 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
         size={300}
         onShapeChange={() => {}}
         onSizeChange={() => {}}
+        noise={{ frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 }}
+        onNoiseChange={() => {}}
       />
     </Theme>
   );
@@ -30,6 +32,8 @@ describe('SettingsPanel', () => {
 
     expect(screen.getByRole('heading', { name: 'Map Settings' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Basic' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'World shape' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Noise' })).toBeInTheDocument();
     expect(screen.getByLabelText('Seed:')).toHaveValue('123456');
     expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generate Map');
   });

@@ -1,6 +1,6 @@
 import { Flex, Text } from '@radix-ui/themes';
 
-import { StatLabel } from '../../stat-label';
+import { InfoLabel } from '../../info-label';
 import type { StatisticsSection } from '../types';
 import styles from './stat-section.module.scss';
 
@@ -25,7 +25,7 @@ export function StatSection({ section }: StatSectionProps) {
         <div className={styles.metrics}>
           {section.metrics.map(metric => (
             <div key={metric.label} className={styles.metric}>
-              <StatLabel label={metric.label} description={metric.description} />
+              <InfoLabel label={metric.label} description={metric.description} />
               <Text size='2'>{metric.value}</Text>
             </div>
           ))}
