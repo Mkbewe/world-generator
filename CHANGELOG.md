@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/Mkbewe/world-generator/compare/v0.2.4...v0.3.0) (2026-09-12)
+
+
+### Features
+
+* **163:** add a segmented generation stage indicator ([#169](https://github.com/Mkbewe/world-generator/issues/169)) ([4879eb0](https://github.com/Mkbewe/world-generator/commit/4879eb0f77dd0347c3d42010bdd5dc5015d3a665))
+* **167:** add progres to generator ([#171](https://github.com/Mkbewe/world-generator/issues/171)) ([b9d8b5a](https://github.com/Mkbewe/world-generator/commit/b9d8b5a9dec2bd96ca656cbd5a369fec99bf0a1c))
+* **170:** extend statistic ([#173](https://github.com/Mkbewe/world-generator/issues/173)) ([1be52a1](https://github.com/Mkbewe/world-generator/commit/1be52a1ea2cb533652930f56178c072b5e6d6e3f))
+* **172:** add map statistic to statistic page ([#175](https://github.com/Mkbewe/world-generator/issues/175)) ([d600c84](https://github.com/Mkbewe/world-generator/commit/d600c84f98537f96c9cb52326f2ec20d8c2d9761))
+* **174:** add tab por noise stage ([#178](https://github.com/Mkbewe/world-generator/issues/178)) ([1f201cf](https://github.com/Mkbewe/world-generator/commit/1f201cfc80607f8d88edbc58c5ef96abcc83e049))
+
+
+### Bug Fixes
+
+* **169:** improve navigation link hover contrast ([#166](https://github.com/Mkbewe/world-generator/issues/166)) ([357548a](https://github.com/Mkbewe/world-generator/commit/357548a659ebccc3e32aecfabc1e0172182f8062))
+
+
+### Code Refactoring
+
+* **105:** map preview and add progressive rendering ([#159](https://github.com/Mkbewe/world-generator/issues/159)) ([188dbd6](https://github.com/Mkbewe/world-generator/commit/188dbd6ee740d4380e4cf0a0ea2d2d0f7998db13))
+* **169:** fix preview loading and refactor map renderer ([#168](https://github.com/Mkbewe/world-generator/issues/168)) ([254907b](https://github.com/Mkbewe/world-generator/commit/254907be34a1ebce29f4fcb40e4bf938025d53e5))
+* **176:** simplify in map renderer ([#177](https://github.com/Mkbewe/world-generator/issues/177)) ([7728300](https://github.com/Mkbewe/world-generator/commit/77283002b22b841bc95c9957b5b24c74140c06fd))
+
 ### [0.2.4](https://github.com/Mkbewe/world-generator/compare/v0.2.3...v0.2.4) (2026-09-09)
 
 
