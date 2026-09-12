@@ -2,12 +2,8 @@
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import { generateMap } from './generate-map';
-import { useGenerationStatisticsStore } from '../../stores';
-import {
-  clearGeneratedMap,
-  getGeneratedMapSnapshot,
-  type MapRenderer,
-} from '../../utils/map-renderer';
+import { useGenerationStatisticsStore, useMapConfigStore } from '../../stores';
+import { type MapRenderer, mapRepository } from '../../utils/map-renderer';
 import type { GenerationProgressState } from '../generation-progress';
 import { PreviewMap } from '../preview-map';
 import { SettingsPanel } from '../settings-panel';
@@ -16,10 +12,10 @@ import type { WorldShape, WorldSize } from '../settings-panel/forms';
 const DEFAULT_WORLD_SIZE = 1000;
 
 export function WorldGenerationPreview() {
-  const restoredMap = getGeneratedMapSnapshot();
-  const previewRef = useRef<MapRenderer | null>(null);
-  const runRef = useRef(0);
+  const restoredMap = mapRepository.get();
+  const rendererRef = useRef<MapRenderer | null>(null);
   const setResult = useGenerationStatisticsStore(state => state.setResult);
+  const setConfig = useMapConfigStore(state => state.setConfig);
   const [shape, setShape] = useState<WorldShape>(restoredMap?.shape ?? 'disc');
   const [size, setSize] = useState<WorldSize>(restoredMap?.size ?? DEFAULT_WORLD_SIZE);
   const [seed, setSeed] = useState(restoredMap?.seed ?? '123456');
@@ -29,28 +25,24 @@ export function WorldGenerationPreview() {
   const [error, setError] = useState<string>();
 
   const handleReady = useCallback((renderer: MapRenderer | undefined) => {
-    previewRef.current = renderer ?? null;
-    const restored = getGeneratedMapSnapshot();
-    if (renderer && restored) {
-      renderer.restore(restored);
-    }
+    rendererRef.current = renderer ?? null;
+    renderer?.restore();
   }, []);
 
-  const generate = (): void => {
+  const generate = async (): Promise<void> => {
     const parsedSeed = Number(seed);
     if (seed.trim() === '' || !Number.isSafeInteger(parsedSeed)) {
       setError('Seed must be an integer.');
       return;
     }
-    const preview = previewRef.current;
-    if (!preview) {
+    const renderer = rendererRef.current;
+    if (!renderer) {
       setError('Preview is not available.');
       return;
     }
 
-    const run = ++runRef.current;
-    clearGeneratedMap();
-    setResult({ statistics: [], totalDurationMs: undefined });
+    mapRepository.clear();
+    setResult(undefined);
     setGenerationRun(current => current + 1);
     setError(undefined);
     setIsGenerating(true);
@@ -60,30 +52,24 @@ export function WorldGenerationPreview() {
       noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
     };
 
-    preview.start(config.world);
+    renderer.start(config.world, { seed: String(parsedSeed), shape });
+    const signal = renderer.signal;
 
-    void generateMap(config, preview, setProgress)
-      .then(result => {
-        if (runRef.current !== run) {
-          return;
-        }
-        setResult({
-          statistics: result.statistics,
-          totalDurationMs: result.totalDurationMs,
-          summary: result.summary,
-        });
-        setIsGenerating(false);
-      })
-      .catch((generationError: unknown) => {
-        if (runRef.current !== run) {
-          return;
-        }
-        setProgress(current => (current ? { ...current, status: 'failed' } : undefined));
-        setError(
-          generationError instanceof Error ? generationError.message : 'World generation failed.'
-        );
-        setIsGenerating(false);
-      });
+    try {
+      const result = await generateMap(config, renderer, setProgress);
+      setConfig(config);
+      setResult(result);
+      setIsGenerating(false);
+    } catch (generationError) {
+      if (signal.aborted) {
+        return;
+      }
+      setProgress(current => (current ? { ...current, status: 'failed' } : undefined));
+      setError(
+        generationError instanceof Error ? generationError.message : 'World generation failed.'
+      );
+      setIsGenerating(false);
+    }
   };
 
   return (

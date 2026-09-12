@@ -7,6 +7,11 @@ export interface MapSize {
 
 export type TileReporter = (x: number, y: number, width: number, height: number) => void;
 
+export interface LayerRenderStatistics {
+  durationMs: number;
+  tiles: number;
+}
+
 const TILES_PER_AXIS = 10;
 
 function createYieldToBrowser(): () => Promise<void> {
@@ -29,6 +34,7 @@ const yieldToBrowser = createYieldToBrowser();
 export abstract class MapLayer {
   readonly canvas = document.createElement('canvas');
   private preparation?: Promise<void>;
+  statistics?: LayerRenderStatistics;
 
   protected constructor(
     readonly id: MapBaseLayerId,
@@ -72,6 +78,7 @@ export abstract class MapLayer {
 
   private async render(signal: AbortSignal, onTile?: TileReporter): Promise<void> {
     signal.throwIfAborted();
+    const startedAt = performance.now();
     const { width, height } = this.size;
     const context = this.canvas.getContext('2d');
     if (!context) {
@@ -80,6 +87,7 @@ export abstract class MapLayer {
     this.canvas.width = width;
     this.canvas.height = height;
 
+    let tiles = 0;
     const tileWidth = Math.ceil(width / TILES_PER_AXIS);
     const tileHeight = Math.ceil(height / TILES_PER_AXIS);
     for (let top = 0; top < height; top += tileHeight) {
@@ -93,10 +101,12 @@ export abstract class MapLayer {
         }
         context.putImageData(image, left, top);
         onTile?.(left, top, tileW, tileH);
+        tiles++;
         await yieldToBrowser();
       }
     }
     signal.throwIfAborted();
+    this.statistics = { durationMs: performance.now() - startedAt, tiles };
   }
 }
 

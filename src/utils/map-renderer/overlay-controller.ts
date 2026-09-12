@@ -1,6 +1,6 @@
 import type { WorldShapeLayer } from './layer';
 import type { MapOverlayId } from './types';
-import { Viewport } from './viewport';
+import { Viewport, type ViewportSize } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
 
 const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = { 'world-boundary': true };
@@ -9,6 +9,7 @@ export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly viewport: Viewport;
   private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
+  lastRenderDurationMs = 0;
 
   constructor(
     overlayCanvas: HTMLCanvasElement,
@@ -28,7 +29,12 @@ export class OverlayController {
     this.visible[id] = visible;
   }
 
+  size(): ViewportSize | undefined {
+    return this.viewport.measure();
+  }
+
   render(world: WorldShapeLayer | undefined): void {
+    const startedAt = performance.now();
     const viewport = this.viewport.measure();
     try {
       if (viewport && world && this.visible['world-boundary']) {
@@ -38,6 +44,8 @@ export class OverlayController {
       }
     } catch {
       // The boundary is a best-effort overlay; base layer errors are reported elsewhere.
+    } finally {
+      this.lastRenderDurationMs = performance.now() - startedAt;
     }
   }
 

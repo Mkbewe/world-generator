@@ -13,4 +13,5 @@ export type {
   StageMetric,
   StageMetrics,
   StageStatistics,
+  WorldConfig,
 } from './types';

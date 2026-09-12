@@ -3,10 +3,14 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { StatisticsPage } from './statistics-page';
-import { useGenerationStatisticsStore } from '../../stores';
+import {
+  useGenerationStatisticsStore,
+  useMapConfigStore,
+  useRenderStatisticsStore,
+} from '../../stores';
 import type { StageStatistics } from '../../utils/map-generator';
 
-function createStatistics(overrides: Partial<StageStatistics> = {}): StageStatistics {
+function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'noise',
     stageName: 'Noise generation',
@@ -30,11 +34,13 @@ function renderPage() {
 
 describe('StatisticsPage', () => {
   beforeEach(() => {
-    useGenerationStatisticsStore.setState({
-      statistics: [],
-      totalDurationMs: undefined,
-      summary: undefined,
-    });
+    useGenerationStatisticsStore.setState({ result: undefined });
+    useMapConfigStore.setState({ config: undefined });
+    useRenderStatisticsStore.setState({ statistics: undefined });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('renders an empty state when there are no statistics yet', () => {
@@ -45,30 +51,33 @@ describe('StatisticsPage', () => {
     expect(screen.getByRole('link', { name: 'Back to generator' })).toHaveAttribute('href', '/');
   });
 
-  it('renders the statistics when present', () => {
+  it('renders map and generation statistics when present', () => {
     useGenerationStatisticsStore.setState({
-      statistics: [
-        createStatistics({
-          stageId: 'world-shape',
-          stageName: 'World shape generation',
-          durationMs: 12.5,
-        }),
-        createStatistics(),
-      ],
-      totalDurationMs: 40,
-      summary: {
-        seed: '123456',
-        width: 10,
-        height: 10,
-        shape: 'disc',
-        cells: 100,
-        bytes: 2048,
+      result: {
+        statistics: [
+          createStage({
+            stageId: 'world-shape',
+            stageName: 'World shape generation',
+            durationMs: 12.5,
+          }),
+          createStage(),
+        ],
+        totalDurationMs: 40,
+      },
+    });
+    useMapConfigStore.setState({
+      config: {
+        world: { width: 10, height: 10, seed: 123456, shape: 'disc' },
+        noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
       },
     });
 
     renderPage();
 
-    expect(screen.getByRole('heading', { name: 'Statistics' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Map' })).toBeInTheDocument();
+    expect(screen.getByText('123456')).toBeInTheDocument();
+    expect(screen.getByText('10 × 10')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Generation' })).toBeInTheDocument();
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();

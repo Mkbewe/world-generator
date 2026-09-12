@@ -1,9 +1,4 @@
-import {
-  cacheGeneratedMap,
-  clearGeneratedMap,
-  type GeneratedMapSnapshot,
-  getGeneratedMapSnapshot,
-} from './repository';
+import { type GeneratedMapSnapshot, MapRepository } from './repository';
 
 function createSnapshot(seed: string): GeneratedMapSnapshot {
   return {
@@ -19,38 +14,36 @@ function createSnapshot(seed: string): GeneratedMapSnapshot {
   };
 }
 
-describe('generated map repository', () => {
-  beforeEach(() => {
-    clearGeneratedMap();
-  });
-
+describe('MapRepository', () => {
   it('has no snapshot by default', () => {
-    expect(getGeneratedMapSnapshot()).toBeUndefined();
+    expect(new MapRepository().get()).toBeUndefined();
   });
 
-  it('caches the snapshot and returns it by reference', () => {
-    const value = createSnapshot('1');
+  it('saves the snapshot and returns it by reference', () => {
+    const repository = new MapRepository();
+    const snapshot = createSnapshot('1');
 
-    const cached = cacheGeneratedMap(value);
+    repository.save(snapshot);
 
-    expect(cached).toBe(value);
-    expect(getGeneratedMapSnapshot()).toBe(value);
+    expect(repository.get()).toBe(snapshot);
   });
 
   it('replaces the previous snapshot', () => {
-    cacheGeneratedMap(createSnapshot('1'));
+    const repository = new MapRepository();
+    repository.save(createSnapshot('1'));
     const next = createSnapshot('2');
 
-    cacheGeneratedMap(next);
+    repository.save(next);
 
-    expect(getGeneratedMapSnapshot()).toBe(next);
+    expect(repository.get()).toBe(next);
   });
 
   it('clears the snapshot', () => {
-    cacheGeneratedMap(createSnapshot('1'));
+    const repository = new MapRepository();
+    repository.save(createSnapshot('1'));
 
-    clearGeneratedMap();
+    repository.clear();
 
-    expect(getGeneratedMapSnapshot()).toBeUndefined();
+    expect(repository.get()).toBeUndefined();
   });
 });

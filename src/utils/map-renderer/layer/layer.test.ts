@@ -26,6 +26,8 @@ describe('WorldShapeLayer', () => {
         image.data.some((value, index) => index % 4 === 3 && value === 255)
       );
       expect(opaque).toBe(true);
+      expect(layer.statistics?.tiles).toBe(16);
+      expect(layer.statistics?.durationMs).toBeGreaterThanOrEqual(0);
     } finally {
       layer.dispose();
       getContext.mockRestore();
