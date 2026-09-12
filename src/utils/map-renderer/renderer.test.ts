@@ -96,7 +96,11 @@ function setupWithSnapshot(
 
 describe('MapRenderer', () => {
   it('renders, reports, saves and restores a registered third mask without built-in layer assumptions', async () => {
-    const registry = new LayerRegistry({ islands, ...LAYER_DEFINITIONS });
+    const registry = new LayerRegistry({
+      islands,
+      'world-shape': LAYER_DEFINITIONS['world-shape'],
+      noise: LAYER_DEFINITIONS.noise,
+    });
     const cache = new LayerCache();
     const repository = new MapRepository();
     const onRenderStatistics = vi.fn();
@@ -212,7 +216,12 @@ describe('MapRenderer', () => {
       .map(([state]) => state.displayedLayer)
       .filter((id, index, ids) => Boolean(id) && id !== ids[index - 1]);
     expect(displayed).toEqual(['world-shape', 'noise']);
-    expect(preview.state.layers.map(layer => layer.id)).toEqual(['world-shape', 'noise']);
+    expect(preview.state.layers.map(layer => layer.id)).toEqual([
+      'world-shape',
+      'progression',
+      'macro-region',
+      'noise',
+    ]);
   });
 
   it('switches to a layer as soon as its drawing starts', async () => {
@@ -283,7 +292,7 @@ describe('MapRenderer', () => {
 
     expect(preview.signal.aborted).toBe(true);
     expect(preview.state.displayedLayer).toBe('noise');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false]);
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
     expect(() => preview.add('noise', new Float32Array(4))).toThrow();
     preview.dispose();
   });

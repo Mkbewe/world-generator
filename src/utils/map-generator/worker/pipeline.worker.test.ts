@@ -51,6 +51,7 @@ describe('generation worker', () => {
       type: 'stages',
       stages: [
         { id: 'world-shape', name: 'World shape generation' },
+        { id: 'macro-region', name: 'Macro region generation' },
         { id: 'noise', name: 'Noise generation' },
       ],
     });
@@ -60,6 +61,7 @@ describe('generation worker', () => {
     }
     expect(message.result).not.toHaveProperty('layers');
     expect(message.result.statistics.map(stage => stage.status)).toEqual([
+      'completed',
       'completed',
       'completed',
     ]);

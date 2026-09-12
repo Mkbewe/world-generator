@@ -5,7 +5,11 @@ describe('createMapGenerator', () => {
   it('creates the current world-generation stages in order', async () => {
     const pipeline = createMapGenerator();
 
-    expect(pipeline.stages.map(stage => stage.id)).toEqual(['world-shape', 'noise']);
+    expect(pipeline.stages.map(stage => stage.id)).toEqual([
+      'world-shape',
+      'macro-region',
+      'noise',
+    ]);
 
     const config: MapConfig = {
       world: { width: 5, height: 5, seed: 123 },
@@ -14,8 +18,14 @@ describe('createMapGenerator', () => {
 
     const result = await pipeline.generate(config, {});
 
-    expect(result.statistics.map(statistic => statistic.stageId)).toEqual(['world-shape', 'noise']);
+    expect(result.statistics.map(statistic => statistic.stageId)).toEqual([
+      'world-shape',
+      'macro-region',
+      'noise',
+    ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
+    expect(result.context.state.progressionMap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
     expect(result.context.state.noiseMap).toBeInstanceOf(Float32Array);
   });
 });

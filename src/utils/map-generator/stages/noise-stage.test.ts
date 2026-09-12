@@ -79,7 +79,7 @@ describe('NoiseStage', () => {
     const pipeline = createMapGenerator();
 
     const result = await pipeline.generate(createConfig(8, 6), {});
-    const details = result.statistics[1].details;
+    const details = result.statistics.find(statistic => statistic.stageId === 'noise')?.details;
 
     expect(details).toMatchObject({
       frequency: 4,
