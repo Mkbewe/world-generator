@@ -1,9 +1,9 @@
-﻿import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { useRenderStatisticsStore } from '../../stores';
 import {
-  EMPTY_RENDER_STATE,
+  emptyRenderState,
   type MapBaseLayerId,
   MapRenderer,
   type MapRendererState,
@@ -21,7 +21,7 @@ interface PreviewMapProps {
 }
 
 export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) {
-  const [preview, setPreview] = useState<MapRendererState>(EMPTY_RENDER_STATE);
+  const [preview, setPreview] = useState<MapRendererState>(emptyRenderState);
   const setRenderStatistics = useRenderStatisticsStore(state => state.setResult);
   const rendererRef = useRef<MapRenderer | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,6 +41,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
       onRenderStatistics: setRenderStatistics,
     });
     rendererRef.current = renderer;
+    setPreview(renderer.state);
     onReady(renderer);
 
     return () => {

@@ -1,11 +1,11 @@
 import {
-  LAYER_DEFINITIONS,
+  type LayerRegistry,
   type LayerRenderStatistics,
   type MapLayer,
   type TileReporter,
-} from './layer';
-import type { MapBaseLayerId, RenderStatistics } from './types';
-import type { ViewportSize } from './viewport';
+} from '../layer';
+import type { MapBaseLayerId, RenderStatistics } from '../types';
+import type { ViewportSize } from '../viewport';
 
 /** Measurements belong to one generation run, independently of the cached images. */
 export class RenderMetrics {
@@ -14,7 +14,10 @@ export class RenderMetrics {
   private presentationDurationMs = 0;
   private readonly layers = new Map<MapBaseLayerId, LayerRenderStatistics>();
 
-  constructor(private readonly onReport?: (statistics: RenderStatistics) => void) {}
+  constructor(
+    private readonly registry: LayerRegistry,
+    private readonly onReport?: (statistics: RenderStatistics) => void
+  ) {}
 
   start(): void {
     this.reset();
@@ -66,7 +69,7 @@ export class RenderMetrics {
       presentationDurationMs: this.presentationDurationMs,
       layers: [...layers].map(layer => ({
         id: layer.id,
-        name: LAYER_DEFINITIONS[layer.id].label,
+        name: this.registry.get(layer.id).label,
         durationMs: this.layers.get(layer.id)?.durationMs ?? 0,
         tiles: this.layers.get(layer.id)?.tiles ?? 0,
         pixels: this.layers.get(layer.id)?.pixels ?? 0,

@@ -3,7 +3,6 @@ import type { MapLayers, MapMetadata } from '../types';
 
 export interface GeneratedMapSnapshot extends MapSize, MapMetadata {
   layers: MapLayers;
-  size: number;
 }
 
 export class MapRepository {

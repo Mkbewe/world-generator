@@ -35,6 +35,8 @@ const yieldToBrowser = createYieldToBrowser();
 export abstract class MapLayer {
   readonly canvas = document.createElement('canvas');
   private preparation?: Promise<void>;
+  private preparationSignal?: AbortSignal;
+  private preparing = false;
   statistics?: LayerRenderStatistics;
 
   protected constructor(
@@ -43,16 +45,29 @@ export abstract class MapLayer {
   ) {}
 
   prepare(signal: AbortSignal, onTile?: TileReporter): Promise<void> {
-    if (!this.preparation) {
-      const preparation = this.render(signal, onTile);
-      this.preparation = preparation;
-      void preparation.catch(() => {
+    if (this.preparation) {
+      const reusable =
+        !this.preparing || this.preparationSignal === signal || !this.preparationSignal?.aborted;
+      if (reusable) {
+        return this.preparation;
+      }
+    }
+    const preparation = this.render(signal, onTile);
+    this.preparation = preparation;
+    this.preparationSignal = signal;
+    this.preparing = true;
+    void preparation
+      .catch(() => {
         if (this.preparation === preparation) {
           this.preparation = undefined;
         }
+      })
+      .finally(() => {
+        if (this.preparation === preparation) {
+          this.preparing = false;
+        }
       });
-    }
-    return this.preparation;
+    return preparation;
   }
 
   show(canvas: HTMLCanvasElement): void {
@@ -67,6 +82,8 @@ export abstract class MapLayer {
   dispose(): void {
     this.canvas.width = this.canvas.height = 0;
     this.preparation = undefined;
+    this.preparationSignal = undefined;
+    this.preparing = false;
   }
 
   protected abstract paintRow(

@@ -27,6 +27,16 @@ async function generate(request: PipelineWorkerGenerateRequest): Promise<void> {
         },
       }
     );
+    const { worldMask, noiseMap } = generation.context.state;
+    const cells = request.config.world.width * request.config.world.height;
+    if (
+      !(worldMask instanceof Uint8Array) ||
+      worldMask.length !== cells ||
+      !(noiseMap instanceof Float32Array) ||
+      noiseMap.length !== cells
+    ) {
+      throw new Error('Pipeline completed without all required map data.');
+    }
     workerScope.postMessage({
       type: 'result',
       requestId: request.requestId,

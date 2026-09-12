@@ -27,6 +27,31 @@ describe('WorldShapeLayer', () => {
     }
   });
 
+  it('starts a fresh render when the pending preparation used an aborted signal', async () => {
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: vi.fn(),
+      clearRect: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const layer = new WorldShapeLayer({ width: 4, height: 4 }, new Uint8Array(16).fill(1));
+    try {
+      const aborted = new AbortController();
+      const first = layer.prepare(aborted.signal);
+      aborted.abort();
+
+      const second = layer.prepare(new AbortController().signal);
+
+      await expect(second).resolves.toBeUndefined();
+      await expect(first).rejects.toThrow();
+      expect(layer.statistics?.tiles).toBe(16);
+    } finally {
+      layer.dispose();
+      getContext.mockRestore();
+    }
+  });
+
   it('renders the world shape into opaque pixels', async () => {
     const images: ImageData[] = [];
     const context = {

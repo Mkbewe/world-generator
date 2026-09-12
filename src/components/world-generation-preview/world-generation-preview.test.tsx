@@ -1,11 +1,13 @@
 import { Theme } from '@radix-ui/themes';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type * as WorldGenerationPipeline from '../../utils/map-generator';
+import { MapRenderer, mapRepository } from '../../utils/map-renderer';
 
-const { generateMock } = vi.hoisted(() => ({
+const { generateMock, disposeMock } = vi.hoisted(() => ({
   generateMock: vi.fn(),
+  disposeMock: vi.fn(),
 }));
 
 vi.mock('../../utils/map-generator', async importOriginal => {
@@ -15,7 +17,7 @@ vi.mock('../../utils/map-generator', async importOriginal => {
     ...actual,
     PipelineWorkerClient: class {
       generate = generateMock;
-      dispose = vi.fn();
+      dispose = disposeMock;
     },
   };
 });
@@ -27,6 +29,8 @@ const previewSize = 300;
 describe('WorldGenerationPreview', () => {
   beforeEach(() => {
     generateMock.mockReset();
+    disposeMock.mockReset();
+    mapRepository.clear();
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       createImageData: () => ({ data: new Uint8ClampedArray(previewSize * previewSize * 4) }),
       putImageData: vi.fn(),
@@ -36,16 +40,41 @@ describe('WorldGenerationPreview', () => {
   });
 
   afterEach(() => {
+    mapRepository.clear();
     vi.restoreAllMocks();
+  });
+
+  it('stops both generation and rendering when the application closes the preview', async () => {
+    let rejectGeneration!: (error: Error) => void;
+    generateMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectGeneration = reject;
+        })
+    );
+    disposeMock.mockImplementation(() => rejectGeneration(new Error('Worker disposed.')));
+    const disposeRenderer = vi.spyOn(MapRenderer.prototype, 'dispose');
+    const { unmount } = render(
+      <Theme>
+        <WorldGenerationPreview />
+      </Theme>
+    );
+    await userEvent.setup().click(screen.getByTestId('generate-map-button'));
+    expect(generateMock).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      unmount();
+    });
+
+    expect(disposeMock).toHaveBeenCalled();
+    expect(disposeRenderer).toHaveBeenCalledOnce();
+    expect(mapRepository.get()).toBeUndefined();
   });
 
   it('reports when pipeline maps are missing', async () => {
     const user = userEvent.setup();
 
-    generateMock.mockResolvedValue({
-      statistics: [],
-      totalDurationMs: 1,
-    });
+    generateMock.mockRejectedValue(new Error('Pipeline completed without all required map data.'));
 
     render(
       <Theme>
@@ -56,7 +85,7 @@ describe('WorldGenerationPreview', () => {
     await user.click(screen.getByTestId('generate-map-button'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Pipeline completed without all required map layers.'
+      'Pipeline completed without all required map data.'
     );
   });
 
@@ -84,7 +113,10 @@ describe('WorldGenerationPreview', () => {
         statistics: {},
         data: { noiseMap: new Float32Array(count).fill(0.5) },
       });
-      return Promise.resolve({ statistics: [], totalDurationMs: 1 });
+      return Promise.resolve({
+        statistics: [],
+        totalDurationMs: 1,
+      });
     });
 
     render(
