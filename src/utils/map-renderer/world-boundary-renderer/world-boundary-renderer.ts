@@ -4,6 +4,10 @@ import type { ViewportSize } from '../viewport';
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
 export class WorldBoundaryRenderer {
+  static pixelRatio(devicePixelRatio: number): number {
+    return Math.min(MAX_DEVICE_PIXEL_RATIO, Math.max(1, devicePixelRatio));
+  }
+
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
   clear(): void {
@@ -15,7 +19,7 @@ export class WorldBoundaryRenderer {
     if (!context) {
       throw new Error('Overlay canvas is not available.');
     }
-    const ratio = Math.min(MAX_DEVICE_PIXEL_RATIO, Math.max(1, viewport.devicePixelRatio));
+    const ratio = WorldBoundaryRenderer.pixelRatio(viewport.devicePixelRatio);
     const width = Math.max(1, Math.round(viewport.width * ratio));
     const height = Math.max(1, Math.round(viewport.height * ratio));
     this.canvas.width = width;

@@ -2,6 +2,7 @@ import { MapLayer } from './layer';
 import { MapRenderer, type MapRendererOptions } from './renderer';
 import { type GeneratedMapSnapshot, MapRepository } from './repository';
 import { Viewport } from './viewport';
+import { WorldBoundaryRenderer } from './world-boundary-renderer';
 
 function deferred() {
   let resolve!: () => void;
@@ -89,6 +90,14 @@ describe('MapRenderer', () => {
   });
 
   it('switches ready images without starting another render', async () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    const renderBoundary = vi
+      .spyOn(WorldBoundaryRenderer.prototype, 'render')
+      .mockImplementation(() => {});
     const { preview } = setup();
     const prepare = vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     preview.add('world-shape', new Uint8Array(4).fill(1));
@@ -98,6 +107,7 @@ describe('MapRenderer', () => {
     preview.select('world-shape');
     preview.select('noise');
     expect(prepare).toHaveBeenCalledTimes(2);
+    expect(renderBoundary).toHaveBeenCalledOnce();
     expect(preview.state.displayedLayer).toBe('noise');
   });
 
@@ -144,7 +154,7 @@ describe('MapRenderer', () => {
     expect(preview.state.overlays[0]).toMatchObject({ available: true, visible: true });
   });
 
-  it('exposes rendered layers and the layer range', async () => {
+  it('exposes rendered layers', async () => {
     const { preview } = setupWithSnapshot({
       worldMask: new Uint8Array(4).fill(1),
       noiseMap: new Float32Array([0.25, 0.5, 0.75, 1]),
@@ -156,7 +166,6 @@ describe('MapRenderer', () => {
     const layers = preview.getLayers();
     expect(layers.worldMask).toBeInstanceOf(Uint8Array);
     expect(layers.noiseMap).toBeInstanceOf(Float32Array);
-    expect(preview.range('noise')).toEqual({ min: 0.25, max: 1 });
   });
 
   it('honours the preferred layer option on restore', async () => {
@@ -208,9 +217,75 @@ describe('MapRenderer', () => {
     await renderer.ready;
 
     const latest = onRenderStatistics.mock.calls.at(-1)?.[0];
-    expect(latest).toMatchObject({ totalDurationMs: expect.any(Number) });
+    expect(latest).toMatchObject({ elapsedDurationMs: expect.any(Number) });
     expect(latest.layers).toEqual([
       expect.objectContaining({ id: 'world-shape', name: 'World shape' }),
     ]);
+  });
+
+  it('separates waiting, drawing and presentation and resets timings for cached layers', async () => {
+    let now = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 3,
+    });
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {
+      now += 7;
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: () => {
+        now += 3;
+      },
+      clearRect: vi.fn(),
+      drawImage: () => {
+        now += 2;
+      },
+    } as unknown as CanvasRenderingContext2D);
+    const onRenderStatistics = vi.fn();
+    const { preview } = setup({ onRenderStatistics });
+    const mask = new Uint8Array(4).fill(1);
+    const noise = new Float32Array(4);
+    now += 100;
+    preview.add('world-shape', mask);
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    preview.select('world-shape');
+    preview.add('noise', noise);
+    await vi.runAllTimersAsync();
+    await preview.ready;
+
+    expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
+      elapsedDurationMs: 153,
+      firstTileDurationMs: 105,
+      presentationDurationMs: 6,
+      overlayDurationMs: 7,
+      viewport: { devicePixelRatio: 2 },
+      layers: [
+        { durationMs: 20, tiles: 4, pixels: 4 },
+        { durationMs: 20, tiles: 4, pixels: 4 },
+      ],
+    });
+
+    preview.start({ width: 2, height: 2 });
+    preview.add('world-shape', mask);
+    preview.add('noise', noise);
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
+      elapsedDurationMs: 11,
+      firstTileDurationMs: undefined,
+      presentationDurationMs: 4,
+      overlayDurationMs: 7,
+      layers: [
+        { durationMs: 0, tiles: 0, pixels: 0 },
+        { durationMs: 0, tiles: 0, pixels: 0 },
+      ],
+    });
+    preview.dispose();
   });
 });

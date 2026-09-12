@@ -38,6 +38,7 @@ describe('GenerationStatisticsPanel', () => {
       statistics: [
         createStage({ stageId: 'world-shape', details: { bytes: 1024 } }),
         createStage({ stageId: 'noise', details: { bytes: 4096 } }),
+        createStage({ stageId: 'other', details: { samples: 123 } }),
       ],
       totalDurationMs: 40,
     });

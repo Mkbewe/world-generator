@@ -9,7 +9,8 @@ export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly viewport: Viewport;
   private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
-  lastRenderDurationMs = 0;
+  private rendered?: { world: WorldShapeLayer; viewport: ViewportSize };
+  renderDurationMs = 0;
 
   constructor(
     overlayCanvas: HTMLCanvasElement,
@@ -30,26 +31,51 @@ export class OverlayController {
   }
 
   size(): ViewportSize | undefined {
-    return this.viewport.measure();
+    const viewport = this.viewport.measure();
+    return viewport
+      ? {
+          ...viewport,
+          devicePixelRatio: WorldBoundaryRenderer.pixelRatio(viewport.devicePixelRatio),
+        }
+      : undefined;
   }
 
   render(world: WorldShapeLayer | undefined): void {
-    const startedAt = performance.now();
-    const viewport = this.viewport.measure();
-    try {
-      if (viewport && world && this.visible['world-boundary']) {
-        this.boundary.render(world, viewport);
-      } else {
+    const viewport = this.size();
+    if (!viewport || !world || !this.visible['world-boundary']) {
+      if (this.rendered) {
+        const startedAt = performance.now();
         this.boundary.clear();
+        this.rendered = undefined;
+        this.renderDurationMs += performance.now() - startedAt;
       }
+      return;
+    }
+    if (
+      this.rendered?.world === world &&
+      this.rendered.viewport.width === viewport.width &&
+      this.rendered.viewport.height === viewport.height &&
+      this.rendered.viewport.devicePixelRatio === viewport.devicePixelRatio
+    ) {
+      return;
+    }
+
+    const startedAt = performance.now();
+    this.rendered = undefined;
+    try {
+      this.boundary.render(world, viewport);
+      this.rendered = { world, viewport };
     } catch {
       // The boundary is a best-effort overlay; base layer errors are reported elsewhere.
+      this.boundary.clear();
     } finally {
-      this.lastRenderDurationMs = performance.now() - startedAt;
+      this.renderDurationMs += performance.now() - startedAt;
     }
   }
 
   reset(): void {
+    this.rendered = undefined;
+    this.renderDurationMs = 0;
     this.visible = { ...DEFAULT_VISIBLE };
     this.boundary.clear();
   }

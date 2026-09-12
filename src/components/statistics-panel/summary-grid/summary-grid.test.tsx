@@ -2,9 +2,9 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { SummaryGrid } from './summary-grid';
-import type { StatisticsSummaryItem } from '../types';
+import type { StatisticsMetric } from '../types';
 
-const items: StatisticsSummaryItem[] = [
+const items: StatisticsMetric[] = [
   { label: 'Seed', value: '123456', description: 'Seed.' },
   { label: 'Cells', value: '5,000', description: 'Cells.' },
 ];

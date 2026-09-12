@@ -1,13 +1,13 @@
 import { formatNumber } from '../../utils/format';
 import type { WorldConfig } from '../../utils/map-generator';
-import { StatisticsPanel, type StatisticsSummaryItem } from '../statistics-panel';
+import { type StatisticsMetric, StatisticsPanel } from '../statistics-panel';
 
 interface MapStatisticsPanelProps {
   world: WorldConfig;
 }
 
 export function MapStatisticsPanel({ world }: MapStatisticsPanelProps) {
-  const items: StatisticsSummaryItem[] = [
+  const items: StatisticsMetric[] = [
     {
       label: 'Seed',
       value: String(world.seed),

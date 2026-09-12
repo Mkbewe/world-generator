@@ -1,19 +1,19 @@
 import { hasAllBaseLayers, isBaseLayerId, lastPresentLayer, sourceOf } from './base-layers';
 import {
+  BASE_LAYER_IDS,
   LAYER_DEFINITIONS,
   type LayerCache,
   layerCache,
   LayerQueue,
+  type LayerRenderStatistics,
   type MapLayer,
   type MapSize,
   type TileReporter,
-  type WorldShapeLayer,
+  WorldShapeLayer,
 } from './layer';
 import { OverlayController } from './overlay-controller';
 import { type GeneratedMapSnapshot, type MapRepository, mapRepository } from './repository';
 import {
-  BASE_LAYER_IDS,
-  BASE_LAYERS,
   type MapBaseLayerId,
   type MapLayerOption,
   type MapLayers,
@@ -51,7 +51,7 @@ export interface MapRendererOptions {
 export const EMPTY_RENDER_STATE: MapRendererState = {
   layers: BASE_LAYER_IDS.map(id => ({
     id,
-    label: BASE_LAYERS[id].label,
+    label: LAYER_DEFINITIONS[id].label,
     available: false,
   })),
   overlays: OVERLAY_IDS.map(id => ({
@@ -82,6 +82,9 @@ export class MapRenderer {
   private metadata?: MapMetadata;
   private selectedLayer?: MapBaseLayerId;
   private renderStartedAt?: number;
+  private firstTileDurationMs?: number;
+  private presentationDurationMs = 0;
+  private readonly layerStatistics = new Map<MapBaseLayerId, LayerRenderStatistics>();
 
   constructor(
     private readonly elements: MapRendererElements,
@@ -93,12 +96,20 @@ export class MapRenderer {
     this.selectedLayer = options.selectedLayer;
     this.onRenderStatistics = options.onRenderStatistics;
     this.overlays = new OverlayController(elements.overlayCanvas, elements.viewportElement, () =>
-      this.refresh()
+      this.overlays.render(this.boundaryLayer())
     );
     this.queue = new LayerQueue({
       signal: () => this.lifetime.signal,
-      load: (layer, signal) =>
-        layer.prepare(signal, this.auto ? this.tilePainter(layer) : undefined),
+      load: async (layer, signal) => {
+        const previous = layer.statistics;
+        try {
+          await layer.prepare(signal, this.auto ? this.tilePainter(layer) : undefined);
+        } finally {
+          if (!signal.aborted && layer.statistics && layer.statistics !== previous) {
+            this.layerStatistics.set(layer.id, { ...layer.statistics });
+          }
+        }
+      },
       present: layer => this.present(layer),
       fail: (layer, error) => {
         layer.dispose();
@@ -121,7 +132,7 @@ export class MapRenderer {
     return {
       layers: BASE_LAYER_IDS.map(id => ({
         id,
-        label: BASE_LAYERS[id].label,
+        label: LAYER_DEFINITIONS[id].label,
         available: this.available.has(id),
       })),
       overlays: OVERLAY_IDS.map(id => ({
@@ -218,11 +229,6 @@ export class MapRenderer {
     return layers;
   }
 
-  range(id: MapBaseLayerId): { min: number; max: number } | undefined {
-    const layer = this.layerMap.get(id);
-    return layer ? LAYER_DEFINITIONS[id].range?.(layer) : undefined;
-  }
-
   select(id: MapBaseLayerId): void {
     const layer = this.layerMap.get(id);
     if (!layer || !this.available.has(id)) {
@@ -238,7 +244,8 @@ export class MapRenderer {
 
   setOverlay(id: MapOverlayId, visible: boolean): void {
     this.overlays.setVisible(id, visible);
-    this.refresh();
+    this.overlays.render(this.boundaryLayer());
+    this.emitState();
   }
 
   reset(emit = true): void {
@@ -251,6 +258,9 @@ export class MapRenderer {
     this.size = undefined;
     this.metadata = undefined;
     this.renderStartedAt = undefined;
+    this.firstTileDurationMs = undefined;
+    this.presentationDurationMs = 0;
+    this.layerStatistics.clear();
     this.elements.canvas.width = this.elements.canvas.height = 0;
     this.overlays.reset();
     if (emit) {
@@ -271,12 +281,8 @@ export class MapRenderer {
   }
 
   private boundaryLayer(): WorldShapeLayer | undefined {
-    for (const layer of this.layerMap.values()) {
-      if (LAYER_DEFINITIONS[layer.id].boundary) {
-        return layer as WorldShapeLayer;
-      }
-    }
-    return undefined;
+    const layer = this.layerMap.get('world-shape');
+    return layer instanceof WorldShapeLayer ? layer : undefined;
   }
 
   private enqueue(layer: MapLayer): void {
@@ -287,10 +293,11 @@ export class MapRenderer {
 
   private present(layer: MapLayer): void {
     this.available.add(layer.id);
+    this.overlays.render(this.boundaryLayer());
     if (this.auto || layer.id === this.selectedLayer) {
       this.show(layer);
     } else {
-      this.refresh();
+      this.emitState();
     }
     this.emitRenderStatistics();
   }
@@ -301,14 +308,17 @@ export class MapRenderer {
     }
     const startedAt = this.renderStartedAt;
     this.onRenderStatistics({
-      totalDurationMs: performance.now() - startedAt,
+      elapsedDurationMs: performance.now() - startedAt,
+      firstTileDurationMs: this.firstTileDurationMs,
       viewport: this.overlays.size(),
-      overlayDurationMs: this.overlays.lastRenderDurationMs,
+      overlayDurationMs: this.overlays.renderDurationMs,
+      presentationDurationMs: this.presentationDurationMs,
       layers: [...this.layerMap.values()].map(layer => ({
         id: layer.id,
-        name: BASE_LAYERS[layer.id].label,
-        durationMs: layer.statistics?.durationMs ?? 0,
-        tiles: layer.statistics?.tiles ?? 0,
+        name: LAYER_DEFINITIONS[layer.id].label,
+        durationMs: this.layerStatistics.get(layer.id)?.durationMs ?? 0,
+        tiles: this.layerStatistics.get(layer.id)?.tiles ?? 0,
+        pixels: this.layerStatistics.get(layer.id)?.pixels ?? 0,
         bytes: layer.canvas.width * layer.canvas.height * 4,
       })),
     });
@@ -317,24 +327,34 @@ export class MapRenderer {
   private tilePainter(layer: MapLayer): TileReporter {
     const context = this.elements.canvas.getContext('2d');
     return (x, y, width, height) => {
-      context?.drawImage(layer.canvas, x, y, width, height, x, y, width, height);
+      if (!context) {
+        return;
+      }
+      context.drawImage(layer.canvas, x, y, width, height, x, y, width, height);
+      if (this.firstTileDurationMs === undefined && this.renderStartedAt !== undefined) {
+        this.firstTileDurationMs = performance.now() - this.renderStartedAt;
+      }
     };
   }
 
   private show(layer: MapLayer): void {
-    layer.show(this.elements.canvas);
+    const startedAt = performance.now();
+    try {
+      layer.show(this.elements.canvas);
+    } finally {
+      this.presentationDurationMs += performance.now() - startedAt;
+    }
     this.available.add(layer.id);
     this.displayedLayer = layer.id;
-    this.refresh();
+    this.emitState();
   }
 
   private reportError(error: unknown): void {
     this.error = error instanceof Error ? error.message : String(error);
-    this.refresh();
+    this.emitState();
   }
 
-  private refresh(): void {
-    this.overlays.render(this.boundaryLayer());
+  private emitState(): void {
     this.onChange(this.size ? this.state : EMPTY_RENDER_STATE);
   }
 }

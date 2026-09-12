@@ -10,20 +10,14 @@ export interface MapMetadata {
   shape: 'disc' | 'rectangle';
 }
 
-export const BASE_LAYERS = {
-  'world-shape': { label: 'World shape', source: 'worldMask' },
-  noise: { label: 'Noise', source: 'noiseMap' },
-} as const satisfies Record<string, { label: string; source: keyof MapLayers }>;
-
 export const OVERLAY_LAYERS = {
   'world-boundary': { label: 'World boundary' },
 } as const;
 
-export type MapBaseLayerId = keyof typeof BASE_LAYERS;
+export type MapBaseLayerId = 'world-shape' | 'noise';
 export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
 
 /** ID in declaration order, for iteration. */
-export const BASE_LAYER_IDS = Object.keys(BASE_LAYERS) as MapBaseLayerId[];
 export const OVERLAY_IDS = Object.keys(OVERLAY_LAYERS) as MapOverlayId[];
 
 export interface MapLayerOption<TId extends string> {
@@ -39,14 +33,23 @@ export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
 export interface RenderLayerStatistics {
   id: MapBaseLayerId;
   name: string;
+  /** Synchronous preparation and tile drawing time, excluding browser yields. */
   durationMs: number;
   tiles: number;
+  /** Pixels drawn in this run, including transparent pixels. */
+  pixels: number;
   bytes: number;
 }
 
 export interface RenderStatistics {
-  totalDurationMs: number;
+  /** Wall-clock time from starting the run to this report, including waiting. */
+  elapsedDurationMs: number;
+  /** Time from starting the run to the first tile copied to the preview canvas. */
+  firstTileDurationMs?: number;
   viewport?: ViewportSize;
+  /** Cumulative synchronous overlay work in this run. */
   overlayDurationMs: number;
+  /** Cumulative time copying complete layers to the preview canvas. */
+  presentationDurationMs: number;
   layers: readonly RenderLayerStatistics[];
 }

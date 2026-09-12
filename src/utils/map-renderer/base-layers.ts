@@ -1,11 +1,12 @@
-import { BASE_LAYER_IDS, BASE_LAYERS, type MapBaseLayerId, type MapLayers } from './types';
+import { BASE_LAYER_IDS, LAYER_DEFINITIONS } from './layer/layer-definition';
+import type { MapBaseLayerId, MapLayers } from './types';
 
 export function isBaseLayerId(value: string): value is MapBaseLayerId {
-  return value in BASE_LAYERS;
+  return Object.hasOwn(LAYER_DEFINITIONS, value);
 }
 
 export function sourceOf(id: MapBaseLayerId): keyof MapLayers {
-  return BASE_LAYERS[id].source;
+  return LAYER_DEFINITIONS[id].source;
 }
 
 /** Last defined layer whose data is present; the natural default to display. */

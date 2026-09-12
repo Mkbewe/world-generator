@@ -2,13 +2,13 @@ import { Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import { StatSection } from './stat-section';
 import { SummaryGrid } from './summary-grid';
-import type { StatisticsSection, StatisticsSummaryItem } from './types';
+import type { StatisticsMetric, StatisticsSection } from './types';
 import { TimingBar, type TimingSegment } from '../timing-bar';
 import styles from './statistics-panel.module.scss';
 
 interface StatisticsPanelProps {
   title: string;
-  summary?: readonly StatisticsSummaryItem[];
+  summary?: readonly StatisticsMetric[];
   timing?: readonly TimingSegment[];
   sections?: readonly StatisticsSection[];
 }

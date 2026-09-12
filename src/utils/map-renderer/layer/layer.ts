@@ -10,6 +10,7 @@ export type TileReporter = (x: number, y: number, width: number, height: number)
 export interface LayerRenderStatistics {
   durationMs: number;
   tiles: number;
+  pixels: number;
 }
 
 const TILES_PER_AXIS = 10;
@@ -87,13 +88,15 @@ export abstract class MapLayer {
     this.canvas.width = width;
     this.canvas.height = height;
 
-    let tiles = 0;
+    const statistics = { durationMs: performance.now() - startedAt, tiles: 0, pixels: 0 };
+    this.statistics = statistics;
     const tileWidth = Math.ceil(width / TILES_PER_AXIS);
     const tileHeight = Math.ceil(height / TILES_PER_AXIS);
     for (let top = 0; top < height; top += tileHeight) {
       const tileH = Math.min(tileHeight, height - top);
       for (let left = 0; left < width; left += tileWidth) {
         signal.throwIfAborted();
+        const tileStartedAt = performance.now();
         const tileW = Math.min(tileWidth, width - left);
         const image = context.createImageData(tileW, tileH);
         for (let row = 0; row < tileH; row++) {
@@ -101,12 +104,13 @@ export abstract class MapLayer {
         }
         context.putImageData(image, left, top);
         onTile?.(left, top, tileW, tileH);
-        tiles++;
+        statistics.tiles++;
+        statistics.pixels += tileW * tileH;
+        statistics.durationMs += performance.now() - tileStartedAt;
         await yieldToBrowser();
       }
     }
     signal.throwIfAborted();
-    this.statistics = { durationMs: performance.now() - startedAt, tiles };
   }
 }
 
@@ -142,25 +146,11 @@ export class WorldShapeLayer extends MapLayer {
 }
 
 export class NoiseLayer extends MapLayer {
-  readonly min: number;
-  readonly max: number;
-
   constructor(
     readonly world: WorldShapeLayer,
     readonly noise: Float32Array
   ) {
     super('noise', world.size);
-    let min = Infinity;
-    let max = -Infinity;
-    for (let index = 0; index < noise.length; index++) {
-      if (world.mask[index] === 0) {
-        continue;
-      }
-      min = Math.min(min, noise[index]);
-      max = Math.max(max, noise[index]);
-    }
-    this.min = min;
-    this.max = max;
   }
 
   protected paintRow(

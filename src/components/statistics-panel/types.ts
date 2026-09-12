@@ -1,9 +1,3 @@
-export interface StatisticsSummaryItem {
-  label: string;
-  value: string;
-  description: string;
-}
-
 export interface StatisticsMetric {
   label: string;
   value: string;

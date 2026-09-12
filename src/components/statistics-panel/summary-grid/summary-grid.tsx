@@ -1,11 +1,11 @@
 import { Text } from '@radix-ui/themes';
 
 import { StatLabel } from '../../stat-label';
-import type { StatisticsSummaryItem } from '../types';
+import type { StatisticsMetric } from '../types';
 import styles from './summary-grid.module.scss';
 
 interface SummaryGridProps {
-  items: readonly StatisticsSummaryItem[];
+  items: readonly StatisticsMetric[];
 }
 
 export function SummaryGrid({ items }: SummaryGridProps) {

@@ -9,21 +9,20 @@ export interface LayerBuildContext {
 }
 
 export interface LayerDefinition {
+  label: string;
+  source: keyof MapLayers;
   /** Builds the layer from its raw data; may depend on already built layers. */
   build(context: LayerBuildContext, value: unknown): MapLayer;
   /** Writes the layer's raw data into a snapshot. */
   write(target: MapLayers, layer: MapLayer): void;
-  /** Optional value range exposed by the layer. */
-  range?(layer: MapLayer): { min: number; max: number } | undefined;
   /** Layers that must be built first. */
   requires?: readonly MapBaseLayerId[];
-  /** Marks the layer that provides the world boundary outline. */
-  boundary?: boolean;
 }
 
 export const LAYER_DEFINITIONS: Record<MapBaseLayerId, LayerDefinition> = {
   'world-shape': {
-    boundary: true,
+    label: 'World shape',
+    source: 'worldMask',
     build: ({ size, cache }, value) => {
       if (!(value instanceof Uint8Array)) {
         throw new Error('Invalid world mask.');
@@ -35,6 +34,8 @@ export const LAYER_DEFINITIONS: Record<MapBaseLayerId, LayerDefinition> = {
     },
   },
   noise: {
+    label: 'Noise',
+    source: 'noiseMap',
     requires: ['world-shape'],
     build: ({ cache, built }, value) => {
       if (!(value instanceof Float32Array)) {
@@ -45,9 +46,8 @@ export const LAYER_DEFINITIONS: Record<MapBaseLayerId, LayerDefinition> = {
     write: (target, layer) => {
       target.noiseMap = (layer as NoiseLayer).noise;
     },
-    range: layer => {
-      const noise = layer as NoiseLayer;
-      return Number.isFinite(noise.min) ? { min: noise.min, max: noise.max } : undefined;
-    },
   },
 };
+
+/** Layer IDs in dependency order. */
+export const BASE_LAYER_IDS = Object.keys(LAYER_DEFINITIONS) as MapBaseLayerId[];

@@ -1,7 +1,6 @@
 import { describeMetric } from './metric-descriptors';
 import type { GenerationStatistics } from '../../stores';
 import { formatBytes, formatDuration, formatMetric } from '../../utils/format';
-import type { StageStatistics } from '../../utils/map-generator';
 import { StatisticsPanel, type StatisticsSection } from '../statistics-panel';
 import type { TimingSegment } from '../timing-bar';
 
@@ -9,19 +8,10 @@ interface GenerationStatisticsPanelProps {
   statistics: GenerationStatistics;
 }
 
-function sumDataBytes(stages: readonly StageStatistics[]): number {
-  return stages.reduce((total, stage) => {
-    const stageBytes = Object.entries(stage.details ?? {}).reduce((sum, [key, value]) => {
-      return typeof value === 'number' && describeMetric(key).kind === 'bytes' ? sum + value : sum;
-    }, 0);
-    return total + stageBytes;
-  }, 0);
-}
-
 export function GenerationStatisticsPanel({ statistics }: GenerationStatisticsPanelProps) {
   const stages = statistics.statistics;
   const totalDurationMs = statistics.totalDurationMs;
-  const totalBytes = sumDataBytes(stages);
+  const totalBytes = stages.reduce((total, stage) => total + (stage.details?.bytes ?? 0), 0);
 
   const stageTotal = stages.reduce((sum, stage) => sum + stage.durationMs, 0);
   const overhead = Math.max(0, totalDurationMs - stageTotal);
