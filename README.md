@@ -50,21 +50,15 @@ pipeline contains two implemented stages:
 1. `WorldShapeStage` creates a disc or rectangular `worldMask`.
 2. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
 
-The preview exposes these results as base map layers. The `World boundary`
-overlay is currently implemented as well. Temperature and moisture are shown in
-the layer controls as reserved future overlays and remain disabled until their
-generation stages produce data.
+The preview exposes these results as base map layers and the `World boundary`
+overlay. The map viewer keeps raw numeric layers separate from rendering, so
+future stages such as height, temperature, moisture, hydrology and biomes can be
+added without changing the rendering layer.
 
-The map viewer keeps raw numeric layers separate from rendering. This allows
-future stages such as height, temperature, moisture, hydrology and biomes to be
-displayed or composited without changing the generator result format again.
-
-Generation stages emit lifecycle events used by the progress indicator below the
-map. Every completed stage reports its output data together with its statistics.
-Generation always runs in a worker. Stage data is copied before its buffers are
-transferred so subsequent stages can continue using the pipeline state. The
-current events report stage boundaries (`0%` and `100%`); chunk-level progress can
-be added later without changing the preview component API.
+Generation always runs in a Web Worker. Stages emit lifecycle events carrying
+their output data and progress, which drive the indicator below the map. The
+final result carries generation statistics only; generated layers are persisted
+from the stage events so the last map can be restored after navigation.
 
 For local visual testing, an optional delay can be enabled between stages:
 
@@ -75,47 +69,27 @@ VITE_GENERATION_STAGE_DELAY_MS=500
 The value is in milliseconds. Restart the Vite server after changing the value.
 Leave it unset, or set it to `0`, for normal generation speed.
 
-### Preview rendering statistics
+### Statistics
 
-`MapPreviewRenderer.showLayer()` resolves to a `PreviewRenderResult` containing
-`status`, `layer`, `revision`, `statistics` and `totalDurationMs`. Each operation
-reports `stageId`, `stageName`, `startedAt`, `finishedAt` and `durationMs`, together
-with its layer, source revision, buffer dimensions and `cacheHit`. The target is
-`display` for the visible base layer and overlays, or `cache` for background layer
-preparation. The base-layer duration includes rasterization (on a cache miss) and
-copying to the display canvas; an overlay has its own operation.
-
-```ts
-const renderer = new MapPreviewRenderer(elements, {
-  onStatistics: statistics => {
-    // Store this operation for a future statistics panel.
-    // Also receives overlay redraws triggered by resize, setSource or setOverlays.
-  },
-});
-renderer.setSource(source);
-const result = await renderer.showLayer('noise');
-// result.statistics contains only operations belonging to this showLayer call.
-```
-
-Use either the callback or the returned list when accumulating statistics; the
-same operation is available through both. Durations measure elapsed wall-clock
-time, including browser yields, rather than CPU time or GPU presentation time.
-The total also includes preparation of other layers after the active layer is
-shown. Canvas errors resolve as `failed` with an `error` message on the affected
-operation; a background failure does not hide an already displayed layer.
-Superseded calls resolve as `cancelled`, and unavailable layers as `skipped`.
-Filter by source revision when presenting results for the current map.
+The progress indicator below the map shows the current stage and percentage
+during generation. Finished runs keep their map configuration, per-stage
+generation statistics and render statistics (layer timings, tiles, first-tile
+time and presentation/overlay time); the `/statistics` page presents them
+together. All of it lives in memory for the session, so a full page refresh
+clears it.
 
 ## Project structure
 
-- `src/utils/map-generator` contains the stage pipeline, stage events and worker
-  transport.
-- `src/components/world-generation-preview` coordinates generation state and
-  sends raw results to the UI.
-- `src/components/preview-map` contains the map canvas and React controls for
-  base layers and overlays.
-- `src/utils/map-preview` contains the object-oriented preview renderer,
-  responsive viewport, surface cache, raster rendering and overlay rendering.
+- `src/utils/map-generator` contains the stage pipeline, stages, stage events and
+  worker transport.
+- `src/components/world-generator` is the generator view: settings, generation
+  orchestration and the map preview.
+- `src/components/preview-map` contains the map canvas and the layer/overlay
+  controls.
+- `src/utils/map-renderer` renders layers and overlays (scene, view, layer cache,
+  metrics and persistence).
+- `src/stores` holds global UI state: form values per settings tab, generation
+  progress and statistics, map config, preview selection and render statistics.
 - `src/components/generation-progress` renders the current stage and progress.
 - `docs/world-generation-roadmap.md` describes planned stages and future layer
   contracts beyond the currently implemented shape and noise stages.
@@ -125,12 +99,12 @@ Filter by source revision when presenting results for the current map.
 The repository uses a simplified GitHub Flow:
 
 - `master` — the single long-lived branch (protected)
-- `feature/<name>` — new work
-- `hotfix/<name>` — emergency fixes
+- `<type>/<issue>-<name>` — working branches, e.g. `feat/163-stage-indicator`
+- `release/vX.Y.Z` — release branches created by the release script
 
 Recommended flow:
 
-1. Create a `feature/*` (or `hotfix/*`) branch from `master`
+1. Create a branch from `master` (`feat/*`, `fix/*`, `refactor/*`, `chore/*`, ...)
 2. Open a PR to `master`
 3. After review and green CI, **squash and merge** into `master`
 
@@ -161,69 +135,45 @@ Common types:
 
 ## CI workflow
 
-CI is responsible for validating pull requests and branch updates.
+CI runs on pull requests and pushes to `master` (`ci.yml`) with two jobs:
 
-The workflow runs two parallel jobs:
+**Code Quality** — typecheck, ESLint, Stylelint, format and production build.
 
-**Code Quality** (typecheck, ESLint, Stylelint, format, build)
-- Type safety check (`pnpm typecheck`)
-- TypeScript/React linting (`pnpm lint`)
-- SCSS linting with Stylelint (`pnpm lint:scss`)
-- Formatting validation (`pnpm format`)
-- Production build verification (`pnpm build`)
+**Tests** — the full Vitest suite.
 
-**Tests** (unit and component tests)
-- Test suite execution (`pnpm test`)
-
-**PR Title Validation**
-- Enforces Conventional Commits format for PR titles
-- Validates commit type prefixes (feat, fix, docs, etc.)
-- Ensures subject starts with lowercase
-
-These checks are the main safety gate before merge.
+A separate workflow (`pr-title-check.yml`) validates that PR titles follow
+Conventional Commits (type prefix, lowercase subject). These checks are the main
+safety gate before merge.
 
 ## Versioning and releases
 
-The project uses `standard-version` for automated versioning and changelog generation.
-
-Available commands:
+Versioning and changelog generation use `standard-version` with Conventional
+Commits:
 
 ```bash
-pnpm release        # auto-detect version bump from commits
-pnpm release:patch  # 0.0.x
-pnpm release:minor  # 0.x.0
-pnpm release:major  # x.0.0
+pnpm release        # detects the bump and creates release/vX.Y.Z
+pnpm release:patch  # force patch
+pnpm release:minor  # force minor
+pnpm release:major  # force major
 ```
 
-This tool:
+`pnpm release` looks at the commits since the last tag: `feat:` bumps `minor`,
+while fixes, refactors, chores and docs bump `patch`. A breaking change
+(`feat!:` or a `BREAKING CHANGE:` footer) bumps `major` — or `minor` while the
+project is still on `0.x`. The script creates a `release/vX.Y.Z` branch, updates
+`package.json` and `CHANGELOG.md`, and commits the result; no git tag is created
+locally. Add `--dry-run` to preview the detected bump without changing anything.
 
-- analyzes commit messages (Conventional Commits)
-- decides version bump (`patch`, `minor`, or `major`)
-- updates `package.json`
-- generates `CHANGELOG.md`
-- creates a git commit with the changes
+Flow: run the release on a clean `master`, push the `release/*` branch and merge
+it through a PR. Merging ships the build to **dev**. The git tag and GitHub
+release are created later, when the tested build is **promoted to production**.
+The **Promote to Production** workflow calls **Create GitHub Release**
+(`create-release.yml`) as its final step, which tags the current
+`package.json` version and publishes the matching section of `CHANGELOG.md`.
 
-Examples:
-
-- `feat:` → bumps `minor`
-- `fix:` → bumps `patch`
-- `BREAKING CHANGE:` → bumps `major`
-
-Typical flow: on a `feature/*` branch run `pnpm release` to bump the version
-and update `CHANGELOG.md` (no git tag is created locally), then open the PR and
-merge it to `master`. Merging only ships the build to **dev** — no tag or
-release yet.
-
-The git tag and GitHub release are created later, when the tested build is
-**promoted to production**. The **Promote to Production** workflow calls the
-**Create GitHub Release** workflow (`create-release.yml`, a reusable
-`workflow_call`) as its final step, which:
-- creates a git tag for the current `package.json` version (e.g., `v0.1.0`)
-- creates a GitHub release with changelog notes
-
-This means a GitHub release always corresponds to something that is live in
-production. Rollbacks do **not** create releases. The tag step is idempotent —
-promoting the same version again will not create a duplicate tag or release.
+A GitHub release therefore always corresponds to something live in production,
+rollbacks do not create releases, and promoting the same version twice is a
+no-op.
 
 ## Deployment
 

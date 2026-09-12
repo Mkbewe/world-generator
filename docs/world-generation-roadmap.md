@@ -10,7 +10,7 @@
 
 ## Stan implementacji
 
-Stan na 2026-09-10, uwzględniający lokalne zmiany w katalogu roboczym.
+Stan na 2026-09-12.
 
 Aktualny generator jest działającym szkieletem pipeline'u, a nie pełną
 implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane są:
@@ -18,38 +18,29 @@ implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane s
 - `WorldShapeStage` — tworzy maskę świata w `worldMask`: dysk (`disc`) albo
   prostokąt (`rectangle`). Nie implementuje jeszcze zawijania krawędzi.
 - `NoiseStage` — tworzy deterministyczną mapę szumu w `noiseMap`.
-- `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia rozpoczęcia
-  etapu, jego zakończenia lub błędu. Zakończony etap przekazuje dane wynikowe
-  i statystyki; wynik całego pipeline'u zawiera statystyki oraz łączny czas.
-- `PipelineWorkerClient` — aplikacja zawsze uruchamia generowanie w Web Workerze.
-  Klient przekazuje zdarzenia etapów do UI, a worker kopiuje dane zakończonych
-  etapów przed transferem buforów, aby zachować dane potrzebne dalszym etapom.
+- `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia etapów wraz
+  z danymi i postępem; wynik zawiera statystyki i łączny czas.
+- `PipelineWorkerClient` — generowanie zawsze działa w Web Workerze; dane etapów
+  płyną zdarzeniami, a końcowy wynik zawiera tylko statystyki.
 - ustawienia świata — wybór kształtu, presety rozdzielczości 600, 2400 i 5000
   oraz własny rozmiar od 100 do 5000. UI generuje kwadratową siatkę `size × size`;
-  rozmiar oznacza liczbę próbek, a nie metry świata.
-- podgląd mapy — pozwala przełączać bazową warstwę `World shape`/`Noise` oraz
-  włączać nakładkę `World boundary`. Dane etapów udostępniają kolejne warstwy
-  jeszcze przed otrzymaniem końcowego wyniku generowania.
-- `utils/map-preview` — osobny moduł renderowania z cache powierzchni,
-  przygotowaniem nieaktywnych warstw w tle i anulowaniem nieaktualnego renderowania.
-  Granica świata jest rysowana na osobnym canvasie w rozdzielczości viewportu
-  z DPR ograniczonym do 2; bazowe warstwy nadal używają pełnej rozdzielczości danych.
-- odtwarzanie podglądu — ostatnia ukończona mapa i jej konfiguracja są zachowywane
-  w pamięci na czas działania aplikacji i odtwarzane po ponownym zamontowaniu widoku.
-  Nie jest to trwały zapis po odświeżeniu strony.
-- statystyki renderowania — `showLayer()` zwraca status, listę operacji i łączny
-  czas, a `onStatistics` raportuje również osobne przerysowania nakładek.
-  Operacje zawierają czasy, warstwę, rewizję, wymiary bufora, trafienie w cache
-  oraz cel `display`/`cache`. Obsługiwane są błędy i anulowanie; panel UI tych
-  statystyk oraz pomiary pamięci pozostają do zrobienia.
-- progres generowania — pokazuje aktualny etap, numer etapu i procent. Procent
-  jest obecnie raportowany na granicach etapów; raportowanie postępu z pętli i
-  chunków pozostaje zadaniem przyszłego API.
+  rozmiar oznacza liczbę próbek, a nie metry świata. Stan formularza jest
+  pamiętany osobno dla każdej zakładki i przeżywa zmianę widoku.
+- podgląd mapy — warstwy bazowe `World shape`/`Noise` oraz nakładka
+  `World boundary`, z progresywnym rysowaniem i wyborem pamiętanym między
+  widokami.
+- `utils/map-renderer` — renderowanie warstw i nakładek: scena, widok, cache
+  warstw, statystyki oraz zapis i odtworzenie ostatniej mapy.
+- odtwarzanie podglądu — ostatnia ukończona mapa i jej konfiguracja są trzymane
+  w pamięci na czas działania aplikacji i odtwarzane po powrocie;
+  odświeżenie strony czyści stan.
+- statystyki — oddzielne statystyki generowania i renderowania zbierane
+  w globalnych store'ach i pokazywane na stronie `/statistics`.
+- progres generowania — pokazuje aktualny etap, numer etapu i procent
+  raportowany z wnętrza etapów; postęp przeżywa zmianę widoku.
 
 Warstwy `Temperature`, `Moisture`, wysokość, batymetria, hydrologia, biomy i
-lokacje są jeszcze planowane. Kontrolki temperatury i wilgotności są już
-zarezerwowane w podglądzie, ale pozostają wyłączone do czasu pojawienia się
-odpowiednich danych.
+lokacje są jeszcze planowane i pojawią się, gdy wygenerują je odpowiednie etapy.
 
 Opcjonalne opóźnienie etapów do ręcznego testowania podglądu jest konfigurowane
 wewnątrz generatora przez zmienną `VITE_GENERATION_STAGE_DELAY_MS`. Nie jest to
@@ -81,10 +72,11 @@ odpowiadać za palety, normalizację, alpha blending i kolejność rysowania. Dz
 temu ta sama warstwa może być użyta jako baza, nakładka, źródło statystyk albo
 wejście kolejnego etapu.
 
-Warstwy powinny mieć rejestr metadanych obejmujący identyfikator, nazwę, typ
-danych, dostępność jako warstwa bazowa oraz dostępność jako nakładka. UI może
-wtedy pokazywać przyszłe warstwy jako wyłączone bez udawania, że generator już
-je produkuje.
+Warstwy mają już podstawowy rejestr (identyfikator, nazwa, źródło danych,
+zależności, budowa i odczyt warstwy). Docelowo rejestr powinien nieść także typ
+danych, dostępność jako warstwa bazowa lub nakładka oraz informacje o palecie,
+żeby UI mogło pokazywać przyszłe warstwy jako wyłączone bez udawania, że
+generator już je produkuje.
 
 Obecny wariant używa poziomych tabów dla warstw bazowych i przełączników
 (`Switch`) dla nakładek, wydzielonych do komponentów `MapLayerControls`
@@ -380,13 +372,11 @@ Zakres pierwszej wersji:
 Tryb eksploracji nie potrzebuje ekwipunku, zasobów, NPC, symulacji odległych obszarów ani zapisywania zmian w świecie. Kolejne iteracje mogą dodać animacje postaci, wizualne obiekty i dekoracje terenu. Chunkowanie oraz poziomy szczegółowości pozostają opcjonalną optymalizacją dla większych map. Skala postaci i kamery powinna wynikać z metrów świata oraz zoomu, a nie z liczby pikseli źródłowego obrazu.
 
 ## Wydajność — dalszy plan
-
 Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
-transfer buforów, postęp na granicach etapów i statystyki generowania oraz
-renderowania. Rasteryzacja podglądu działa na głównym wątku, oddając sterowanie
-przeglądarce co 128 wierszy. Rdzeń generatora przyjmuje `AbortSignal`, ale klient
-workera nie obsługuje jeszcze anulowania pojedynczego żądania; `dispose()` kończy
-cały worker. Renderer anuluje nieaktualne zadania przy zmianie źródła lub warstwy.
+progresywne rysowanie podglądu, postęp raportowany z wnętrza etapów oraz
+statystyki generowania i renderowania pokazywane na stronie statystyk. Cache
+warstw jest kluczowany tożsamością danych i współdzielony przez renderery;
+renderer anuluje nieaktualne rysowanie przy starcie nowego przebiegu.
 
 Pozostałe zadania:
 
@@ -396,15 +386,12 @@ Pozostałe zadania:
   mapy 5000 × 5000. Nie tworzyć pośrednich obrazów w pełnej rozdzielczości.
 - Dobrać próbkowanie maski i filtrowanie szumu; zachować zgodność warstw z granicą
   świata po zmianie rozmiaru viewportu lub DPR.
-- Powiązać cache z tożsamością danych warstwy i rozdzielczością podglądu, zachować
-  powierzchnie niezmienionych warstw między etapami i zabezpieczyć współdzielenie
-  cache przez wiele rendererów. Obecnie zmiana rewizji czyści cały cache.
 - Wprowadzić budżet pamięci cache i uzależnić przygotowanie nieaktywnych warstw
   od dostępnego budżetu.
 - Rozszerzyć statystyki o rozdzielczość źródłową i wynikową oraz szacowany rozmiar
-  buforów i cache; podłączyć statystyki renderowania do panelu UI.
-- Dodać postęp wewnątrz etapów oraz anulowanie pojedynczego generowania przez
-  protokół workera i UI.
+  buforów i cache.
+- Dodać anulowanie pojedynczego generowania przez protokół workera i UI; obecnie
+  anulowanie kończy cały worker.
 - Po pomiarach rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami
   w puli workerów. Hydrologię i inne globalnie zależne etapy dzielić dopiero po
   zaprojektowaniu ich przepływu danych.
