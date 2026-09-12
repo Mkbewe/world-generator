@@ -40,15 +40,13 @@ describe('pipeline worker result', () => {
     return messages.at(-1);
   }
 
-  it('returns complete map data without a renderer', async () => {
+  it('returns generation statistics once the map data is complete', async () => {
     const message = await generate();
     expect(message?.type).toBe('result');
     if (message?.type !== 'result') {
       throw new Error('Expected a generation result.');
     }
-    expect(message.result.layers.worldMask).toEqual(new Uint8Array(4).fill(1));
-    expect(message.result.layers.noiseMap).toBeInstanceOf(Float32Array);
-    expect(message.result.layers.noiseMap).toHaveLength(4);
+    expect(message.result).not.toHaveProperty('layers');
     expect(message.result.statistics.map(stage => stage.status)).toEqual([
       'completed',
       'completed',

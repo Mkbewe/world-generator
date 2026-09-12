@@ -78,7 +78,6 @@ describe('MapGenerationSession', () => {
     const mask = new Uint8Array(4).fill(1);
     const elevation = new Float32Array(4);
     const result = {
-      layers: { worldMask: mask.slice(), noiseMap: elevation.slice() },
       statistics: [],
       totalDurationMs: 2,
     };
@@ -107,13 +106,12 @@ describe('MapGenerationSession', () => {
     expect(mapRepository.get()).toMatchObject({
       width: 2,
       height: 2,
-      size: 2,
       seed: '17',
       shape: 'disc',
     });
-    expect(mapRepository.get()?.layers.worldMask).toBe(result.layers.worldMask);
-    expect(mapRepository.get()?.layers.noiseMap).toBe(result.layers.noiseMap);
-    expect(mapRepository.get()?.layers.elevation).toBeUndefined();
+    expect(mapRepository.get()?.layers.worldMask).toBe(mask);
+    expect(mapRepository.get()?.layers.elevation).toBe(elevation);
+    expect(mapRepository.get()?.layers.noiseMap).toBeUndefined();
     expect(renderer.state.displayedLayer).toBe('noise');
     expect(onProgress.mock.lastCall?.[0].status).toBe('completed');
     expect(dispose).toHaveBeenCalledOnce();
@@ -124,7 +122,6 @@ describe('MapGenerationSession', () => {
     vi.spyOn(PipelineWorkerClient.prototype, 'generate').mockImplementation(async (_, options) => {
       options?.onEvent?.(completed('world-shape', {}));
       return {
-        layers: { worldMask: new Uint8Array(4), noiseMap: new Float32Array(4) },
         statistics: [],
         totalDurationMs: 1,
       };
@@ -135,22 +132,26 @@ describe('MapGenerationSession', () => {
     expect(dispose).toHaveBeenCalledOnce();
   });
 
-  it('saves the generator result even when no layers were sent to the preview', async () => {
-    const layers = { worldMask: new Uint8Array(4), noiseMap: new Float32Array(4) };
-    vi.spyOn(PipelineWorkerClient.prototype, 'generate').mockResolvedValue({
-      layers,
-      statistics: [],
-      totalDurationMs: 1,
+  it('saves generated stage data even when the preview is cancelled', async () => {
+    const mask = new Uint8Array(4).fill(1);
+    const elevation = new Float32Array(4);
+    const add = vi.spyOn(renderer, 'add');
+    vi.spyOn(PipelineWorkerClient.prototype, 'generate').mockImplementation(async (_, options) => {
+      renderer.cancel();
+      options?.onEvent?.(completed('world-shape', { worldMask: mask }));
+      options?.onEvent?.(completed('noise', { elevation }));
+      return {
+        statistics: [],
+        totalDurationMs: 1,
+      };
     });
-    const isComplete = vi.spyOn(renderer, 'isComplete');
-    const getLayers = vi.spyOn(renderer, 'getLayers');
 
     await expect(session.generate(config, vi.fn())).resolves.toMatchObject({ totalDurationMs: 1 });
 
+    expect(add).not.toHaveBeenCalled();
     expect(renderer.state.layers.every(layer => !layer.available)).toBe(true);
-    expect(isComplete).not.toHaveBeenCalled();
-    expect(getLayers).not.toHaveBeenCalled();
-    expect(mapRepository.get()?.layers).toBe(layers);
+    expect(mapRepository.get()?.layers.worldMask).toBe(mask);
+    expect(mapRepository.get()?.layers.elevation).toBe(elevation);
   });
 
   it('does not save when the generator rejects its incomplete result', async () => {
@@ -186,7 +187,6 @@ describe('MapGenerationSession', () => {
     expect(renderSignal.aborted).toBe(false);
     expect(() => onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4) }))).toThrow();
     finish({
-      layers: { worldMask: new Uint8Array(4), noiseMap: new Float32Array(4) },
       statistics: [],
       totalDurationMs: 1,
     });
@@ -220,12 +220,15 @@ describe('MapGenerationSession', () => {
       }
 
       expect(dispose).not.toHaveBeenCalled();
-      const layers = { worldMask: new Uint8Array(4), noiseMap: new Float32Array(4) };
-      expect(() => onEvent?.(completed('world-shape', layers))).not.toThrow();
+      const mask = new Uint8Array(4);
+      const noise = new Float32Array(4);
+      expect(() => onEvent?.(completed('world-shape', { worldMask: mask }))).not.toThrow();
+      expect(() => onEvent?.(completed('noise', { noiseMap: noise }))).not.toThrow();
       expect(add).not.toHaveBeenCalled();
-      finish({ layers, statistics: [], totalDurationMs: 1 });
+      finish({ statistics: [], totalDurationMs: 1 });
       await expect(generation).resolves.toMatchObject({ totalDurationMs: 1 });
-      expect(mapRepository.get()?.layers).toBe(layers);
+      expect(mapRepository.get()?.layers.worldMask).toBe(mask);
+      expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
       expect(onProgress.mock.lastCall?.[0].status).toBe('completed');
     }
   );
@@ -236,7 +239,6 @@ describe('MapGenerationSession', () => {
     const snapshot = {
       width: 2,
       height: 2,
-      size: 2,
       seed: '17',
       shape: 'disc' as const,
       layers: { worldMask: mask, elevation },
@@ -247,7 +249,7 @@ describe('MapGenerationSession', () => {
     await renderer.ready;
 
     expect(renderer.state.displayedLayer).toBe('noise');
-    expect(renderer.getLayers().elevation).toBe(elevation);
+    expect(renderer.state.layers.find(layer => layer.id === 'noise')?.available).toBe(true);
     expect(mapRepository.get()).toBe(snapshot);
   });
 
@@ -267,7 +269,6 @@ describe('MapGenerationSession', () => {
         options?.onEvent?.(completed('world-shape', { worldMask: mask }));
         options?.onEvent?.(completed('noise', { elevation }));
         return {
-          layers: { worldMask: mask, noiseMap: elevation },
           statistics: [],
           totalDurationMs: 2,
         };
@@ -283,14 +284,15 @@ describe('MapGenerationSession', () => {
     await expect(second).resolves.toMatchObject({ totalDurationMs: 2 });
     const saved = mapRepository.get();
     expect(saved?.seed).toBe('99');
+    expect(saved?.layers.worldMask).toBe(mask);
+    expect(saved?.layers.elevation).toBe(elevation);
 
     finishFirst({
-      layers: { worldMask: new Uint8Array(4), noiseMap: new Float32Array(4) },
       statistics: [],
       totalDurationMs: 1,
     });
     await expect(first).resolves.toBeUndefined();
     expect(mapRepository.get()).toBe(saved);
-    expect(renderer.getLayers().elevation).toBe(elevation);
+    expect(renderer.state.displayedLayer).toBe('noise');
   });
 });

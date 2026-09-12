@@ -36,19 +36,21 @@ export interface MapRendererOptions {
   onRenderStatistics?: (statistics: RenderStatistics) => void;
 }
 
-export const EMPTY_RENDER_STATE: MapRendererState = {
-  layers: layerRegistry.ids.map(id => ({
-    id,
-    label: layerRegistry.get(id).label,
-    available: false,
-  })),
-  overlays: OVERLAY_IDS.map(id => ({
-    id,
-    label: OVERLAY_LAYERS[id].label,
-    available: false,
-    visible: true,
-  })),
-};
+export function emptyRenderState(registry: LayerRegistry = layerRegistry): MapRendererState {
+  return {
+    layers: registry.ids.map(id => ({
+      id,
+      label: registry.get(id).label,
+      available: false,
+    })),
+    overlays: OVERLAY_IDS.map(id => ({
+      id,
+      label: OVERLAY_LAYERS[id].label,
+      available: false,
+      visible: true,
+    })),
+  };
+}
 
 export class MapRenderer {
   readonly registry: LayerRegistry;
@@ -70,10 +72,14 @@ export class MapRenderer {
     this.view = new MapView(elements, this.metrics, options.selectedLayer, options.boundarySource);
     this.queue = new LayerQueue({
       signal: () => this.lifetime.signal,
+      begin: layer => {
+        this.view.begin(layer);
+        this.emitState();
+      },
       load: (layer, signal) => this.metrics.prepare(layer, signal, this.view.tilePainter(layer)),
       present: layer => this.present(layer),
       fail: (layer, error) => {
-        layer.dispose();
+        this.scene.discard(layer);
         this.reportError(error);
         this.emitRenderStatistics();
       },
@@ -121,18 +127,9 @@ export class MapRenderer {
     return this.scene.size;
   }
 
-  /** True when every base layer has been added. */
-  isComplete(): boolean {
-    return this.scene.isComplete();
-  }
-
   add(id: MapBaseLayerId, value: unknown): void {
     this.signal.throwIfAborted();
     this.queue.enqueue(this.scene.add(id, value));
-  }
-
-  getLayers(): MapLayers {
-    return this.scene.getLayers();
   }
 
   select(id: MapBaseLayerId): void {

@@ -24,6 +24,16 @@ export class LayerCache {
     this.layers.set(id, { inputs: [...inputs], layer });
     return layer;
   }
+
+  /** Disposes and forgets a layer owned by this cache. */
+  evict(layer: MapLayer): void {
+    const cached = this.layers.get(layer.id);
+    if (cached?.layer !== layer) {
+      return;
+    }
+    cached.layer.dispose();
+    this.layers.delete(layer.id);
+  }
 }
 
 export const layerCache = new LayerCache();

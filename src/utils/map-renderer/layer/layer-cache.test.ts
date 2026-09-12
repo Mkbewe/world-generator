@@ -19,6 +19,22 @@ describe('LayerCache', () => {
     expect(dispose).toHaveBeenCalledOnce();
   });
 
+  it('evicts and disposes only the matching layer', () => {
+    const cache = new LayerCache();
+    const mask = new Uint8Array(4);
+    const create = () => new WorldShapeLayer({ width: 2, height: 2 }, mask);
+    const layer = cache.getOrCreate('world-shape', [mask], create);
+    const dispose = vi.spyOn(layer, 'dispose');
+
+    cache.evict(new WorldShapeLayer({ width: 2, height: 2 }, mask));
+    expect(dispose).not.toHaveBeenCalled();
+    expect(cache.getOrCreate('world-shape', [mask], create)).toBe(layer);
+
+    cache.evict(layer);
+    expect(dispose).toHaveBeenCalledOnce();
+    expect(cache.getOrCreate('world-shape', [mask], create)).not.toBe(layer);
+  });
+
   it('preserves the previous entry if creating the replacement fails', () => {
     const cache = new LayerCache();
     const create = () => new WorldShapeLayer({ width: 1, height: 1 }, new Uint8Array(1));

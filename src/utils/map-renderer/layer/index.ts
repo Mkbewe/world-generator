@@ -1,4 +1,3 @@
-export { hasAllBaseLayers, isBaseLayerId, lastPresentLayer, sourceOf } from './base-layers';
 export { LayerCache, layerCache } from './layer-cache';
 export { LAYER_DEFINITIONS } from './layer-definition';
 export { LayerRegistry, layerRegistry } from './layer-registry';

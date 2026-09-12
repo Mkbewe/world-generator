@@ -3,6 +3,8 @@ import type { MapLayer } from './layer';
 export interface LayerQueueHandlers {
   /** Signal for the current run; a fresh one is created per renderer session. */
   signal(): AbortSignal;
+  /** Called when a layer's preparation starts, before `load`. */
+  begin?(layer: MapLayer): void;
   /** Prepares (renders) a layer, optionally reporting progressive tiles. */
   load(layer: MapLayer, signal: AbortSignal): Promise<void>;
   /** Called after a layer is ready and the run is still current. */
@@ -55,6 +57,7 @@ export class LayerQueue {
     const signal = this.handlers.signal();
     while (this.pending.length > 0 && this.run === run && !signal.aborted) {
       const layer = this.pending.shift()!;
+      this.handlers.begin?.(layer);
       try {
         await this.handlers.load(layer, signal);
         if (this.run !== run || signal.aborted) {

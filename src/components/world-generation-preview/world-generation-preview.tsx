@@ -19,7 +19,7 @@ export function WorldGenerationPreview() {
   const setResult = useGenerationStatisticsStore(state => state.setResult);
   const setConfig = useMapConfigStore(state => state.setConfig);
   const [shape, setShape] = useState<WorldShape>(restoredMap?.shape ?? 'disc');
-  const [size, setSize] = useState<WorldSize>(restoredMap?.size ?? DEFAULT_WORLD_SIZE);
+  const [size, setSize] = useState<WorldSize>(restoredMap?.width ?? DEFAULT_WORLD_SIZE);
   const [seed, setSeed] = useState(restoredMap?.seed ?? '123456');
   const [noise, setNoise] = useState<NoiseConfig>(DEFAULT_NOISE);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,12 +62,12 @@ export function WorldGenerationPreview() {
       }
       setConfig(config);
       setResult(result);
-      setIsGenerating(false);
     } catch (generationError) {
       setProgress(current => (current ? { ...current, status: 'failed' } : undefined));
       setError(
         generationError instanceof Error ? generationError.message : 'World generation failed.'
       );
+    } finally {
       setIsGenerating(false);
     }
   };

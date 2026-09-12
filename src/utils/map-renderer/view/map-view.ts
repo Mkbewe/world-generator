@@ -70,6 +70,13 @@ export class MapView {
     this.overlays.render(this.mask);
   }
 
+  /** Marks a layer as current as soon as its progressive drawing starts. */
+  begin(layer: MapLayer): void {
+    if (this.progressive) {
+      this.displayed = layer.id;
+    }
+  }
+
   present(layer: MapLayer): void {
     if (this.progressive || layer.id === this.selectedLayer) {
       this.show(layer);

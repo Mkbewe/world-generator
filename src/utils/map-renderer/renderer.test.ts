@@ -72,7 +72,7 @@ function elements() {
 }
 
 function snapshot(layers: GeneratedMapSnapshot['layers']): GeneratedMapSnapshot {
-  return { width: 2, height: 2, size: 2, seed: '1', shape: 'disc', layers };
+  return { width: 2, height: 2, seed: '1', shape: 'disc', layers };
 }
 
 function setup(options: MapRendererOptions = {}) {
@@ -119,13 +119,11 @@ describe('MapRenderer', () => {
       .mockImplementation(() => {});
     preview.add('world-shape', new Uint8Array(4).fill(1));
     preview.add('noise', new Float32Array(4));
-    expect(preview.isComplete()).toBe(false);
     const cells = new Uint16Array([1, 0, 0, 1]);
     preview.add('islands', cells);
     await vi.runAllTimersAsync();
     await preview.ready;
 
-    expect(preview.isComplete()).toBe(true);
     expect(preview.state.displayedLayer).toBe('islands');
     expect(preview.state.layers.every(layer => layer.available)).toBe(true);
     expect(boundary).toHaveBeenCalledWith(expect.any(IslandMaskLayer), expect.anything());
@@ -159,7 +157,6 @@ describe('MapRenderer', () => {
     await vi.runAllTimersAsync();
     await restored.ready;
     expect(restored.state.displayedLayer).toBe('islands');
-    expect(restored.getLayers().islandMask).toBe(cells);
     expect(onRenderStatistics).not.toHaveBeenCalled();
     restored.reset();
     expect(restored.state.layers.map(layer => layer.id)).toEqual([
@@ -211,9 +208,26 @@ describe('MapRenderer', () => {
     noise.resolve();
     await vi.runAllTimersAsync();
     await preview.ready;
-    const displayed = onChange.mock.calls.map(([state]) => state.displayedLayer).filter(Boolean);
+    const displayed = onChange.mock.calls
+      .map(([state]) => state.displayedLayer)
+      .filter((id, index, ids) => Boolean(id) && id !== ids[index - 1]);
     expect(displayed).toEqual(['world-shape', 'noise']);
     expect(preview.state.layers.map(layer => layer.id)).toEqual(['world-shape', 'noise']);
+  });
+
+  it('switches to a layer as soon as its drawing starts', async () => {
+    const { preview } = setup();
+    const pending = deferred();
+    vi.spyOn(MapLayer.prototype, 'prepare').mockReturnValue(pending.promise);
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+
+    expect(preview.state.displayedLayer).toBe('world-shape');
+    expect(preview.state.layers[0].available).toBe(false);
+
+    pending.resolve();
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    preview.dispose();
   });
 
   it('switches ready images without starting another render', async () => {
@@ -253,7 +267,7 @@ describe('MapRenderer', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('cancels pending drawing while keeping the displayed layer', async () => {
+  it('cancels pending drawing without presenting the cancelled layer', async () => {
     const { preview } = setup();
     const pending = deferred();
     vi.spyOn(MapLayer.prototype, 'prepare')
@@ -268,7 +282,7 @@ describe('MapRenderer', () => {
     await preview.ready;
 
     expect(preview.signal.aborted).toBe(true);
-    expect(preview.state.displayedLayer).toBe('world-shape');
+    expect(preview.state.displayedLayer).toBe('noise');
     expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false]);
     expect(() => preview.add('noise', new Float32Array(4))).toThrow();
     preview.dispose();
@@ -300,20 +314,6 @@ describe('MapRenderer', () => {
     expect(preview.state.displayedLayer).toBe('noise');
     expect(preview.state.overlays.map(overlay => overlay.id)).toEqual(['world-boundary']);
     expect(preview.state.overlays[0]).toMatchObject({ available: true, visible: true });
-  });
-
-  it('exposes rendered layers', async () => {
-    const { preview } = setupWithSnapshot({
-      worldMask: new Uint8Array(4).fill(1),
-      noiseMap: new Float32Array([0.25, 0.5, 0.75, 1]),
-    });
-    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
-
-    await vi.runAllTimersAsync();
-    await preview.ready;
-    const layers = preview.getLayers();
-    expect(layers.worldMask).toBeInstanceOf(Uint8Array);
-    expect(layers.noiseMap).toBeInstanceOf(Float32Array);
   });
 
   it('honours the preferred layer option on restore', async () => {

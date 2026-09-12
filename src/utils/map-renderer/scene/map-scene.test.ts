@@ -109,6 +109,18 @@ describe('MapScene', () => {
     expect(dispose).not.toHaveBeenCalled();
   });
 
+  it('discards a failed layer and lets the cache dispose its image', () => {
+    const scene = setup();
+    const world = scene.add('world-shape', new Uint8Array(4));
+    const dispose = vi.spyOn(world, 'dispose');
+
+    scene.discard(world);
+
+    expect(scene.get('world-shape')).toBeUndefined();
+    expect(scene.options.every(option => !option.available)).toBe(true);
+    expect(dispose).toHaveBeenCalledOnce();
+  });
+
   it('does not mark a new layer ready when given a layer from a previous map', () => {
     const scene = setup();
     const previous = scene.add('world-shape', new Uint8Array(4));

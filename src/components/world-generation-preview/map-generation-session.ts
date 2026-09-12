@@ -5,7 +5,12 @@ import {
   type MapConfig,
   PipelineWorkerClient,
 } from '../../utils/map-generator';
-import { mapPersistence, type MapRenderer, mapRepository } from '../../utils/map-renderer';
+import {
+  type MapLayers,
+  mapPersistence,
+  type MapRenderer,
+  mapRepository,
+} from '../../utils/map-renderer';
 import { type GenerationProgressState, ProgressTracker } from '../generation-progress';
 
 /** Coordinates generation and preview, with independent cancellation for each. */
@@ -36,6 +41,7 @@ export class MapGenerationSession {
     const abort = (): void => worker.dispose();
     signal.addEventListener('abort', abort, { once: true });
     const progress = new ProgressTracker(MAP_STAGES, onProgress);
+    const layers: MapLayers = {};
 
     try {
       this.renderer.start(config.world);
@@ -46,6 +52,9 @@ export class MapGenerationSession {
       const result = await worker.generate(config, {
         onEvent: event => {
           signal.throwIfAborted();
+          if (event.type === 'stage-completed') {
+            Object.assign(layers, event.data);
+          }
           if (!renderSignal.aborted) {
             this.applyStage(event);
           }
@@ -59,7 +68,7 @@ export class MapGenerationSession {
         height: config.world.height,
         seed: String(config.world.seed),
         shape: config.world.shape ?? 'disc',
-        layers: result.layers,
+        layers,
       });
       progress.complete(result.totalDurationMs);
       return {

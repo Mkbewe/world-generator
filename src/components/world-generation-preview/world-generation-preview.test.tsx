@@ -114,7 +114,6 @@ describe('WorldGenerationPreview', () => {
         data: { noiseMap: new Float32Array(count).fill(0.5) },
       });
       return Promise.resolve({
-        layers: { worldMask: new Uint8Array(count), noiseMap: new Float32Array(count) },
         statistics: [],
         totalDurationMs: 1,
       });

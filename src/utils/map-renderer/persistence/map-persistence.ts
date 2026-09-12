@@ -12,11 +12,7 @@ export class MapPersistence {
     }
   }
 
-  save(map: Omit<GeneratedMapSnapshot, 'size'>): GeneratedMapSnapshot {
-    const snapshot: GeneratedMapSnapshot = {
-      ...map,
-      size: map.width,
-    };
+  save(snapshot: GeneratedMapSnapshot): GeneratedMapSnapshot {
     this.repository.save(snapshot);
     return snapshot;
   }

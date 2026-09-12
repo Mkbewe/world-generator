@@ -87,6 +87,16 @@ export class MapScene {
     }
   }
 
+  /** Removes a failed layer; the cache owns disposal of its image. */
+  discard(layer: MapLayer): void {
+    if (this.layers.get(layer.id) !== layer) {
+      return;
+    }
+    this.layers.delete(layer.id);
+    this.available.delete(layer.id);
+    this.cache.evict(layer);
+  }
+
   values(): IterableIterator<MapLayer> {
     return this.layers.values();
   }

@@ -41,7 +41,6 @@ async function generate(request: PipelineWorkerGenerateRequest): Promise<void> {
       type: 'result',
       requestId: request.requestId,
       result: {
-        layers: { ...generation.context.state, worldMask, noiseMap },
         statistics: generation.statistics,
         totalDurationMs: generation.totalDurationMs,
       },

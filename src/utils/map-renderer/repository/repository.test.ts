@@ -4,7 +4,6 @@ function createSnapshot(seed: string): GeneratedMapSnapshot {
   return {
     width: 2,
     height: 2,
-    size: 2,
     seed,
     shape: 'disc',
     layers: {

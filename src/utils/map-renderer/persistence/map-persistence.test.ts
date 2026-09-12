@@ -19,7 +19,7 @@ describe('MapPersistence', () => {
       layers,
     });
 
-    expect(saved).toEqual({ width: 2, height: 3, size: 2, seed: '7', shape: 'rectangle', layers });
+    expect(saved).toEqual({ width: 2, height: 3, seed: '7', shape: 'rectangle', layers });
     expect(saved.layers).toBe(layers);
     expect(repository.get()).toBe(saved);
   });
