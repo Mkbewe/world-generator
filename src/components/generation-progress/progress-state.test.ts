@@ -89,6 +89,23 @@ describe('ProgressTracker', () => {
     expect(latest().stages[1]).toMatchObject({ status: 'running', percentage: 42 });
   });
 
+  it('updates stages by id regardless of the reported index', () => {
+    const { tracker, latest } = createTracker();
+    tracker.start();
+
+    tracker.handle({
+      type: 'stage-progress',
+      stageId: 'noise',
+      stageName: 'Noise generation',
+      stageIndex: 0,
+      stageCount: 2,
+      progress: 0.42,
+    });
+
+    expect(latest().stages[0]).toMatchObject({ id: 'world-shape', status: 'pending' });
+    expect(latest().stages[1]).toMatchObject({ id: 'noise', status: 'running', percentage: 42 });
+  });
+
   it('marks the whole run failed when a stage fails', () => {
     const { tracker, latest } = createTracker();
     tracker.start();

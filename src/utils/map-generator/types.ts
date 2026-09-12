@@ -67,7 +67,8 @@ type StageProgressEvent = StageEventBase & {
 type StageCompletedEvent = StageEventBase & {
   type: 'stage-completed';
   statistics: StageStatistics;
-  data: StageData;
+  /** Read-only snapshot; typed arrays are shared with the generator state. */
+  data: Readonly<StageData>;
 };
 
 type StageFailedEvent = StageEventBase & {

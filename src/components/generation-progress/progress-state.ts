@@ -36,8 +36,8 @@ function applyEvent(
   return {
     ...current,
     status: event.type === 'stage-failed' ? 'failed' : current.status,
-    stages: current.stages.map((stage, index) =>
-      index === event.stageIndex ? applyStageEvent(stage, event) : stage
+    stages: current.stages.map(stage =>
+      stage.id === event.stageId ? applyStageEvent(stage, event) : stage
     ),
   };
 }

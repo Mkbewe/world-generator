@@ -16,7 +16,15 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
   constructor(
     readonly stages: readonly MapStage<TConfig, TState>[],
     private readonly options: MapGeneratorOptions = {}
-  ) {}
+  ) {
+    const ids = new Set<string>();
+    for (const stage of stages) {
+      if (ids.has(stage.id)) {
+        throw new Error(`Duplicate stage id: "${stage.id}".`);
+      }
+      ids.add(stage.id);
+    }
+  }
 
   async generate(
     config: Readonly<TConfig>,
@@ -56,9 +64,10 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
       try {
         data = await stage.execute(context, signal, report);
         this.throwIfCancelled(signal);
+        stage.validate?.(context.state, context.config);
       } catch (error) {
-        if (error instanceof GenerationCancelledError || signal.aborted) {
-          throw new GenerationCancelledError();
+        if (error instanceof GenerationCancelledError) {
+          throw error;
         }
 
         const statistics = this.createStatistics(stage, startedAt, 'failed');
@@ -92,7 +101,8 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
         stageIndex,
         stageCount: this.stages.length,
         statistics,
-        data,
+        // The snapshot keeps consumers from replacing keys of the shared state.
+        data: Object.freeze({ ...data }),
       });
       await this.delay(this.options.stageDelayMs);
     }

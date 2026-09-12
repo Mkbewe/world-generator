@@ -20,8 +20,9 @@ implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane s
 - `NoiseStage` — tworzy deterministyczną mapę szumu w `noiseMap`.
 - `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia etapów wraz
   z danymi i postępem; wynik zawiera statystyki i łączny czas.
-- `PipelineWorkerClient` — generowanie zawsze działa w Web Workerze; dane etapów
-  płyną zdarzeniami, a końcowy wynik zawiera tylko statystyki.
+- worker — każdy run generowania dostaje świeży Web Worker (`runGeneration`);
+  worker ogłasza swoją listę etapów, a potem strumieniuje zdarzenia etapów.
+  Anulowanie kończy worker.
 - ustawienia świata — wybór kształtu, presety rozdzielczości 600, 2400 i 5000
   oraz własny rozmiar od 100 do 5000. UI generuje kwadratową siatkę `size × size`;
   rozmiar oznacza liczbę próbek, a nie metry świata. Stan formularza jest
@@ -374,9 +375,10 @@ Tryb eksploracji nie potrzebuje ekwipunku, zasobów, NPC, symulacji odległych o
 ## Wydajność — dalszy plan
 Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
 progresywne rysowanie podglądu, postęp raportowany z wnętrza etapów oraz
-statystyki generowania i renderowania pokazywane na stronie statystyk. Cache
-warstw jest kluczowany tożsamością danych i współdzielony przez renderery;
-renderer anuluje nieaktualne rysowanie przy starcie nowego przebiegu.
+statystyki generowania i renderowania pokazywane na stronie statystyk. Anulowanie
+kończy worker, cache warstw jest kluczowany tożsamością danych i współdzielony
+przez renderery, a renderer przerywa nieaktualne rysowanie przy starcie nowego
+przebiegu.
 
 Pozostałe zadania:
 
@@ -390,8 +392,8 @@ Pozostałe zadania:
   od dostępnego budżetu.
 - Rozszerzyć statystyki o rozdzielczość źródłową i wynikową oraz szacowany rozmiar
   buforów i cache.
-- Dodać anulowanie pojedynczego generowania przez protokół workera i UI; obecnie
-  anulowanie kończy cały worker.
+- Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary
+  wykażą, że koszt startu jest istotny.
 - Po pomiarach rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami
   w puli workerów. Hydrologię i inne globalnie zależne etapy dzielić dopiero po
   zaprojektowaniu ich przepływu danych.

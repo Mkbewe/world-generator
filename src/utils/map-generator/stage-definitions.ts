@@ -12,5 +12,3 @@ export const NOISE_STAGE: StageInfo = {
   id: 'noise',
   name: 'Noise generation',
 };
-
-export const MAP_STAGES: readonly StageInfo[] = [WORLD_SHAPE_STAGE, NOISE_STAGE];

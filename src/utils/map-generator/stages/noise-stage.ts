@@ -2,7 +2,7 @@ import { createNoise2D } from 'simplex-noise';
 
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import type { MapStage } from '../stage';
+import { assertStageOutput, type MapStage } from '../stage';
 import { NOISE_STAGE } from '../stage-definitions';
 import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
 
@@ -68,6 +68,11 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
 
     context.state.noiseMap = noiseMap;
     return { noiseMap };
+  }
+
+  validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
+    const { width, height } = config.world;
+    assertStageOutput(state.noiseMap, 'float32', width * height);
   }
 
   summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {

@@ -17,9 +17,8 @@ import {
 import type * as WorldGenerationPipeline from '../../utils/map-generator';
 import { MapRenderer, mapRepository } from '../../utils/map-renderer';
 
-const { generateMock, disposeMock } = vi.hoisted(() => ({
-  generateMock: vi.fn(),
-  disposeMock: vi.fn(),
+const { runGenerationMock } = vi.hoisted(() => ({
+  runGenerationMock: vi.fn(),
 }));
 
 vi.mock('../../utils/map-generator', async importOriginal => {
@@ -27,10 +26,7 @@ vi.mock('../../utils/map-generator', async importOriginal => {
 
   return {
     ...actual,
-    PipelineWorkerClient: class {
-      generate = generateMock;
-      dispose = disposeMock;
-    },
+    runGeneration: runGenerationMock,
   };
 });
 
@@ -40,8 +36,7 @@ const previewSize = 300;
 
 describe('WorldGenerator', () => {
   beforeEach(() => {
-    generateMock.mockReset();
-    disposeMock.mockReset();
+    runGenerationMock.mockReset();
     mapRepository.clear();
     useBasicFormStore.setState({ ...BASIC_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
@@ -69,14 +64,11 @@ describe('WorldGenerator', () => {
   });
 
   it('stops both generation and rendering when the application closes the preview', async () => {
-    let rejectGeneration!: (error: Error) => void;
-    generateMock.mockImplementation(
-      () =>
-        new Promise((_, reject) => {
-          rejectGeneration = reject;
-        })
-    );
-    disposeMock.mockImplementation(() => rejectGeneration(new Error('Worker disposed.')));
+    let runSignal: AbortSignal | undefined;
+    runGenerationMock.mockImplementation((_config, options) => {
+      runSignal = options?.signal;
+      return new Promise(() => {});
+    });
     const disposeRenderer = vi.spyOn(MapRenderer.prototype, 'dispose');
     const { unmount } = render(
       <Theme>
@@ -84,13 +76,13 @@ describe('WorldGenerator', () => {
       </Theme>
     );
     await userEvent.setup().click(screen.getByTestId('generate-map-button'));
-    expect(generateMock).toHaveBeenCalledOnce();
+    expect(runGenerationMock).toHaveBeenCalledOnce();
 
     await act(async () => {
       unmount();
     });
 
-    expect(disposeMock).toHaveBeenCalled();
+    expect(runSignal?.aborted).toBe(true);
     expect(disposeRenderer).toHaveBeenCalledOnce();
     expect(mapRepository.get()).toBeUndefined();
   });
@@ -98,7 +90,9 @@ describe('WorldGenerator', () => {
   it('reports when pipeline maps are missing', async () => {
     const user = userEvent.setup();
 
-    generateMock.mockRejectedValue(new Error('Pipeline completed without all required map data.'));
+    runGenerationMock.mockRejectedValue(
+      new Error('Pipeline completed without all required map data.')
+    );
 
     render(
       <Theme>
@@ -117,8 +111,12 @@ describe('WorldGenerator', () => {
     const user = userEvent.setup();
 
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-    generateMock.mockImplementation((config, options) => {
+    runGenerationMock.mockImplementation((config, options) => {
       const count = config.world.width * config.world.height;
+      options.onStages([
+        { id: 'world-shape', name: 'World shape' },
+        { id: 'noise', name: 'Noise' },
+      ]);
       options.onEvent({
         type: 'stage-completed',
         stageId: 'world-shape',
