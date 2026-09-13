@@ -27,6 +27,14 @@ function isTouchPointer(event: React.PointerEvent<HTMLCanvasElement>): boolean {
   return event.pointerType === 'touch';
 }
 
+interface TouchGesture {
+  startX: number;
+  startY: number;
+  moved: boolean;
+}
+
+const TAP_MOVE_TOLERANCE_PX = 8;
+
 export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) {
   const [preview, setPreview] = useState<MapRendererState>(emptyRenderState);
   const [navigation] = useState(
@@ -39,6 +47,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const positionRef = useRef<PointerSample | undefined>(undefined);
+  const gestureRef = useRef<TouchGesture | undefined>(undefined);
   const [readout, setReadout] = useState<InspectorReadout | undefined>(undefined);
   const [pinned, setPinned] = useState(false);
 
@@ -103,7 +112,15 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>): void => {
-    if (pinned || isTouchPointer(event)) {
+    const gesture = gestureRef.current;
+    if (gesture && !gesture.moved) {
+      const dx = event.clientX - gesture.startX;
+      const dy = event.clientY - gesture.startY;
+      if (Math.hypot(dx, dy) > TAP_MOVE_TOLERANCE_PX) {
+        gesture.moved = true;
+      }
+    }
+    if (pinned) {
       return;
     }
     const position = sampleAt(event);
@@ -118,10 +135,15 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
     refreshReadout(position);
   };
 
-  /** Mouse clicks toggle the pinned readout; touch taps only inspect, because touch has no hover. */
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>): void => {
     if (event.button !== 0) {
       return;
+    }
+    if (isTouchPointer(event)) {
+      gestureRef.current = { startX: event.clientX, startY: event.clientY, moved: false };
+      if (pinned) {
+        return;
+      }
     }
     const position = sampleAt(event);
     if (!position) {
@@ -134,6 +156,25 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
     }
   };
 
+  /** A touch tap toggles the pin; a touch drag keeps following the finger. */
+  const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>): void => {
+    if (!isTouchPointer(event)) {
+      return;
+    }
+    const gesture = gestureRef.current;
+    gestureRef.current = undefined;
+    if (!gesture || gesture.moved) {
+      return;
+    }
+    const position = sampleAt(event);
+    if (!position) {
+      return;
+    }
+    positionRef.current = position;
+    refreshReadout(position);
+    setPinned(current => !current);
+  };
+
   const handlePointerLeave = (event: React.PointerEvent<HTMLCanvasElement>): void => {
     if (pinned || isTouchPointer(event)) {
       return;
@@ -144,6 +185,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
 
   const handlePointerCancel = (event: React.PointerEvent<HTMLCanvasElement>): void => {
     if (isTouchPointer(event)) {
+      gestureRef.current = undefined;
       return;
     }
     handlePointerLeave(event);
@@ -189,6 +231,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
               aria-label='Generated map preview'
               onPointerMove={handlePointerMove}
               onPointerDown={handlePointerDown}
+              onPointerUp={handlePointerUp}
               onPointerLeave={handlePointerLeave}
               onPointerCancel={handlePointerCancel}
             />

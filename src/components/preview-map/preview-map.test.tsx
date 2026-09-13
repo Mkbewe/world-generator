@@ -69,21 +69,58 @@ describe('PreviewMap readout', () => {
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
   });
 
-  it('inspects coordinates on touch taps without pinning', async () => {
+  it('tracks a touch drag on the map without pinning', async () => {
     renderPreview();
     const canvas = screen.getByLabelText('Generated map preview');
     await act(async () => {});
 
     fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
 
-    fireEvent.pointerLeave(canvas, { pointerType: 'touch' });
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
-
-    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
     expect(screen.getByText('X 3, Y 3')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+  });
+
+  it('pins on a touch tap and unpins on the next tap', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
+    expect(screen.getByText('X 3, Y 3')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+  });
+
+  it('keeps a pinned touch readout frozen while the finger moves', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', clientX: 350, clientY: 350 });
+    fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 350, clientY: 350 });
+
+    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+  });
+
+  it('keeps the touch readout after the finger leaves the canvas', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerLeave(canvas, { pointerType: 'touch' });
+
+    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
   });
 });
