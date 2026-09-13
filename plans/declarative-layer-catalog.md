@@ -392,3 +392,120 @@ wdrożeniem.
   (1) katalog + palety + `CatalogLayer` dla world-shape/noise,
   (2) registry/UI/macro-region, (3) typy i sprzątanie.
 
+## Zastrzeżenia i propozycje (kolejna recenzja)
+
+Kierunek jest dobry. Największa wartość to jedna klasa malująca i jeden wpis
+specyfikacji zamiast osobnych painterów. Poniższe punkty nie podważają katalogu;
+ucinają z niego to, co spina generator z podglądem albo buduje framework typów
+zamiast kontraktu wyświetlania.
+
+Grupy zakładek są w zakresie od pierwszej wersji. Nie odkładać ich na później.
+
+### Zastrzeżenia
+
+1. Katalog nie może być źródłem `MapState`. `MapState` to tablica ogłoszeń między
+   stage'ami. Noise czyta `worldMask`; później dojdą dane, które w ogóle nie są
+   rastrem do narysowania. `MapState = MapLayers` wiąże generator z podglądem.
+   Zgoda z wcześniejszą uwagą: ewentualnie `MapRasters` z katalogu,
+   `MapState extends MapRasters` z miejscem na dane domenowe. Nigdy odwrotnie.
+2. Generator nie powinien importować katalogu. Katalog opisuje, jak pokazać
+   raster, a nie jaki jest świat. Stage'e zostają niezależne: piszą pola po
+   nazwie źródła, worker przekazuje te pola dalej, renderer składa warstwy z
+   katalogu. Formularze mogą importować palety z katalogu; nie mogą importować
+   `map-renderer`.
+3. Wyprowadzanie całej siatki typów z katalogu (`MapBaseLayerId`, `MapLayers`,
+   `MapState`) jest droższe niż korzyść. Jedna linia
+   `temperatureMap?: Float32Array` w `MapState` jest tańsza niż mapped types,
+   index signature i casy na granicy worker/scena/session. Typy z katalogu
+   warto dodać dopiero gdy po migracji painterów nadal boli dopisywanie pola.
+4. Flaga „produced vs declared” rozwiązuje problem, którego nie trzeba tworzyć.
+   Katalog to aktualna powierzchnia produktu, nie roadmapa. Temperature trafia
+   do katalogu razem ze stage'em. Wtedy `isComplete()` może zostać „wszystkie
+   wpisy katalogu są na scenie”.
+5. `defineCatalog` / `defineLayer` nic nie dają, skoro duplikaty, nieznane
+   zależności i cykle i tak sprawdza registry w runtime. Zwykła tablica
+   `as const satisfies readonly LayerSpec[]`. `defineLayer` tylko jeśli bez
+   niego TypeScript zgubi literały `id` / `source`.
+6. `masked: true` plus osobne `requires: ['world-shape']` to dwie deklaracje
+   tej samej zależności renderera. Łatwo je rozjechać. To nie jest zależność
+   generatora — stage i tak sam decyduje, czy czyta maskę.
+7. Kryterium „najwyżej trzy pliki” jest prawdziwe tylko dla rastra, który już
+   ma konfigurację i nie potrzebuje UI. Nowy stage z parametrami dotknie
+   `MapConfig` i formularza. To nie wadzi planu jako kierunku, wadzi jako
+   obietnica.
+
+### Propozycje
+
+Podział modułów:
+
+```text
+map-generator                map-layers                  map-renderer
+  stage'e, MapState            specyfikacje rastrów         CatalogLayer
+  pipeline-factory             palety                       registry, scena
+         |                            |                            |
+         |                            +-- formularze (kolory)      |
+         +---- worker przekazuje pola po nazwie źródła ------------+
+```
+
+Katalog jest DOM-free i data-only. `CatalogLayer` zostaje w rendererze.
+`REGION_COLORS` / `regionColor` przenoszą się do katalogu, żeby formularz
+regionów nie importował z renderera.
+
+Kontrakt wpisu — płaski katalog, grupy jako metadane nawigacji od v1:
+
+```ts
+type LayerSpec = {
+  readonly id: string;
+  readonly label: string;
+  readonly source: string;
+  readonly dataType: 'uint8' | 'float32';
+  readonly clipTo?: string;
+  readonly providesMask?: boolean;
+  readonly group?: { id: string; label: string };
+  readonly palette: PaletteSpec;
+};
+```
+
+- Katalog jest płaską tablicą. `group` nie zmienia tożsamości warstwy ani
+  kolejności budowania; registry składa z niego jednopoziomowe drzewo zakładek.
+- Kolejność wpisów w katalogu to kolejność zakładek i kolejność dzieci w
+  grupie. Sąsiednie wpisy z tym samym `group.id` tworzą jedną grupę; zmiana
+  kolejności w tablicy przestawia UI, nie graf zależności.
+- `group.id` nie koliduje z `id` warstwy. Wszystkie wpisy tej samej grupy mają
+  tę samą `group.label`; niespójna etykieta to błąd walidacji.
+- Pusta grupa nie istnieje, bo grupa powstaje wyłącznie z wpisów dzieci.
+- `clipTo` zamiast `masked`. W v1 jedyna dozwolona wartość to `'world-shape'`;
+  `clipTo` samo znaczy „zbuduj po warstwie maski”. Bez równoległego `requires`.
+- `providesMask: true` udostępnia `SpatialMask`. W v1 tylko `world-shape`.
+  `MapView.setMasks` zostaje zahardkodowany na tę warstwę do czasu, aż overlay
+  będzie czytał maskę z katalogu.
+- `ramp` ma `domain: [min, max]`, domyślnie `[0, 1]`, żeby noise nie zmienił
+  zachowania, a heightmapa nie wymagała normalizacji w stage'u.
+- `discrete.overflow` jest jawne; macro-region zostaje przy `'cycle'`.
+- Paleta kompiluje się raz do funkcji zapisującej w `Uint8ClampedArray`.
+
+Registry trzyma dwie niezależne kolejności: `order` (katalog, UI i grupy) oraz
+`buildOrder` (topo po `clipTo` / `providesMask`). `MapScene.options`,
+`emptyRenderState` i `LayerNavigation` czytają wyłącznie `order` / drzewo.
+Zmiana zależności nie przestawia zakładek.
+
+`CatalogLayer` trzyma `spec`, typed array, rozmiar i opcjonalną maskę. Scena
+czyta `layer.data` po `spec.source`. Koniec z callbackami `build` / `read` i
+osobnymi klasami painterów dla zmigrowanych warstw. World-boundary zostaje
+osobnym overlayem. `summarize()` zostaje w stage'u.
+
+`MapState` na starcie zostaje ręczny. Jeśli po usunięciu painterów nadal boli
+dopisywanie pola, dopiero wtedy wyprowadzić `MapRasters` z katalogu.
+
+Wdrożenie w dwóch krokach, z grupami od razu w kontrakcie i w registry:
+
+1. Palety + `CatalogLayer` + przepisanie obecnych warstw na specyfikacje,
+   w tym `group?`. Snapshoty pikseli, maska, restore, cache, statystyki renderu
+   i drzewo zakładek bez zmian zachowania.
+2. Płaski katalog jako SSOT, drzewo grup z kolejności wpisów, palety
+   regionów poza rendererem, sprzątanie painterów i callbacków. Typy
+   wyprowadzane z katalogu tylko jeśli nadal są potrzebne.
+
+Escape hatch `LayerVisual = palette | custom` nie wchodzi do v1. Dodać go,
+gdy pojawi się warstwa, której nie da się opisać paletą.
+
