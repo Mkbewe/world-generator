@@ -1,4 +1,32 @@
-import { WorldShapeLayer } from './layer';
+import { NoiseLayer, WorldShapeLayer } from './layer';
+
+describe('MapLayer.sample', () => {
+  it('reads world shape values and rejects out-of-bounds cells', () => {
+    const layer = new WorldShapeLayer({ width: 2, height: 2 }, new Uint8Array([0, 1, 1, 1]));
+    try {
+      expect(layer.sample(0, 0)).toBe(0);
+      expect(layer.sample(1, 0)).toBe(1);
+      expect(layer.sample(2, 0)).toBeUndefined();
+      expect(layer.sample(-1, 0)).toBeUndefined();
+      expect(layer.sample(0, 2)).toBeUndefined();
+    } finally {
+      layer.dispose();
+    }
+  });
+
+  it('reads noise only inside the world mask', () => {
+    const world = new WorldShapeLayer({ width: 2, height: 2 }, new Uint8Array([1, 0, 1, 1]));
+    const layer = new NoiseLayer(world, new Float32Array([0.25, 0.5, 0.75, 1]));
+    try {
+      expect(layer.sample(0, 0)).toBe(0.25);
+      expect(layer.sample(1, 0)).toBeUndefined();
+      expect(layer.sample(1, 1)).toBe(1);
+    } finally {
+      world.dispose();
+      layer.dispose();
+    }
+  });
+});
 
 describe('WorldShapeLayer', () => {
   it('excludes time yielded to the browser from drawing time', async () => {

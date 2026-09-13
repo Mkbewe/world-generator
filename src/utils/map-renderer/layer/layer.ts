@@ -86,6 +86,9 @@ export abstract class MapLayer {
     this.preparing = false;
   }
 
+  /** Raw value at a source raster cell, or undefined outside the layer's valid area. */
+  abstract sample(x: number, y: number): number | undefined;
+
   protected abstract paintRow(
     pixels: Uint8ClampedArray,
     offset: number,
@@ -143,6 +146,13 @@ export class WorldShapeLayer extends MapLayer implements SpatialMask {
     return this.mask[y * this.size.width + x] === 1;
   }
 
+  sample(x: number, y: number): number | undefined {
+    if (x < 0 || y < 0 || x >= this.size.width || y >= this.size.height) {
+      return undefined;
+    }
+    return this.mask[y * this.size.width + x];
+  }
+
   protected paintRow(
     pixels: Uint8ClampedArray,
     offset: number,
@@ -168,6 +178,16 @@ export class NoiseLayer extends MapLayer {
     readonly noise: Float32Array
   ) {
     super('noise', world.size);
+  }
+
+  sample(x: number, y: number): number | undefined {
+    if (x < 0 || y < 0 || x >= this.size.width || y >= this.size.height) {
+      return undefined;
+    }
+    if (!this.world.contains(x, y)) {
+      return undefined;
+    }
+    return this.noise[y * this.size.width + x];
   }
 
   protected paintRow(

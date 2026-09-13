@@ -19,6 +19,19 @@ function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
 }
 
 describe('MacroRegionLayer', () => {
+  it('samples region ids only inside the world mask', () => {
+    const world = new WorldShapeLayer({ width: 2, height: 2 }, new Uint8Array([1, 0, 1, 1]));
+    const layer = new MacroRegionLayer(world, new Uint8Array([3, 4, 5, 6]));
+    try {
+      expect(layer.sample(0, 0)).toBe(3);
+      expect(layer.sample(1, 0)).toBeUndefined();
+      expect(layer.sample(1, 1)).toBe(6);
+    } finally {
+      world.dispose();
+      layer.dispose();
+    }
+  });
+
   it('paints distinct colors per region id', async () => {
     const { images, restore } = mockCanvasContext();
     const world = new WorldShapeLayer({ width: 3, height: 1 }, new Uint8Array([1, 1, 1]));
