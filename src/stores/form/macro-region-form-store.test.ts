@@ -94,12 +94,13 @@ describe('useMacroRegionFormStore', () => {
     const overlay = overlayRegions(state.regions)[0];
     expect(overlay.geometry).toMatchObject({ kind: 'band', axis: 'x' });
 
-    store.updateOverlay(overlay.id, { axis: 'y', center: 0.2, width: 0.3 });
+    store.updateOverlay(overlay.id, { axis: 'y', center: 0.2, width: 0.3, irregularity: 0.02 });
     store.updateRegion(overlay.id, { danger: 0.75 });
 
     state = useMacroRegionFormStore.getState();
     expect(overlayRegions(state.regions)[0]).toMatchObject({
       danger: 0.75,
+      irregularity: 0.02,
       geometry: { kind: 'band', axis: 'y', center: 0.2, width: 0.3 },
     });
 

@@ -3,7 +3,9 @@ import { Flex, Text } from '@radix-ui/themes';
 import { useMacroRegionFormStore } from '../../../../stores';
 import { SliderField } from '../../../slider-field';
 
-function irregularityLabel(value: number): string {
+export const MAX_IRREGULARITY = 0.3;
+
+export function irregularityLabel(value: number): string {
   if (value === 0) {
     return 'None';
   }
@@ -27,10 +29,10 @@ export function BorderSettings() {
       </Text>
       <SliderField
         label='Irregularity'
-        description='How strongly region borders bend away from their geometric shape.'
+        description='How strongly region borders bend away from their geometric shape; overlays can override this.'
         value={deformation.amplitude}
         min={0}
-        max={0.3}
+        max={MAX_IRREGULARITY}
         step={0.01}
         format={irregularityLabel}
         rangeLabels={['None', 'Large']}

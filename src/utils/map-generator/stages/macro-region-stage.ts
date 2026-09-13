@@ -33,7 +33,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
     this.validateConfig(regions);
     this.validateDeformation(deformation);
-    const warp = createWarp(context, deformation);
+    const displacement = createDisplacement(context, regions, deformation);
 
     const macroRegionIdMap = new Uint8Array(width * height);
     const xDivisor = Math.max(1, width - 1);
@@ -47,9 +47,15 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
       const normalizedY = y / yDivisor;
       for (let x = 0; x < width; x++) {
         const normalizedX = x / xDivisor;
-        const point = warp ? warp(normalizedX, normalizedY) : { x: normalizedX, y: normalizedY };
+        const offset = displacement ? displacement(normalizedX, normalizedY) : { x: 0, y: 0 };
         const cell = y * width + x;
-        macroRegionIdMap[cell] = ownerIndex(regions, point.x, point.y);
+        macroRegionIdMap[cell] = ownerIndex(
+          regions,
+          normalizedX,
+          normalizedY,
+          offset,
+          deformation.amplitude
+        );
       }
 
       report((y + 1) / height);
@@ -121,29 +127,47 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
       if (!isNormalized(region.danger)) {
         throw new RangeError(`Macro region "${region.id}" danger must be within 0..1.`);
       }
+      if (
+        region.irregularity !== undefined &&
+        (!Number.isFinite(region.irregularity) || region.irregularity < 0)
+      ) {
+        throw new RangeError(`Macro region "${region.id}" irregularity must be zero or greater.`);
+      }
     }
   }
 }
 
-function ownerIndex(regions: readonly MacroRegionConfig[], x: number, y: number): number {
+function ownerIndex(
+  regions: readonly MacroRegionConfig[],
+  x: number,
+  y: number,
+  displacement: { readonly x: number; readonly y: number },
+  fallbackAmplitude: number
+): number {
   // Overlays are painter-ordered: the last matching overlay is on top.
   for (let index = regions.length - 1; index >= 0; index--) {
     const region = regions[index];
-    if (region.role === 'overlay' && contains(region.geometry, x, y)) {
+    if (region.role !== 'overlay') {
+      continue;
+    }
+    const amplitude = region.irregularity ?? fallbackAmplitude;
+    if (contains(region.geometry, x + displacement.x * amplitude, y + displacement.y * amplitude)) {
       return index;
     }
   }
 
+  const baseX = x + displacement.x * fallbackAmplitude;
+  const baseY = y + displacement.y * fallbackAmplitude;
   let nearest = 0;
   let nearestDistance = Infinity;
   for (const [index, region] of regions.entries()) {
     if (region.role !== 'base') {
       continue;
     }
-    if (contains(region.geometry, x, y)) {
+    if (contains(region.geometry, baseX, baseY)) {
       return index;
     }
-    const distance = distanceTo(region.geometry, x, y);
+    const distance = distanceTo(region.geometry, baseX, baseY);
     if (distance < nearestDistance) {
       nearest = index;
       nearestDistance = distance;
@@ -192,24 +216,27 @@ function validateGeometry(id: string, geometry: MacroRegionGeometry): void {
   }
 }
 
-function createWarp(
+function createDisplacement(
   context: MapContext<MapConfig, MapState>,
+  regions: readonly MacroRegionConfig[],
   deformation: MacroRegionDeformation
 ): ((x: number, y: number) => { x: number; y: number }) | undefined {
-  if (!(deformation.amplitude > 0)) {
+  const needsDisplacement = regions.some(
+    region => (region.irregularity ?? deformation.amplitude) > 0
+  );
+  if (!needsDisplacement) {
     return undefined;
   }
 
-  const { amplitude } = deformation;
   const frequency = deformation.frequency ?? 3;
   const octaves = deformation.octaves ?? 2;
   const random = context.random.create(deformation.seed || 'macro-region');
-  const warpX = createNoise2D(() => random.next());
-  const warpY = createNoise2D(() => random.next());
+  const displacementX = createNoise2D(() => random.next());
+  const displacementY = createNoise2D(() => random.next());
 
   return (x, y) => ({
-    x: x + amplitude * fbm(warpX, x * frequency, y * frequency, octaves),
-    y: y + amplitude * fbm(warpY, x * frequency, y * frequency, octaves),
+    x: fbm(displacementX, x * frequency, y * frequency, octaves),
+    y: fbm(displacementY, x * frequency, y * frequency, octaves),
   });
 }
 

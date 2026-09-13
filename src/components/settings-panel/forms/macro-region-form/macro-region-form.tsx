@@ -12,8 +12,8 @@ export function MacroRegionForm() {
       <PresetPicker />
       <BaseLayoutField />
       <BaseRegionSection />
-      <OverlayRegionSection />
       <BorderSettings />
+      <OverlayRegionSection />
     </Flex>
   );
 }

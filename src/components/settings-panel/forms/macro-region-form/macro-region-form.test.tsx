@@ -7,6 +7,7 @@ import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../..
 import {
   baseRegions,
   overlayRegions,
+  regionSegments,
 } from '../../../../utils/map-generator/stages/macro-region-sizes';
 
 function renderForm() {
@@ -36,6 +37,19 @@ describe('MacroRegionForm', () => {
     expect(screen.getByText('Small')).toBeInTheDocument();
     expect(screen.getByText('None')).toBeInTheDocument();
     expect(screen.getByText('Large')).toBeInTheDocument();
+  });
+
+  it('resizes regions by dragging a boundary on the distribution bar', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const [firstHandle] = within(screen.getByLabelText('Region boundaries')).getAllByRole('slider');
+    firstHandle.focus();
+    await user.keyboard('{ArrowRight}');
+
+    const segments = regionSegments('radial', useMacroRegionFormStore.getState().regions);
+    expect(segments[0].percent).toBe(26);
+    expect(segments[1].percent).toBe(24);
   });
 
   it('switches the base layout without changing region metadata', async () => {
@@ -89,6 +103,11 @@ describe('MacroRegionForm', () => {
     ]);
     expect(screen.getByText('Overlay regions (2)')).toBeInTheDocument();
     expect(screen.getAllByText('Position')).toHaveLength(2);
+    expect(screen.getAllByText('Overlay irregularity')).toHaveLength(2);
+    expect(screen.getByText('North')).toBeInTheDocument();
+    expect(screen.getByText('South')).toBeInTheDocument();
+    expect(screen.getByText('West')).toBeInTheDocument();
+    expect(screen.getByText('East')).toBeInTheDocument();
   });
 
   it('disables every add action at the ten-region limit', () => {
