@@ -331,3 +331,64 @@ trzeba zsynchronizować z ostatecznym kierunkiem macro-region.
   zmian.
 - Typecheck, lint, format i testy przechodzą.
 
+## Uwagi
+
+Recenzja planu z perspektywy aktualnego kodu (`layer-definition.ts`,
+`layer-registry.ts`, `map-scene.ts`, `renderer.ts`, stage'y, persistence).
+Kierunek refaktoru oceniam dobrze; zakres jest właściwy i nie jest
+przekombinowany poza propozycją DSL-a. Poniżej punkty do dopięcia przed
+wdrożeniem.
+
+1. `MapState = MapLayers` to błąd projektowy. `context.state` jest kanałem
+   komunikacji między stage'ami (np. `NoiseStage` czyta `context.state.worldMask`),
+   a roadmapa przewiduje dane nierastrowe (`LandmassDefinition`,
+   `IslandTerrainProfile`, szkielet lądu). Wyprowadzić z katalogu `MapRasters`,
+   a `MapState` zostawić jako interfejs rozszerzający go o dane domenowe;
+   `StageData` tego nie zastąpi.
+2. Kolejność UI musi pochodzić z katalogu, nie z topo. `MapScene.options`
+   i `emptyRenderState` używają dziś `registry.ids` (kolejność topologiczna),
+   a `LayerNavigation` buduje taby z `registry.tree`. Dziś porządki są zbieżne;
+   po rozjechaniu się potrzebne są jawne `order` (katalog) i `buildOrder`
+   (topo), a UI korzysta wyłącznie z `order`.
+3. `ramp` potrzebuje dziedziny wartości. Noise normalizuje się do 0..1, ale
+   heightmap/temperatura już nie. `PaletteSpec.ramp` powinien nieść
+   `domain: [min, max]` (lub `normalize`), żeby katalog opisywał też przyszłe
+   warstwy bez wymuszania normalizacji w każdym stage'u.
+4. Wewnętrzny typ luźny dla dynamicznego dostępu. `presentIn`/`load`/`getLayers`
+   indeksują po `source` w runtime; wyprowadzony `MapLayers` bez index signature
+   wymusi casty. Potrzebny wewnętrzny `Record<string, unknown>` na granicy
+   registry/scena/worker/session.
+5. Rozróżnić warstwy produkowane od deklarowanych w UI. `isComplete()` wymaga
+   wszystkich zarejestrowanych warstw; jeśli katalog będzie zawierał przyszłe
+   `Temperature`/`Moisture`, kompletność i restore się rozjadą. Potrzebny
+   znacznik warstw wymaganych („produced by stage").
+6. Bez DSL-a. `defineCatalog` niewiele wnosi — `as const satisfies readonly
+   LayerSpec[]` plus walidacja runtime w `LayerRegistry` (już istnieje) wystarczą.
+   `defineLayer` tylko jeśli realnie poprawia inferencję.
+7. Granice modułów. Katalog ma być DOM-free i data-only, `CatalogLayer` zostaje
+   w rendererze. Warto wymusić to lintem/testem (generator nie importuje
+   `map-renderer`). Przy okazji `REGION_COLORS`/`regionColor` przenieść
+   z `map-renderer/layer/macro-region-palette.ts` do katalogu, żeby formularz nie
+   importował z renderera.
+8. Maski w pierwszej wersji. `MapView.setMasks` twardo mapuje overlay na
+   `'world-shape'`; `clipTo` jest OK jako przyszłość, ale „pierwsza wersja =
+   tylko world-shape dostarcza maskę" trzeba zapisać wprost.
+9. Kryterium „najwyżej trzy pliki" jest prawdziwe dla istniejącej konfiguracji;
+   nowy stage z parametrami dotknie też `MapConfig` i UI. Warto dopisać typy
+   konfiguracji do uzasadnionych dodatkowych plików.
+10. Parity `solid`. `transparentValue: 0` różni się semantycznie od obecnego
+    `mask === 1`; dla danych 0/1 wynik ten sam, ale warto przybić to testem.
+11. Notka o `progression-layer.ts` jest nieaktualna — plik już nie istnieje
+    w HEAD; usunąć akapit.
+
+### Co bym zrobił inaczej
+
+- Wyprowadzić `MapRasters` z katalogu; `MapState` zostawić otwarty na dane
+  domenowe.
+- Zwykła const tablica katalogu zamiast `defineCatalog`.
+- `domain` w `ramp`, świadome `overflow` w `discrete`.
+- Jawne `order`/`buildOrder` w registry; UI wyłącznie na `order`.
+- Migracja warstwa po warstwie za testami charakteryzującymi i osobne PR-y:
+  (1) katalog + palety + `CatalogLayer` dla world-shape/noise,
+  (2) registry/UI/macro-region, (3) typy i sprzątanie.
+
