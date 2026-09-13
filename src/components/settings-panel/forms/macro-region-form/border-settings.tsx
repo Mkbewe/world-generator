@@ -1,0 +1,41 @@
+import { Flex, Text } from '@radix-ui/themes';
+
+import { useMacroRegionFormStore } from '../../../../stores';
+import { SliderField } from '../../../slider-field';
+
+function irregularityLabel(value: number): string {
+  if (value === 0) {
+    return 'None';
+  }
+  if (value <= 0.1) {
+    return 'Small';
+  }
+  if (value <= 0.2) {
+    return 'Medium';
+  }
+  return 'Large';
+}
+
+export function BorderSettings() {
+  const deformation = useMacroRegionFormStore(state => state.deformation);
+  const setDeformation = useMacroRegionFormStore(state => state.setDeformation);
+
+  return (
+    <Flex direction='column' gap='2'>
+      <Text size='2' weight='bold' color='gray'>
+        Borders
+      </Text>
+      <SliderField
+        label='Irregularity'
+        description='How strongly region borders bend away from their geometric shape.'
+        value={deformation.amplitude}
+        min={0}
+        max={0.3}
+        step={0.01}
+        format={irregularityLabel}
+        rangeLabels={['None', 'Large']}
+        onChange={amplitude => setDeformation({ ...deformation, amplitude })}
+      />
+    </Flex>
+  );
+}

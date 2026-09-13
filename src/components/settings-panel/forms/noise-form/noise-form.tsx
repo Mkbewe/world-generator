@@ -1,7 +1,7 @@
-import { Flex, Slider, Text } from '@radix-ui/themes';
+import { Flex } from '@radix-ui/themes';
 
-import type { NoiseConfig } from '../../../utils/map-generator';
-import { InfoLabel } from '../../info-label';
+import type { NoiseConfig } from '../../../../utils/map-generator';
+import { SliderField } from '../../../slider-field';
 
 type NoiseFieldKey = keyof NoiseConfig;
 
@@ -70,22 +70,17 @@ export function NoiseForm({ noise, onNoiseChange }: NoiseFormProps) {
   return (
     <Flex direction='column' gap='4'>
       {NOISE_FIELDS.map(field => (
-        <Flex key={field.key} direction='column' gap='2'>
-          <Flex justify='between' align='center'>
-            <InfoLabel label={field.label} description={field.description} />
-            <Text size='2' weight='bold'>
-              {field.format(noise[field.key])}
-            </Text>
-          </Flex>
-          <Slider
-            value={[noise[field.key]]}
-            min={field.min}
-            max={field.max}
-            step={field.step}
-            aria-label={field.label}
-            onValueChange={([value]) => updateField(field.key, value)}
-          />
-        </Flex>
+        <SliderField
+          key={field.key}
+          label={field.label}
+          description={field.description}
+          value={noise[field.key]}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          format={field.format}
+          onChange={value => updateField(field.key, value)}
+        />
       ))}
     </Flex>
   );

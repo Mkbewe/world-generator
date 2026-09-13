@@ -1,12 +1,17 @@
 import { createNoise2D } from 'simplex-noise';
 
-import { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './macro-region-defaults';
+import {
+  DEFAULT_MACRO_DEFORMATION,
+  DEFAULT_MACRO_REGIONS,
+  MAX_MACRO_REGIONS,
+} from './macro-region-defaults';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import { assertStageOutput, type MapStage } from '../stage';
 import type {
   MacroRegionConfig,
   MacroRegionDeformation,
+  MacroRegionGeometry,
   MapConfig,
   MapState,
   StageMetrics,
@@ -22,7 +27,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     context: MapContext<MapConfig, MapState>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ progressionMap: Float32Array; macroRegionIdMap: Uint8Array }> {
+  ): Promise<{ macroRegionIdMap: Uint8Array }> {
     const { width, height } = context.config.world;
     const regions = context.config.macroRegions ?? DEFAULT_MACRO_REGIONS;
     const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
@@ -30,13 +35,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     this.validateDeformation(deformation);
     const warp = createWarp(context, deformation);
 
-    const cells = width * height;
-    const progressionMap = new Float32Array(cells);
-    const macroRegionIdMap = new Uint8Array(cells);
-    const fallbackIndex = regions.reduce(
-      (best, region, index) => (region.progression > regions[best].progression ? index : best),
-      0
-    );
+    const macroRegionIdMap = new Uint8Array(width * height);
     const xDivisor = Math.max(1, width - 1);
     const yDivisor = Math.max(1, height - 1);
 
@@ -46,77 +45,37 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
       }
 
       const normalizedY = y / yDivisor;
-
       for (let x = 0; x < width; x++) {
         const normalizedX = x / xDivisor;
         const point = warp ? warp(normalizedX, normalizedY) : { x: normalizedX, y: normalizedY };
-        let weightSum = 0;
-        let weightedProgression = 0;
-        let bestWeight = -1;
-        let bestIndex = fallbackIndex;
-
-        for (const [index, region] of regions.entries()) {
-          const weight = influence(region, point.x, point.y);
-          if (weight > 0) {
-            weightSum += weight;
-            weightedProgression += weight * region.progression;
-          }
-          if (weight > bestWeight) {
-            bestWeight = weight;
-            bestIndex = index;
-          }
-        }
-
         const cell = y * width + x;
-        if (weightSum > 0) {
-          progressionMap[cell] = weightedProgression / weightSum;
-          macroRegionIdMap[cell] = bestIndex;
-        } else {
-          progressionMap[cell] = regions[fallbackIndex].progression;
-          macroRegionIdMap[cell] = fallbackIndex;
-        }
+        macroRegionIdMap[cell] = ownerIndex(regions, point.x, point.y);
       }
 
       report((y + 1) / height);
     }
 
-    context.state.progressionMap = progressionMap;
     context.state.macroRegionIdMap = macroRegionIdMap;
-    return { progressionMap, macroRegionIdMap };
+    return { macroRegionIdMap };
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
     const { width, height } = config.world;
-    assertStageOutput(state.progressionMap, 'float32', width * height);
     assertStageOutput(state.macroRegionIdMap, 'uint8', width * height);
   }
 
   summarize(context: MapContext<MapConfig, MapState>, data: Record<string, unknown>) {
-    const progressionMap = data.progressionMap;
-    if (!(progressionMap instanceof Float32Array) || progressionMap.length === 0) {
+    const regionIdMap = data.macroRegionIdMap;
+    if (!(regionIdMap instanceof Uint8Array) || regionIdMap.length === 0) {
       return undefined;
     }
 
-    let min = Infinity;
-    let max = -Infinity;
-    let sum = 0;
-    for (const value of progressionMap) {
-      min = Math.min(min, value);
-      max = Math.max(max, value);
-      sum += value;
-    }
-
     const regions = context.config.macroRegions ?? DEFAULT_MACRO_REGIONS;
-    const regionIdMap = data.macroRegionIdMap;
-
+    const overlays = regions.filter(region => region.role === 'overlay').length;
     return {
       regions: regions.length,
-      min,
-      max,
-      mean: sum / progressionMap.length,
-      bytes:
-        progressionMap.byteLength +
-        (regionIdMap instanceof Uint8Array ? regionIdMap.byteLength : 0),
+      overlays,
+      bytes: regionIdMap.byteLength,
     } satisfies StageMetrics;
   }
 
@@ -139,33 +98,97 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     if (regions.length === 0) {
       throw new RangeError('At least one macro region is required.');
     }
+    if (regions.length > MAX_MACRO_REGIONS) {
+      throw new RangeError(`At most ${MAX_MACRO_REGIONS} macro regions are allowed.`);
+    }
+    if (!regions.some(region => region.role === 'base')) {
+      throw new RangeError('At least one base macro region is required.');
+    }
 
+    const ids = new Set<string>();
     for (const region of regions) {
       if (!region.id) {
         throw new RangeError('Macro region id must not be empty.');
       }
-      if (!isNormalized(region.center.x) || !isNormalized(region.center.y)) {
-        throw new RangeError(`Macro region "${region.id}" center must be within 0..1.`);
+      if (ids.has(region.id)) {
+        throw new RangeError(`Duplicate macro region id: "${region.id}".`);
       }
-      if (!(region.radius > 0)) {
-        throw new RangeError(`Macro region "${region.id}" radius must be greater than zero.`);
+      ids.add(region.id);
+      if (region.role !== 'base' && region.role !== 'overlay') {
+        throw new RangeError(`Macro region "${region.id}" has an invalid role.`);
       }
-      if (!(region.falloff > 0)) {
-        throw new RangeError(`Macro region "${region.id}" falloff must be greater than zero.`);
-      }
-      if (
-        region.innerRadius !== undefined &&
-        !(region.innerRadius >= 0 && region.innerRadius < region.radius)
-      ) {
-        throw new RangeError(`Macro region "${region.id}" inner radius must be within 0..radius.`);
-      }
-      if (!isNormalized(region.progression)) {
-        throw new RangeError(`Macro region "${region.id}" progression must be within 0..1.`);
-      }
-      if (region.weight !== undefined && !(region.weight > 0)) {
-        throw new RangeError(`Macro region "${region.id}" weight must be greater than zero.`);
+      validateGeometry(region.id, region.geometry);
+      if (!isNormalized(region.danger)) {
+        throw new RangeError(`Macro region "${region.id}" danger must be within 0..1.`);
       }
     }
+  }
+}
+
+function ownerIndex(regions: readonly MacroRegionConfig[], x: number, y: number): number {
+  // Overlays are painter-ordered: the last matching overlay is on top.
+  for (let index = regions.length - 1; index >= 0; index--) {
+    const region = regions[index];
+    if (region.role === 'overlay' && contains(region.geometry, x, y)) {
+      return index;
+    }
+  }
+
+  let nearest = 0;
+  let nearestDistance = Infinity;
+  for (const [index, region] of regions.entries()) {
+    if (region.role !== 'base') {
+      continue;
+    }
+    if (contains(region.geometry, x, y)) {
+      return index;
+    }
+    const distance = distanceTo(region.geometry, x, y);
+    if (distance < nearestDistance) {
+      nearest = index;
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
+}
+
+function contains(geometry: MacroRegionGeometry, x: number, y: number): boolean {
+  if (geometry.kind === 'ring') {
+    const distance = Math.hypot(x - geometry.center.x, y - geometry.center.y);
+    return distance >= geometry.innerRadius && distance <= geometry.outerRadius;
+  }
+  const coordinate = geometry.axis === 'x' ? x : y;
+  return Math.abs(coordinate - geometry.center) <= geometry.width / 2;
+}
+
+function distanceTo(geometry: MacroRegionGeometry, x: number, y: number): number {
+  if (geometry.kind === 'ring') {
+    const distance = Math.hypot(x - geometry.center.x, y - geometry.center.y);
+    return Math.max(distance - geometry.outerRadius, geometry.innerRadius - distance, 0);
+  }
+  const coordinate = geometry.axis === 'x' ? x : y;
+  return Math.max(Math.abs(coordinate - geometry.center) - geometry.width / 2, 0);
+}
+
+function validateGeometry(id: string, geometry: MacroRegionGeometry): void {
+  if (geometry.kind === 'ring') {
+    if (!isNormalized(geometry.center.x) || !isNormalized(geometry.center.y)) {
+      throw new RangeError(`Macro region "${id}" center must be within 0..1.`);
+    }
+    if (!(geometry.innerRadius >= 0 && geometry.outerRadius > geometry.innerRadius)) {
+      throw new RangeError(`Macro region "${id}" must have a valid radial range.`);
+    }
+    return;
+  }
+
+  if (geometry.axis !== 'x' && geometry.axis !== 'y') {
+    throw new RangeError(`Macro region "${id}" axis must be "x" or "y".`);
+  }
+  if (!isNormalized(geometry.center)) {
+    throw new RangeError(`Macro region "${id}" center must be within 0..1.`);
+  }
+  if (!(geometry.width > 0 && geometry.width <= 1)) {
+    throw new RangeError(`Macro region "${id}" width must be within 0..1.`);
   }
 }
 
@@ -209,25 +232,6 @@ function fbm(
   }
 
   return value / amplitudeSum;
-}
-
-function influence(region: MacroRegionConfig, x: number, y: number): number {
-  const distance = Math.hypot(x - region.center.x, y - region.center.y);
-  const outer = smoothstep(
-    Math.min(1, Math.max(0, (region.radius + region.falloff - distance) / region.falloff))
-  );
-  const innerRadius = region.innerRadius ?? 0;
-  const inner =
-    innerRadius > 0
-      ? smoothstep(
-          Math.min(1, Math.max(0, (distance - (innerRadius - region.falloff)) / region.falloff))
-        )
-      : 1;
-  return outer * inner * (region.weight ?? 1);
-}
-
-function smoothstep(t: number): number {
-  return t * t * (3 - 2 * t);
 }
 
 function isNormalized(value: number): boolean {

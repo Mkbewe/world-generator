@@ -1,6 +1,5 @@
 import { type MapLayer, type MapSize, NoiseLayer, WorldShapeLayer } from './layer';
 import { MacroRegionLayer } from './macro-region-layer';
-import { ProgressionLayer } from './progression-layer';
 import type { MapBaseLayerId, SpatialMask } from '../types';
 
 export interface LayerBuildContext {
@@ -8,17 +7,23 @@ export interface LayerBuildContext {
   built: ReadonlyMap<MapBaseLayerId, MapLayer>;
 }
 
-export interface LayerDefinition {
+export interface RasterLayerDefinition {
   readonly label: string;
   readonly source: string;
   readonly requires?: readonly MapBaseLayerId[];
-  /** Validates the raw data and builds its visual representation. */
   build(context: LayerBuildContext, value: unknown): MapLayer;
-  /** Raw data saved under this definition's source key. */
   read(layer: MapLayer): unknown;
-  /** Spatial data available to overlays, if this layer provides a mask. */
   mask?(layer: MapLayer): SpatialMask;
 }
+
+export interface LayerGroupDefinition {
+  readonly label: string;
+  /** Ordered raster children. The first child is selected by default. */
+  readonly children: Readonly<Record<string, RasterLayerDefinition>>;
+}
+
+/** Groups describe navigation; only leaf definitions produce raster data. */
+export type LayerDefinition = RasterLayerDefinition | LayerGroupDefinition;
 
 export const LAYER_DEFINITIONS = {
   'world-shape': {
@@ -35,21 +40,6 @@ export const LAYER_DEFINITIONS = {
     },
     read: layer => (layer as WorldShapeLayer).mask,
     mask: layer => layer as WorldShapeLayer,
-  },
-  progression: {
-    label: 'Progression',
-    source: 'progressionMap',
-    requires: ['world-shape'],
-    build: ({ size, built }, value) => {
-      if (!(value instanceof Float32Array)) {
-        throw new Error('Invalid progression map.');
-      }
-      if (value.length !== size.width * size.height) {
-        throw new Error('Invalid "progression" data size.');
-      }
-      return new ProgressionLayer(built.get('world-shape') as WorldShapeLayer, value);
-    },
-    read: layer => (layer as ProgressionLayer).progression,
   },
   'macro-region': {
     label: 'Macro regions',

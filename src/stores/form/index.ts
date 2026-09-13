@@ -1,4 +1,5 @@
 export { BASIC_FORM_DEFAULTS, DEFAULT_SEED, useBasicFormStore } from './basic-form-store';
+export { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from './macro-region-form-store';
 export { DEFAULT_NOISE, NOISE_FORM_DEFAULTS, useNoiseFormStore } from './noise-form-store';
 export {
   DEFAULT_WORLD_SIZE,

@@ -24,7 +24,6 @@ describe('createMapGenerator', () => {
       'noise',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
-    expect(result.context.state.progressionMap).toBeInstanceOf(Float32Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
     expect(result.context.state.noiseMap).toBeInstanceOf(Float32Array);
   });

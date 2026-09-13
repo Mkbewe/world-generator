@@ -25,21 +25,32 @@ export interface MacroRegionPoint {
   readonly y: number;
 }
 
-/** Narrative zone with a smooth field of influence; independent of the world shape. */
+export type MacroRegionGeometry =
+  | {
+      readonly kind: 'ring';
+      readonly center: MacroRegionPoint;
+      readonly innerRadius: number;
+      readonly outerRadius: number;
+    }
+  | {
+      readonly kind: 'band';
+      /** x creates a vertical band; y creates a horizontal band. */
+      readonly axis: 'x' | 'y';
+      /** Position on the selected axis, normalized to 0..1. */
+      readonly center: number;
+      /** Full band width in normalized world units. */
+      readonly width: number;
+    };
+
+/** A categorical narrative zone; each generated cell belongs to exactly one region. */
 export interface MacroRegionConfig {
   readonly id: string;
   readonly label: string;
-  readonly center: MacroRegionPoint;
-  /** Distance from the center where the region has full influence. */
-  readonly radius: number;
-  /** Width of the falloff band on both sides of the ring. */
-  readonly falloff: number;
-  /** Inner edge of the ring; 0 makes it a full disc. Defaults to 0. */
-  readonly innerRadius?: number;
-  /** Narrative progression/danger level of the region, 0..1. */
-  readonly progression: number;
-  /** Relative influence strength; defaults to 1. */
-  readonly weight?: number;
+  /** Base regions partition the world; overlays replace them inside their geometry. */
+  readonly role: 'base' | 'overlay';
+  readonly geometry: MacroRegionGeometry;
+  /** Target gameplay danger of the region, from safe (0) to deadly (1). */
+  readonly danger: number;
 }
 
 /** Domain warping applied to macro region borders; shared by every region. */
@@ -64,7 +75,6 @@ export interface MapConfig extends SeededWorldConfig {
 export interface MapState {
   worldMask?: Uint8Array;
   noiseMap?: Float32Array;
-  progressionMap?: Float32Array;
   macroRegionIdMap?: Uint8Array;
 }
 

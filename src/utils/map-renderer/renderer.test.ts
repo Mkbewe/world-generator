@@ -1,59 +1,9 @@
-import {
-  LAYER_DEFINITIONS,
-  LayerCache,
-  type LayerDefinition,
-  LayerRegistry,
-  MapLayer,
-  type MapSize,
-} from './layer';
+import { MapLayer } from './layer';
 import { MapPersistence } from './persistence';
 import { MapRenderer, type MapRendererOptions } from './renderer';
 import { type GeneratedMapSnapshot, MapRepository } from './repository';
-import type { SpatialMask } from './types';
 import { Viewport } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
-
-/** A test-only layer with a different data type from the built-in masks. */
-class IslandMaskLayer extends MapLayer implements SpatialMask {
-  constructor(
-    size: MapSize,
-    readonly cells: Uint16Array
-  ) {
-    super('islands', size);
-  }
-
-  contains(x: number, y: number): boolean {
-    return this.cells[y * this.size.width + x] > 0;
-  }
-
-  protected paintRow(
-    pixels: Uint8ClampedArray,
-    offset: number,
-    y: number,
-    xStart: number,
-    xEnd: number
-  ): void {
-    for (let x = xStart; x < xEnd; x++, offset += 4) {
-      if (this.contains(x, y)) {
-        pixels[offset + 3] = 255;
-      }
-    }
-  }
-}
-
-const islands: LayerDefinition = {
-  label: 'Islands',
-  source: 'islandMask',
-  requires: ['noise'],
-  build: ({ size }, value) => {
-    if (!(value instanceof Uint16Array) || value.length !== size.width * size.height) {
-      throw new Error('Invalid island mask.');
-    }
-    return new IslandMaskLayer(size, value);
-  },
-  read: layer => (layer as IslandMaskLayer).cells,
-  mask: layer => layer as IslandMaskLayer,
-};
 
 function deferred() {
   let resolve!: () => void;
@@ -95,83 +45,6 @@ function setupWithSnapshot(
 }
 
 describe('MapRenderer', () => {
-  it('renders, reports, saves and restores a registered third mask without built-in layer assumptions', async () => {
-    const registry = new LayerRegistry({
-      islands,
-      'world-shape': LAYER_DEFINITIONS['world-shape'],
-      noise: LAYER_DEFINITIONS.noise,
-    });
-    const cache = new LayerCache();
-    const repository = new MapRepository();
-    const onRenderStatistics = vi.fn();
-    const persistence = new MapPersistence(repository);
-    const options = { registry, cache, boundarySource: 'islands', onRenderStatistics };
-    const { preview } = setup(options);
-    preview.start({ width: 2, height: 2 });
-    expect(preview.state.layers.map(layer => layer.id)).toEqual([
-      'world-shape',
-      'noise',
-      'islands',
-    ]);
-    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
-      width: 10,
-      height: 10,
-      devicePixelRatio: 1,
-    });
-    const boundary = vi
-      .spyOn(WorldBoundaryRenderer.prototype, 'render')
-      .mockImplementation(() => {});
-    preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4));
-    const cells = new Uint16Array([1, 0, 0, 1]);
-    preview.add('islands', cells);
-    await vi.runAllTimersAsync();
-    await preview.ready;
-
-    expect(preview.state.displayedLayer).toBe('islands');
-    expect(preview.state.layers.every(layer => layer.available)).toBe(true);
-    expect(boundary).toHaveBeenCalledWith(expect.any(IslandMaskLayer), expect.anything());
-    expect(onRenderStatistics.mock.lastCall?.[0].layers.at(-1)).toMatchObject({
-      id: 'islands',
-      name: 'Islands',
-      tiles: 4,
-      pixels: 4,
-    });
-    preview.select('noise');
-    preview.select('islands');
-    expect(preview.state.displayedLayer).toBe('islands');
-    expect(
-      persistence.save({
-        width: 2,
-        height: 2,
-        seed: '12',
-        shape: 'disc',
-        layers: {
-          worldMask: new Uint8Array(4).fill(1),
-          noiseMap: new Float32Array(4),
-          islandMask: cells,
-        },
-      }).layers.islandMask
-    ).toBe(cells);
-    preview.dispose();
-
-    const restored = new MapRenderer(elements(), vi.fn(), options);
-    onRenderStatistics.mockClear();
-    persistence.restore(restored);
-    await vi.runAllTimersAsync();
-    await restored.ready;
-    expect(restored.state.displayedLayer).toBe('islands');
-    expect(onRenderStatistics).not.toHaveBeenCalled();
-    restored.reset();
-    expect(restored.state.layers.map(layer => layer.id)).toEqual([
-      'world-shape',
-      'noise',
-      'islands',
-    ]);
-    expect(restored.state.layers.every(layer => !layer.available)).toBe(true);
-    restored.dispose();
-  });
-
   beforeEach(() => {
     vi.useFakeTimers();
     vi.spyOn(Viewport.prototype, 'start').mockImplementation(() => {});
@@ -218,7 +91,6 @@ describe('MapRenderer', () => {
     expect(displayed).toEqual(['world-shape', 'noise']);
     expect(preview.state.layers.map(layer => layer.id)).toEqual([
       'world-shape',
-      'progression',
       'macro-region',
       'noise',
     ]);
@@ -236,6 +108,30 @@ describe('MapRenderer', () => {
     pending.resolve();
     await vi.runAllTimersAsync();
     await preview.ready;
+    preview.dispose();
+  });
+
+  it('prepares a filtered layer without displaying it automatically', async () => {
+    const { preview, onChange } = setup({ shouldDisplay: id => id !== 'macro-region' });
+    const prepare = vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    preview.add('macro-region', new Uint8Array(4));
+    preview.add('noise', new Float32Array(4));
+    await vi.runAllTimersAsync();
+    await preview.ready;
+
+    const displayed = onChange.mock.calls
+      .map(([state]) => state.displayedLayer)
+      .filter((id, index, ids) => Boolean(id) && id !== ids[index - 1]);
+    expect(displayed).toEqual(['world-shape', 'noise']);
+    const regionsIndex = prepare.mock.contexts.findIndex(
+      layer => layer instanceof MapLayer && layer.id === 'macro-region'
+    );
+    expect(prepare.mock.calls[regionsIndex][1]).toBeUndefined();
+    expect(preview.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
+
+    preview.select('macro-region');
+    expect(preview.state.displayedLayer).toBe('macro-region');
     preview.dispose();
   });
 
@@ -292,7 +188,7 @@ describe('MapRenderer', () => {
 
     expect(preview.signal.aborted).toBe(true);
     expect(preview.state.displayedLayer).toBe('noise');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false]);
     expect(() => preview.add('noise', new Float32Array(4))).toThrow();
     preview.dispose();
   });
@@ -350,7 +246,7 @@ describe('MapRenderer', () => {
     const onRenderStatistics = vi.fn();
     const { preview } = setupWithSnapshot(
       { worldMask: new Uint8Array(4).fill(1) },
-      { cache: new LayerCache(), onRenderStatistics }
+      { onRenderStatistics }
     );
     await vi.runAllTimersAsync();
     await preview.ready;
@@ -371,7 +267,7 @@ describe('MapRenderer', () => {
   });
 
   it('leaves the current rendering run intact when the repository is empty', async () => {
-    const { preview } = setup({ cache: new LayerCache() });
+    const { preview } = setup();
     preview.add('world-shape', new Uint8Array(4).fill(1));
     const signal = preview.signal;
     new MapPersistence(new MapRepository()).restore(preview);

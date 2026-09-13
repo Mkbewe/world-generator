@@ -5,6 +5,7 @@ import {
   useBasicFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
+  useMacroRegionFormStore,
   useMapConfigStore,
   useNoiseFormStore,
   useWorldShapeFormStore,
@@ -25,6 +26,8 @@ export function useWorldGeneration(): WorldGeneration {
   const shape = useWorldShapeFormStore(state => state.shape);
   const size = useWorldShapeFormStore(state => state.size);
   const noise = useNoiseFormStore(state => state.noise);
+  const macroRegions = useMacroRegionFormStore(state => state.regions);
+  const macroRegionDeformation = useMacroRegionFormStore(state => state.deformation);
   const setProgress = useGenerationProgressStore(state => state.setProgress);
   const setResult = useGenerationStatisticsStore(state => state.setResult);
   const setConfig = useMapConfigStore(state => state.setConfig);
@@ -59,6 +62,8 @@ export function useWorldGeneration(): WorldGeneration {
     const config = {
       world: { width: size, height: size, seed: parsedSeed, shape },
       noise,
+      macroRegions,
+      macroRegionDeformation,
     };
 
     try {
@@ -78,7 +83,17 @@ export function useWorldGeneration(): WorldGeneration {
     } finally {
       setIsGenerating(false);
     }
-  }, [noise, seed, setConfig, setProgress, setResult, shape, size]);
+  }, [
+    macroRegionDeformation,
+    macroRegions,
+    noise,
+    seed,
+    setConfig,
+    setProgress,
+    setResult,
+    shape,
+    size,
+  ]);
 
   return { isGenerating, generationRun, error, onRendererReady, generate };
 }

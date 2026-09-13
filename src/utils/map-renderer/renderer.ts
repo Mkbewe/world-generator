@@ -1,12 +1,4 @@
-import {
-  type LayerCache,
-  layerCache,
-  LayerQueue,
-  type LayerRegistry,
-  layerRegistry,
-  type MapLayer,
-  type MapSize,
-} from './layer';
+import { layerCache, LayerQueue, layerRegistry, type MapLayer, type MapSize } from './layer';
 import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
 import {
@@ -30,17 +22,16 @@ export interface MapRendererState {
 
 export interface MapRendererOptions {
   selectedLayer?: MapBaseLayerId;
-  registry?: LayerRegistry;
-  boundarySource?: MapBaseLayerId;
-  cache?: LayerCache;
+  /** Decides which layers may draw while a run is progressive; defaults to all. */
+  shouldDisplay?: (id: MapBaseLayerId) => boolean;
   onRenderStatistics?: (statistics: RenderStatistics) => void;
 }
 
-export function emptyRenderState(registry: LayerRegistry = layerRegistry): MapRendererState {
+export function emptyRenderState(): MapRendererState {
   return {
-    layers: registry.ids.map(id => ({
+    layers: layerRegistry.ids.map(id => ({
       id,
-      label: registry.get(id).label,
+      label: layerRegistry.get(id).label,
       available: false,
     })),
     overlays: OVERLAY_IDS.map(id => ({
@@ -53,7 +44,7 @@ export function emptyRenderState(registry: LayerRegistry = layerRegistry): MapRe
 }
 
 export class MapRenderer {
-  readonly registry: LayerRegistry;
+  readonly registry = layerRegistry;
   private readonly scene: MapScene;
   private readonly view: MapView;
   private readonly queue: LayerQueue;
@@ -66,10 +57,9 @@ export class MapRenderer {
     private readonly onChange: (state: MapRendererState) => void,
     options: MapRendererOptions = {}
   ) {
-    this.registry = options.registry ?? layerRegistry;
-    this.scene = new MapScene(options.cache ?? layerCache, this.registry);
+    this.scene = new MapScene(layerCache, this.registry);
     this.metrics = new RenderMetrics(this.registry, options.onRenderStatistics);
-    this.view = new MapView(elements, this.metrics, options.selectedLayer, options.boundarySource);
+    this.view = new MapView(elements, this.metrics, options.selectedLayer, options.shouldDisplay);
     this.queue = new LayerQueue({
       signal: () => this.lifetime.signal,
       begin: layer => {

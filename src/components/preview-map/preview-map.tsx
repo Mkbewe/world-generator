@@ -1,9 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
+import { LayerNavigation } from './layer-navigation';
 import { usePreviewStore, useRenderStatisticsStore } from '../../stores';
 import {
   emptyRenderState,
+  layerRegistry,
   type MapBaseLayerId,
   type MapOverlayId,
   MapRenderer,
@@ -21,6 +23,10 @@ interface PreviewMapProps {
 
 export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) {
   const [preview, setPreview] = useState<MapRendererState>(emptyRenderState);
+  const [navigation] = useState(
+    () => new LayerNavigation(layerRegistry.tree, usePreviewStore.getState().layerTree)
+  );
+  const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer);
   const setRenderStatistics = useRenderStatisticsStore(state => state.setResult);
   const rendererRef = useRef<MapRenderer | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,6 +44,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
     const { baseLayer, overlays } = usePreviewStore.getState();
     const renderer = new MapRenderer({ canvas, overlayCanvas, viewportElement }, setPreview, {
       selectedLayer: baseLayer,
+      shouldDisplay: id => navigation.leadsToSelection(id),
       onRenderStatistics: setRenderStatistics,
     });
     for (const [id, visible] of Object.entries(overlays)) {
@@ -54,11 +61,19 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
       onReady(undefined);
       renderer.dispose();
     };
-  }, [onReady, setRenderStatistics]);
+  }, [navigation, onReady, setRenderStatistics]);
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
-    usePreviewStore.getState().setBaseLayer(layer);
-    rendererRef.current?.select(layer);
+    const renderer = rendererRef.current;
+    if (!renderer) {
+      return;
+    }
+    renderer.select(layer);
+    if (renderer.state.displayedLayer === layer) {
+      navigation.select(layer);
+      const { layers } = renderer.state;
+      usePreviewStore.getState().setBaseLayer(layer, navigation.toViewState(layers, layer).tabs);
+    }
   };
 
   const handleOverlayChange = (id: MapOverlayId, visible: boolean): void => {
@@ -75,6 +90,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
         <Separator size='4' />
         <MapLayerControls
           preview={preview}
+          navigation={navigationState}
           onBaseLayerChange={handleBaseLayerChange}
           onOverlayChange={handleOverlayChange}
         >

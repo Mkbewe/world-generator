@@ -6,13 +6,8 @@ import {
   type RunGeneration,
   type StageInfo,
 } from '../../utils/map-generator';
-import {
-  LAYER_DEFINITIONS,
-  LayerRegistry,
-  MapRenderer,
-  mapRepository,
-} from '../../utils/map-renderer';
-import { LayerCache, MapLayer } from '../../utils/map-renderer/layer';
+import { MapRenderer, mapRepository } from '../../utils/map-renderer';
+import { MapLayer } from '../../utils/map-renderer/layer';
 import { Viewport } from '../../utils/map-renderer/viewport';
 
 const config: MapConfig = {
@@ -48,10 +43,6 @@ describe('WorldGenerationSession', () => {
   let renderer: MapRenderer;
   let runner: ReturnType<typeof vi.fn<RunGeneration>>;
   let session: WorldGenerationSession;
-  const registry = new LayerRegistry({
-    ...LAYER_DEFINITIONS,
-    noise: { ...LAYER_DEFINITIONS.noise, source: 'elevation' },
-  });
 
   beforeEach(() => {
     mapRepository.clear();
@@ -68,8 +59,7 @@ describe('WorldGenerationSession', () => {
         overlayCanvas: document.createElement('canvas'),
         viewportElement: document.createElement('div'),
       },
-      vi.fn(),
-      { cache: new LayerCache(), registry }
+      vi.fn()
     );
     runner = vi.fn<RunGeneration>();
     session = new WorldGenerationSession(renderer, runner);
@@ -84,7 +74,7 @@ describe('WorldGenerationSession', () => {
 
   it('maps registered stage data and saves map metadata after generation', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const elevation = new Float32Array(4);
+    const noise = new Float32Array(4);
     const result: PipelineWorkerGenerationResult = {
       statistics: [],
       totalDurationMs: 2,
@@ -99,8 +89,8 @@ describe('WorldGenerationSession', () => {
         stageCount: 2,
       });
       options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('statistics-only', { unknown: elevation }));
-      options?.onEvent?.(completed('noise', { elevation }));
+      options?.onEvent?.(completed('statistics-only', { unknown: noise }));
+      options?.onEvent?.(completed('noise', { noiseMap: noise }));
       return result;
     });
 
@@ -119,8 +109,7 @@ describe('WorldGenerationSession', () => {
       shape: 'disc',
     });
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
-    expect(mapRepository.get()?.layers.elevation).toBe(elevation);
-    expect(mapRepository.get()?.layers.noiseMap).toBeUndefined();
+    expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
     expect(renderer.state.displayedLayer).toBe('noise');
     expect(onProgress.mock.lastCall?.[0].status).toBe('completed');
   });
@@ -139,18 +128,12 @@ describe('WorldGenerationSession', () => {
     expect(mapRepository.get()).toBeUndefined();
   });
 
-  it('registers every layer source produced by a single stage', async () => {
-    const progression = new Float32Array(4);
+  it('registers the region layer produced by the macro-region stage', async () => {
     const regionIds = new Uint8Array(4);
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages);
       options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
-      options?.onEvent?.(
-        completed('macro-region', {
-          progressionMap: progression,
-          macroRegionIdMap: regionIds,
-        })
-      );
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regionIds }));
       return {
         statistics: [],
         totalDurationMs: 1,
@@ -160,21 +143,19 @@ describe('WorldGenerationSession', () => {
     await expect(session.generate(config, vi.fn())).resolves.toMatchObject({ totalDurationMs: 1 });
     await renderer.ready;
 
-    expect(renderer.state.layers.find(layer => layer.id === 'progression')?.available).toBe(true);
     expect(renderer.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
-    expect(mapRepository.get()?.layers.progressionMap).toBe(progression);
     expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regionIds);
   });
 
   it('saves generated stage data even when the preview is cancelled', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const elevation = new Float32Array(4);
+    const noise = new Float32Array(4);
     const add = vi.spyOn(renderer, 'add');
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages);
       renderer.cancel();
       options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('noise', { elevation }));
+      options?.onEvent?.(completed('noise', { noiseMap: noise }));
       return {
         statistics: [],
         totalDurationMs: 1,
@@ -186,7 +167,7 @@ describe('WorldGenerationSession', () => {
     expect(add).not.toHaveBeenCalled();
     expect(renderer.state.layers.every(layer => !layer.available)).toBe(true);
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
-    expect(mapRepository.get()?.layers.elevation).toBe(elevation);
+    expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
   });
 
   it('does not save when the generator rejects its incomplete result', async () => {
@@ -272,15 +253,15 @@ describe('WorldGenerationSession', () => {
     }
   );
 
-  it('restores saved layers using the same registry as generation', async () => {
+  it('restores saved layers when the preview remounts', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const elevation = new Float32Array(4);
+    const noise = new Float32Array(4);
     const snapshot = {
       width: 2,
       height: 2,
       seed: '17',
       shape: 'disc' as const,
-      layers: { worldMask: mask, elevation },
+      layers: { worldMask: mask, noiseMap: noise },
     };
     mapRepository.save(snapshot);
 
@@ -297,7 +278,7 @@ describe('WorldGenerationSession', () => {
     let firstEvent: ((event: GenerationEvent) => void) | undefined;
     let firstSignal: AbortSignal | undefined;
     const mask = new Uint8Array(4).fill(1);
-    const elevation = new Float32Array(4);
+    const noise = new Float32Array(4);
     runner
       .mockImplementationOnce((_, options) => {
         firstEvent = options?.onEvent;
@@ -309,7 +290,7 @@ describe('WorldGenerationSession', () => {
       .mockImplementationOnce(async (_, options) => {
         options?.onStages?.(stages);
         options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-        options?.onEvent?.(completed('noise', { elevation }));
+        options?.onEvent?.(completed('noise', { noiseMap: noise }));
         return {
           statistics: [],
           totalDurationMs: 2,
@@ -326,7 +307,7 @@ describe('WorldGenerationSession', () => {
     const saved = mapRepository.get();
     expect(saved?.seed).toBe('99');
     expect(saved?.layers.worldMask).toBe(mask);
-    expect(saved?.layers.elevation).toBe(elevation);
+    expect(saved?.layers.noiseMap).toBe(noise);
 
     finishFirst({
       statistics: [],
