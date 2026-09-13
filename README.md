@@ -148,8 +148,8 @@ safety gate before merge.
 
 ## Versioning and releases
 
-Versioning and changelog generation use `standard-version` with Conventional
-Commits:
+Versioning and changelog generation use `release-it` with the
+`@release-it/conventional-changelog` plugin (Conventional Commits):
 
 ```bash
 pnpm release        # detects the bump and creates release/vX.Y.Z
@@ -162,8 +162,10 @@ pnpm release:major  # force major
 while fixes, refactors, chores and docs bump `patch`. A breaking change
 (`feat!:` or a `BREAKING CHANGE:` footer) bumps `major` — or `minor` while the
 project is still on `0.x`. The script creates a `release/vX.Y.Z` branch, updates
-`package.json` and `CHANGELOG.md`, and commits the result; no git tag is created
-locally. Add `--dry-run` to preview the detected bump without changing anything.
+`package.json` and `CHANGELOG.md`, and commits the result; no git tag or push is
+done locally. Changelog entries keep the commit subject and the commit body, so
+multi-line descriptions are preserved. Add `--dry-run` to preview the detected
+bump without changing anything.
 
 Flow: run the release on a clean `master`, push the `release/*` branch and merge
 it through a PR. Merging ships the build to **dev**. The git tag and GitHub
