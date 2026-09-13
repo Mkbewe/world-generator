@@ -469,8 +469,9 @@ type LayerSpec = {
 - Katalog jest płaską tablicą. `group` nie zmienia tożsamości warstwy ani
   kolejności budowania; registry składa z niego jednopoziomowe drzewo zakładek.
 - Kolejność wpisów w katalogu to kolejność zakładek i kolejność dzieci w
-  grupie. Sąsiednie wpisy z tym samym `group.id` tworzą jedną grupę; zmiana
-  kolejności w tablicy przestawia UI, nie graf zależności.
+  grupie. Wszystkie wpisy z tym samym `group.id` tworzą jedną grupę, w pozycji
+  pierwszego z nich; późniejsze dzieci są zbierane do tej grupy, a nie otwierają
+  drugiej. Zmiana kolejności w tablicy przestawia UI, nie graf zależności.
 - `group.id` nie koliduje z `id` warstwy. Wszystkie wpisy tej samej grupy mają
   tę samą `group.label`; niespójna etykieta to błąd walidacji.
 - Pusta grupa nie istnieje, bo grupa powstaje wyłącznie z wpisów dzieci.

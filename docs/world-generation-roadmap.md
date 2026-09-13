@@ -335,6 +335,34 @@ Podglądy koncepcyjne:
 
 - [trzy presety świata](world-presets.jpg).
 
+### Pierścienie dzielone z rotacją — planowane
+
+Układ radialny można rozszerzyć o pierścienie dzielone na dwa naprzemienne
+regiony. Krzyż z dwóch prostopadłych średnic tnie pierścień na cztery wycinki
+90°, a przeciwległe wycinki należą do tego samego regionu. Pierścień tworzą więc
+dwa regiony, każdy zajmujący połowę jego powierzchni.
+
+- Podział i rotacja są konfigurowane osobno dla każdego pierścienia; obrót np.
+  o 45° ustawia granice niezależnie od osi świata.
+- Każda połowa jest osobnym `MacroRegionConfig` z własną etykietą i `danger`, więc
+  jeden pierścień może mieć naprzemiennie bezpieczne i niebezpieczne wycinki.
+- Pierścień niepodzielony pozostaje jednym regionem; podział nie zmienia
+  niezmiennika partycji — wycinki przylegają do siebie i pokrywają cały
+  pierścień.
+- Limit 10 regionów oznacza maksymalnie 5 podzielonych pierścieni; dodawanie
+  i usuwanie działa na pierścieniach, nie na pojedynczych połowach.
+- Edytor szerokości nadal operuje na promieniach pierścieni, a procent regionu to
+  połowa udziału pierścienia.
+- Testy powinny objąć zawijanie kątów wokół 0/360, rotację inną niż 0/45/90 oraz
+  partycję każdej komórki dokładnie do jednego regionu bazowego.
+
+Geometria pierścienia zyskałaby opcjonalny podział, np. `split: { rotation, side }`,
+gdzie `side` wybiera jedną z dwóch par przeciwległych wycinków. `contains` dodaje
+wtedy warunek na kąt (`atan2`), a domain warping granic działa jak dotychczas,
+więc krzyż również falowałby spójnie z resztą mapy.
+
+Preset pokrewny: „Crossed rings” z naprzemiennym `danger` w obrębie pierścienia.
+
 ## Topologia i krawędzie świata
 
 Kształt mapy należy oddzielić od sposobu działania jej krawędzi oraz od presetu klimatu. Docelowo użytkownik będzie mógł wybrać świat radialny w formie dysku albo świat cylindryczny, niezależnie od wybranego układu temperatury i wilgotności.
