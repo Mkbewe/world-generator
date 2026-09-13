@@ -31,14 +31,12 @@ console.log(
 );
 
 if (dryRun) {
-  console.log(
-    `Dry run: would create ${branchName} and run standard-version --release-as ${releaseType}.`
-  );
+  console.log(`Dry run: would create ${branchName} and run release-it ${nextVersion} --ci.`);
   process.exit(0);
 }
 
 execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
-execSync(`npx standard-version --release-as ${releaseType} --skip.tag`, { stdio: 'inherit' });
+execSync(`npx release-it ${nextVersion} --ci`, { stdio: 'inherit' });
 
 /** Detects the bump from conventional commits since the last tag. */
 function detectReleaseType(currentVersion) {
