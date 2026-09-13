@@ -30,7 +30,7 @@ export interface MapRendererOptions {
 
 export function emptyRenderState(): MapRendererState {
   return {
-    layers: layerRegistry.ids.map(id => ({
+    layers: layerRegistry.order.map(id => ({
       id,
       label: layerRegistry.get(id).label,
       available: false,

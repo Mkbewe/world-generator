@@ -1,13 +1,26 @@
-import { LAYER_DEFINITIONS, type LayerDefinition } from './layer-definition';
 import { LayerRegistry } from './layer-registry';
+import { LAYER_CATALOG, type LayerSpec } from '../../map-layers';
+
+const world = LAYER_CATALOG[0];
+const noise = LAYER_CATALOG[2];
+
+function solid(id: string, overrides: Partial<LayerSpec> = {}): LayerSpec {
+  return {
+    id,
+    label: id,
+    source: id + 'Map',
+    dataType: 'uint8',
+    palette: { kind: 'solid', color: [0, 0, 0] },
+    ...overrides,
+  };
+}
 
 describe('LayerRegistry', () => {
-  it('orders definitions by dependencies and reads their registered source keys', () => {
-    const registry = new LayerRegistry({
-      noise: LAYER_DEFINITIONS.noise,
-      'world-shape': LAYER_DEFINITIONS['world-shape'],
-    });
-    expect(registry.ids).toEqual(['world-shape', 'noise']);
+  it('keeps catalog order separate from dependency build order', () => {
+    const registry = new LayerRegistry([noise, world]);
+
+    expect(registry.order).toEqual(['noise', 'world-shape']);
+    expect(registry.buildOrder).toEqual(['world-shape', 'noise']);
     expect(
       registry.presentIn({ noiseMap: new Float32Array(4), worldMask: new Uint8Array(4) })
     ).toEqual(['world-shape', 'noise']);
@@ -16,80 +29,78 @@ describe('LayerRegistry', () => {
     expect(() => registry.get('missing')).toThrow('Unknown layer');
   });
 
-  it('rejects unknown dependencies, cycles and ambiguous data sources', () => {
-    expect(() => new LayerRegistry({ noise: LAYER_DEFINITIONS.noise })).toThrow('Unknown layer');
-    expect(
-      () =>
-        new LayerRegistry({
-          ...LAYER_DEFINITIONS,
-          'world-shape': { ...LAYER_DEFINITIONS['world-shape'], requires: ['noise'] },
-        })
-    ).toThrow('Cyclic layer dependency');
-    expect(
-      () =>
-        new LayerRegistry({
-          ...LAYER_DEFINITIONS,
-          duplicate: LAYER_DEFINITIONS.noise,
-        })
-    ).toThrow('Duplicate layer source');
-  });
-
-  it('supports one level of groups and orders their leaves by dependencies', () => {
-    const registry = new LayerRegistry({
-      'world-shape': LAYER_DEFINITIONS['world-shape'],
-      climate: {
-        label: 'Climate',
-        children: {
-          winds: { ...LAYER_DEFINITIONS.noise, source: 'windMap', requires: ['rainfall'] },
-          rainfall: { ...LAYER_DEFINITIONS.noise, source: 'rainfallMap' },
-        },
-      },
-    });
-
-    expect(registry.ids).toEqual(['world-shape', 'rainfall', 'winds']);
-    expect(registry.tree[1]).toMatchObject({
-      id: 'climate',
-      children: [{ id: 'winds' }, { id: 'rainfall' }],
-    });
-    expect(registry.has('climate')).toBe(false);
-    expect(registry.presentIn({ windMap: new Float32Array(1) })).toEqual(['winds']);
-  });
-
-  it('rejects nested groups', () => {
-    const definitions = {
-      climate: {
-        label: 'Climate',
-        children: {
-          winds: {
-            label: 'Winds',
-            children: { speed: { ...LAYER_DEFINITIONS.noise, source: 'windSpeed' } },
-          },
-        },
-      },
-    } as unknown as Readonly<Record<string, LayerDefinition>>;
-
-    expect(() => new LayerRegistry(definitions)).toThrow('Nested layer groups are not supported');
-  });
-
-  it('rejects empty groups, duplicate IDs across branches and dependencies on groups', () => {
-    expect(() => new LayerRegistry({ empty: { label: 'Empty', children: {} } })).toThrow(
-      'Empty layer group'
+  it('rejects unknown, non-mask and cyclic clipping dependencies', () => {
+    expect(() => new LayerRegistry([{ ...noise, clipTo: 'missing' }])).toThrow('Unknown layer');
+    expect(() => new LayerRegistry([solid('plain'), { ...noise, clipTo: 'plain' }])).toThrow(
+      'non-mask layer'
     );
+
+    const first = solid('first', {
+      clipTo: 'second',
+      providesMask: { insideValue: 1 },
+    });
+    const second = solid('second', {
+      clipTo: 'first',
+      providesMask: { insideValue: 1 },
+    });
+    expect(() => new LayerRegistry([first, second])).toThrow('Cyclic layer dependency');
+  });
+
+  it('rejects duplicate IDs and data sources', () => {
+    expect(() => new LayerRegistry([world, world])).toThrow('Duplicate layer ID');
+    expect(() => new LayerRegistry([world, { ...noise, source: world.source }])).toThrow(
+      'Duplicate layer source'
+    );
+  });
+
+  it('builds single-level groups in first-child catalog order', () => {
+    const group = { id: 'climate', label: 'Climate' };
+    const registry = new LayerRegistry([
+      world,
+      solid('winds', { group }),
+      solid('terrain'),
+      solid('rainfall', { group }),
+    ]);
+
+    expect(registry.order).toEqual(['world-shape', 'winds', 'terrain', 'rainfall']);
+    expect(registry.tree).toMatchObject([
+      { id: 'world-shape' },
+      { id: 'climate', children: [{ id: 'winds' }, { id: 'rainfall' }] },
+      { id: 'terrain' },
+    ]);
+    expect(registry.has('climate')).toBe(false);
+  });
+
+  it('rejects group ID collisions and inconsistent labels', () => {
     expect(
       () =>
-        new LayerRegistry({
-          first: { label: 'First', children: { noise: LAYER_DEFINITIONS.noise } },
-          second: { label: 'Second', children: { noise: LAYER_DEFINITIONS.noise } },
-        })
-    ).toThrow('Duplicate layer ID');
+        new LayerRegistry([
+          solid('climate'),
+          solid('winds', { group: { id: 'climate', label: 'Climate' } }),
+        ])
+    ).toThrow('collides with a layer ID');
     expect(
       () =>
-        new LayerRegistry({
-          group: {
-            label: 'Group',
-            children: { noise: { ...LAYER_DEFINITIONS.noise, requires: ['group'] } },
-          },
-        })
-    ).toThrow('Unknown layer: group');
+        new LayerRegistry([
+          solid('winds', { group: { id: 'climate', label: 'Climate' } }),
+          solid('rainfall', { group: { id: 'climate', label: 'Weather' } }),
+        ])
+    ).toThrow('Inconsistent layer group label');
+  });
+
+  it('validates palettes while constructing the registry', () => {
+    expect(
+      () =>
+        new LayerRegistry([
+          solid('invalid', { palette: { kind: 'discrete', colors: [], overflow: 'cycle' } }),
+        ])
+    ).toThrow('at least one color');
+  });
+
+  it('validates layer identity and mask values', () => {
+    expect(() => new LayerRegistry([solid('', { source: '' })])).toThrow('must not be empty');
+    expect(
+      () => new LayerRegistry([solid('mask', { providesMask: { insideValue: 1.5 } })])
+    ).toThrow('invalid mask inside value');
   });
 });

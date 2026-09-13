@@ -10,14 +10,18 @@ interface CacheEntry {
 export class LayerCache {
   private readonly layers = new Map<MapBaseLayerId, CacheEntry>();
 
-  getOrCreate(id: MapBaseLayerId, inputs: readonly unknown[], create: () => MapLayer): MapLayer {
+  getOrCreate<TLayer extends MapLayer>(
+    id: MapBaseLayerId,
+    inputs: readonly unknown[],
+    create: () => TLayer
+  ): TLayer {
     const cached = this.layers.get(id);
     if (
       cached &&
       cached.inputs.length === inputs.length &&
       cached.inputs.every((input, index) => input === inputs[index])
     ) {
-      return cached.layer;
+      return cached.layer as TLayer;
     }
     const layer = create();
     cached?.layer.dispose();

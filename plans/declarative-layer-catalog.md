@@ -1,512 +1,489 @@
-# Declarative layer catalog
+# Refactor: declarative layer catalog as the single source for raster layers
 
-## Cel
+## Zaktualizowany opis zadania
 
-Dodanie nowej warstwy rastrowej nie powinno wymagać ręcznej edycji typów stanu,
-typów danych renderera, fabryk warstw, rejestru, nawigacji, persistence, eksportów
-i osobnej klasy renderującej.
+### Problem
 
-Docelowo nowa warstwa generowana przez nowy etap powinna wymagać najwyżej trzech
-plików produkcyjnych:
+Dodanie warstwy rastrowej wymaga obecnie zmian w wielu niezależnych miejscach:
 
-1. pliku stage'a,
-2. wpisu w katalogu warstw,
-3. dopisania stage'a do `pipeline-factory.ts`.
+- `MapState` generatora i `MapLayers` renderera,
+- implementacji oraz rejestracji stage'a,
+- `layer-definition.ts`,
+- osobnej klasie painter,
+- rejestrze, nawigacji, persistence i statystykach,
+- barrel exports i testach związanych z konkretną klasą.
 
-Test stage'a lub UI jego konfiguracji są uzasadnionymi dodatkowymi plikami i nie
-powinny być liczone jako narzut infrastruktury rasterów.
-
-## Ocena obecnego rozwiązania
-
-Kierunek refaktoru jest właściwy. Obecny kod ma już część potrzebnej
-infrastruktury (`LAYER_DEFINITIONS`, `LayerRegistry`, sortowanie zależności oraz
-generowanie drzewa zakładek), ale abstrakcja zatrzymała się w połowie.
-
-Ta sama informacja jest nadal powtarzana w kilku miejscach:
-
-- `MapState` i `MapLayers` osobno deklarują te same źródła typed arrays,
-- `layer-definition.ts` powtarza walidację typu i rozmiaru oraz callbacki
-  `build`, `read` i `mask`,
-- `WorldShapeLayer`, `NoiseLayer`, `ProgressionLayer` i `MacroRegionLayer`
-  powtarzają niemal identyczną pętlę renderującą,
-- eksporty oraz testy są związane z konkretnymi klasami painterów,
-- fabryka pipeline'u ręcznie ustala stage'e, co jest właściwe i powinno pozostać
-  jawne.
-
-Katalog powinien eliminować wyłącznie powtarzalną integrację rastra. Nie powinien
-przejmować niestandardowej logiki generowania ani domenowych statystyk stage'ów.
-
-## Docelowy podział odpowiedzialności
+Większość warstw jest renderowana tak samo:
 
 ```text
-layer catalog
-├── MapLayerId / MapLayers / MapState
-├── typ i rozmiar danych
-├── zależności warstw
-├── grupy zakładek
-├── paleta
-├── klucze persistence
-└── nazwy używane w statystykach renderowania
-        │
-        └── CatalogLayer
-            ├── walidacja
-            ├── wspólne kafelkowanie
-            ├── clipping do maski
-            └── zapis pikseli
+typed array -> palette -> RGBA canvas -> clipping do world mask
 ```
 
-Katalog powinien znajdować się w neutralnym module współdzielonym przez generator
-i renderer, na przykład:
+Różni się generowanie danych oraz mapowanie wartości na kolor. Powtarzanie całej
+infrastruktury nie będzie możliwe do utrzymania przy planowanych heightmapach,
+klimacie, hydrologii i biomach.
+
+### Cel
+
+Wprowadzić płaski, deklaratywny katalog będący pojedynczym źródłem prawdy dla
+warstw rastrowych dostępnych w produkcie. Jeden wpis ma sterować:
+
+- identyfikatorem i źródłem danych,
+- walidacją typed array i liczby komórek,
+- paletą oraz clippingiem,
+- budowaniem i odczytem `CatalogLayer`,
+- kolejnością budowania,
+- kolejnością oraz grupowaniem zakładek,
+- wykrywaniem danych podczas generowania i restore,
+- kluczem persistence,
+- nazwą w render statistics.
+
+Logika generowania pozostaje w niestandardowych stage'ach.
+
+### Oczekiwany koszt dodania warstwy
+
+Dla rastra, którego konfiguracja już istnieje:
+
+1. wpis w katalogu,
+2. plik stage'a,
+3. dopisanie stage'a do `pipeline-factory.ts`.
+
+Limit trzech plików dotyczy infrastruktury produkcyjnej rastra. Testy stage'a,
+typy konfiguracji, formularze oraz inne UI nowej funkcji są uzasadnionymi
+dodatkowymi zmianami i nie są narzutem katalogu.
+
+## Zakres
+
+### W zakresie
+
+- DOM-free, data-only `LayerSpec` i płaski katalog aktualnie działających warstw.
+- Palety `solid`, `ramp` i `discrete`.
+- Jedna generyczna klasa `CatalogLayer` do walidacji i malowania.
+- Osobne `order` katalogowe i `buildOrder` zależności.
+- Jednopoziomowe grupy zakładek wyprowadzane z katalogu.
+- Wyprowadzenie `MapBaseLayerId` i `MapRasters` z katalogu.
+- Zachowanie `MapState` jako stanu generatora, który może zawierać dane
+  nierastrowe.
+- Luźny kontrakt danych wyłącznie na granicach worker/session/registry/scena.
+- Migracja `world-shape`, `noise` i `macro-region`.
+- Usunięcie klas painterów oraz callbacków `build`, `read` i `mask`.
+- Zachowanie restore, cache, nawigacji i render statistics.
+- Przeniesienie współdzielonych kolorów macro-region poza `map-renderer`.
+
+### Poza zakresem
+
+- Zmiany logiki generowania stage'ów.
+- Automatyczne odkrywanie lub importowanie stage'ów.
+- Wyprowadzanie kolejności stage'ów z katalogu renderowania.
+- `world-boundary`, który pozostaje viewport overlayem.
+- Nowe zachowania UI i placeholdery przyszłych warstw.
+- Warstwy z roadmapy, których generator jeszcze nie produkuje.
+- Wielopoziomowe grupy i wiele rodzajów masek.
+- Custom renderer oraz escape hatch `render?`.
+- Automatyzacja domenowych `summarize()` stage'ów.
+- Przywracanie usuniętej warstwy `progression`.
+
+## Decyzje architektoniczne po recenzji
+
+### 1. Katalog jest współdzielony, ale nie należy do renderera
 
 ```text
-src/utils/map-layer-catalog/
+map-generator                map-layers                  map-renderer
+  stage'e, MapState     ->     LayerSpec              <-   CatalogLayer
+  pipeline-factory             katalog                     registry
+                               palety                      scena
+                               MapRasters
+```
+
+`map-layers` nie korzysta z DOM, canvasa, Reacta ani `map-renderer`. Generator
+może importować typ `MapRasters`; jest to zależność od współdzielonego kontraktu,
+nie od renderera. Stage'e nie korzystają runtime'owo z palet ani `CatalogLayer`.
+
+Proponowana struktura:
+
+```text
+src/utils/map-layers/
   catalog.ts
   layer-spec.ts
   palettes.ts
+  types.ts
+
+src/utils/map-renderer/layer/
+  map-layer.ts
+  catalog-layer.ts
+  layer-registry.ts
 ```
 
-Umieszczenie kanonicznych typów wyłącznie pod `map-renderer` stworzyłoby
-niepotrzebną zależność generatora od renderera.
+`REGION_COLORS` oraz funkcja używana przez formularze regionów przechodzą z
+`map-renderer/layer/macro-region-palette.ts` do neutralnego `map-layers`.
 
-## Kontrakt katalogu
+### 2. `MapState` nie jest zbiorem warstw podglądu
 
-Przykładowy kontrakt:
+Katalog opisuje wyłącznie renderowalne typed arrays. Stan generatora jest
+kanałem komunikacji między stage'ami i w przyszłości będzie zawierał także dane
+nierastrowe, np. definicje lądów, szkielety oraz profile terenu.
 
 ```ts
-type RasterDataType = 'uint8' | 'float32';
+type MapRasters = RasterTypesDerivedFrom<typeof LAYER_CATALOG>;
+
+interface MapState extends MapRasters {
+  // Przyszłe dane domenowe, które nie są warstwami podglądu.
+}
+```
+
+Konkretny zapis może użyć type intersection, jeśli lepiej współpracuje z
+TypeScriptem i ESLintem. Istotna jest granica: `MapRasters` jest częścią
+`MapState`, ale `MapState` nie jest pojęciowo katalogiem warstw podglądu.
+
+### 3. Ścisłe typy publiczne, luźne granice runtime
+
+Publiczne `MapRasters` nie dostaje index signature tylko po to, aby registry
+mogło indeksować po runtime'owym `source`. Na granicach dynamicznych używamy:
+
+```ts
+type LayerDataRecord = Readonly<Record<string, unknown>>;
+```
+
+Cast lub konwersja do `MapRasters` ma być zamknięta w jednym miejscu, np. w
+`MapScene.getLayers()`, i nie może wyciekać do komponentów ani stage'ów.
+
+### 4. Katalog zawiera tylko działającą powierzchnię produktu
+
+Nie wpisujemy przyszłych warstw tylko po to, aby UI pokazało je jako disabled.
+Nowy wpis trafia do katalogu razem z kodem produkującym dane. W v1 nie są
+potrzebne flagi `produced`, `required` ani `enabled`.
+
+### 5. Kolejność UI i budowania są niezależne
+
+Registry wystawia:
+
+- `order` — kolejność katalogu dla UI, `MapScene.options` i drzewa grup,
+- `buildOrder` — stabilny topological sort zależności `clipTo` dla load/restore.
+
+Zmiana zależności technicznej nie może przestawiać zakładek.
+
+### 6. `clipTo` zastępuje `masked`
+
+```ts
+clipTo: 'world-shape'
+```
+
+jednocześnie wskazuje maskę i tworzy krawędź w `buildOrder`. Nie deklarujemy
+równolegle `masked: true` i `requires: ['world-shape']`.
+
+Ogólne `requires` nie wchodzi do v1. Obecny generyczny renderer potrzebuje tylko
+maski, a zależności stage'ów należą do pipeline'u. `requires` można dodać wraz z
+pierwszym rzeczywistym przypadkiem renderowania zależnego od innej warstwy.
+
+### 7. Semantyka maski pozostaje dokładna
+
+`world-shape` uznaje komórkę za wewnętrzną tylko dla `value === 1`.
+`value !== 0` lub samo `transparentValue: 0` nie zachowuje tego kontraktu.
+
+```ts
+providesMask: { insideValue: 1 }
+```
+
+W v1 tylko `world-shape` może dostarczać maskę. `CatalogLayer.contains()` używa
+ścisłego porównania, wizualizacja kształtu maluje tylko wnętrze, a `MapView`
+nadal korzysta z tej maski dla `world-boundary`.
+
+### 8. Rampy obsługują rzeczywistą dziedzinę danych
+
+`RampStop.at` jest wartością źródłowego rastra. Pierwszy i ostatni stop definiują
+clamp:
+
+```ts
+ramp([
+  { at: -1, color: LOW },
+  { at: 0, color: MID },
+  { at: 1, color: HIGH },
+]);
+```
+
+Noise używa stopów `0` i `1`, a heightmapa lub temperatura nie wymagają
+normalizacji w stage'u. Walidacja wymaga co najmniej dwóch stopów oraz ściśle
+rosnących `at`.
+
+### 9. Discrete overflow jest jawne
+
+Paleta dyskretna wymaga `overflow: 'cycle'` albo
+`overflow: { color: FALLBACK_COLOR }`. `macro-region` pozostaje przy `cycle`, bo
+odpowiada to obecnemu `index % colors.length`.
+
+### 10. Bez DSL-a i escape hatch w v1
+
+Katalog jest zwykłą tablicą:
+
+```ts
+export const LAYER_CATALOG = [
+  // entries
+] as const satisfies readonly LayerSpec[];
+```
+
+Runtime validation wykonuje `LayerRegistry`. `defineCatalog` nie jest potrzebne.
+`defineLayer` można dodać tylko wtedy, gdy test typów wykaże utratę literałów lub
+wyraźnie poprawi ergonomię.
+
+Nie dodajemy `render?`. Kontrakt `palette | custom` należy zaprojektować dopiero
+dla pierwszego realnego przypadku niestandardowego renderowania.
+
+## Docelowy kontrakt
+
+```ts
+type Color = readonly [red: number, green: number, blue: number];
 
 type PaletteSpec =
+  | { readonly kind: 'solid'; readonly color: Color }
   | {
-      kind: 'solid';
-      color: RGB;
-      transparentValue?: number;
+      readonly kind: 'ramp';
+      readonly stops: readonly {
+        readonly at: number;
+        readonly color: Color;
+      }[];
     }
   | {
-      kind: 'ramp';
-      stops: readonly RampStop[];
-    }
-  | {
-      kind: 'discrete';
-      colors: readonly RGB[];
-      overflow: 'cycle' | { color: RGB };
+      readonly kind: 'discrete';
+      readonly colors: readonly Color[];
+      readonly overflow: 'cycle' | { readonly color: Color };
     };
 
 interface LayerSpec {
   readonly id: string;
   readonly label: string;
   readonly source: string;
-  readonly dataType: RasterDataType;
-  readonly requires?: readonly string[];
-  readonly group?: {
-    readonly id: string;
-    readonly label: string;
-  };
-  readonly masked?: boolean;
-  readonly providesMask?: boolean;
+  readonly dataType: 'uint8' | 'float32';
+  readonly clipTo?: string;
+  readonly providesMask?: { readonly insideValue: number };
+  readonly group?: { readonly id: string; readonly label: string };
   readonly palette: PaletteSpec;
 }
 ```
 
-`masked` i `providesMask` muszą mieć różne znaczenia:
-
-- `masked: true` oznacza przycięcie renderowania do `world-shape`,
-- `providesMask: true` oznacza, że dane warstwy mogą służyć jako maska.
-
-Jeżeli pojawi się więcej rodzajów masek, `masked` powinno zostać rozszerzone lub
-zastąpione przez `clipTo: MapLayerId`. W pierwszej wersji `masked: true` może być
-normalizowane wewnętrznie do `clipTo: 'world-shape'`.
-
-`masked: true` powinno automatycznie dodawać zależność od `world-shape`. Nie należy
-wymagać równoczesnego wpisywania `masked: true` i `requires: ['world-shape']`, bo
-te deklaracje mogą się rozjechać.
-
-Przykład:
+Przykład katalogu:
 
 ```ts
-export const LAYER_CATALOG = defineCatalog([
-  defineLayer({
+export const LAYER_CATALOG = [
+  {
     id: 'world-shape',
     label: 'World shape',
     source: 'worldMask',
     dataType: 'uint8',
-    providesMask: true,
-    palette: solid([16, 42, 67], { transparentValue: 0 }),
-  }),
-  defineLayer({
-    id: 'noise',
-    label: 'Noise',
-    source: 'noiseMap',
-    dataType: 'float32',
-    masked: true,
-    palette: ramp([
-      { at: 0, color: [0, 0, 0] },
-      { at: 1, color: [255, 255, 255] },
-    ]),
-  }),
-  defineLayer({
+    providesMask: { insideValue: 1 },
+    palette: { kind: 'solid', color: [16, 42, 67] },
+  },
+  {
     id: 'macro-region',
     label: 'Macro regions',
     source: 'macroRegionIdMap',
     dataType: 'uint8',
-    masked: true,
-    palette: discrete(REGION_COLORS, { overflow: 'cycle' }),
-  }),
-] as const);
+    clipTo: 'world-shape',
+    palette: {
+      kind: 'discrete',
+      colors: REGION_COLORS,
+      overflow: 'cycle',
+    },
+  },
+  {
+    id: 'noise',
+    label: 'Noise',
+    source: 'noiseMap',
+    dataType: 'float32',
+    clipTo: 'world-shape',
+    palette: {
+      kind: 'ramp',
+      stops: [
+        { at: 0, color: [0, 0, 0] },
+        { at: 1, color: [255, 255, 255] },
+      ],
+    },
+  },
+] as const satisfies readonly LayerSpec[];
 ```
 
-`defineLayer` powinno używać const generics, aby zachować literalne `id`, `source`
-i `dataType`. `defineCatalog` lub `LayerRegistry` powinny runtime'owo sprawdzać:
+## Zachowanie `CatalogLayer`
 
-- duplikaty identyfikatorów i źródeł,
-- nieznane zależności,
-- cykle zależności,
-- kolizje identyfikatorów grup i warstw,
-- niespójne etykiety grup.
+`CatalogLayer`:
 
-Nie warto kodować całej walidacji grafu w złożonych typach TypeScript.
+- przechowuje `spec`, `data`, `size` i opcjonalną maskę,
+- mapuje `uint8` na `Uint8Array`, a `float32` na `Float32Array`,
+- odrzuca niewłaściwy typed array i rozmiar inny niż `width * height`,
+- wykorzystuje istniejący lifecycle, kafelkowanie, cache i statystyki `MapLayer`,
+- pomija komórki poza `clipTo`,
+- dla providera maski implementuje `value === insideValue`,
+- udostępnia surowe `data` dla persistence,
+- nie zna logiki stage'a.
 
-## Typy wyprowadzane z katalogu
+Paleta jest kompilowana raz do funkcji zapisującej bezpośrednio do
+`Uint8ClampedArray`. Pętla pikseli nie tworzy nowej tablicy RGB dla każdej
+komórki.
 
-`MapBaseLayerId`, `MapLayers` oraz `MapState` powinny być generowane z katalogu:
+## Registry i scena
 
-```ts
-type TypedArrayFor<T extends RasterDataType> =
-  T extends 'uint8' ? Uint8Array : Float32Array;
+`LayerRegistry`:
 
-type CatalogEntry = (typeof LAYER_CATALOG)[number];
+- waliduje unikalne `id` i `source`, typ danych oraz palety,
+- waliduje, że `clipTo` istnieje i wskazuje provider maski,
+- wykrywa cykle,
+- waliduje kolizje `group.id` z ID warstw oraz spójność etykiet grup,
+- tworzy `order`, `buildOrder` i jednopoziomowe `tree`,
+- umieszcza grupę w miejscu pierwszego dziecka i zachowuje kolejność dzieci,
+- znajduje źródła obecne w danych stage'a lub snapshotu.
 
-export type MapBaseLayerId = CatalogEntry['id'];
+`MapScene`:
 
-export type MapLayers = Partial<{
-  [Entry in CatalogEntry as Entry['source']]:
-    TypedArrayFor<Entry['dataType']>;
-}>;
-
-export type MapState = MapLayers;
-```
-
-Ogólne `StageData = Record<string, unknown>` może pozostać otwarte, ponieważ etap
-może zwracać również dane, które nie są rastrem przeznaczonym do wyświetlenia.
-
-## CatalogLayer
-
-Jedna klasa `CatalogLayer` powinna:
-
-- przechowywać `spec`, `data`, `size` i opcjonalną maskę,
-- walidować klasę typed array na podstawie `dataType`,
-- sprawdzać `data.length === width * height`,
-- korzystać z istniejącego lifecycle'u, kafelkowania i statystyk `MapLayer`,
-- mapować wartości przez skompilowaną paletę,
-- pozostawiać piksele poza maską przezroczyste,
-- udostępniać `SpatialMask` tylko dla wpisów `providesMask`,
-- pozwalać scenie zapisywać surowe `layer.data` bez callbacka `read`.
-
-Paleta nie powinna tworzyć nowej tablicy RGB dla każdego piksela. `PaletteSpec`
-należy raz skompilować do funkcji zapisującej bezpośrednio do
-`Uint8ClampedArray`. Pozwoli to uniknąć milionów krótkotrwałych alokacji przy
-dużych mapach.
-
-## Registry i grupy
-
-Katalog powinien być płaski, a `group` powinno zawierać wyłącznie metadane
-nawigacji. Registry wyprowadza z niego jednopoziomowe drzewo.
-
-Należy zachować dwie niezależne kolejności:
-
-- kolejność wpisów katalogu określa kolejność zakładek,
-- sortowanie topologiczne po `requires` określa kolejność budowania warstw.
-
-Zmiana zależności nie może przypadkowo przestawiać UI.
+- buduje według `buildOrder`, a opcje wystawia według `order`,
+- tworzy `CatalogLayer` bez callbacków `build`, `read` i `mask`,
+- zapisuje `[spec.source, layer.data]`,
+- udostępnia maskę tylko z wpisów `providesMask`,
+- zachowuje cache oparty na tożsamości specyfikacji, danych, rozmiaru i maski.
 
 ## Persistence i statystyki
 
-`MapScene.load()` oraz `getLayers()` powinny korzystać odpowiednio z `spec.source`
-i `CatalogLayer.data`. Osobne callbacki `build` i `read` nie są potrzebne.
+Persistence nadal zapisuje surowe typed arrays. Katalog dostarcza `source`, po
+którym dane są zbierane i odtwarzane.
 
-Katalog może dostarczać `id`, `label`, `source` i `dataType` używane przez
-persistence oraz statystyki renderowania. Nie powinien jednak przejmować
-statystyk domenowych:
+Render statistics zachowują obecne znaczenie:
 
-- `WorldShapeStage` nadal może liczyć coverage,
-- `NoiseStage` nadal może liczyć min/max/mean/stdDev,
-- `MacroRegionStage` nadal może liczyć regiony i overlays.
+- `id` i `name` pochodzą z katalogu,
+- `durationMs`, `tiles` i `pixels` z lifecycle'u `MapLayer`,
+- `bytes` pozostaje rozmiarem bitmapy RGBA.
 
-Te wartości zależą od semantyki stage'a, a nie od sposobu wyświetlania rastra.
-Rozmiar raportowany przez render statistics powinien pozostać rozmiarem bitmapy
-RGBA, jeśli wymagane jest zachowanie obecnego zachowania.
+Domenowe statystyki pozostają w `stage.summarize()`. Katalog nie liczy coverage,
+rozkładu noise ani liczby regionów.
 
-## Pipeline
+## Kryteria akceptacji
 
-Stage'e powinny pozostać niestandardowe i jawnie ułożone w `pipeline-factory.ts`:
+- `world-shape`, `noise` i `macro-region` są wpisami płaskiego katalogu.
+- Nie istnieją dla nich osobne klasy painterów.
+- Proceduralne `layer-definition.ts` oraz callbacki `build`, `read`, `mask`
+  zostają usunięte.
+- Typ i liczba komórek są walidowane na podstawie `dataType`.
+- `world-shape` zachowuje `value === 1`, noise dokładne zaokrąglanie skali
+  szarości, a macro-region cykliczny dobór kolorów.
+- `order` UI nie zależy od `buildOrder`.
+- Jednopoziomowe grupy powstają z katalogu.
+- Restore i persistence read używają `source` oraz `CatalogLayer.data`.
+- `MapRasters` i `MapBaseLayerId` są wyprowadzone z katalogu, a `MapState` może
+  zawierać dane nierastrowe.
+- `Record<string, unknown>` nie wycieka do publicznych konsumentów mapy.
+- `world-boundary` pozostaje osobnym viewport overlayem.
+- Snapshoty, cache, restore, navigation i render statistics są niezmienione.
+- Generator nie importuje `map-renderer`, a `map-layers` pozostaje DOM-free.
+- Nowy skonfigurowany raster nie wymaga klasy, zmian registry, persistence,
+  navigation ani eksportów painterów.
+- Typecheck, ESLint, Stylelint, Prettier i wszystkie testy przechodzą.
 
-```ts
-new MapGenerator([
-  new WorldShapeStage(),
-  new MacroRegionStage(),
-  new NoiseStage(),
-]);
-```
+## Strategia testów
 
-Nie należy umieszczać konstruktorów stage'ów w katalogu warstw ani używać
-dynamicznych importów. Jeden stage może w przyszłości produkować kilka rastrów,
-np. `temperatureMap` i `moistureMap`, a część stage'ów może nie produkować
-warstwy wyświetlanej.
+Przed migracją należy scharakteryzować:
 
-## Palety i zgodność zachowania
+- dokładne RGBA wszystkich trzech warstw,
+- transparentność poza maską i wartości maski inne niż 0/1,
+- kolejność UI i budowania,
+- cache po zmianie danych, rozmiaru, specyfikacji oraz maski,
+- round-trip `MapScene.load()` / `getLayers()` i restore,
+- strukturę render statistics.
 
-Palety muszą zachować dokładne obecne reguły:
+Nowa infrastruktura wymaga testów:
 
-- `solid` obsługuje przezroczystą wartość potrzebną przez `world-shape`,
-- `ramp` clampuje wartości i stosuje ten sam sposób zaokrąglania,
-- `discrete` ma jawnie określone zachowanie po przekroczeniu liczby kolorów.
+- właściwego i niewłaściwego typed array oraz liczby komórek,
+- solid, ramp clamp/interpolation/rounding i obu discrete overflow,
+- clippingu i `insideValue`,
+- duplikatów, nieznanego `clipTo`, cykli i grup,
+- niezależnych `order` i `buildOrder`,
+- typów `MapBaseLayerId` i `MapRasters`.
 
-Obecna paleta macro-region używa cyklu (`index % colors.length`). Jeżeli
-"fallback" ma oznaczać stały kolor zamiast cyklu, będzie to zmiana zachowania i
-powinna zostać jawnie dopisana do acceptance criteria. Przy wymaganiu zachowania
-snapshotów właściwym ustawieniem jest `overflow: 'cycle'`.
+Po migracji testy zachowania pozostają, ale nie są organizowane według usuniętych
+klas painterów.
 
-## Escape hatch
+## Plan wdrożenia i podział na etapy
 
-Na początku nie należy dodawać ogólnego `render?`, ponieważ łatwo odtworzyłby
-system osobnych painterów wewnątrz katalogu.
+Zadanie warto rozbić na trzy PR-y po przygotowaniu baseline'u. Nie należy jednak
+utrzymywać dwóch równoległych rejestrów. Przełączenie registry na katalog powinno
+być atomowym elementem drugiego PR-a.
 
-Jeżeli pojawi się rzeczywisty wyjątek, można wprowadzić rozłączny kontrakt:
+### Etap 0: baseline i przygotowanie zakresu
 
-```ts
-type LayerVisual =
-  | { kind: 'palette'; palette: PaletteSpec }
-  | { kind: 'custom'; renderer: RasterRenderer };
-```
+- Oddzielić lub zakończyć bieżące zmiany macro-region/UI.
+- Potwierdzić zestaw warstw: `world-shape`, `macro-region`, `noise`.
+- Dodać brakujące testy pikseli, maski, cache, restore, navigation i statystyk.
+- Zapisać zachowanie maski dla wartości innych niż 0/1 i overflow regionów.
 
-Jest to bezpieczniejsze niż równoczesne opcjonalne `palette` i `render`, dla
-których nie byłoby jasne, co ma pierwszeństwo.
+Warunek zakończenia: brak zmian produkcyjnych i wszystkie kontrole są zielone.
 
-## Plan wdrożenia
+### Etap 1 / PR 1: fundament katalogu i palet
 
-1. Ustabilizować i oddzielnie zatwierdzić bieżące zmiany macro-region/UI.
-2. Dodać testy charakteryzujące obecne piksele, masking, restore, kolejność,
-   cache i render statistics.
-3. Wprowadzić `LayerSpec`, `defineLayer`, `defineCatalog` i palety wraz z testami.
-4. Dodać `CatalogLayer` i najpierw przenieść `world-shape` oraz `noise`.
-5. Przestawić registry i drzewo zakładek na płaski katalog.
-6. Przenieść `macro-region` oraz `progression`, jeżeli progression nadal należy
-   do produktu.
-7. Wyprowadzić `MapLayers`, `MapState` i `MapBaseLayerId` z katalogu.
-8. Usunąć klasy painterów, proceduralne definicje, zbędne eksporty i ich testy.
-9. Uruchomić `typecheck`, lint, format, testy i porównać snapshoty oraz strukturę
-   render statistics.
+- Utworzyć DOM-free `map-layers`.
+- Dodać `LayerSpec`, `PaletteSpec` i mapowanie `dataType` na typed arrays.
+- Dodać bezalokacyjne kompilatory `solid`, `ramp`, `discrete` i ich testy.
+- Przenieść `REGION_COLORS`/`regionColor`; poprawić importy formularzy i
+  istniejącego renderera.
+- Dodać `CatalogLayer` oraz testy kontraktowe.
+- Nie dodawać `defineCatalog`, custom renderera ani zagnieżdżonych grup.
 
-Bieżący working tree usuwa `progression-layer.ts`. Nie należy przywracać martwej
-warstwy wyłącznie w celu spełnienia nieaktualnego punktu ticketu. Zakres migracji
-trzeba zsynchronizować z ostatecznym kierunkiem macro-region.
+Warunek zakończenia: prymitywy są przetestowane, ale produkcyjne registry i obraz
+pozostają bez zmian.
 
-## Proponowane testy
+### Etap 2 / PR 2: atomowe przełączenie i migracja
 
-- testy `solid`, `ramp` i `discrete`, w tym clamp, interpolacja, alpha i overflow,
-- tabelaryczne testy `CatalogLayer` dla obu typów typed arrays,
-- walidacja błędnego typu i liczby komórek,
-- clipping poza `world-shape`,
-- udostępnianie `SpatialMask` przez `world-shape`,
-- duplikaty, nieznane zależności i cykle katalogu,
-- stabilna kolejność UI niezależna od kolejności zależności,
-- round-trip `MapScene.load()` / `getLayers()` z zachowaniem referencji danych,
-- restore ostatniej mapy,
-- niezmienione snapshoty i pola render statistics,
-- brak osobnych testów klas painterów po migracji.
+- Dodać wpisy katalogu dla trzech warstw.
+- Przestawić `LayerRegistry` na płaski katalog.
+- Wprowadzić `order`, `buildOrder` i generowanie drzewa grup.
+- Przestawić `MapScene`, load, restore, persistence read i maski.
+- Zachować cache inputs oraz render statistics.
+- Usunąć `WorldShapeLayer`, `NoiseLayer`, `MacroRegionLayer` i proceduralne
+  `layer-definition.ts`.
+- Zastąpić testy klas testami katalogu i zachowania renderera.
 
-## Doprecyzowane kryteria akceptacji
+PR może mieć kilka commitów, ale kończy się jednym aktywnym katalogiem i bez
+tymczasowej warstwy kompatybilności.
 
-- Dodanie istniejącego pola rastrowego do podglądu wymaga tylko wpisu w katalogu.
-- Dodanie nowego rastra i generującego go etapu wymaga najwyżej trzech plików
-  produkcyjnych: katalogu, stage'a i `pipeline-factory.ts`.
-- Nie trzeba ręcznie edytować `MapState`, `MapLayers`, identyfikatorów warstw,
-  registry, tabs, persistence ani eksportów painterów.
-- Walidacja konstruktora typed array i liczby komórek wynika z `dataType`.
-- Wszystkie standardowe warstwy korzystają z `CatalogLayer`; brak osobnych klas
-  painterów dla zmigrowanych warstw.
-- Grupy są jednopoziomowe i pochodzą z katalogu.
-- World-boundary pozostaje osobnym rendererem viewport overlay.
-- Stage'e i ich domenowe `summarize()` pozostają niestandardowe.
-- Obraz, masking, restore, cache oraz struktura render statistics pozostają bez
-  zmian.
-- Typecheck, lint, format i testy przechodzą.
+Warunek zakończenia: katalog steruje runtime'em, nie ma klas painterów, a testy
+są zielone.
 
-## Uwagi
+### Etap 3 / PR 3: typy i sprzątanie API
 
-Recenzja planu z perspektywy aktualnego kodu (`layer-definition.ts`,
-`layer-registry.ts`, `map-scene.ts`, `renderer.ts`, stage'y, persistence).
-Kierunek refaktoru oceniam dobrze; zakres jest właściwy i nie jest
-przekombinowany poza propozycją DSL-a. Poniżej punkty do dopięcia przed
-wdrożeniem.
+- Wyprowadzić `MapBaseLayerId`, `LayerSource` i `MapRasters` z katalogu.
+- Pozostawić `MapState` rozszerzalny o dane nierastrowe.
+- Wprowadzić wewnętrzny `LayerDataRecord` i zamknąć casty w registry/scenie.
+- Usunąć duplikaty z `map-renderer/types.ts`.
+- Uporządkować exports i usunąć eksporty painterów.
+- Dodać testy typów i zaktualizować dokumentację architektury.
 
-1. `MapState = MapLayers` to błąd projektowy. `context.state` jest kanałem
-   komunikacji między stage'ami (np. `NoiseStage` czyta `context.state.worldMask`),
-   a roadmapa przewiduje dane nierastrowe (`LandmassDefinition`,
-   `IslandTerrainProfile`, szkielet lądu). Wyprowadzić z katalogu `MapRasters`,
-   a `MapState` zostawić jako interfejs rozszerzający go o dane domenowe;
-   `StageData` tego nie zastąpi.
-2. Kolejność UI musi pochodzić z katalogu, nie z topo. `MapScene.options`
-   i `emptyRenderState` używają dziś `registry.ids` (kolejność topologiczna),
-   a `LayerNavigation` buduje taby z `registry.tree`. Dziś porządki są zbieżne;
-   po rozjechaniu się potrzebne są jawne `order` (katalog) i `buildOrder`
-   (topo), a UI korzysta wyłącznie z `order`.
-3. `ramp` potrzebuje dziedziny wartości. Noise normalizuje się do 0..1, ale
-   heightmap/temperatura już nie. `PaletteSpec.ramp` powinien nieść
-   `domain: [min, max]` (lub `normalize`), żeby katalog opisywał też przyszłe
-   warstwy bez wymuszania normalizacji w każdym stage'u.
-4. Wewnętrzny typ luźny dla dynamicznego dostępu. `presentIn`/`load`/`getLayers`
-   indeksują po `source` w runtime; wyprowadzony `MapLayers` bez index signature
-   wymusi casty. Potrzebny wewnętrzny `Record<string, unknown>` na granicy
-   registry/scena/worker/session.
-5. Rozróżnić warstwy produkowane od deklarowanych w UI. `isComplete()` wymaga
-   wszystkich zarejestrowanych warstw; jeśli katalog będzie zawierał przyszłe
-   `Temperature`/`Moisture`, kompletność i restore się rozjadą. Potrzebny
-   znacznik warstw wymaganych („produced by stage").
-6. Bez DSL-a. `defineCatalog` niewiele wnosi — `as const satisfies readonly
-   LayerSpec[]` plus walidacja runtime w `LayerRegistry` (już istnieje) wystarczą.
-   `defineLayer` tylko jeśli realnie poprawia inferencję.
-7. Granice modułów. Katalog ma być DOM-free i data-only, `CatalogLayer` zostaje
-   w rendererze. Warto wymusić to lintem/testem (generator nie importuje
-   `map-renderer`). Przy okazji `REGION_COLORS`/`regionColor` przenieść
-   z `map-renderer/layer/macro-region-palette.ts` do katalogu, żeby formularz nie
-   importował z renderera.
-8. Maski w pierwszej wersji. `MapView.setMasks` twardo mapuje overlay na
-   `'world-shape'`; `clipTo` jest OK jako przyszłość, ale „pierwsza wersja =
-   tylko world-shape dostarcza maskę" trzeba zapisać wprost.
-9. Kryterium „najwyżej trzy pliki" jest prawdziwe dla istniejącej konfiguracji;
-   nowy stage z parametrami dotknie też `MapConfig` i UI. Warto dopisać typy
-   konfiguracji do uzasadnionych dodatkowych plików.
-10. Parity `solid`. `transparentValue: 0` różni się semantycznie od obecnego
-    `mask === 1`; dla danych 0/1 wynik ten sam, ale warto przybić to testem.
-11. Notka o `progression-layer.ts` jest nieaktualna — plik już nie istnieje
-    w HEAD; usunąć akapit.
+Warunek zakończenia: nowy raster nie wymaga ręcznych zmian typów renderera,
+registry, persistence, navigation ani eksportów painterów.
 
-### Co bym zrobił inaczej
+### Etap 4: końcowa weryfikacja
 
-- Wyprowadzić `MapRasters` z katalogu; `MapState` zostawić otwarty na dane
-  domenowe.
-- Zwykła const tablica katalogu zamiast `defineCatalog`.
-- `domain` w `ramp`, świadome `overflow` w `discrete`.
-- Jawne `order`/`buildOrder` w registry; UI wyłącznie na `order`.
-- Migracja warstwa po warstwie za testami charakteryzującymi i osobne PR-y:
-  (1) katalog + palety + `CatalogLayer` dla world-shape/noise,
-  (2) registry/UI/macro-region, (3) typy i sprzątanie.
+Może być ostatnim commitem PR 3:
 
-## Zastrzeżenia i propozycje (kolejna recenzja)
+- uruchomić typecheck, ESLint, Stylelint, Prettier i cały zestaw testów,
+- porównać snapshoty RGBA, kolejność zakładek i raportów,
+- sprawdzić restore,
+- zmierzyć większą mapę pod kątem regresji palety,
+- testowo dodać tymczasową warstwę i policzyć zmiany produkcyjne,
+- usunąć tymczasową warstwę po teście.
 
-Kierunek jest dobry. Największa wartość to jedna klasa malująca i jeden wpis
-specyfikacji zamiast osobnych painterów. Poniższe punkty nie podważają katalogu;
-ucinają z niego to, co spina generator z podglądem albo buduje framework typów
-zamiast kontraktu wyświetlania.
+Warunek zakończenia: każde kryterium akceptacji jest potwierdzone.
 
-Grupy zakładek są w zakresie od pierwszej wersji. Nie odkładać ich na później.
+## Poprawiony plan końcowy
 
-### Zastrzeżenia
-
-1. Katalog nie może być źródłem `MapState`. `MapState` to tablica ogłoszeń między
-   stage'ami. Noise czyta `worldMask`; później dojdą dane, które w ogóle nie są
-   rastrem do narysowania. `MapState = MapLayers` wiąże generator z podglądem.
-   Zgoda z wcześniejszą uwagą: ewentualnie `MapRasters` z katalogu,
-   `MapState extends MapRasters` z miejscem na dane domenowe. Nigdy odwrotnie.
-2. Generator nie powinien importować katalogu. Katalog opisuje, jak pokazać
-   raster, a nie jaki jest świat. Stage'e zostają niezależne: piszą pola po
-   nazwie źródła, worker przekazuje te pola dalej, renderer składa warstwy z
-   katalogu. Formularze mogą importować palety z katalogu; nie mogą importować
-   `map-renderer`.
-3. Wyprowadzanie całej siatki typów z katalogu (`MapBaseLayerId`, `MapLayers`,
-   `MapState`) jest droższe niż korzyść. Jedna linia
-   `temperatureMap?: Float32Array` w `MapState` jest tańsza niż mapped types,
-   index signature i casy na granicy worker/scena/session. Typy z katalogu
-   warto dodać dopiero gdy po migracji painterów nadal boli dopisywanie pola.
-4. Flaga „produced vs declared” rozwiązuje problem, którego nie trzeba tworzyć.
-   Katalog to aktualna powierzchnia produktu, nie roadmapa. Temperature trafia
-   do katalogu razem ze stage'em. Wtedy `isComplete()` może zostać „wszystkie
-   wpisy katalogu są na scenie”.
-5. `defineCatalog` / `defineLayer` nic nie dają, skoro duplikaty, nieznane
-   zależności i cykle i tak sprawdza registry w runtime. Zwykła tablica
-   `as const satisfies readonly LayerSpec[]`. `defineLayer` tylko jeśli bez
-   niego TypeScript zgubi literały `id` / `source`.
-6. `masked: true` plus osobne `requires: ['world-shape']` to dwie deklaracje
-   tej samej zależności renderera. Łatwo je rozjechać. To nie jest zależność
-   generatora — stage i tak sam decyduje, czy czyta maskę.
-7. Kryterium „najwyżej trzy pliki” jest prawdziwe tylko dla rastra, który już
-   ma konfigurację i nie potrzebuje UI. Nowy stage z parametrami dotknie
-   `MapConfig` i formularza. To nie wadzi planu jako kierunku, wadzi jako
-   obietnica.
-
-### Propozycje
-
-Podział modułów:
-
-```text
-map-generator                map-layers                  map-renderer
-  stage'e, MapState            specyfikacje rastrów         CatalogLayer
-  pipeline-factory             palety                       registry, scena
-         |                            |                            |
-         |                            +-- formularze (kolory)      |
-         +---- worker przekazuje pola po nazwie źródła ------------+
-```
-
-Katalog jest DOM-free i data-only. `CatalogLayer` zostaje w rendererze.
-`REGION_COLORS` / `regionColor` przenoszą się do katalogu, żeby formularz
-regionów nie importował z renderera.
-
-Kontrakt wpisu — płaski katalog, grupy jako metadane nawigacji od v1:
-
-```ts
-type LayerSpec = {
-  readonly id: string;
-  readonly label: string;
-  readonly source: string;
-  readonly dataType: 'uint8' | 'float32';
-  readonly clipTo?: string;
-  readonly providesMask?: boolean;
-  readonly group?: { id: string; label: string };
-  readonly palette: PaletteSpec;
-};
-```
-
-- Katalog jest płaską tablicą. `group` nie zmienia tożsamości warstwy ani
-  kolejności budowania; registry składa z niego jednopoziomowe drzewo zakładek.
-- Kolejność wpisów w katalogu to kolejność zakładek i kolejność dzieci w
-  grupie. Wszystkie wpisy z tym samym `group.id` tworzą jedną grupę, w pozycji
-  pierwszego z nich; późniejsze dzieci są zbierane do tej grupy, a nie otwierają
-  drugiej. Zmiana kolejności w tablicy przestawia UI, nie graf zależności.
-- `group.id` nie koliduje z `id` warstwy. Wszystkie wpisy tej samej grupy mają
-  tę samą `group.label`; niespójna etykieta to błąd walidacji.
-- Pusta grupa nie istnieje, bo grupa powstaje wyłącznie z wpisów dzieci.
-- `clipTo` zamiast `masked`. W v1 jedyna dozwolona wartość to `'world-shape'`;
-  `clipTo` samo znaczy „zbuduj po warstwie maski”. Bez równoległego `requires`.
-- `providesMask: true` udostępnia `SpatialMask`. W v1 tylko `world-shape`.
-  `MapView.setMasks` zostaje zahardkodowany na tę warstwę do czasu, aż overlay
-  będzie czytał maskę z katalogu.
-- `ramp` ma `domain: [min, max]`, domyślnie `[0, 1]`, żeby noise nie zmienił
-  zachowania, a heightmapa nie wymagała normalizacji w stage'u.
-- `discrete.overflow` jest jawne; macro-region zostaje przy `'cycle'`.
-- Paleta kompiluje się raz do funkcji zapisującej w `Uint8ClampedArray`.
-
-Registry trzyma dwie niezależne kolejności: `order` (katalog, UI i grupy) oraz
-`buildOrder` (topo po `clipTo` / `providesMask`). `MapScene.options`,
-`emptyRenderState` i `LayerNavigation` czytają wyłącznie `order` / drzewo.
-Zmiana zależności nie przestawia zakładek.
-
-`CatalogLayer` trzyma `spec`, typed array, rozmiar i opcjonalną maskę. Scena
-czyta `layer.data` po `spec.source`. Koniec z callbackami `build` / `read` i
-osobnymi klasami painterów dla zmigrowanych warstw. World-boundary zostaje
-osobnym overlayem. `summarize()` zostaje w stage'u.
-
-`MapState` na starcie zostaje ręczny. Jeśli po usunięciu painterów nadal boli
-dopisywanie pola, dopiero wtedy wyprowadzić `MapRasters` z katalogu.
-
-Wdrożenie w dwóch krokach, z grupami od razu w kontrakcie i w registry:
-
-1. Palety + `CatalogLayer` + przepisanie obecnych warstw na specyfikacje,
-   w tym `group?`. Snapshoty pikseli, maska, restore, cache, statystyki renderu
-   i drzewo zakładek bez zmian zachowania.
-2. Płaski katalog jako SSOT, drzewo grup z kolejności wpisów, palety
-   regionów poza rendererem, sprzątanie painterów i callbacków. Typy
-   wyprowadzane z katalogu tylko jeśli nadal są potrzebne.
-
-Escape hatch `LayerVisual = palette | custom` nie wchodzi do v1. Dodać go,
-gdy pojawi się warstwa, której nie da się opisać paletą.
-
+1. Ustabilizować gałąź i zamrozić zachowanie testami charakteryzującymi.
+2. Utworzyć neutralny, DOM-free moduł `map-layers`.
+3. Zdefiniować prosty `LayerSpec` z `clipTo`, `providesMask`, `group` i paletą;
+   bez `defineCatalog`, `requires` i custom renderera w v1.
+4. Zaimplementować bezalokacyjne `solid`, `ramp` i `discrete`, z rzeczywistą
+   dziedziną stopów oraz jawnym overflow.
+5. Zaimplementować `CatalogLayer`, zachowując lifecycle, kafelkowanie, cache,
+   dokładną semantykę maski i statystyki.
+6. Atomowo przełączyć registry i scenę, rozdzielając `order` UI od
+   topologicznego `buildOrder`.
+7. Zmigrować `world-shape`, `macro-region` i `noise`; usunąć klasy painterów oraz
+   callbacki `build`, `read` i `mask`.
+8. Wyprowadzić `MapBaseLayerId` i `MapRasters`, ale pozostawić `MapState`
+   rozszerzalny o dane nierastrowe; luźne rekordy zamknąć na granicach runtime.
+9. Uporządkować exports i zastąpić testy klas testami katalogu, palet, sceny i
+   zachowania end-to-end.
+10. Wykonać pełną weryfikację parity, restore, kolejności, statystyk, wydajności
+    oraz limitu trzech plików produkcyjnych.

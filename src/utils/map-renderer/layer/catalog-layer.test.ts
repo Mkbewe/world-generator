@@ -1,0 +1,117 @@
+import { CatalogLayer } from './catalog-layer';
+import { LAYER_CATALOG, type LayerSpec } from '../../map-layers';
+
+function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
+  const images: ImageData[] = [];
+  const spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    createImageData: (width: number, height: number) => {
+      const image = {
+        width,
+        height,
+        data: new Uint8ClampedArray(width * height * 4),
+      } as ImageData;
+      images.push(image);
+      return image;
+    },
+    putImageData: vi.fn(),
+  } as unknown as CanvasRenderingContext2D);
+  return { images, restore: () => spy.mockRestore() };
+}
+
+describe('CatalogLayer', () => {
+  it('validates the typed array constructor and cell count from the spec', () => {
+    const world = LAYER_CATALOG[0];
+    const noise = LAYER_CATALOG[2];
+
+    expect(() => new CatalogLayer(world, { width: 2, height: 2 }, new Float32Array(4))).toThrow(
+      'Invalid world mask.'
+    );
+    expect(() => new CatalogLayer(noise, { width: 2, height: 2 }, new Float32Array(3))).toThrow(
+      'data size'
+    );
+  });
+
+  it('samples raw mask values but paints only the exact inside value', async () => {
+    const { images, restore } = mockCanvasContext();
+    const layer = new CatalogLayer(
+      LAYER_CATALOG[0],
+      { width: 3, height: 1 },
+      new Uint8Array([0, 1, 2])
+    );
+
+    try {
+      expect(layer.sample(0, 0)).toBe(0);
+      expect(layer.sample(1, 0)).toBe(1);
+      expect(layer.sample(3, 0)).toBeUndefined();
+      expect(layer.contains(0, 0)).toBe(false);
+      expect(layer.contains(1, 0)).toBe(true);
+      expect(layer.contains(2, 0)).toBe(false);
+
+      await layer.prepare(new AbortController().signal);
+      const pixels = images.flatMap(image => [...image.data]);
+      expect(pixels).toEqual([0, 0, 0, 0, 16, 42, 67, 255, 0, 0, 0, 0]);
+    } finally {
+      layer.dispose();
+      restore();
+    }
+  });
+
+  it('clips painting and sampling to another catalog layer', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 2, height: 1 };
+    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 0]));
+    const noise = new CatalogLayer(LAYER_CATALOG[2], size, new Float32Array([0.5, 1]), world);
+
+    try {
+      expect(noise.sample(0, 0)).toBe(0.5);
+      expect(noise.sample(1, 0)).toBeUndefined();
+      await noise.prepare(new AbortController().signal);
+      const pixels = images.flatMap(image => [...image.data]);
+      expect(pixels).toEqual([128, 128, 128, 255, 0, 0, 0, 0]);
+    } finally {
+      world.dispose();
+      noise.dispose();
+      restore();
+    }
+  });
+
+  it('renders discrete catalog colors with cycling overflow', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 3, height: 1 };
+    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 1, 1]));
+    const regions = new CatalogLayer(LAYER_CATALOG[1], size, new Uint8Array([0, 1, 8]), world);
+
+    try {
+      expect(regions.sample(1, 0)).toBe(1);
+      await regions.prepare(new AbortController().signal);
+      const pixels = images.flatMap(image => [...image.data]);
+      expect(pixels).toEqual([46, 125, 50, 255, 124, 179, 66, 255, 46, 125, 50, 255]);
+    } finally {
+      world.dispose();
+      regions.dispose();
+      restore();
+    }
+  });
+
+  it('requires a matching mask for clipped layers', () => {
+    const clipped = {
+      id: 'clipped',
+      label: 'Clipped',
+      source: 'clippedMap',
+      dataType: 'uint8',
+      clipTo: 'world-shape',
+      palette: { kind: 'solid', color: [0, 0, 0] },
+    } as const satisfies LayerSpec;
+
+    expect(() => new CatalogLayer(clipped, { width: 1, height: 1 }, new Uint8Array(1))).toThrow(
+      'requires "world-shape"'
+    );
+    const wrongSize = {
+      size: { width: 2, height: 1 },
+      contains: () => true,
+    };
+    expect(
+      () => new CatalogLayer(clipped, { width: 1, height: 1 }, new Uint8Array(1), wrongSize)
+    ).toThrow('clip mask size');
+  });
+});

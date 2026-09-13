@@ -1,5 +1,10 @@
-import { WorldShapeLayer } from './layer';
+import { CatalogLayer } from './catalog-layer';
 import { LayerCache } from './layer-cache';
+import { LAYER_CATALOG } from '../../map-layers';
+
+function world(data: Uint8Array, width = 2, height = 2): CatalogLayer {
+  return new CatalogLayer(LAYER_CATALOG[0], { width, height }, data);
+}
 
 describe('LayerCache', () => {
   it('reuses a layer only when all inputs match', () => {
@@ -7,7 +12,7 @@ describe('LayerCache', () => {
     const mask = new Uint8Array(4);
     const definition = {};
     const dependency = {};
-    const create = vi.fn(() => new WorldShapeLayer({ width: 2, height: 2 }, mask));
+    const create = vi.fn(() => world(mask));
     const inputs = [definition, mask, 2, 2, dependency];
     const first = cache.getOrCreate('world-shape', inputs, create);
     expect(cache.getOrCreate('world-shape', [...inputs], create)).toBe(first);
@@ -22,11 +27,11 @@ describe('LayerCache', () => {
   it('evicts and disposes only the matching layer', () => {
     const cache = new LayerCache();
     const mask = new Uint8Array(4);
-    const create = () => new WorldShapeLayer({ width: 2, height: 2 }, mask);
+    const create = () => world(mask);
     const layer = cache.getOrCreate('world-shape', [mask], create);
     const dispose = vi.spyOn(layer, 'dispose');
 
-    cache.evict(new WorldShapeLayer({ width: 2, height: 2 }, mask));
+    cache.evict(world(mask));
     expect(dispose).not.toHaveBeenCalled();
     expect(cache.getOrCreate('world-shape', [mask], create)).toBe(layer);
 
@@ -37,7 +42,7 @@ describe('LayerCache', () => {
 
   it('preserves the previous entry if creating the replacement fails', () => {
     const cache = new LayerCache();
-    const create = () => new WorldShapeLayer({ width: 1, height: 1 }, new Uint8Array(1));
+    const create = () => world(new Uint8Array(1), 1, 1);
     const first = cache.getOrCreate('world-shape', [1], create);
     const dispose = vi.spyOn(first, 'dispose');
     expect(() =>
