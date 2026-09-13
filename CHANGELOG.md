@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/Mkbewe/world-generator/compare/v0.3.1...v0.4.0) (2026-09-13)
+
+
+### Features
+
+* **106:** add macro regions ([#196](https://github.com/Mkbewe/world-generator/issues/196)) ([e07352e](https://github.com/Mkbewe/world-generator/commit/e07352ed27267a7fa4766a1a1a5c71adf74d8522))
+* **165:** add map coordinate and value inspection ([#201](https://github.com/Mkbewe/world-generator/issues/201)) ([c1a4039](https://github.com/Mkbewe/world-generator/commit/c1a40393a3d1e76f2b1ea30b7bf8a7196666b92b))
+* **195:** macro region form ([#200](https://github.com/Mkbewe/world-generator/issues/200)) ([3f45190](https://github.com/Mkbewe/world-generator/commit/3f45190bc53fd5ef1deef6d75d14385603010c18))
+
+
+### Bug Fixes
+
+* **202:** reset stale progress when a run starts ([#203](https://github.com/Mkbewe/world-generator/issues/203)) ([4070dbb](https://github.com/Mkbewe/world-generator/commit/4070dbb9d6a6a5a02d12d2807f8942073c37dd00))
+
+
+### Documentation
+
+* sync readme and roadmap with current architecture ([#193](https://github.com/Mkbewe/world-generator/issues/193)) ([48ed5b5](https://github.com/Mkbewe/world-generator/commit/48ed5b5315f611bf8a96814f4e759530760101b3))
+
+
+### Code Refactoring
+
+* **181:** generator ([#194](https://github.com/Mkbewe/world-generator/issues/194)) ([7b41964](https://github.com/Mkbewe/world-generator/commit/7b41964c71fd155f00df13f67e4996711804e387))
+
 ### [0.3.1](https://github.com/Mkbewe/world-generator/compare/v0.3.0...v0.3.1) (2026-09-12)
 
 
