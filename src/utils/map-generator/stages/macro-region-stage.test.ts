@@ -72,6 +72,37 @@ describe('MacroRegionStage', () => {
     expect([...map.slice(12, 15)]).toEqual([5, 5, 5]);
   });
 
+  it('lets overlays override the shared border irregularity', async () => {
+    const base = createHorizontalLayout(3);
+    const crisp = [
+      ...base,
+      { ...createBandOverlay('middle', 'Middle', 'y', 0.5, 0.2), irregularity: 0 },
+    ];
+    const warped = [...base, createBandOverlay('middle', 'Middle', 'y', 0.5, 0.2)];
+    const deformation = { amplitude: 0.6, frequency: 4, octaves: 3, seed: 'overlay-borders' };
+
+    const crispMap = (
+      await generate({ ...config(crisp, 5, 5), macroRegionDeformation: deformation })
+    ).context.state.macroRegionIdMap!;
+    const warpedMap = (
+      await generate({ ...config(warped, 5, 5), macroRegionDeformation: deformation })
+    ).context.state.macroRegionIdMap!;
+
+    expect([...crispMap.slice(10, 15)]).toEqual([3, 3, 3, 3, 3]);
+    expect(warpedMap).not.toEqual(crispMap);
+  });
+
+  it('rejects a negative region irregularity', async () => {
+    const regions = [
+      ...createRadialLayout(1),
+      { ...createBandOverlay('bad', 'Bad', 'y', 0.5, 0.2), irregularity: -0.1 },
+    ];
+
+    await expect(generate(config(regions))).rejects.toMatchObject({
+      cause: { message: expect.stringContaining('irregularity must be zero or greater') },
+    });
+  });
+
   it('supports ten regions and rejects an eleventh', async () => {
     await expect(generate(config(createHorizontalLayout(10)))).resolves.toBeDefined();
     await expect(generate(config(createHorizontalLayout(11)))).rejects.toMatchObject({

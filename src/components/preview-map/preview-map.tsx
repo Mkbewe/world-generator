@@ -23,6 +23,10 @@ interface PreviewMapProps {
   progressKey: number;
 }
 
+function isTouchPointer(event: React.PointerEvent<HTMLCanvasElement>): boolean {
+  return event.pointerType === 'touch';
+}
+
 export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) {
   const [preview, setPreview] = useState<MapRendererState>(emptyRenderState);
   const [navigation] = useState(
@@ -99,7 +103,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>): void => {
-    if (pinned) {
+    if (pinned || isTouchPointer(event)) {
       return;
     }
     const position = sampleAt(event);
@@ -114,7 +118,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
     refreshReadout(position);
   };
 
-  /** The first left click or tap pins the readout; the next one releases it. */
+  /** Mouse clicks toggle the pinned readout; touch taps only inspect, because touch has no hover. */
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>): void => {
     if (event.button !== 0) {
       return;
@@ -125,15 +129,24 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
     }
     positionRef.current = position;
     refreshReadout(position);
-    setPinned(current => !current);
+    if (!isTouchPointer(event)) {
+      setPinned(current => !current);
+    }
   };
 
-  const handlePointerLeave = (): void => {
-    if (pinned) {
+  const handlePointerLeave = (event: React.PointerEvent<HTMLCanvasElement>): void => {
+    if (pinned || isTouchPointer(event)) {
       return;
     }
     positionRef.current = undefined;
     setReadout(undefined);
+  };
+
+  const handlePointerCancel = (event: React.PointerEvent<HTMLCanvasElement>): void => {
+    if (isTouchPointer(event)) {
+      return;
+    }
+    handlePointerLeave(event);
   };
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
@@ -177,7 +190,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
               onPointerMove={handlePointerMove}
               onPointerDown={handlePointerDown}
               onPointerLeave={handlePointerLeave}
-              onPointerCancel={handlePointerLeave}
+              onPointerCancel={handlePointerCancel}
             />
             <canvas
               ref={overlayRef}

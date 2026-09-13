@@ -1,3 +1,4 @@
+import { DEFAULT_MACRO_DEFORMATION } from './macro-region-defaults';
 import {
   createBandOverlay,
   createHorizontalLayout,
@@ -61,11 +62,19 @@ describe('macro region presets', () => {
       danger: 0.2,
       geometry: { kind: 'band', axis: 'x', center: 0.25, width: 0.1 },
     });
+    const poleOverlays = poles.filter(region => region.role === 'overlay');
     expect(poles.filter(region => region.role === 'base')).toHaveLength(4);
-    expect(poles.filter(region => region.role === 'overlay')).toMatchObject([
+    expect(poleOverlays).toMatchObject([
       { id: 'pole-north', geometry: { axis: 'y', center: 0, width: 0.32 } },
       { id: 'pole-south', geometry: { axis: 'y', center: 1, width: 0.32 } },
     ]);
+    expect(
+      poleOverlays.every(
+        region =>
+          region.irregularity !== undefined &&
+          region.irregularity < DEFAULT_MACRO_DEFORMATION.amplitude
+      )
+    ).toBe(true);
   });
 
   it('creates every base layout with the requested count', () => {

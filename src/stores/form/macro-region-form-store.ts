@@ -41,7 +41,7 @@ interface MacroRegionFormState {
   updateRegion: (id: string, patch: Partial<Pick<MacroRegionConfig, 'label' | 'danger'>>) => void;
   updateOverlay: (
     id: string,
-    patch: Partial<{ axis: 'x' | 'y'; center: number; width: number }>
+    patch: Partial<{ axis: 'x' | 'y'; center: number; width: number; irregularity: number }>
   ) => void;
 }
 
@@ -144,11 +144,13 @@ export const useMacroRegionFormStore = createStore<MacroRegionFormState>(set => 
         if (region.id !== id || region.role !== 'overlay' || region.geometry.kind !== 'band') {
           return region;
         }
+        const { irregularity, ...geometry } = patch;
         return {
           ...region,
+          ...(irregularity === undefined ? {} : { irregularity }),
           geometry: {
             ...region.geometry,
-            ...patch,
+            ...geometry,
           },
         };
       }),

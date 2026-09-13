@@ -51,9 +51,14 @@ export interface MacroRegionConfig {
   readonly geometry: MacroRegionGeometry;
   /** Target gameplay danger of the region, from safe (0) to deadly (1). */
   readonly danger: number;
+  /**
+   * Border deformation override in normalized units for this region; when omitted,
+   * the shared macro region deformation amplitude applies.
+   */
+  readonly irregularity?: number;
 }
 
-/** Domain warping applied to macro region borders; shared by every region. */
+/** Domain warping applied to macro region borders; individual regions may override the amplitude. */
 export interface MacroRegionDeformation {
   /** How far the borders may shift in normalized units; 0 disables deformation. */
   readonly amplitude: number;

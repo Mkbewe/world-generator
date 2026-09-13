@@ -68,4 +68,22 @@ describe('PreviewMap readout', () => {
     expect(screen.getByText('X 3, Y 3')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
   });
+
+  it('inspects coordinates on touch taps without pinning', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+
+    fireEvent.pointerLeave(canvas, { pointerType: 'touch' });
+    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
+    expect(screen.getByText('X 3, Y 3')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+  });
 });

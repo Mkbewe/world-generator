@@ -12,6 +12,7 @@ export interface MacroRegionPresetDefinition {
 }
 
 const RADIAL_EXTENT = 0.5;
+const POLE_IRREGULARITY = 0.03;
 
 /** Concentric base regions ordered from the centre to the rim. */
 export function createRadialLayout(count = 4): MacroRegionConfig[] {
@@ -77,8 +78,14 @@ export function createRadialPolesLayout(count = 6): MacroRegionConfig[] {
   const rings = createRadialLayout(Math.max(1, count - 2));
   return [
     ...rings,
-    createBandOverlay('pole-north', `Region ${rings.length + 1}`, 'y', 0, 0.32),
-    createBandOverlay('pole-south', `Region ${rings.length + 2}`, 'y', 1, 0.32),
+    {
+      ...createBandOverlay('pole-north', `Region ${rings.length + 1}`, 'y', 0, 0.32),
+      irregularity: POLE_IRREGULARITY,
+    },
+    {
+      ...createBandOverlay('pole-south', `Region ${rings.length + 2}`, 'y', 1, 0.32),
+      irregularity: POLE_IRREGULARITY,
+    },
   ];
 }
 

@@ -19,6 +19,7 @@
 .canvas {
   image-rendering: auto;
   cursor: crosshair;
+  touch-action: manipulation;
 }
 
 .overlayCanvas {
