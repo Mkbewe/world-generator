@@ -16,6 +16,7 @@ export type {
   MapLayerNode,
   MapLayerOption,
   MapBaseLayerId,
+  MapInspection,
   MapLayers,
   MapMetadata,
   MapOverlayId,

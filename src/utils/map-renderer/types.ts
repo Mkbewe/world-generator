@@ -36,6 +36,14 @@ export interface MapLayerOption<TId extends string> {
   available: boolean;
 }
 
+/** Raw value of the displayed layer at a source raster cell. */
+export interface MapInspection {
+  id: MapBaseLayerId;
+  label: string;
+  /** Undefined when the cell lies outside the layer's valid area. */
+  value?: number;
+}
+
 export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
   visible: boolean;
 }

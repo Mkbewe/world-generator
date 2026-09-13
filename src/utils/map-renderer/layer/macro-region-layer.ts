@@ -11,6 +11,16 @@ export class MacroRegionLayer extends MapLayer {
     super('macro-region', world.size);
   }
 
+  sample(x: number, y: number): number | undefined {
+    if (x < 0 || y < 0 || x >= this.size.width || y >= this.size.height) {
+      return undefined;
+    }
+    if (!this.world.contains(x, y)) {
+      return undefined;
+    }
+    return this.regions[y * this.size.width + x];
+  }
+
   protected paintRow(
     pixels: Uint8ClampedArray,
     offset: number,

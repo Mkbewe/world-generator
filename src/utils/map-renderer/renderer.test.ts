@@ -362,4 +362,26 @@ describe('MapRenderer', () => {
     });
     preview.dispose();
   });
+
+  it('inspects the displayed layer value at source coordinates', async () => {
+    const { preview } = setup();
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+    preview.add('world-shape', new Uint8Array([0, 1, 1, 1]));
+    preview.add('noise', new Float32Array([0.25, 0.5, 0.75, 1]));
+    await vi.runAllTimersAsync();
+    await preview.ready;
+
+    expect(preview.currentSize).toEqual({ width: 2, height: 2 });
+    expect(preview.inspect(1, 1)).toEqual({ id: 'noise', label: 'Noise', value: 1 });
+    expect(preview.inspect(0, 0)).toEqual({ id: 'noise', label: 'Noise', value: undefined });
+  });
+
+  it('does not inspect before a run starts', () => {
+    const preview = new MapRenderer(elements(), vi.fn());
+
+    expect(preview.currentSize).toBeUndefined();
+    expect(() => preview.size).toThrow();
+    expect(preview.inspect(0, 0)).toBeUndefined();
+    preview.dispose();
+  });
 });

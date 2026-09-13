@@ -3,6 +3,7 @@ import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
 import {
   type MapBaseLayerId,
+  type MapInspection,
   type MapLayerOption,
   type MapLayers,
   type MapOverlayId,
@@ -51,6 +52,7 @@ export class MapRenderer {
   private readonly metrics: RenderMetrics;
   private lifetime = new AbortController();
   private error?: string;
+  private mapSize?: MapSize;
 
   constructor(
     elements: MapViewElements,
@@ -98,6 +100,7 @@ export class MapRenderer {
     this.reset();
     this.lifetime = new AbortController();
     this.scene.start(size);
+    this.mapSize = size;
     this.metrics.start();
     this.view.start(size);
   }
@@ -115,6 +118,24 @@ export class MapRenderer {
 
   get size(): MapSize {
     return this.scene.size;
+  }
+
+  /** Size of the current map, or undefined before the first run. */
+  get currentSize(): MapSize | undefined {
+    return this.mapSize;
+  }
+
+  /** Reads the displayed layer's raw value at a source raster cell. */
+  inspect(x: number, y: number): MapInspection | undefined {
+    const id = this.view.displayedLayer;
+    if (!id) {
+      return undefined;
+    }
+    const layer = this.scene.get(id);
+    if (!layer) {
+      return undefined;
+    }
+    return { id, label: this.registry.get(id).label, value: layer.sample(x, y) };
   }
 
   add(id: MapBaseLayerId, value: unknown): void {
@@ -149,6 +170,7 @@ export class MapRenderer {
   reset(emit = true): void {
     this.cancel();
     this.scene.reset();
+    this.mapSize = undefined;
     this.error = undefined;
     this.metrics.reset();
     this.view.reset();

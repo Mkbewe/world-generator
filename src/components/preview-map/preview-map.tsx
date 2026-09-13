@@ -1,7 +1,9 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { LayerNavigation } from './layer-navigation';
+import { MapInspector } from './map-inspector';
+import { type InspectorReadout, type PointerSample, readoutItems, samplePointer } from './readout';
 import { usePreviewStore, useRenderStatisticsStore } from '../../stores';
 import {
   emptyRenderState,
@@ -32,6 +34,9 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
+  const positionRef = useRef<PointerSample | undefined>(undefined);
+  const [readout, setReadout] = useState<InspectorReadout | undefined>(undefined);
+  const [pinned, setPinned] = useState(false);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -62,6 +67,74 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
       renderer.dispose();
     };
   }, [navigation, onReady, setRenderStatistics]);
+
+  const refreshReadout = useCallback((position: PointerSample): void => {
+    setReadout({
+      position,
+      inspection: rendererRef.current?.inspect(position.x, position.y),
+    });
+  }, []);
+
+  useEffect(() => {
+    if (pinned) {
+      return;
+    }
+    const position = positionRef.current;
+    if (position && rendererRef.current?.currentSize) {
+      refreshReadout(position);
+    }
+  }, [pinned, preview.displayedLayer, refreshReadout]);
+
+  const sampleAt = (event: React.PointerEvent<HTMLCanvasElement>): PointerSample | undefined => {
+    const size = rendererRef.current?.currentSize;
+    if (!size) {
+      return undefined;
+    }
+    return samplePointer(
+      event.currentTarget.getBoundingClientRect(),
+      size,
+      event.clientX,
+      event.clientY
+    );
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>): void => {
+    if (pinned) {
+      return;
+    }
+    const position = sampleAt(event);
+    if (!position) {
+      return;
+    }
+    const last = positionRef.current;
+    if (last && last.x === position.x && last.y === position.y) {
+      return;
+    }
+    positionRef.current = position;
+    refreshReadout(position);
+  };
+
+  /** The first left click or tap pins the readout; the next one releases it. */
+  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>): void => {
+    if (event.button !== 0) {
+      return;
+    }
+    const position = sampleAt(event);
+    if (!position) {
+      return;
+    }
+    positionRef.current = position;
+    refreshReadout(position);
+    setPinned(current => !current);
+  };
+
+  const handlePointerLeave = (): void => {
+    if (pinned) {
+      return;
+    }
+    positionRef.current = undefined;
+    setReadout(undefined);
+  };
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
     const renderer = rendererRef.current;
@@ -101,6 +174,10 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
               height={0}
               className={styles.canvas}
               aria-label='Generated map preview'
+              onPointerMove={handlePointerMove}
+              onPointerDown={handlePointerDown}
+              onPointerLeave={handlePointerLeave}
+              onPointerCancel={handlePointerLeave}
             />
             <canvas
               ref={overlayRef}
@@ -111,6 +188,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
             />
           </div>
         </MapLayerControls>
+        <MapInspector items={readoutItems(readout)} pinned={pinned} />
         {preview.error && (
           <Text size='2' color='red' role='alert'>
             {preview.error}
