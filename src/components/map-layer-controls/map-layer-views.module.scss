@@ -1,0 +1,23 @@
+.sections {
+  display: grid;
+  min-width: 0;
+}
+
+.section {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.section[data-active='false'] {
+  visibility: hidden;
+}
+
+.options {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.option[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

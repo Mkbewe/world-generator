@@ -27,7 +27,7 @@ export class MapView {
     private readonly elements: MapViewElements,
     private readonly metrics: RenderMetrics,
     selectedLayer?: MapBaseLayerId,
-    private readonly boundarySource: MapBaseLayerId = OVERLAY_LAYERS['world-boundary'].source
+    private readonly shouldDisplay: (id: MapBaseLayerId) => boolean = () => true
   ) {
     this.selectedLayer = selectedLayer;
     this.overlays = new OverlayController(elements.overlayCanvas, elements.viewportElement, () =>
@@ -66,19 +66,19 @@ export class MapView {
   }
 
   setMasks(masks: ReadonlyMap<MapBaseLayerId, SpatialMask>): void {
-    this.mask = masks.get(this.boundarySource);
+    this.mask = masks.get(OVERLAY_LAYERS['world-boundary'].source);
     this.overlays.render(this.mask);
   }
 
   /** Marks a layer as current as soon as its progressive drawing starts. */
   begin(layer: MapLayer): void {
-    if (this.progressive) {
+    if (this.progressive && this.shouldDisplay(layer.id)) {
       this.displayed = layer.id;
     }
   }
 
   present(layer: MapLayer): void {
-    if (this.progressive || layer.id === this.selectedLayer) {
+    if (this.progressive ? this.shouldDisplay(layer.id) : layer.id === this.selectedLayer) {
       this.show(layer);
     }
   }
@@ -94,12 +94,12 @@ export class MapView {
   }
 
   tilePainter(layer: MapLayer): TileReporter | undefined {
-    if (!this.progressive) {
+    if (!this.progressive || !this.shouldDisplay(layer.id)) {
       return undefined;
     }
     const context = this.elements.canvas.getContext('2d');
     return (x, y, width, height) => {
-      if (!context) {
+      if (!context || !this.shouldDisplay(layer.id)) {
         return;
       }
       context.drawImage(layer.canvas, x, y, width, height, x, y, width, height);

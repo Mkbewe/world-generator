@@ -1,4 +1,5 @@
 import { PREVIEW_DEFAULTS, usePreviewStore } from './preview-store';
+import type { MapLayerNode } from '../../utils/map-renderer';
 
 describe('usePreviewStore', () => {
   beforeEach(() => {
@@ -16,6 +17,23 @@ describe('usePreviewStore', () => {
     usePreviewStore.getState().setBaseLayer('noise');
 
     expect(usePreviewStore.getState().baseLayer).toBe('noise');
+  });
+
+  it('stores the navigation tree with the selected layer and preserves it when omitted', () => {
+    const store = usePreviewStore.getState();
+    const tree: readonly MapLayerNode[] = [
+      {
+        id: 'climate',
+        label: 'Climate',
+        available: true,
+        selectedChild: 'moisture',
+        selectedLayer: 'moisture',
+      },
+    ];
+    store.setBaseLayer('moisture', tree);
+    store.setBaseLayer('noise');
+
+    expect(usePreviewStore.getState().layerTree).toBe(tree);
   });
 
   it('merges overlay visibility changes', () => {

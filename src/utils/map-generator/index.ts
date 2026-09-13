@@ -12,6 +12,7 @@ export type {
   GenerationResult,
   MacroRegionConfig,
   MacroRegionDeformation,
+  MacroRegionGeometry,
   MacroRegionPoint,
   MapGeneratorOptions,
   MapConfig,

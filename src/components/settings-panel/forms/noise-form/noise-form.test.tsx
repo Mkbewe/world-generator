@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { NoiseForm } from './noise-form';
-import type { NoiseConfig } from '../../../utils/map-generator';
+import type { NoiseConfig } from '../../../../utils/map-generator';
 
 const noise: NoiseConfig = { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 };
 

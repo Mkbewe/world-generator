@@ -1,6 +1,5 @@
 import { WorldShapeLayer } from './layer';
 import { MacroRegionLayer } from './macro-region-layer';
-import { ProgressionLayer } from './progression-layer';
 
 function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
   const images: ImageData[] = [];
@@ -18,43 +17,6 @@ function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
   } as unknown as CanvasRenderingContext2D);
   return { images, restore: () => spy.mockRestore() };
 }
-
-describe('ProgressionLayer', () => {
-  it('paints a green-to-red gradient inside the world mask', async () => {
-    const { images, restore } = mockCanvasContext();
-    const world = new WorldShapeLayer({ width: 4, height: 1 }, new Uint8Array([1, 1, 1, 1]));
-    const layer = new ProgressionLayer(world, new Float32Array([0, 0.5, 1, 0]));
-
-    try {
-      await layer.prepare(new AbortController().signal);
-      const pixels = images.flatMap(image => [...image.data]);
-
-      expect(pixels.slice(0, 4)).toEqual([27, 94, 32, 255]);
-      expect(pixels.slice(4, 8)).toEqual([249, 168, 37, 255]);
-      expect(pixels.slice(8, 12)).toEqual([183, 28, 28, 255]);
-    } finally {
-      layer.dispose();
-      restore();
-    }
-  });
-
-  it('leaves cells outside the world mask transparent', async () => {
-    const { images, restore } = mockCanvasContext();
-    const world = new WorldShapeLayer({ width: 2, height: 1 }, new Uint8Array([1, 0]));
-    const layer = new ProgressionLayer(world, new Float32Array([0, 0]));
-
-    try {
-      await layer.prepare(new AbortController().signal);
-      const pixels = images.flatMap(image => [...image.data]);
-
-      expect(pixels[3]).toBe(255);
-      expect(pixels[7]).toBe(0);
-    } finally {
-      layer.dispose();
-      restore();
-    }
-  });
-});
 
 describe('MacroRegionLayer', () => {
   it('paints distinct colors per region id', async () => {

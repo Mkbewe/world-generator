@@ -1,0 +1,104 @@
+import { Theme } from '@radix-ui/themes';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+import { MacroRegionForm } from './macro-region-form';
+import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../stores';
+import {
+  baseRegions,
+  overlayRegions,
+} from '../../../../utils/map-generator/stages/macro-region-sizes';
+
+function renderForm() {
+  render(
+    <Theme>
+      <MacroRegionForm />
+    </Theme>
+  );
+}
+
+describe('MacroRegionForm', () => {
+  beforeEach(() => {
+    useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
+  });
+
+  it('shows one shared distribution editor and simple per-region metadata', () => {
+    renderForm();
+
+    expect(screen.getByText('Base regions (4)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Region width distribution')).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Region boundaries')).getAllByRole('slider')).toHaveLength(
+      3
+    );
+    expect(screen.getAllByText('Width')).toHaveLength(4);
+    expect(screen.queryByText('Radius')).toBeNull();
+    expect(screen.queryByText('Falloff')).toBeNull();
+    expect(screen.getByText('Small')).toBeInTheDocument();
+    expect(screen.getByText('None')).toBeInTheDocument();
+    expect(screen.getByText('Large')).toBeInTheDocument();
+  });
+
+  it('switches the base layout without changing region metadata', async () => {
+    const user = userEvent.setup();
+    const first = useMacroRegionFormStore.getState().regions[0];
+    useMacroRegionFormStore.getState().updateRegion(first.id, { label: 'Safe haven' });
+    renderForm();
+
+    await user.click(screen.getByRole('radio', { name: 'Vertical' }));
+
+    const state = useMacroRegionFormStore.getState();
+    expect(state.layout).toBe('vertical');
+    expect(baseRegions(state.regions)[0].label).toBe('Safe haven');
+    expect(
+      baseRegions(state.regions).every(
+        region => region.geometry.kind === 'band' && region.geometry.axis === 'x'
+      )
+    ).toBe(true);
+  });
+
+  it('applies ready-made layouts from the preset section at the top', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.click(screen.getByRole('button', { name: 'Rings + poles' }));
+
+    let state = useMacroRegionFormStore.getState();
+    expect(baseRegions(state.regions)).toHaveLength(4);
+    expect(overlayRegions(state.regions)).toHaveLength(2);
+    expect(screen.getByText('Overlay regions (2)')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Horizontal' }));
+    state = useMacroRegionFormStore.getState();
+    expect(state.layout).toBe('horizontal');
+    expect(baseRegions(state.regions)).toHaveLength(5);
+    expect(overlayRegions(state.regions)).toHaveLength(0);
+  });
+
+  it('adds horizontal and vertical bands as overlay regions', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.click(screen.getByRole('button', { name: 'Add horizontal overlay' }));
+    await user.click(screen.getByRole('button', { name: 'Add vertical overlay' }));
+
+    const overlays = overlayRegions(useMacroRegionFormStore.getState().regions);
+    expect(overlays).toHaveLength(2);
+    expect(overlays.map(region => region.geometry)).toMatchObject([
+      { kind: 'band', axis: 'y', center: 0.5, width: 0.16 },
+      { kind: 'band', axis: 'x', center: 0.5, width: 0.16 },
+    ]);
+    expect(screen.getByText('Overlay regions (2)')).toBeInTheDocument();
+    expect(screen.getAllByText('Position')).toHaveLength(2);
+  });
+
+  it('disables every add action at the ten-region limit', () => {
+    while (useMacroRegionFormStore.getState().regions.length < 10) {
+      useMacroRegionFormStore.getState().addBaseRegion();
+    }
+    renderForm();
+
+    expect(screen.getByRole('button', { name: /Add region/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add horizontal overlay' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add vertical overlay' })).toBeDisabled();
+  });
+});

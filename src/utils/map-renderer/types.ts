@@ -11,7 +11,6 @@ export interface MapLayers {
   [source: string]: unknown;
   worldMask?: Uint8Array;
   noiseMap?: Float32Array;
-  progressionMap?: Float32Array;
   macroRegionIdMap?: Uint8Array;
 }
 
@@ -39,6 +38,29 @@ export interface MapLayerOption<TId extends string> {
 
 export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
   visible: boolean;
+}
+
+export interface LayerLeafNode {
+  readonly id: MapBaseLayerId;
+  readonly label: string;
+}
+
+/** Layer tabs are leaves or a single-level group of leaves. */
+export interface LayerTreeNode extends LayerLeafNode {
+  readonly children?: readonly LayerLeafNode[];
+}
+
+/** A preview node with readiness and the group's selected child. */
+export interface MapLayerNode extends MapLayerOption<MapBaseLayerId> {
+  readonly children?: readonly MapLayerNode[];
+  readonly selectedChild?: MapBaseLayerId;
+  /** Available raster leaf selected through this node's subtree. */
+  readonly selectedLayer: MapBaseLayerId;
+}
+
+export interface MapLayerNavigation {
+  readonly tabs: readonly MapLayerNode[];
+  readonly activeTab?: MapBaseLayerId;
 }
 
 export interface RenderLayerStatistics {

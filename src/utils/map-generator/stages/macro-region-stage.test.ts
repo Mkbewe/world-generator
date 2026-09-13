@@ -1,186 +1,119 @@
+import {
+  createBandOverlay,
+  createHorizontalLayout,
+  createRadialLayout,
+  createRadialPolesLayout,
+} from './macro-region-presets';
 import { MacroRegionStage } from './macro-region-stage';
 import { MapGenerator } from '../pipeline';
-import type { MapConfig, MapState } from '../types';
+import type { MacroRegionConfig, MapConfig, MapState } from '../types';
 
-const ZERO_DEFORMATION = { amplitude: 0 } as const;
+const noise = { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 };
 
-function createConfig(width = 5, height = 5, shape: 'disc' | 'rectangle' = 'disc'): MapConfig {
+function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 5): MapConfig {
   return {
-    world: { width, height, seed: 123, shape },
-    noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
+    world: { width, height, seed: 123 },
+    noise,
+    macroRegions,
+    macroRegionDeformation: { amplitude: 0 },
   };
 }
 
-async function generate(config: MapConfig): Promise<MapState> {
+async function generate(source: MapConfig) {
   const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
-  return (await pipeline.generate(config, {})).context.state;
+  return pipeline.generate(source, {});
 }
 
 describe('MacroRegionStage', () => {
-  it('produces a progression field and region ids for every cell', async () => {
-    const state = await generate(createConfig(8, 6));
+  it('assigns one valid region index to every cell', async () => {
+    const regions = createRadialLayout(4);
+    const result = await generate(config(regions));
+    const map = result.context.state.macroRegionIdMap!;
 
-    expect(state.progressionMap).toHaveLength(48);
-    expect(state.progressionMap!.every(value => value >= 0 && value <= 1)).toBe(true);
-    expect(state.macroRegionIdMap).toHaveLength(48);
-    expect(state.macroRegionIdMap!.every(id => id < 4)).toBe(true);
+    expect(map).toHaveLength(25);
+    expect([...map].every(index => index >= 0 && index < regions.length)).toBe(true);
   });
 
-  it('grows progression from the safe centre towards the rim', async () => {
-    const state = await generate({
-      ...createConfig(9, 9),
-      macroRegionDeformation: ZERO_DEFORMATION,
-    });
-    const map = state.progressionMap!;
-    const centre = map[4 * 9 + 4];
-    const edge = map[4 * 9 + 8];
+  it('uses horizontal base regions in north-to-south order', async () => {
+    const result = await generate(config(createHorizontalLayout(3), 3, 3));
 
-    expect(centre).toBeLessThan(edge);
-    expect(centre).toBeCloseTo(0, 1);
-    expect(edge).toBeGreaterThan(0.7);
+    expect([...result.context.state.macroRegionIdMap!]).toEqual([0, 0, 0, 1, 1, 1, 2, 2, 2]);
   });
 
-  it('shows every default region inside a disc', async () => {
-    const state = await generate({
-      ...createConfig(9, 9, 'disc'),
-      macroRegionDeformation: ZERO_DEFORMATION,
-    });
-
-    expect([...new Set(state.macroRegionIdMap!)].sort()).toEqual([0, 1, 2, 3]);
-    expect(Math.max(...state.progressionMap!)).toBe(1);
-  });
-
-  it('is independent of the world shape', async () => {
-    const disc = await generate(createConfig(5, 5, 'disc'));
-    const rectangle = await generate(createConfig(5, 5, 'rectangle'));
-
-    expect(rectangle.progressionMap).toEqual(disc.progressionMap);
-    expect(rectangle.macroRegionIdMap).toEqual(disc.macroRegionIdMap);
-  });
-
-  it('blends configured regions smoothly', async () => {
-    const config: MapConfig = {
-      ...createConfig(5, 1),
-      macroRegionDeformation: ZERO_DEFORMATION,
-      macroRegions: [
-        {
-          id: 'west',
-          label: 'West',
-          center: { x: 0, y: 0 },
-          radius: 0.5,
-          falloff: 0.25,
-          progression: 0,
-        },
-        {
-          id: 'east',
-          label: 'East',
-          center: { x: 1, y: 0 },
-          radius: 0.5,
-          falloff: 0.25,
-          progression: 1,
-        },
-      ],
-    };
-
-    const map = (await generate(config)).progressionMap!;
-
-    expect(map[0]).toBeLessThan(0.2);
-    expect(map[4]).toBeGreaterThan(0.8);
-    expect(map[2]).toBeGreaterThan(map[1]);
-    expect(map[2]).toBeLessThan(map[3]);
-  });
-
-  it('deforms region borders with its own deterministic noise', async () => {
-    const base = createConfig(33, 33);
-    const deformation = { amplitude: 0.08, frequency: 4, octaves: 2, seed: 'warp' };
-    const warped = await generate({ ...base, macroRegionDeformation: deformation });
-    const again = await generate({ ...base, macroRegionDeformation: deformation });
-    const straight = await generate({ ...base, macroRegionDeformation: ZERO_DEFORMATION });
-    const otherSeed = await generate({
-      ...base,
-      macroRegionDeformation: { ...deformation, seed: 'other' },
-    });
-
-    expect(again.progressionMap).toEqual(warped.progressionMap);
-    expect(warped.progressionMap).not.toEqual(straight.progressionMap);
-    expect(otherSeed.progressionMap).not.toEqual(warped.progressionMap);
-
-    const size = 33;
-    const center = 16;
-    const ring = (map: Float32Array) => [
-      map[center * size + center + 8],
-      map[center * size + center - 8],
-      map[(center + 8) * size + center],
-      map[(center - 8) * size + center],
+  it('lets a horizontal overlay cut through a radial layout', async () => {
+    const regions = [
+      ...createRadialLayout(2),
+      createBandOverlay('crossing', 'Crossing', 'y', 0.5, 0.2),
     ];
+    const result = await generate(config(regions, 5, 5));
+    const map = result.context.state.macroRegionIdMap!;
 
-    expect(new Set(ring(straight.progressionMap!)).size).toBe(1);
-    expect(new Set(ring(warped.progressionMap!)).size).toBeGreaterThan(1);
+    expect([...map.slice(10, 15)]).toEqual([2, 2, 2, 2, 2]);
+    expect([...map.slice(0, 5)]).not.toContain(2);
   });
 
-  it('rejects invalid deformation configuration', async () => {
-    const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
+  it('uses the last matching overlay at intersections', async () => {
+    const regions = [
+      ...createRadialLayout(1),
+      createBandOverlay('horizontal', 'Horizontal', 'y', 0.5, 0.4),
+      createBandOverlay('vertical', 'Vertical', 'x', 0.5, 0.4),
+    ];
+    const result = await generate(config(regions, 3, 3));
 
-    await expect(
-      pipeline.generate({ ...createConfig(), macroRegionDeformation: { amplitude: -1 } }, {})
-    ).rejects.toMatchObject({
-      name: 'GenerationStageError',
-      cause: expect.any(RangeError),
+    expect(result.context.state.macroRegionIdMap![4]).toBe(2);
+  });
+
+  it('expresses radial poles as ordinary overlays', async () => {
+    const regions = createRadialPolesLayout(6);
+    const result = await generate(config(regions, 3, 5));
+    const map = result.context.state.macroRegionIdMap!;
+
+    expect([...map.slice(0, 3)]).toEqual([4, 4, 4]);
+    expect([...map.slice(12, 15)]).toEqual([5, 5, 5]);
+  });
+
+  it('supports ten regions and rejects an eleventh', async () => {
+    await expect(generate(config(createHorizontalLayout(10)))).resolves.toBeDefined();
+    await expect(generate(config(createHorizontalLayout(11)))).rejects.toMatchObject({
+      cause: { message: 'At most 10 macro regions are allowed.' },
     });
   });
 
-  it('rejects invalid region configuration', async () => {
-    const config: MapConfig = {
-      ...createConfig(),
-      macroRegions: [
-        {
-          id: 'bad',
-          label: 'Bad',
-          center: { x: 0.5, y: 0.5 },
-          radius: 0,
-          falloff: 0.1,
-          progression: 0.5,
-        },
-      ],
+  it('rejects invalid categorical region definitions', async () => {
+    const overlayOnly = [createBandOverlay('only', 'Only', 'x')];
+    const duplicateIds = createRadialLayout(2).map(region => ({ ...region, id: 'same' }));
+    const invalidDanger = createRadialLayout(1).map(region => ({ ...region, danger: 2 }));
+
+    await expect(generate(config(overlayOnly))).rejects.toMatchObject({
+      cause: { message: 'At least one base macro region is required.' },
+    });
+    await expect(generate(config(duplicateIds))).rejects.toMatchObject({
+      cause: { message: expect.stringContaining('Duplicate macro region id') },
+    });
+    await expect(generate(config(invalidDanger))).rejects.toMatchObject({
+      cause: { message: expect.stringContaining('danger must be within 0..1') },
+    });
+  });
+
+  it('is deterministic when borders are deformed', async () => {
+    const source = {
+      ...config(createRadialLayout(4), 12, 12),
+      macroRegionDeformation: { amplitude: 0.2, frequency: 4, octaves: 3, seed: 'borders' },
     };
-    const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
 
-    await expect(pipeline.generate(config, {})).rejects.toMatchObject({
-      name: 'GenerationStageError',
-      cause: expect.any(RangeError),
-    });
+    const first = await generate(source);
+    const second = await generate(source);
+
+    expect(first.context.state.macroRegionIdMap).toEqual(second.context.state.macroRegionIdMap);
   });
 
-  it('validates the generated maps', () => {
+  it('validates output size and reports region counts', async () => {
     const stage = new MacroRegionStage();
-    const config = createConfig();
+    const source = config(createRadialPolesLayout(6), 4, 3);
+    const result = await generate(source);
 
-    expect(() => stage.validate({}, config)).toThrow('required map data');
-    expect(() =>
-      stage.validate(
-        { progressionMap: new Float32Array(3), macroRegionIdMap: new Uint8Array(4) },
-        config
-      )
-    ).toThrow('required map data');
-    expect(() =>
-      stage.validate(
-        { progressionMap: new Float32Array(25), macroRegionIdMap: new Uint8Array(25) },
-        config
-      )
-    ).not.toThrow();
-  });
-
-  it('summarizes the generated regions', async () => {
-    const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
-
-    const result = await pipeline.generate(
-      { ...createConfig(8, 6), macroRegionDeformation: ZERO_DEFORMATION },
-      {}
-    );
-    const details = result.statistics[0].details;
-
-    expect(details).toMatchObject({ regions: 4, max: 1, bytes: 48 * 4 + 48 });
-    expect(details?.min).toBeGreaterThanOrEqual(0);
-    expect(details?.mean).toBeGreaterThan(0);
+    expect(() => stage.validate({}, source)).toThrow('required map data');
+    expect(() => stage.validate({ macroRegionIdMap: new Uint8Array(12) }, source)).not.toThrow();
+    expect(result.statistics[0].details).toEqual({ regions: 6, overlays: 2, bytes: 12 });
   });
 });

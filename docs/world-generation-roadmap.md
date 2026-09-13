@@ -5,12 +5,12 @@
 - Generator działa jako rozszerzalny pipeline niezależny od renderowania i UI.
 - Świat korzysta ze znormalizowanych współrzędnych, aby zachować układ przy różnych rozdzielczościach.
 - Jeden seed świata tworzy niezależne, nazwane strumienie losowości dla poszczególnych etapów.
-- Etapy zapisują osobne warstwy danych; obecnie można wyświetlać maskę świata i szum.
+- Etapy zapisują osobne warstwy danych; obecnie można wyświetlać maskę świata, makroregiony i szum.
 - Docelowo najpierw może powstawać podgląd w niskiej rozdzielczości, a następnie dokładniejsza wersja tego samego świata. Ten tryb nie jest jeszcze zaimplementowany.
 
 ## Stan implementacji
 
-Stan na 2026-09-12.
+Stan na 2026-09-13.
 
 Aktualny generator jest działającym szkieletem pipeline'u, a nie pełną
 implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane są:
@@ -18,6 +18,12 @@ implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane s
 - `WorldShapeStage` — tworzy maskę świata w `worldMask`: dysk (`disc`) albo
   prostokąt (`rectangle`). Nie implementuje jeszcze zawijania krawędzi.
 - `NoiseStage` — tworzy deterministyczną mapę szumu w `noiseMap`.
+- `MacroRegionStage` — przypisuje każdą komórkę do dokładnie jednego regionu
+  w `macroRegionIdMap`. Docelowe zagrożenie (`danger`) jest właściwością definicji
+  regionu, a nie osobnym rastrem. Formularz rozdziela bazowy układ pierścieni lub
+  pasów od nakładanych regionów pasmowych. Wspólny edytor granic zmienia rozmiar
+  dwóch sąsiednich regionów bez tworzenia luk. Obowiązuje łączny limit 10 regionów
+  bazowych i nakładanych w formularzu oraz generatorze.
 - `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia etapów wraz
   z danymi i postępem; wynik zawiera statystyki i łączny czas.
 - worker — każdy run generowania dostaje świeży Web Worker (`runGeneration`);
@@ -27,9 +33,11 @@ implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane s
   oraz własny rozmiar od 100 do 5000. UI generuje kwadratową siatkę `size × size`;
   rozmiar oznacza liczbę próbek, a nie metry świata. Stan formularza jest
   pamiętany osobno dla każdej zakładki i przeżywa zmianę widoku.
-- podgląd mapy — warstwy bazowe `World shape`/`Noise` oraz nakładka
+- podgląd mapy — główne zakładki `World shape`/`Macro regions`/`Noise` oraz nakładka
   `World boundary`, z progresywnym rysowaniem i wyborem pamiętanym między
-  widokami.
+  widokami. Definicje warstw mogą grupować kilka podwidoków pod jedną główną
+  zakładką; przełącznik jest pokazywany dopiero dla grupy z co najmniej dwoma
+  podwidokami. `Macro regions` jest obecnie pojedynczą warstwą bez podwidoków.
 - `utils/map-renderer` — renderowanie warstw i nakładek: scena, widok, cache
   warstw, statystyki oraz zapis i odtworzenie ostatniej mapy.
 - odtwarzanie podglądu — ostatnia ukończona mapa i jej konfiguracja są trzymane
@@ -60,6 +68,7 @@ Docelowy model danych może wyglądać następująco:
 interface MapLayers {
   worldMask?: Uint8Array;
   noiseMap?: Float32Array;
+  macroRegionIdMap?: Uint8Array;
   heightmap?: Float32Array;
   bathymetryMap?: Float32Array;
   temperatureMap?: Float32Array;
@@ -85,14 +94,63 @@ i `MapOverlayControls`. W przyszłości nakładki numeryczne, takie jak
 temperatura i wilgotność, powinny otrzymać także kontrolę przezroczystości oraz
 ustaloną paletę kolorów.
 
+### Opcjonalne spięcie zakładek ustawień i podglądu — planowane
+
+Użytkownik powinien móc włączyć i wyłączyć synchronizację zakładek w obu
+kierunkach. Przełącznik w nagłówku ustawień lub podglądu może korzystać z ikony
+połączonego/rozłączonego łańcucha albo zamkniętej/otwartej kłódki. Musi mieć
+czytelny stan, tooltip, nazwę dostępną dla czytników ekranu i obsługę klawiatury.
+
+- Domyślnie spięcie jest wyłączone. Stan jest pamiętany przy zmianie widoku
+  aplikacji, tak jak pozostałe preferencje podglądu.
+- Po włączeniu kliknięcie zakładki formularza wybiera odpowiadającą główną
+  zakładkę podglądu, a kliknięcie głównej zakładki podglądu wybiera formularz.
+  Samo włączenie wyrównuje podgląd do aktywnej zakładki ustawień, jeśli jej
+  warstwa jest dostępna. Wyłączenie pozostawia oba bieżące wybory bez zmian.
+- Powiązanie opiera się na identyfikatorach etapów, nie indeksach ani etykietach.
+  Jeżeli etap udostępnia kilka podwidoków, spięcie dotyczy jego głównej zakładki
+  i zachowuje ostatni podwidok wybrany przez użytkownika.
+- `Basic` nie ma odpowiednika w podglądzie. Wybór formularza bez dostępnych
+  danych nie czyści bieżącego obrazu i nie uruchamia generatora.
+- Synchronizację wywołują działania użytkownika. Automatyczne przechodzenie
+  podglądu przez etapy podczas generowania nie przełącza formularzy i nie
+  powoduje pętli wzajemnych aktualizacji.
+
+### Automatyczne odświeżanie podglądu po zmianie kontrolek — planowane
+
+Kolejność realizacji: najpierw zadanie rasteryzacji warstw do rozdzielczości
+viewportu × DPR opisane w sekcji „Wydajność — dalszy plan”, następnie
+automatyczne odświeżanie. Mniejsza bitmapa ogranicza koszt renderowania, ale
+sama nie ogranicza kosztu generowania: potrzebne są także selektywne
+przeliczanie etapów i osobna rozdzielczość danych roboczego podglądu.
+
+- Zmiana poprawnej wartości w formularzu automatycznie odświeża powiązany
+  podgląd po krótkim debounce, początkowo około 150 ms. Nie wymaga kliknięcia
+  `Generate Map`; niepełne lub niepoprawne wartości nie uruchamiają obliczeń.
+- Przeliczany jest zmieniony etap oraz wymagane zależności, z ponownym użyciem
+  nadal aktualnych danych. Zmiana makroregionów nie przelicza niezależnego
+  szumu. Zmiany wspólnego seedu lub wymiarów unieważniają odpowiednie zależności.
+- Obliczenia działają w workerze, z ograniczoną rozdzielczością próbkowania
+  podglądu. Ten sam seed i znormalizowane współrzędne zachowują układ świata;
+  roboczy podgląd nie zastępuje pełnych danych ostatniego wygenerowanego świata.
+- Nowsza zmiana anuluje lub zastępuje starsze zlecenie. Spóźniony wynik nie
+  może nadpisać nowszego podglądu ani pełnego wyniku `Generate Map`.
+- UI zachowuje aktywną zakładkę, podwidok i nakładki, pokazuje stan odświeżania
+  oraz odróżnia roboczy podgląd od wyniku w docelowej jakości. Nieaktualne
+  wyniki zależnych etapów są oznaczane jako wymagające ponownego wygenerowania.
+- `Generate Map` nadal uruchamia pełny pipeline w docelowej rozdzielczości.
+  Zmiana samego sposobu wyświetlania lub nakładek nie uruchamia generatora.
+- Weryfikacja obejmuje serię szybkich zmian kontrolek, anulowanie, zgodność
+  seedu i układu przy różnych rozdzielczościach oraz pomiary czasu i pamięci.
+
 ## Planowany pipeline
 
 Poniżej opisano docelowy pipeline. Aktualna fabryka uruchamia wyłącznie
-`WorldShapeStage` → `NoiseStage`; pozostałe etapy i rozszerzenia ich kontraktów
+`WorldShapeStage` → `MacroRegionStage` → `NoiseStage`; pozostałe etapy i rozszerzenia ich kontraktów
 nie są jeszcze zaimplementowane.
 
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu.
-2. `MacroRegionStage` — makroregiony, pola progresji oraz narracyjne wymagania świata.
+2. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie.
 3. `NoiseStage` — deterministyczne warstwy szumu.
 4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi.
 5. `IslandCharacterStage` — profile terenu struktur lądowych i ich regionów.
@@ -246,11 +304,22 @@ Preset powinien być gotową konfiguracją tych samych etapów generatora, a nie
 
 Planowane presety:
 
-1. `Mythic Moon` — zamieszkały księżyc gazowego giganta z bezpiecznym centrum, zimną północą, wulkanicznym południem i progresją rosnącą wraz z odległością od środka. Długie dni i noce, regularne zaćmienia oraz wulkanizm pływowy wspierają fabułę, ale model może świadomie upraszczać astrofizykę na rzecz czytelnego świata.
+1. `Mythic Moon` — zamieszkały księżyc gazowego giganta z bezpiecznym centrum, zimną północą, wulkanicznym południem i zagrożeniem rosnącym wraz z odległością od środka. Długie dni i noce, regularne zaćmienia oraz wulkanizm pływowy wspierają fabułę, ale model może świadomie upraszczać astrofizykę na rzecz czytelnego świata.
 2. `Earth-like` — zwykła obracająca się planeta, zimne bieguny, strefy umiarkowane, gorący równik oraz normalny cykl dnia i nocy.
 3. `Engineered Rings` — sztuczny albo magiczny świat z konfigurowalnymi pierścieniami klimatycznymi wokół centralnego sanktuarium.
 
-Tryb zaawansowany może pozwalać zmieniać układ makroregionów, szerokość stref, źródła ciepła i wilgoci, obrót osi klimatu, siłę gradientów, mieszanie regionów oraz deformację granic. Makroregiony powinny być polami wpływu z płynnym przejściem, a nie rozłącznymi obszarami o ostrych krawędziach.
+Tryb zaawansowany może pozwalać zmieniać układ makroregionów, szerokość stref,
+źródła ciepła i wilgoci, obrót osi klimatu, siłę gradientów oraz deformację granic.
+Makroregiony są rozłączne: każda komórka należy do jednego regionu. Płynne
+przejścia należą do pól środowiskowych i wynikowych biomów, a nie do tożsamości
+makroregionu.
+
+Układ bazowy dzieli cały świat na przylegające regiony radialne, poziome albo
+pionowe. Region nakładany jest poziomym lub pionowym pasem, który wycina swój
+obszar z układu bazowego i ma własny `danger`. Dzięki temu dwa pasy na brzegach
+świata mogą tworzyć bieguny, a pojedynczy pas może przeciąć układ pierścieni.
+Nakładanie nie tworzy wielu przynależności komórki: ostatni pas obejmujący punkt
+wygrywa, a `macroRegionIdMap` nadal przechowuje dokładnie jeden identyfikator.
 
 ```ts
 interface WorldPreset {
@@ -265,6 +334,34 @@ interface WorldPreset {
 Podglądy koncepcyjne:
 
 - [trzy presety świata](world-presets.jpg).
+
+### Pierścienie dzielone z rotacją — planowane
+
+Układ radialny można rozszerzyć o pierścienie dzielone na dwa naprzemienne
+regiony. Krzyż z dwóch prostopadłych średnic tnie pierścień na cztery wycinki
+90°, a przeciwległe wycinki należą do tego samego regionu. Pierścień tworzą więc
+dwa regiony, każdy zajmujący połowę jego powierzchni.
+
+- Podział i rotacja są konfigurowane osobno dla każdego pierścienia; obrót np.
+  o 45° ustawia granice niezależnie od osi świata.
+- Każda połowa jest osobnym `MacroRegionConfig` z własną etykietą i `danger`, więc
+  jeden pierścień może mieć naprzemiennie bezpieczne i niebezpieczne wycinki.
+- Pierścień niepodzielony pozostaje jednym regionem; podział nie zmienia
+  niezmiennika partycji — wycinki przylegają do siebie i pokrywają cały
+  pierścień.
+- Limit 10 regionów oznacza maksymalnie 5 podzielonych pierścieni; dodawanie
+  i usuwanie działa na pierścieniach, nie na pojedynczych połowach.
+- Edytor szerokości nadal operuje na promieniach pierścieni, a procent regionu to
+  połowa udziału pierścienia.
+- Testy powinny objąć zawijanie kątów wokół 0/360, rotację inną niż 0/45/90 oraz
+  partycję każdej komórki dokładnie do jednego regionu bazowego.
+
+Geometria pierścienia zyskałaby opcjonalny podział, np. `split: { rotation, side }`,
+gdzie `side` wybiera jedną z dwóch par przeciwległych wycinków. `contains` dodaje
+wtedy warunek na kąt (`atan2`), a domain warping granic działa jak dotychczas,
+więc krzyż również falowałby spójnie z resztą mapy.
+
+Preset pokrewny: „Crossed rings” z naprzemiennym `danger` w obrębie pierścienia.
 
 ## Topologia i krawędzie świata
 
@@ -327,9 +424,15 @@ Przykładowe kombinacje:
 
 Wilgotność nie powinna być prostym podziałem na suchy zachód i mokry wschód. Kierunkowy gradient może być jedynie słabym wpływem bazowym. Na niego należy nałożyć wielkoskalowy noise, kilka suchych i mokrych centrów wpływu, odległość od oceanu, dominujące wiatry oraz cień opadowy gór. W efekcie powstaną nieregularne wyspy wilgotności i suchości, które miejscami przenikają na przeciwną stronę świata. Granice powinny być dodatkowo deformowane przez domain warping.
 
-Klimat należy oddzielić od poziomu niebezpieczeństwa i progresji. Dwie strefy umiarkowane w realistycznym świecie nie muszą być równoważne. Jedna może zawierać bezpieczne równiny i lasy, a druga niebezpieczne biomy wynikające z silnego wulkanizmu, toksycznych mokradeł, gwałtownych burz albo odmiennej geologii. Podobnie oba zimne krańce mogą różnić się charakterem, mimo podobnej temperatury.
+Klimat należy oddzielić od docelowego poziomu niebezpieczeństwa. Dwie strefy umiarkowane w realistycznym świecie nie muszą być równoważne. Jedna może zawierać bezpieczne równiny i lasy, a druga niebezpieczne warianty wynikające z silnego wulkanizmu, toksycznych mokradeł, gwałtownych burz albo odmiennej geologii. Podobnie oba zimne krańce mogą różnić się charakterem, mimo podobnej temperatury.
 
-Pola progresji i narracyjne wymagania pochodzą z `MacroRegionStage`, natomiast `ClimateStage` opisuje warunki fizyczne. Dzięki temu fabuła może wymagać niebezpiecznego południowego regionu bez sztucznego zmieniania całej jego temperatury.
+Każda definicja makroregionu zawiera `danger` w zakresie `0..1`. Późniejsze etapy
+odczytują tę wartość przez `macroRegionIdMap`; nie powstaje osobny raster danger.
+`BiomeStage` najpierw wyznacza bazowy biom na podstawie warunków fizycznych, a
+następnie używa danger jako ograniczenia dla jego wariantu gameplayowego.
+`LocationStage` używa tego samego parametru przy rozmieszczaniu przeciwników,
+bossów, zasobów i nagród. Dzięki temu fabuła może wymagać niebezpiecznego
+południowego regionu bez sztucznego zmieniania całej jego temperatury.
 
 ## Fizyczna skala świata
 
@@ -388,6 +491,9 @@ Pozostałe zadania:
   mapy 5000 × 5000. Nie tworzyć pośrednich obrazów w pełnej rozdzielczości.
 - Dobrać próbkowanie maski i filtrowanie szumu; zachować zgodność warstw z granicą
   świata po zmianie rozmiaru viewportu lub DPR.
+- Po ukończeniu rasteryzacji do viewportu dodać automatyczne odświeżanie po
+  zmianie kontrolek, zgodnie z sekcją „Automatyczne odświeżanie podglądu po
+  zmianie kontrolek — planowane”.
 - Wprowadzić budżet pamięci cache i uzależnić przygotowanie nieaktywnych warstw
   od dostępnego budżetu.
 - Rozszerzyć statystyki o rozdzielczość źródłową i wynikową oraz szacowany rozmiar

@@ -4,11 +4,13 @@ import userEvent from '@testing-library/user-event';
 
 import {
   BASIC_FORM_DEFAULTS,
+  MACRO_REGION_FORM_DEFAULTS,
   NOISE_FORM_DEFAULTS,
   PREVIEW_DEFAULTS,
   useBasicFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
+  useMacroRegionFormStore,
   useNoiseFormStore,
   usePreviewStore,
   useWorldShapeFormStore,
@@ -41,6 +43,7 @@ describe('WorldGenerator', () => {
     useBasicFormStore.setState({ ...BASIC_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
     useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
+    useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
     useGenerationProgressStore.getState().setProgress(undefined);
     useGenerationStatisticsStore.getState().setResult(undefined);
     usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
@@ -57,6 +60,7 @@ describe('WorldGenerator', () => {
     useBasicFormStore.setState({ ...BASIC_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
     useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
+    useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
     useGenerationProgressStore.getState().setProgress(undefined);
     useGenerationStatisticsStore.getState().setResult(undefined);
     usePreviewStore.setState({ ...PREVIEW_DEFAULTS });

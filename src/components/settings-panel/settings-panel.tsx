@@ -1,12 +1,19 @@
 import { useState } from 'react';
-import { GearIcon, GlobeIcon, MixerHorizontalIcon } from '@radix-ui/react-icons';
+import { GearIcon, GlobeIcon, LayersIcon, MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
-import { BasicForm, NoiseForm, type WorldShape, WorldShapeForm, type WorldSize } from './forms';
+import {
+  BasicForm,
+  MacroRegionForm,
+  NoiseForm,
+  type WorldShape,
+  WorldShapeForm,
+  type WorldSize,
+} from './forms';
 import type { NoiseConfig } from '../../utils/map-generator';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
 
-type SettingsTab = 'basic' | 'world-shape' | 'noise';
+type SettingsTab = 'basic' | 'world-shape' | 'noise' | 'macro-region';
 
 let activeSettingsTab: SettingsTab = 'basic';
 
@@ -55,6 +62,12 @@ export function SettingsPanel({
           onSizeChange={onSizeChange}
         />
       ),
+    },
+    {
+      value: 'macro-region',
+      label: 'Macro regions',
+      icon: <LayersIcon />,
+      content: <MacroRegionForm />,
     },
     {
       value: 'noise',

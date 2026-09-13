@@ -1,23 +1,53 @@
-import { LAYER_DEFINITIONS, type LayerDefinition } from './layer-definition';
-import type { MapBaseLayerId, MapLayers } from '../types';
+import {
+  LAYER_DEFINITIONS,
+  type LayerDefinition,
+  type RasterLayerDefinition,
+} from './layer-definition';
+import type { LayerLeafNode, LayerTreeNode, MapBaseLayerId, MapLayers } from '../types';
 
-/** A validated catalog whose iteration order respects layer dependencies. */
+/** Validates the definition tree and orders its raster leaves by data dependencies. */
 export class LayerRegistry {
   readonly ids: readonly MapBaseLayerId[];
-  private readonly definitions: ReadonlyMap<MapBaseLayerId, LayerDefinition>;
+  readonly tree: readonly LayerTreeNode[];
+  private readonly definitions = new Map<MapBaseLayerId, RasterLayerDefinition>();
 
   constructor(definitions: Readonly<Record<string, LayerDefinition>>) {
-    this.definitions = new Map(Object.entries(definitions));
+    const nodeIds = new Set<string>();
     const sources = new Set<string>();
-    for (const [id, definition] of this.definitions) {
+    const registerLeaf = (id: string, definition: RasterLayerDefinition): LayerLeafNode => {
+      if ('children' in definition) {
+        throw new Error('Nested layer groups are not supported: ' + id);
+      }
+      if (nodeIds.has(id)) {
+        throw new Error('Duplicate layer ID: ' + id);
+      }
+      nodeIds.add(id);
       if (sources.has(definition.source)) {
         throw new Error('Duplicate layer source: ' + definition.source);
       }
-      if ((definition.requires ?? []).includes(id)) {
-        throw new Error('Cyclic layer dependency: ' + id);
-      }
       sources.add(definition.source);
-    }
+      this.definitions.set(id, definition);
+      return { id, label: definition.label };
+    };
+    this.tree = Object.entries(definitions).map(([id, definition]): LayerTreeNode => {
+      if (!('children' in definition)) {
+        return registerLeaf(id, definition);
+      }
+      if (nodeIds.has(id)) {
+        throw new Error('Duplicate layer ID: ' + id);
+      }
+      nodeIds.add(id);
+      const children = Object.entries(definition.children);
+      if (children.length === 0) {
+        throw new Error('Empty layer group: ' + id);
+      }
+      return {
+        id,
+        label: definition.label,
+        children: children.map(([childId, child]) => registerLeaf(childId, child)),
+      };
+    });
+
     const ordered: MapBaseLayerId[] = [];
     const visited = new Set<MapBaseLayerId>();
     const visiting = new Set<MapBaseLayerId>();
@@ -43,11 +73,12 @@ export class LayerRegistry {
     this.ids = ordered;
   }
 
+  /** Whether a raster leaf is registered. Groups have no raster data. */
   has(id: string): boolean {
     return this.definitions.has(id);
   }
 
-  get(id: MapBaseLayerId): LayerDefinition {
+  get(id: MapBaseLayerId): RasterLayerDefinition {
     const definition = this.definitions.get(id);
     if (!definition) {
       throw new Error('Unknown layer: ' + id);
