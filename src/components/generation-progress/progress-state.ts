@@ -42,6 +42,23 @@ function applyEvent(
   };
 }
 
+/**
+ * Keeps the known stage list visible but resets it to the initial pending state.
+ * Stage names are authoritative only after the worker announces them, so the
+ * previous list is reused until the new run starts reporting.
+ */
+export function restartProgress(progress: GenerationProgressState): GenerationProgressState {
+  return {
+    status: 'running',
+    stages: progress.stages.map(stage => ({
+      id: stage.id,
+      name: stage.name,
+      status: 'pending',
+      percentage: 0,
+    })),
+  };
+}
+
 function applyStageEvent(
   stage: GenerationStageProgress,
   event: GenerationEvent

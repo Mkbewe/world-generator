@@ -4,4 +4,4 @@ export type {
   GenerationStageProgress,
   GenerationStageStatus,
 } from './generation-progress';
-export { ProgressTracker } from './progress-state';
+export { ProgressTracker, restartProgress } from './progress-state';
