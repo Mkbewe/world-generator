@@ -157,6 +157,39 @@ describe('WorldGenerator', () => {
     expect(useGenerationProgressStore.getState().progress?.status).toBe('completed');
   });
 
+  it('resets the previous progress when a new run starts', async () => {
+    useGenerationProgressStore.getState().setProgress({
+      status: 'completed',
+      totalDurationMs: 3,
+      stages: [
+        {
+          id: 'world-shape',
+          name: 'World shape generation',
+          status: 'completed',
+          percentage: 100,
+        },
+        { id: 'noise', name: 'Noise generation', status: 'completed', percentage: 100 },
+      ],
+    });
+    runGenerationMock.mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <Theme>
+        <WorldGenerator />
+      </Theme>
+    );
+    await userEvent.setup().click(screen.getByTestId('generate-map-button'));
+
+    expect(useGenerationProgressStore.getState().progress).toEqual({
+      status: 'running',
+      stages: [
+        { id: 'world-shape', name: 'World shape generation', status: 'pending', percentage: 0 },
+        { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },
+      ],
+    });
+    expect(screen.getByText('Generating')).toBeInTheDocument();
+  });
+
   it('keeps the stored progress after the preview is remounted', async () => {
     useGenerationProgressStore.getState().setProgress({
       status: 'completed',

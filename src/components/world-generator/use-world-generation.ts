@@ -11,6 +11,7 @@ import {
   useWorldShapeFormStore,
 } from '../../stores';
 import type { MapRenderer } from '../../utils/map-renderer';
+import { restartProgress } from '../generation-progress';
 
 export interface WorldGeneration {
   isGenerating: boolean;
@@ -58,6 +59,8 @@ export function useWorldGeneration(): WorldGeneration {
     setGenerationRun(current => current + 1);
     setError(undefined);
     setIsGenerating(true);
+    const previousProgress = useGenerationProgressStore.getState().progress;
+    setProgress(previousProgress ? restartProgress(previousProgress) : undefined);
 
     const config = {
       world: { width: size, height: size, seed: parsedSeed, shape },

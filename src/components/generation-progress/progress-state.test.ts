@@ -1,5 +1,5 @@
 import type { GenerationProgressState } from './generation-progress';
-import { ProgressTracker } from './progress-state';
+import { ProgressTracker, restartProgress } from './progress-state';
 import type { StageStatistics } from '../../utils/map-generator';
 
 const stageInfos = [
@@ -130,5 +130,38 @@ describe('ProgressTracker', () => {
     tracker.complete(460);
 
     expect(latest()).toMatchObject({ status: 'completed', totalDurationMs: 460 });
+  });
+});
+
+describe('restartProgress', () => {
+  it('resets every stage to pending and keeps its identity', () => {
+    const previous: GenerationProgressState = {
+      status: 'completed',
+      totalDurationMs: 460,
+      stages: [
+        {
+          id: 'world-shape',
+          name: 'World shape generation',
+          status: 'completed',
+          percentage: 100,
+          durationMs: 120,
+        },
+        {
+          id: 'noise',
+          name: 'Noise generation',
+          status: 'failed',
+          percentage: 40,
+          durationMs: 30,
+        },
+      ],
+    };
+
+    expect(restartProgress(previous)).toEqual({
+      status: 'running',
+      stages: [
+        { id: 'world-shape', name: 'World shape generation', status: 'pending', percentage: 0 },
+        { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },
+      ],
+    });
   });
 });
