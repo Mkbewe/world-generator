@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/Mkbewe/world-generator/compare/v0.4.0...v0.4.1) (2026-09-13)
+
+
+### Features
+
+* **macro-region:** add overlay irregularity and draggable boundary h… ([#205](https://github.com/Mkbewe/world-generator/issues/205)) ([080542d](https://github.com/Mkbewe/world-generator/commit/080542d043a0e53f47db606845befd5bd3f91922))
+
 ## [0.4.0](https://github.com/Mkbewe/world-generator/compare/v0.3.1...v0.4.0) (2026-09-13)
 
 
