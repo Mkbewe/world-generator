@@ -31,4 +31,11 @@ module.exports = [
       ],
     },
   },
+  {
+    files: ['src/components/**/*.tsx'],
+    ignores: ['**/*.test.tsx'],
+    rules: {
+      'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ];

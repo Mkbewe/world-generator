@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- split into renderer and readout hooks in #239 */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
