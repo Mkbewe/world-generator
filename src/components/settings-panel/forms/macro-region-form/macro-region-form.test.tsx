@@ -39,6 +39,16 @@ describe('MacroRegionForm', () => {
     expect(screen.getByText('Large')).toBeInTheDocument();
   });
 
+  it('shows the Borders section above the base regions', () => {
+    renderForm();
+
+    const borders = screen.getByText('Borders');
+    const baseHeading = screen.getByText('Base regions (4)');
+    expect(
+      borders.compareDocumentPosition(baseHeading) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it('resizes regions by dragging a boundary on the distribution bar', async () => {
     const user = userEvent.setup();
     renderForm();
