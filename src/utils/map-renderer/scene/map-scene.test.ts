@@ -1,13 +1,11 @@
 import { MapScene } from './map-scene';
-import { LAYER_DEFINITIONS, LayerCache, LayerRegistry, MapLayer, type NoiseLayer } from '../layer';
+import { LAYER_CATALOG } from '../../map-layers';
+import { LayerCache, LayerRegistry, MapLayer } from '../layer';
 
-const BASE_DEFINITIONS = {
-  'world-shape': LAYER_DEFINITIONS['world-shape'],
-  noise: LAYER_DEFINITIONS.noise,
-};
+const BASE_CATALOG = [LAYER_CATALOG[0], LAYER_CATALOG[2]];
 
 function setup() {
-  const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_DEFINITIONS));
+  const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_CATALOG));
   scene.start({ width: 2, height: 2 });
   return scene;
 }
@@ -30,15 +28,15 @@ describe('MapScene', () => {
     expect(resizedNoise).not.toBe(firstNoise);
 
     scene.start({ width: 1, height: 4 });
-    const otherWorld = scene.add('world-shape', new Uint8Array(4));
+    scene.add('world-shape', new Uint8Array(4));
     const otherNoise = scene.add('noise', noise);
     expect(otherNoise).not.toBe(resizedNoise);
-    expect((otherNoise as NoiseLayer).world).toBe(otherWorld);
+    expect(otherNoise.sample(0, 0)).toBeUndefined();
 
-    const newDefinition = { ...LAYER_DEFINITIONS.noise };
+    const newSpec = { ...LAYER_CATALOG[2] };
     const otherScene = new MapScene(
       cache,
-      new LayerRegistry({ ...LAYER_DEFINITIONS, noise: newDefinition })
+      new LayerRegistry([LAYER_CATALOG[0], LAYER_CATALOG[1], newSpec])
     );
     otherScene.start({ width: 1, height: 4 });
     otherScene.add('world-shape', scene.getLayers().worldMask);

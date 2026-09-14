@@ -1,8 +1,18 @@
-import { NoiseLayer, WorldShapeLayer } from './layer';
+import { CatalogLayer } from './catalog-layer';
+import type { MapSize } from './layer';
+import { LAYER_CATALOG } from '../../map-layers';
+
+function worldLayer(size: MapSize, data: Uint8Array): CatalogLayer {
+  return new CatalogLayer(LAYER_CATALOG[0], size, data);
+}
+
+function noiseLayer(world: CatalogLayer, data: Float32Array): CatalogLayer {
+  return new CatalogLayer(LAYER_CATALOG[2], world.size, data, world);
+}
 
 describe('MapLayer.sample', () => {
   it('reads world shape values and rejects out-of-bounds cells', () => {
-    const layer = new WorldShapeLayer({ width: 2, height: 2 }, new Uint8Array([0, 1, 1, 1]));
+    const layer = worldLayer({ width: 2, height: 2 }, new Uint8Array([0, 1, 1, 1]));
     try {
       expect(layer.sample(0, 0)).toBe(0);
       expect(layer.sample(1, 0)).toBe(1);
@@ -15,8 +25,8 @@ describe('MapLayer.sample', () => {
   });
 
   it('reads noise only inside the world mask', () => {
-    const world = new WorldShapeLayer({ width: 2, height: 2 }, new Uint8Array([1, 0, 1, 1]));
-    const layer = new NoiseLayer(world, new Float32Array([0.25, 0.5, 0.75, 1]));
+    const world = worldLayer({ width: 2, height: 2 }, new Uint8Array([1, 0, 1, 1]));
+    const layer = noiseLayer(world, new Float32Array([0.25, 0.5, 0.75, 1]));
     try {
       expect(layer.sample(0, 0)).toBe(0.25);
       expect(layer.sample(1, 0)).toBeUndefined();
@@ -28,7 +38,7 @@ describe('MapLayer.sample', () => {
   });
 });
 
-describe('WorldShapeLayer', () => {
+describe('MapLayer rendering lifecycle', () => {
   it('excludes time yielded to the browser from drawing time', async () => {
     let now = 0;
     const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);
@@ -39,7 +49,7 @@ describe('WorldShapeLayer', () => {
       },
       putImageData: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
-    const layer = new WorldShapeLayer({ width: 2, height: 1 }, new Uint8Array(2).fill(1));
+    const layer = worldLayer({ width: 2, height: 1 }, new Uint8Array(2).fill(1));
     try {
       const preparation = layer.prepare(new AbortController().signal, () => {
         now += 3;
@@ -63,7 +73,7 @@ describe('WorldShapeLayer', () => {
       putImageData: vi.fn(),
       clearRect: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
-    const layer = new WorldShapeLayer({ width: 4, height: 4 }, new Uint8Array(16).fill(1));
+    const layer = worldLayer({ width: 4, height: 4 }, new Uint8Array(16).fill(1));
     try {
       const aborted = new AbortController();
       const first = layer.prepare(aborted.signal);
@@ -95,7 +105,7 @@ describe('WorldShapeLayer', () => {
       putImageData: vi.fn(),
     } as unknown as CanvasRenderingContext2D;
     const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context);
-    const layer = new WorldShapeLayer(
+    const layer = worldLayer(
       { width: 4, height: 4 },
       new Uint8Array([0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0])
     );

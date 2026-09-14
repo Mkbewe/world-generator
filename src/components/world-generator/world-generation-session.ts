@@ -1,16 +1,11 @@
 import type { GenerationStatistics } from '../../stores';
 import {
-  type GenerationEvent,
   type MapConfig,
   type RunGeneration,
   runGeneration as runGenerationInWorker,
 } from '../../utils/map-generator';
-import {
-  type MapLayers,
-  mapPersistence,
-  type MapRenderer,
-  mapRepository,
-} from '../../utils/map-renderer';
+import { type LayerDataRecord, type MapRasters, selectRasters } from '../../utils/map-layers';
+import { mapPersistence, type MapRenderer, mapRepository } from '../../utils/map-renderer';
 import { type GenerationProgressState, ProgressTracker } from '../generation-progress';
 
 /** Coordinates generation and preview, with independent cancellation for each. */
@@ -40,7 +35,7 @@ export class WorldGenerationSession {
     const generation = new AbortController();
     this.generation = generation;
     const signal = generation.signal;
-    const layers: MapLayers = {};
+    const layers: MapRasters = {};
     let progress: ProgressTracker | undefined;
 
     try {
@@ -57,10 +52,7 @@ export class WorldGenerationSession {
         onEvent: event => {
           signal.throwIfAborted();
           if (event.type === 'stage-completed') {
-            Object.assign(layers, event.data);
-          }
-          if (!renderSignal.aborted) {
-            this.applyStage(event);
+            this.receiveStage(event.data, layers, !renderSignal.aborted);
           }
           progress?.handle(event);
         },
@@ -91,14 +83,18 @@ export class WorldGenerationSession {
     }
   }
 
-  /** Maps every layer source present in a stage event, so stages may produce any number of layers. */
-  private applyStage(event: GenerationEvent): void {
-    if (event.type !== 'stage-completed') {
-      return;
-    }
+  /** Collects catalog rasters and optionally sends them to the active preview. */
+  private receiveStage(data: LayerDataRecord, target: MapRasters, render: boolean): void {
     const { registry } = this.renderer;
-    for (const id of registry.presentIn(event.data)) {
-      this.renderer.add(id, event.data[registry.get(id).source]);
+    const rasters = selectRasters(data);
+    const values: LayerDataRecord = rasters;
+    Object.assign(target, rasters);
+    for (const id of registry.presentIn(values)) {
+      const source = registry.get(id).source;
+      const value = values[source];
+      if (render) {
+        this.renderer.add(id, value);
+      }
     }
   }
 }

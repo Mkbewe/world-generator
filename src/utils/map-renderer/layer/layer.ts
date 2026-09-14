@@ -1,4 +1,4 @@
-import type { MapBaseLayerId, SpatialMask } from '../types';
+import type { MapBaseLayerId } from '../types';
 
 export interface MapSize {
   width: number;
@@ -131,80 +131,5 @@ export abstract class MapLayer {
       }
     }
     signal.throwIfAborted();
-  }
-}
-
-export class WorldShapeLayer extends MapLayer implements SpatialMask {
-  constructor(
-    size: MapSize,
-    readonly mask: Uint8Array
-  ) {
-    super('world-shape', size);
-  }
-
-  contains(x: number, y: number): boolean {
-    return this.mask[y * this.size.width + x] === 1;
-  }
-
-  sample(x: number, y: number): number | undefined {
-    if (x < 0 || y < 0 || x >= this.size.width || y >= this.size.height) {
-      return undefined;
-    }
-    return this.mask[y * this.size.width + x];
-  }
-
-  protected paintRow(
-    pixels: Uint8ClampedArray,
-    offset: number,
-    y: number,
-    xStart: number,
-    xEnd: number
-  ): void {
-    for (let x = xStart; x < xEnd; x++, offset += 4) {
-      if (!this.contains(x, y)) {
-        continue;
-      }
-      pixels[offset] = 16;
-      pixels[offset + 1] = 42;
-      pixels[offset + 2] = 67;
-      pixels[offset + 3] = 255;
-    }
-  }
-}
-
-export class NoiseLayer extends MapLayer {
-  constructor(
-    readonly world: SpatialMask,
-    readonly noise: Float32Array
-  ) {
-    super('noise', world.size);
-  }
-
-  sample(x: number, y: number): number | undefined {
-    if (x < 0 || y < 0 || x >= this.size.width || y >= this.size.height) {
-      return undefined;
-    }
-    if (!this.world.contains(x, y)) {
-      return undefined;
-    }
-    return this.noise[y * this.size.width + x];
-  }
-
-  protected paintRow(
-    pixels: Uint8ClampedArray,
-    offset: number,
-    y: number,
-    xStart: number,
-    xEnd: number
-  ): void {
-    let index = y * this.size.width + xStart;
-    for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
-      if (!this.world.contains(x, y)) {
-        continue;
-      }
-      const value = Math.round(this.noise[index] * 255);
-      pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = value;
-      pixels[offset + 3] = 255;
-    }
   }
 }

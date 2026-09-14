@@ -5,9 +5,9 @@ import {
   type MapBaseLayerId,
   type MapInspection,
   type MapLayerOption,
-  type MapLayers,
   type MapOverlayId,
   type MapOverlayOption,
+  type MapRasters,
   OVERLAY_IDS,
   OVERLAY_LAYERS,
   type RenderStatistics,
@@ -30,7 +30,7 @@ export interface MapRendererOptions {
 
 export function emptyRenderState(): MapRendererState {
   return {
-    layers: layerRegistry.ids.map(id => ({
+    layers: layerRegistry.order.map(id => ({
       id,
       label: layerRegistry.get(id).label,
       available: false,
@@ -106,7 +106,7 @@ export class MapRenderer {
   }
 
   /** Displays existing layer data without progressive drawing or generation statistics. */
-  load(size: MapSize, data: MapLayers): void {
+  load(size: MapSize, data: MapRasters): void {
     this.start(size);
     this.metrics.reset();
     const layers = this.scene.load(data);
