@@ -56,6 +56,33 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     precision: 3,
     description: 'Standard deviation — how spread out the noise values are.',
   },
+  regions: {
+    label: 'Regions',
+    kind: 'number',
+    description: 'Number of configured macro regions.',
+  },
+  overlays: {
+    label: 'Overlays',
+    kind: 'number',
+    description: 'Number of macro regions configured as overlays.',
+  },
+  deformationAmplitude: {
+    label: 'Deformation amplitude',
+    kind: 'number',
+    precision: 2,
+    description: 'Strength of the shared macro-region border displacement.',
+  },
+  deformationFrequency: {
+    label: 'Deformation frequency',
+    kind: 'number',
+    precision: 2,
+    description: 'Base frequency used to deform macro-region borders.',
+  },
+  deformationOctaves: {
+    label: 'Deformation octaves',
+    kind: 'number',
+    description: 'Number of noise octaves used to deform macro-region borders.',
+  },
   bytes: {
     label: 'Data',
     kind: 'bytes',

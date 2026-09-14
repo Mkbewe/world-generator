@@ -11,6 +11,7 @@ describe('StatisticsPanel', () => {
           title='Statistics'
           summary={[{ label: 'Seed', value: '1', description: 'Seed.' }]}
           timing={[{ key: 'a', label: 'Alpha', durationMs: 10 }]}
+          timingNote='Timing note.'
           sections={[{ key: 'a', title: 'Alpha', trailing: '10.0 ms', metrics: [] }]}
         />
       </Theme>
@@ -20,6 +21,7 @@ describe('StatisticsPanel', () => {
     expect(screen.getByText('Seed')).toBeInTheDocument();
     expect(screen.getByText('Timing')).toBeInTheDocument();
     expect(screen.getByText('Alpha · 10.0 ms')).toBeInTheDocument();
+    expect(screen.getByText('Timing note.')).toBeInTheDocument();
     expect(screen.getByText('Alpha')).toBeInTheDocument();
   });
 });

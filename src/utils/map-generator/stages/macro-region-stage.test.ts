@@ -145,6 +145,13 @@ describe('MacroRegionStage', () => {
 
     expect(() => stage.validate({}, source)).toThrow('required map data');
     expect(() => stage.validate({ macroRegionIdMap: new Uint8Array(12) }, source)).not.toThrow();
-    expect(result.statistics[0].details).toEqual({ regions: 6, overlays: 2, bytes: 12 });
+    expect(result.statistics[0].details).toEqual({
+      regions: 6,
+      overlays: 2,
+      deformationAmplitude: 0,
+      deformationFrequency: 3,
+      deformationOctaves: 2,
+      bytes: 12,
+    });
   });
 });

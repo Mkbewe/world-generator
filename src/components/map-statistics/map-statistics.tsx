@@ -1,12 +1,13 @@
-import { formatNumber } from '../../utils/format';
+import { formatDuration, formatNumber } from '../../utils/format';
 import type { WorldConfig } from '../../utils/map-generator';
 import { type StatisticsMetric, StatisticsPanel } from '../statistics-panel';
 
 interface MapStatisticsPanelProps {
   world: WorldConfig;
+  totalDurationMs: number;
 }
 
-export function MapStatisticsPanel({ world }: MapStatisticsPanelProps) {
+export function MapStatisticsPanel({ world, totalDurationMs }: MapStatisticsPanelProps) {
   const items: StatisticsMetric[] = [
     {
       label: 'Seed',
@@ -23,6 +24,11 @@ export function MapStatisticsPanel({ world }: MapStatisticsPanelProps) {
       label: 'Cells',
       value: formatNumber(world.width * world.height),
       description: 'Total number of cells (width × height).',
+    },
+    {
+      label: 'Total time',
+      value: formatDuration(totalDurationMs),
+      description: 'Elapsed time from starting generation to the latest rendered result.',
     },
   ];
 
