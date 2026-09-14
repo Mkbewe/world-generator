@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.5.0](https://github.com/Mkbewe/world-generator/compare/v0.4.1...v0.5.0) (2026-09-14)
+
+### Features
+
+* **228:** move the borders section above base regions in the macro r… ([#230](https://github.com/Mkbewe/world-generator/issues/230)) ([de66a90](https://github.com/Mkbewe/world-generator/commit/de66a90bd399f721c17512b15801ff3f55a98f71))
+
+  …egion form
+
+### Bug Fixes
+
+* **preview-map:** follow touch drags and toggle the pin on tap ([#211](https://github.com/Mkbewe/world-generator/issues/211)) ([968f684](https://github.com/Mkbewe/world-generator/commit/968f68444d6487b81fe5957a1bcc5fdf77900e10))
+
+  - drag follows the finger, tap toggles the pin
+
+### Chores
+
+* **208:** migrate releases from standard-version to release-it ([#209](https://github.com/Mkbewe/world-generator/issues/209)) ([d498574](https://github.com/Mkbewe/world-generator/commit/d498574d3bf339ce4db802833f776201513b2e52))
+
+  - changelog entries now include commit bodies
+* **213:** make git hook errors short and readable ([#214](https://github.com/Mkbewe/world-generator/issues/214)) ([78045ec](https://github.com/Mkbewe/world-generator/commit/78045ec9bd4148dd0ddf9a63f4fc9ce55d39656f))
+* **215:** add cli task picker and commit message generator ([#216](https://github.com/Mkbewe/world-generator/issues/216)) ([8cca8cf](https://github.com/Mkbewe/world-generator/commit/8cca8cfff9db43eceb77891662957609fabc98d4))
+
+  - pick a task straight from the GitHub board and get a ready git branch
+  - generate the commit header from the task: type, issue number and title
+  - copy the finished commit message to the clipboard in one step
+
+### Documentation
+
+* **226:** sync roadmap and agent docs with current architecture ([#227](https://github.com/Mkbewe/world-generator/issues/227)) ([991658c](https://github.com/Mkbewe/world-generator/commit/991658c00afb56e19d32c9a8a52c63cc7f6712a3))
+
+### Code Refactoring
+
+* **212:** show total generation time once + add macro-region def… ([#229](https://github.com/Mkbewe/world-generator/issues/229)) ([2278221](https://github.com/Mkbewe/world-generator/commit/227822149ea8051e023ab67eb4b24344cb94abf7))
+
+  …ormation metrics
+* **layers:** replace painter classes with a declarative layer ([#207](https://github.com/Mkbewe/world-generator/issues/207)) ([37125c3](https://github.com/Mkbewe/world-generator/commit/37125c316fa4226d092c0f5e270da78891a49eb8))
+
+  replace painter classes with a declarative layer ctalog
+
+  - add DOM-free map-layers with LayerSpec, palette specs
+  (solid/ramp/discrete), compiled palette writers, the flat catalog and
+  shared region colors
+  - add generic CatalogLayer that validates typed data, clips to mask
+  layers and paints through a compiled palette
+  - drive LayerRegistry from the catalog with independent order and
+  topological buildOrder
+  - switch MapScene, cache and restore to catalog entries, keeping
+  persistence and render statistics
+  - remove WorldShapeLayer, NoiseLayer, MacroRegionLayer and
+  layer-definition.ts; replace class tests with catalog, palette and scene
+  tests
+  - update macro region form imports for the moved region palette
+  - keep parity: world-shape value === 1, exact noise rounding, cyclic
+  region colors
+  - document the staged migration in plans/declarative-layer-catalog.md
+
 ### [0.4.1](https://github.com/Mkbewe/world-generator/compare/v0.4.0...v0.4.1) (2026-09-13)
 
 
