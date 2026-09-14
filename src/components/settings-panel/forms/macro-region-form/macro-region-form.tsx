@@ -11,8 +11,8 @@ export function MacroRegionForm() {
     <Flex direction='column' gap='4'>
       <PresetPicker />
       <BaseLayoutField />
-      <BaseRegionSection />
       <BorderSettings />
+      <BaseRegionSection />
       <OverlayRegionSection />
     </Flex>
   );
