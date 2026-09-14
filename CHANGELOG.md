@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.1](https://github.com/Mkbewe/world-generator/compare/v0.5.0...v0.5.1) (2026-09-14)
+
+### Code Refactoring
+
+* **238:** split world-shape-form into one component per file ([#248](https://github.com/Mkbewe/world-generator/issues/248)) ([9c1287c](https://github.com/Mkbewe/world-generator/commit/9c1287cbec6de8e773c834450ab4f924a3f08b6a))
+
 ## [0.5.0](https://github.com/Mkbewe/world-generator/compare/v0.4.1...v0.5.0) (2026-09-14)
 
 ### Features
