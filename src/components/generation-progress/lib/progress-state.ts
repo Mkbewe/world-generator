@@ -1,5 +1,5 @@
-import type { GenerationProgressState, GenerationStageProgress } from './generation-progress';
-import type { GenerationEvent, StageInfo } from '../../utils/map-generator';
+import type { GenerationProgressState, GenerationStageProgress } from './progress-types';
+import type { GenerationEvent, StageInfo } from '../../../utils/map-generator';
 
 export class ProgressTracker {
   private state: GenerationProgressState;

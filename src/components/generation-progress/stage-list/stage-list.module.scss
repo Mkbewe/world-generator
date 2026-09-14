@@ -1,0 +1,29 @@
+.labels {
+  display: flex;
+}
+
+.label {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.labelName {
+  overflow: hidden;
+  color: var(--gray-11);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.label[data-status='completed'] .labelName {
+  color: var(--green-11);
+}
+
+.label[data-status='failed'] .labelName {
+  color: var(--red-11);
+}
+
+.labelTime {
+  color: var(--gray-9);
+}
