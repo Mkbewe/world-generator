@@ -1,3 +1,7 @@
+set -e
+
+export NO_COLOR=1
+
 pnpm typecheck
 pnpm exec lint-staged
-pnpm test
+pnpm exec vitest run --reporter=dot --silent
