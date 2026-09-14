@@ -10,6 +10,7 @@ See `README.md` and `docs/world-generation-roadmap.md` for architecture.
 - `pnpm run check:all` — typecheck, ESLint, Stylelint, Prettier and tests; run before finishing work
 - `pnpm test` — Vitest suite only
 - Commits follow Conventional Commits; pre-commit runs typecheck, lint-staged and tests
+- Commit subjects are at most 72 characters (enforced by commitlint)
 
 ## GitHub
 
