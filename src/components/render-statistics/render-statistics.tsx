@@ -35,11 +35,6 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
       value: formatDuration(statistics.firstTileDurationMs),
       description: 'Time from starting generation to drawing the first tile on the preview canvas.',
     },
-    {
-      label: 'Elapsed time',
-      value: formatDuration(statistics.elapsedDurationMs),
-      description: 'Time from starting the run to this report, including generation and waiting.',
-    },
   ];
 
   const timing: TimingSegment[] = [
@@ -52,12 +47,7 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
     { key: 'presentation', label: 'Presentation', durationMs: statistics.presentationDurationMs },
   ];
   const measuredTime = timing.reduce((total, segment) => total + segment.durationMs, 0);
-  timing.push({
-    key: 'waiting',
-    label: 'Waiting and other work',
-    durationMs: Math.max(0, statistics.elapsedDurationMs - measuredTime),
-    muted: true,
-  });
+  const unmeasuredTime = Math.max(0, statistics.elapsedDurationMs - measuredTime);
 
   const sections: StatisticsSection[] = statistics.layers.map(layer => ({
     key: layer.id,
@@ -87,6 +77,16 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
   }));
 
   return (
-    <StatisticsPanel title='Rendering' summary={summary} timing={timing} sections={sections} />
+    <StatisticsPanel
+      title='Rendering'
+      summary={summary}
+      timing={timing}
+      timingNote={
+        unmeasuredTime > 0
+          ? `Additional time outside measured rendering: ${formatDuration(unmeasuredTime)}.`
+          : undefined
+      }
+      sections={sections}
+    />
   );
 }

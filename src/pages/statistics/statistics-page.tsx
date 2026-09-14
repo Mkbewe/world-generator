@@ -35,7 +35,12 @@ export function StatisticsPage() {
 
   return (
     <Flex direction='column' gap='5'>
-      {config && <MapStatisticsPanel world={config.world} />}
+      {config && (
+        <MapStatisticsPanel
+          world={config.world}
+          totalDurationMs={renderStatistics?.elapsedDurationMs ?? generation.totalDurationMs}
+        />
+      )}
       <GenerationStatisticsPanel statistics={generation} />
       {renderStatistics && <RenderStatisticsPanel statistics={renderStatistics} />}
     </Flex>

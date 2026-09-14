@@ -18,6 +18,9 @@ import type {
   StageProgressReporter,
 } from '../types';
 
+const DEFAULT_DEFORMATION_FREQUENCY = 3;
+const DEFAULT_DEFORMATION_OCTAVES = 2;
+
 export class MacroRegionStage implements MapStage<MapConfig, MapState> {
   readonly id = 'macro-region';
   readonly name = 'Macro region generation';
@@ -77,10 +80,14 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     }
 
     const regions = context.config.macroRegions ?? DEFAULT_MACRO_REGIONS;
+    const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
     const overlays = regions.filter(region => region.role === 'overlay').length;
     return {
       regions: regions.length,
       overlays,
+      deformationAmplitude: deformation.amplitude,
+      deformationFrequency: deformation.frequency ?? DEFAULT_DEFORMATION_FREQUENCY,
+      deformationOctaves: deformation.octaves ?? DEFAULT_DEFORMATION_OCTAVES,
       bytes: regionIdMap.byteLength,
     } satisfies StageMetrics;
   }
@@ -228,8 +235,8 @@ function createDisplacement(
     return undefined;
   }
 
-  const frequency = deformation.frequency ?? 3;
-  const octaves = deformation.octaves ?? 2;
+  const frequency = deformation.frequency ?? DEFAULT_DEFORMATION_FREQUENCY;
+  const octaves = deformation.octaves ?? DEFAULT_DEFORMATION_OCTAVES;
   const random = context.random.create(deformation.seed || 'macro-region');
   const displacementX = createNoise2D(() => random.next());
   const displacementY = createNoise2D(() => random.next());

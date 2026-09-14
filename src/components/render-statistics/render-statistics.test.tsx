@@ -33,15 +33,19 @@ describe('RenderStatisticsPanel', () => {
 
     expect(screen.getByRole('heading', { name: 'Rendering' })).toBeInTheDocument();
     expect(screen.getByText('640 × 480')).toBeInTheDocument();
-    expect(screen.getByText('1.20 s')).toBeInTheDocument();
+    expect(screen.queryByText('Elapsed time')).not.toBeInTheDocument();
+    expect(screen.queryByText('1.20 s')).not.toBeInTheDocument();
     expect(screen.getByText('250.0 ms')).toBeInTheDocument();
     expect(screen.getByText('30.00 ms/MPix')).toBeInTheDocument();
     expect(screen.getByText('10.00 ms/MPix')).toBeInTheDocument();
     expect(screen.getByText('World shape')).toBeInTheDocument();
     expect(screen.getByText('Noise')).toBeInTheDocument();
-    expect(screen.getByText('Waiting and other work · 1.13 s')).toBeInTheDocument();
-    expect(screen.getByTitle('Waiting and other work: 1.13 s')).toHaveStyle({
-      width: `${(1130 / 1200) * 100}%`,
+    expect(
+      screen.getByText('Additional time outside measured rendering: 1.13 s.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Waiting and other work/)).not.toBeInTheDocument();
+    expect(screen.getByTitle('World shape: 30.0 ms')).toHaveStyle({
+      width: `${(30 / 70) * 100}%`,
     });
   });
 
