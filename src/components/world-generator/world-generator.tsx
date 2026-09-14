@@ -2,7 +2,7 @@ import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import { useWorldGeneration } from './use-world-generation';
 import {
-  useBasicFormStore,
+  useGeneralFormStore,
   useGenerationProgressStore,
   useNoiseFormStore,
   useWorldShapeFormStore,
@@ -11,8 +11,8 @@ import { PreviewMap } from '../preview-map';
 import { SettingsPanel } from '../settings-panel';
 
 export function WorldGenerator() {
-  const seed = useBasicFormStore(state => state.seed);
-  const setSeed = useBasicFormStore(state => state.setSeed);
+  const seed = useGeneralFormStore(state => state.seed);
+  const setSeed = useGeneralFormStore(state => state.setSeed);
   const shape = useWorldShapeFormStore(state => state.shape);
   const size = useWorldShapeFormStore(state => state.size);
   const setShape = useWorldShapeFormStore(state => state.setShape);

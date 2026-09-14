@@ -1,4 +1,4 @@
-export { BasicForm } from './basic-form';
+export { GeneralForm } from './general-form';
 export { MacroRegionForm } from './macro-region-form';
 export { NoiseForm } from './noise-form';
 export { WorldShapeForm } from './world-shape-form';

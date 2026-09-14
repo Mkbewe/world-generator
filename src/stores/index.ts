@@ -1,12 +1,12 @@
 export { createStore, type StoreCreator } from './create-store';
 export {
-  BASIC_FORM_DEFAULTS,
+  GENERAL_FORM_DEFAULTS,
   DEFAULT_NOISE,
   DEFAULT_SEED,
   DEFAULT_WORLD_SIZE,
   MACRO_REGION_FORM_DEFAULTS,
   NOISE_FORM_DEFAULTS,
-  useBasicFormStore,
+  useGeneralFormStore,
   useMacroRegionFormStore,
   useNoiseFormStore,
   useWorldShapeFormStore,

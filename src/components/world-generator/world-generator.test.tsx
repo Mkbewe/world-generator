@@ -3,11 +3,11 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
-  BASIC_FORM_DEFAULTS,
+  GENERAL_FORM_DEFAULTS,
   MACRO_REGION_FORM_DEFAULTS,
   NOISE_FORM_DEFAULTS,
   PREVIEW_DEFAULTS,
-  useBasicFormStore,
+  useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
   useMacroRegionFormStore,
@@ -40,7 +40,7 @@ describe('WorldGenerator', () => {
   beforeEach(() => {
     runGenerationMock.mockReset();
     mapRepository.clear();
-    useBasicFormStore.setState({ ...BASIC_FORM_DEFAULTS });
+    useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
     useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
@@ -57,7 +57,7 @@ describe('WorldGenerator', () => {
 
   afterEach(() => {
     mapRepository.clear();
-    useBasicFormStore.setState({ ...BASIC_FORM_DEFAULTS });
+    useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
     useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
