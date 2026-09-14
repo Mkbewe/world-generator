@@ -10,7 +10,7 @@
 
 ## Stan implementacji
 
-Stan na 2026-09-13.
+Stan na 2026-09-14.
 
 Aktualny generator jest działającym szkieletem pipeline'u, a nie pełną
 implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane są:
@@ -40,6 +40,11 @@ implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane s
   podwidokami. `Macro regions` jest obecnie pojedynczą warstwą bez podwidoków.
 - `utils/map-renderer` — renderowanie warstw i nakładek: scena, widok, cache
   warstw, statystyki oraz zapis i odtworzenie ostatniej mapy.
+- katalog warstw — deklaratywny `LAYER_CATALOG` w `src/utils/map-layers` jest
+  pojedynczym źródłem prawdy dla rastrów: identyfikator, źródło danych, typ,
+  `clipTo`, maska, paleta i grupa zakładek. `MapRasters` i identyfikatory warstw
+  są z niego wyprowadzane, a kolejność UI (`order`) jest niezależna od kolejności
+  budowania (`buildOrder`).
 - odtwarzanie podglądu — ostatnia ukończona mapa i jej konfiguracja są trzymane
   w pamięci na czas działania aplikacji i odtwarzane po powrocie;
   odświeżenie strony czyści stan.
@@ -47,6 +52,10 @@ implementacją wszystkich etapów opisanych poniżej. Obecnie zaimplementowane s
   w globalnych store'ach i pokazywane na stronie `/statistics`.
 - progres generowania — pokazuje aktualny etap, numer etapu i procent
   raportowany z wnętrza etapów; postęp przeżywa zmianę widoku.
+- wskaźnik etapów — segmentowany pasek pokazuje stan każdego etapu (oczekuje,
+  trwa, ukończony, błąd) i odróżnia generowanie danych od renderowania podglądu.
+- inspekcja mapy — współrzędne źródłowe i wartość wybranej warstwy pod kursorem,
+  z możliwością przypięcia odczytu na urządzeniach dotykowych.
 
 Warstwy `Temperature`, `Moisture`, wysokość, batymetria, hydrologia, biomy i
 lokacje są jeszcze planowane i pojawią się, gdy wygenerują je odpowiednie etapy.
@@ -62,31 +71,30 @@ canvas, natomiast granica świata jest rysowana na drugim canvasie nad nią. UI
 utrzymuje jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
 traktować każdą kombinację jako osobny typ mapy.
 
-Docelowy model danych może wyglądać następująco:
+Rastry renderowalne są wyprowadzane z katalogu — wpis wygląda tak:
 
 ```ts
-interface MapLayers {
-  worldMask?: Uint8Array;
-  noiseMap?: Float32Array;
-  macroRegionIdMap?: Uint8Array;
-  heightmap?: Float32Array;
-  bathymetryMap?: Float32Array;
-  temperatureMap?: Float32Array;
-  moistureMap?: Float32Array;
-  biomeMap?: Uint8Array;
+{
+  id: 'noise',
+  label: 'Noise',
+  source: 'noiseMap',
+  dataType: 'float32',
+  clipTo: 'world-shape',
+  palette: { kind: 'ramp', stops: [...] },
 }
 ```
 
-Generator powinien zwracać surowe dane numeryczne, a renderer podglądu powinien
-odpowiadać za palety, normalizację, alpha blending i kolejność rysowania. Dzięki
-temu ta sama warstwa może być użyta jako baza, nakładka, źródło statystyk albo
-wejście kolejnego etapu.
+`MapState` generatora rozszerza `MapRasters` o dane nierastrowe, np. definicje
+lądów, szkielety i profile terenu, więc etapy nie muszą znać renderera. Katalog
+opisuje wyłącznie warstwy możliwe do pokazania; palety, normalizację i kolejność
+rysowania nadal trzyma renderer podglądu.
 
-Warstwy mają już podstawowy rejestr (identyfikator, nazwa, źródło danych,
-zależności, budowa i odczyt warstwy). Docelowo rejestr powinien nieść także typ
-danych, dostępność jako warstwa bazowa lub nakładka oraz informacje o palecie,
-żeby UI mogło pokazywać przyszłe warstwy jako wyłączone bez udawania, że
-generator już je produkuje.
+Rejestr warstw działa na deklaratywnym katalogu: `LayerSpec` niesie `id`, `label`,
+`source`, `dataType`, `clipTo`, `providesMask`, grupę zakładek i paletę
+(`solid`/`ramp`/`discrete`). `LayerRegistry` waliduje katalog, wykrywa cykle i
+wystawia niezależne `order` (UI) oraz `buildOrder` (zależności), a `CatalogLayer`
+waliduje typed array i maluje piksele skompilowaną paletą. Nowa warstwa rastrowa
+to wpis w katalogu, plik stage'a i dopisanie stage'a do `pipeline-factory.ts`.
 
 Obecny wariant używa poziomych tabów dla warstw bazowych i przełączników
 (`Switch`) dla nakładek, wydzielonych do komponentów `MapLayerControls`
@@ -300,13 +308,26 @@ Przykładowo bagno wymaga płaskiego, wilgotnego i nisko położonego obszaru. P
 
 ## Presety świata i konfiguracja makroregionów
 
-Preset powinien być gotową konfiguracją tych samych etapów generatora, a nie osobną implementacją. Użytkownik może rozpocząć od presetu, zmienić jego parametry, a następnie zapisać wynik jako własny profil.
+Preset powinien być gotową konfiguracją tych samych etapów generatora, a nie osobną implementacją. Presety działają na dwóch poziomach:
 
-Planowane presety:
+- preset świata definiuje budowę całego świata: topologię, układ i charakter stref
+  klimatycznych, źródła ciepła i wilgoci, obrót osi klimatu, gradienty oraz
+  rozkład `danger`; nie opisuje pojedynczych lądów,
+- preset geografii (poziom landmass) definiuje samą geografię: liczbę i układ
+  struktur lądowych, szkielet, formy dodatnie i ujemne, szelf oraz profile terenu
+  (`LandmassLayoutStage`, `IslandCharacterStage`); można go łączyć z dowolnym
+  presetem świata, np. archipelag na `Earth-like` albo pojedynczy kontynent na
+  `Mythic Moon`.
+
+Użytkownik może rozpocząć od presetu, zmienić jego parametry, a następnie zapisać wynik jako własny profil.
+
+Planowane presety świata:
 
 1. `Mythic Moon` — zamieszkały księżyc gazowego giganta z bezpiecznym centrum, zimną północą, wulkanicznym południem i zagrożeniem rosnącym wraz z odległością od środka. Długie dni i noce, regularne zaćmienia oraz wulkanizm pływowy wspierają fabułę, ale model może świadomie upraszczać astrofizykę na rzecz czytelnego świata.
 2. `Earth-like` — zwykła obracająca się planeta, zimne bieguny, strefy umiarkowane, gorący równik oraz normalny cykl dnia i nocy.
 3. `Engineered Rings` — sztuczny albo magiczny świat z konfigurowalnymi pierścieniami klimatycznymi wokół centralnego sanktuarium.
+
+Przykładowe presety geografii: `Archipelago`, `Large Continent`, `Many Islands`, `Mountainous`.
 
 Tryb zaawansowany może pozwalać zmieniać układ makroregionów, szerokość stref,
 źródła ciepła i wilgoci, obrót osi klimatu, siłę gradientów oraz deformację granic.
