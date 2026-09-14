@@ -110,13 +110,21 @@ async function main() {
 
   const issueNumber = match?.[2];
   const defaultSubject = issueNumber ? await issueTitle(issueNumber) : undefined;
+  const prefix = scope ? `${type}(${scope}): ` : `${type}: `;
   const subject = (
     await input({
       message: defaultSubject
-        ? `Subject (z issue #${issueNumber}, lowercase)`
-        : 'Subject (lowercase, bez kropki)',
+        ? `Subject (z issue #${issueNumber}, lowercase, max ${72 - prefix.length})`
+        : `Subject (lowercase, bez kropki, max ${72 - prefix.length})`,
       default: defaultSubject,
-      validate: value => value.trim().length > 0 || 'Subject jest wymagany.',
+      validate: value => {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return 'Subject jest wymagany.';
+        }
+        const length = prefix.length + trimmed.length;
+        return length <= 72 || `Cały nagłówek ma ${length} znaków, limit to 72.`;
+      },
     })
   ).trim();
 
