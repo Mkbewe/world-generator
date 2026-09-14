@@ -1,5 +1,6 @@
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
-import { WorldShapeLayer } from '../layer';
+import { LAYER_CATALOG } from '../../map-layers';
+import { CatalogLayer } from '../layer';
 
 describe('WorldBoundaryRenderer', () => {
   it('renders the boundary at display resolution with capped pixel ratio', () => {
@@ -15,7 +16,11 @@ describe('WorldBoundaryRenderer', () => {
       getContext: vi.fn(() => context),
     } as unknown as HTMLCanvasElement;
 
-    const world = new WorldShapeLayer({ width: 4, height: 4 }, new Uint8Array(16).fill(1));
+    const world = new CatalogLayer(
+      LAYER_CATALOG[0],
+      { width: 4, height: 4 },
+      new Uint8Array(16).fill(1)
+    );
     new WorldBoundaryRenderer(canvas).render(world, { width: 4, height: 4, devicePixelRatio: 3 });
     world.dispose();
 

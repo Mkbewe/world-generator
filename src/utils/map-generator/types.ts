@@ -1,3 +1,5 @@
+import type { MapRasters } from '../map-layers';
+
 export interface WorldConfig {
   width: number;
   height: number;
@@ -77,11 +79,8 @@ export interface MapConfig extends SeededWorldConfig {
   macroRegionDeformation?: MacroRegionDeformation;
 }
 
-export interface MapState {
-  worldMask?: Uint8Array;
-  noiseMap?: Float32Array;
-  macroRegionIdMap?: Uint8Array;
-}
+/** Generator state may extend the shared rasters with stage-only domain data. */
+export type MapState<TDomainData extends object = Record<never, never>> = MapRasters & TDomainData;
 
 export type StageMetric = number | string;
 export type StageMetrics = Record<string, StageMetric> & {

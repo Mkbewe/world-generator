@@ -1,5 +1,5 @@
 import { OverlayController } from './overlay-controller';
-import type { WorldShapeLayer } from '../layer';
+import type { SpatialMask } from '../types';
 import { Viewport } from '../viewport';
 import { WorldBoundaryRenderer } from '../world-boundary-renderer';
 
@@ -24,7 +24,7 @@ describe('OverlayController', () => {
     });
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
     const controller = setup();
-    const world = {} as WorldShapeLayer;
+    const world = {} as SpatialMask;
     controller.render(world);
     expect(controller.size()?.devicePixelRatio).toBe(effective);
     expect(render).toHaveBeenCalledWith(world, {
@@ -61,7 +61,7 @@ describe('OverlayController', () => {
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
     const clear = vi.spyOn(WorldBoundaryRenderer.prototype, 'clear').mockImplementation(() => {});
     const controller = setup();
-    const world = {} as WorldShapeLayer;
+    const world = {} as SpatialMask;
 
     controller.render(world);
     expect(render).toHaveBeenCalledWith(world, expect.anything());
@@ -83,7 +83,7 @@ describe('OverlayController', () => {
     });
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
     const controller = setup();
-    const world = {} as WorldShapeLayer;
+    const world = {} as SpatialMask;
     controller.render(world);
     controller.render(world);
     measure.mockReturnValue({ width: 10, height: 10, devicePixelRatio: 4 });
@@ -96,7 +96,7 @@ describe('OverlayController', () => {
     controller.render(world);
     measure.mockReturnValue({ width: 12, height: 14, devicePixelRatio: 1 });
     controller.render(world);
-    controller.render({} as WorldShapeLayer);
+    controller.render({} as SpatialMask);
     expect(render).toHaveBeenCalledTimes(5);
     controller.dispose();
   });
@@ -106,7 +106,7 @@ describe('OverlayController', () => {
     const measure = vi.spyOn(Viewport.prototype, 'measure').mockReturnValue(viewport);
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
     const controller = setup();
-    const world = {} as WorldShapeLayer;
+    const world = {} as SpatialMask;
     controller.render(world);
     controller.setVisible('world-boundary', false);
     controller.render(world);
@@ -135,7 +135,7 @@ describe('OverlayController', () => {
       })
       .mockImplementation(() => {});
     const controller = setup();
-    const world = {} as WorldShapeLayer;
+    const world = {} as SpatialMask;
     controller.render(world);
     controller.render(world);
     controller.render(world);

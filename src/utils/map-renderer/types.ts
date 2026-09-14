@@ -1,17 +1,13 @@
 import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
+import type { MapBaseLayerId } from '../map-layers';
+
+export type { MapBaseLayerId, MapRasters } from '../map-layers';
 
 /** Immutable spatial data usable by layers and overlays. */
 export interface SpatialMask {
   readonly size: MapSize;
   contains(x: number, y: number): boolean;
-}
-
-export interface MapLayers {
-  [source: string]: unknown;
-  worldMask?: Uint8Array;
-  noiseMap?: Float32Array;
-  macroRegionIdMap?: Uint8Array;
 }
 
 export interface MapMetadata {
@@ -23,8 +19,6 @@ export const OVERLAY_LAYERS = {
   'world-boundary': { label: 'World boundary', source: 'world-shape' },
 } as const;
 
-/** IDs are supplied and validated by the layer registry. */
-export type MapBaseLayerId = string;
 export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
 
 /** ID in declaration order, for iteration. */
@@ -48,18 +42,23 @@ export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
   visible: boolean;
 }
 
-export interface LayerLeafNode {
-  readonly id: MapBaseLayerId;
+export interface LayerLeafNode<TId extends string = MapBaseLayerId> {
+  readonly id: TId;
   readonly label: string;
 }
 
-/** Layer tabs are leaves or a single-level group of leaves. */
-export interface LayerTreeNode extends LayerLeafNode {
-  readonly children?: readonly LayerLeafNode[];
+export interface LayerGroupNode<TId extends string = MapBaseLayerId> {
+  readonly id: string;
+  readonly label: string;
+  readonly children: readonly LayerLeafNode<TId>[];
 }
 
+/** Layer tabs are raster leaves or a single-level group of leaves. */
+export type LayerTreeNode<TId extends string = MapBaseLayerId> =
+  LayerLeafNode<TId> | LayerGroupNode<TId>;
+
 /** A preview node with readiness and the group's selected child. */
-export interface MapLayerNode extends MapLayerOption<MapBaseLayerId> {
+export interface MapLayerNode extends MapLayerOption<string> {
   readonly children?: readonly MapLayerNode[];
   readonly selectedChild?: MapBaseLayerId;
   /** Available raster leaf selected through this node's subtree. */
@@ -68,7 +67,7 @@ export interface MapLayerNode extends MapLayerOption<MapBaseLayerId> {
 
 export interface MapLayerNavigation {
   readonly tabs: readonly MapLayerNode[];
-  readonly activeTab?: MapBaseLayerId;
+  readonly activeTab?: string;
 }
 
 export interface RenderLayerStatistics {

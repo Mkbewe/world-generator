@@ -1,4 +1,5 @@
 import type {
+  LayerGroupNode,
   LayerTreeNode,
   MapBaseLayerId,
   MapLayerNavigation,
@@ -12,7 +13,7 @@ interface NavigationLeaf {
 }
 
 interface NavigationGroup {
-  readonly id: MapBaseLayerId;
+  readonly id: string;
   readonly label: string;
   readonly children: readonly NavigationLeaf[];
   selectedChild?: MapBaseLayerId;
@@ -27,10 +28,10 @@ function isGroup(node: NavigationNode): node is NavigationGroup {
 /** Each group remembers one selected leaf; rendering and UI use the same tree. */
 export class LayerNavigation {
   private readonly roots: readonly NavigationNode[];
-  private readonly paths = new Map<MapBaseLayerId, readonly NavigationNode[]>();
+  private readonly paths = new Map<string, readonly NavigationNode[]>();
 
   constructor(tree: readonly LayerTreeNode[], saved: readonly MapLayerNode[] = []) {
-    const savedById = new Map<MapBaseLayerId, MapLayerNode>();
+    const savedById = new Map<string, MapLayerNode>();
     indexSavedNodes(saved, savedById);
     this.roots = tree.map(node => createNode(node, savedById));
     for (const root of this.roots) {
@@ -46,7 +47,7 @@ export class LayerNavigation {
   /** Points the owning group at the given leaf. */
   select(id: MapBaseLayerId): void {
     const [root, child] = this.paths.get(id) ?? [];
-    if (root && isGroup(root) && child) {
+    if (root && isGroup(root) && child && !isGroup(child)) {
       root.selectedChild = child.id;
     }
   }
@@ -75,10 +76,7 @@ export class LayerNavigation {
   }
 }
 
-function indexSavedNodes(
-  nodes: readonly MapLayerNode[],
-  target: Map<MapBaseLayerId, MapLayerNode>
-): void {
+function indexSavedNodes(nodes: readonly MapLayerNode[], target: Map<string, MapLayerNode>): void {
   for (const node of nodes) {
     target.set(node.id, node);
     if (node.children) {
@@ -89,11 +87,14 @@ function indexSavedNodes(
 
 function createNode(
   node: LayerTreeNode,
-  savedById: ReadonlyMap<MapBaseLayerId, MapLayerNode>
+  savedById: ReadonlyMap<string, MapLayerNode>
 ): NavigationNode {
   const remembered = savedById.get(node.id);
-  if (!node.children) {
+  if (!isTreeGroup(node)) {
     return { id: node.id, label: node.label };
+  }
+  if (node.children.length === 0) {
+    throw new Error(`Layer group "${node.id}" must contain at least one layer.`);
   }
 
   return {
@@ -102,6 +103,10 @@ function createNode(
     children: node.children.map(child => ({ id: child.id, label: child.label })),
     selectedChild: resolveRememberedChild(node.children, remembered?.selectedChild),
   };
+}
+
+function isTreeGroup(node: LayerTreeNode): node is LayerGroupNode {
+  return 'children' in node;
 }
 
 /** Keeps a remembered child while it exists, otherwise falls back to the first child. */
@@ -133,12 +138,17 @@ function projectNode(
     available: available.has(child.id),
     selectedLayer: child.id,
   }));
-  const displayedChild = displayedPath?.[0] === node ? displayedPath[1]?.id : undefined;
+  const displayedNode = displayedPath?.[0] === node ? displayedPath[1] : undefined;
+  const displayedChild = displayedNode && !isGroup(displayedNode) ? displayedNode.id : undefined;
   const selectedChild = displayedChild ?? node.selectedChild;
   const selected = children.find(child => child.id === selectedChild);
+  const first = children[0];
+  if (!first) {
+    throw new Error(`Layer group "${node.id}" must contain at least one layer.`);
+  }
   const target = selected?.available
     ? selected
-    : (children.find(child => child.available) ?? selected);
+    : (children.find(child => child.available) ?? selected ?? first);
 
   return {
     id: node.id,
@@ -146,6 +156,6 @@ function projectNode(
     available: children.some(child => child.available),
     children,
     selectedChild,
-    selectedLayer: target?.selectedLayer ?? node.id,
+    selectedLayer: target.selectedLayer,
   };
 }

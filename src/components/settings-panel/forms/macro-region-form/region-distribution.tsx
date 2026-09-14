@@ -9,7 +9,7 @@ import {
   regionSegments,
 } from '../../../../utils/map-generator/stages/macro-region-sizes';
 import type { MacroRegionConfig } from '../../../../utils/map-generator/types';
-import { regionColor } from '../../../../utils/map-renderer/layer/macro-region-palette';
+import { regionColor } from '../../../../utils/map-layers';
 import styles from './macro-region-form.module.scss';
 
 export function RegionDistribution({ regions }: { regions: readonly MacroRegionConfig[] }) {
