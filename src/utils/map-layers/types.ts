@@ -1,7 +1,7 @@
 import type { LAYER_CATALOG } from './catalog';
 import type { TypedArrayFor } from './layer-spec';
 
-export type CatalogEntry = (typeof LAYER_CATALOG)[number];
+type CatalogEntry = (typeof LAYER_CATALOG)[number];
 export type MapBaseLayerId = CatalogEntry['id'];
 export type LayerSource = CatalogEntry['source'];
 

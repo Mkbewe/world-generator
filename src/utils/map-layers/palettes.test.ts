@@ -1,5 +1,5 @@
 import type { PaletteSpec } from './layer-spec';
-import { compilePalette, validatePalette } from './palettes';
+import { compilePalette, regionColor, validatePalette } from './palettes';
 
 function color(palette: PaletteSpec, value: number): number[] {
   const pixels = new Uint8ClampedArray(4);
@@ -27,6 +27,21 @@ describe('palette compiler', () => {
     expect(color(palette, Number.NaN)).toEqual([0, 0, 0, 255]);
   });
 
+  it('preserves ramp semantics for the optimized grayscale path', () => {
+    const palette = {
+      kind: 'ramp',
+      stops: [
+        { at: 0, color: [10, 10, 10] },
+        { at: 2, color: [110, 110, 110] },
+      ],
+    } as const satisfies PaletteSpec;
+
+    expect(color(palette, -1)).toEqual([10, 10, 10, 255]);
+    expect(color(palette, 1)).toEqual([60, 60, 60, 255]);
+    expect(color(palette, 3)).toEqual([110, 110, 110, 255]);
+    expect(color(palette, Number.NaN)).toEqual([0, 0, 0, 255]);
+  });
+
   it('supports cycling and fixed overflow for discrete palettes', () => {
     const colors = [
       [10, 20, 30],
@@ -37,6 +52,19 @@ describe('palette compiler', () => {
     expect(color({ kind: 'discrete', colors, overflow: { color: [70, 80, 90] } }, 3)).toEqual([
       70, 80, 90, 255,
     ]);
+    expect(color({ kind: 'discrete', colors, overflow: 'cycle' }, Number.NaN)).toEqual([
+      120, 120, 120, 255,
+    ]);
+    expect(color({ kind: 'discrete', colors, overflow: 'cycle' }, -1)).toEqual([
+      120, 120, 120, 255,
+    ]);
+    expect(color({ kind: 'discrete', colors, overflow: 'cycle' }, 1.5)).toEqual([
+      120, 120, 120, 255,
+    ]);
+    expect(
+      color({ kind: 'discrete', colors, overflow: { color: [70, 80, 90] } }, Number.NaN)
+    ).toEqual([70, 80, 90, 255]);
+    expect(regionColor(Number.NaN)).toEqual([120, 120, 120]);
   });
 
   it('rejects invalid colors, stops and empty discrete palettes', () => {

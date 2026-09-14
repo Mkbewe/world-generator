@@ -7,13 +7,13 @@ import {
 import type { LayerLeafNode, LayerTreeNode, MapBaseLayerId } from '../types';
 
 /** Validates the raster catalog and exposes independent UI and build orders. */
-export class LayerRegistry {
-  readonly order: readonly MapBaseLayerId[];
-  readonly buildOrder: readonly MapBaseLayerId[];
-  readonly tree: readonly LayerTreeNode[];
-  private readonly specs = new Map<string, LayerSpec>();
+export class LayerRegistry<TId extends string = MapBaseLayerId> {
+  readonly order: readonly TId[];
+  readonly buildOrder: readonly TId[];
+  readonly tree: readonly LayerTreeNode<TId>[];
+  private readonly specs = new Map<string, LayerSpec<TId>>();
 
-  constructor(catalog: readonly LayerSpec[]) {
+  constructor(catalog: readonly LayerSpec<TId>[]) {
     const sources = new Set<string>();
     for (const spec of catalog) {
       if (!spec.id || !spec.source) {
@@ -32,10 +32,10 @@ export class LayerRegistry {
     }
 
     const layerIds = new Set(this.specs.keys());
-    const groups = new Map<string, { label: string; children: LayerLeafNode[] }>();
-    const tree: LayerTreeNode[] = [];
+    const groups = new Map<string, { label: string; children: LayerLeafNode<TId>[] }>();
+    const tree: LayerTreeNode<TId>[] = [];
     for (const spec of catalog) {
-      const leaf = { id: spec.id as MapBaseLayerId, label: spec.label };
+      const leaf = { id: spec.id, label: spec.label };
       if (!spec.group) {
         tree.push(leaf);
         continue;
@@ -56,7 +56,7 @@ export class LayerRegistry {
       tree.push({ id: spec.group.id, label: group.label, children: group.children });
     }
     this.tree = tree;
-    this.order = catalog.map(spec => spec.id as MapBaseLayerId);
+    this.order = catalog.map(spec => spec.id);
 
     for (const spec of catalog) {
       if (!spec.clipTo) {
@@ -71,10 +71,10 @@ export class LayerRegistry {
       }
     }
 
-    const ordered: MapBaseLayerId[] = [];
-    const visited = new Set<string>();
-    const visiting = new Set<string>();
-    const visit = (id: string): void => {
+    const ordered: TId[] = [];
+    const visited = new Set<TId>();
+    const visiting = new Set<TId>();
+    const visit = (id: TId): void => {
       if (visiting.has(id)) {
         throw new Error('Cyclic layer dependency: ' + id);
       }
@@ -88,7 +88,7 @@ export class LayerRegistry {
       }
       visiting.delete(id);
       visited.add(id);
-      ordered.push(id as MapBaseLayerId);
+      ordered.push(id);
     };
     for (const spec of catalog) {
       visit(spec.id);
@@ -100,7 +100,7 @@ export class LayerRegistry {
     return this.specs.has(id);
   }
 
-  get(id: string): LayerSpec {
+  get(id: string): LayerSpec<TId> {
     const spec = this.specs.get(id);
     if (!spec) {
       throw new Error('Unknown layer: ' + id);
@@ -108,7 +108,7 @@ export class LayerRegistry {
     return spec;
   }
 
-  presentIn(data: LayerDataRecord): readonly MapBaseLayerId[] {
+  presentIn(data: LayerDataRecord): readonly TId[] {
     return this.buildOrder.filter(id => {
       const source = this.get(id).source;
       return Object.hasOwn(data, source) && data[source] !== undefined;

@@ -1,5 +1,5 @@
-export { LAYER_CATALOG } from './catalog';
-export { compilePalette, REGION_COLORS, regionColor, validatePalette } from './palettes';
+export { LAYER_CATALOG, selectRasters } from './catalog';
+export { compilePalette, regionColor, validatePalette } from './palettes';
 export type { PixelWriter } from './palettes';
 export type {
   Color,
@@ -12,10 +12,4 @@ export type {
   RasterDataType,
   TypedArrayFor,
 } from './layer-spec';
-export type {
-  CatalogEntry,
-  LayerDataRecord,
-  LayerSource,
-  MapBaseLayerId,
-  MapRasters,
-} from './types';
+export type { LayerDataRecord, LayerSource, MapBaseLayerId, MapRasters } from './types';

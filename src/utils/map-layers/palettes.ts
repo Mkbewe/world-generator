@@ -13,8 +13,12 @@ export const REGION_COLORS = [
   [0, 137, 123],
 ] as const satisfies readonly Color[];
 
+const UNKNOWN_COLOR = [120, 120, 120] as const satisfies Color;
+
 export function regionColor(index: number): Color {
-  return REGION_COLORS[index % REGION_COLORS.length] ?? REGION_COLORS[0];
+  return Number.isInteger(index) && index >= 0
+    ? (REGION_COLORS[index % REGION_COLORS.length] ?? UNKNOWN_COLOR)
+    : UNKNOWN_COLOR;
 }
 
 export function validatePalette(palette: PaletteSpec): void {
@@ -50,16 +54,25 @@ export function compilePalette(palette: PaletteSpec): PixelWriter {
   validatePalette(palette);
   if (palette.kind === 'solid') {
     const [red, green, blue] = palette.color;
-    return (pixels, offset) => writeColor(pixels, offset, red, green, blue);
+    return (pixels, offset) => {
+      pixels[offset] = red;
+      pixels[offset + 1] = green;
+      pixels[offset + 2] = blue;
+      pixels[offset + 3] = 255;
+    };
   }
   if (palette.kind === 'discrete') {
     const { colors, overflow } = palette;
     return (pixels, offset, value) => {
-      const index = Math.trunc(value);
+      const index = Number.isInteger(value) && value >= 0 ? value : undefined;
       const color =
         overflow === 'cycle'
-          ? colors[((index % colors.length) + colors.length) % colors.length]
-          : (colors[index] ?? overflow.color);
+          ? index === undefined
+            ? UNKNOWN_COLOR
+            : colors[index % colors.length]
+          : index === undefined
+            ? overflow.color
+            : (colors[index] ?? overflow.color);
       writeColor(pixels, offset, color[0], color[1], color[2]);
     };
   }
@@ -69,6 +82,9 @@ export function compilePalette(palette: PaletteSpec): PixelWriter {
 function compileRamp(stops: readonly RampStop[]): PixelWriter {
   const first = stops[0];
   const last = stops.at(-1)!;
+  if (stops.length === 2 && isGray(first.color) && isGray(last.color)) {
+    return compileGrayRamp(first, last);
+  }
   return (pixels, offset, value) => {
     if (Number.isNaN(value)) {
       writeColor(pixels, offset, 0, 0, 0);
@@ -95,6 +111,32 @@ function compileRamp(stops: readonly RampStop[]): PixelWriter {
     }
     writeTuple(pixels, offset, last.color);
   };
+}
+
+function compileGrayRamp(first: RampStop, last: RampStop): PixelWriter {
+  const from = first.color[0];
+  const colorRange = last.color[0] - from;
+  const valueRange = last.at - first.at;
+  return (pixels, offset, value) => {
+    let color: number;
+    if (Number.isNaN(value)) {
+      color = 0;
+    } else if (value <= first.at) {
+      color = from;
+    } else if (value >= last.at) {
+      color = last.color[0];
+    } else {
+      color = Math.round(from + ((value - first.at) / valueRange) * colorRange);
+    }
+    pixels[offset] = color;
+    pixels[offset + 1] = color;
+    pixels[offset + 2] = color;
+    pixels[offset + 3] = 255;
+  };
+}
+
+function isGray(color: Color): boolean {
+  return color[0] === color[1] && color[1] === color[2];
 }
 
 function validateColor(color: Color): void {

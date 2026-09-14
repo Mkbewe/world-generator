@@ -9,6 +9,7 @@ import {
   emptyRenderState,
   layerRegistry,
   type LayerTreeNode,
+  type MapBaseLayerId,
   type MapLayerOption,
   type MapRendererState,
 } from '../../utils/map-renderer';
@@ -20,23 +21,25 @@ const MULTI_VIEW_TREE: readonly LayerTreeNode[] = [
     id: 'climate',
     label: 'Climate',
     children: [
-      { id: 'temperature', label: 'Temperature' },
-      { id: 'moisture', label: 'Moisture' },
+      { id: 'macro-region', label: 'Macro regions' },
+      { id: 'noise', label: 'Noise' },
     ],
   },
-  { id: 'noise', label: 'Noise' },
 ];
 
-const MULTI_VIEW_LAYERS = ['world-shape', 'temperature', 'moisture', 'noise'].map(id => ({
-  id,
-  label: id,
-  available: true,
-}));
+const MULTI_VIEW_LAYER_IDS = ['world-shape', 'macro-region', 'noise'] as const;
+const MULTI_VIEW_LAYERS: readonly MapLayerOption<MapBaseLayerId>[] = MULTI_VIEW_LAYER_IDS.map(
+  id => ({
+    id,
+    label: id,
+    available: true,
+  })
+);
 
 interface ControlsProps {
-  unavailable?: readonly string[];
+  unavailable?: readonly MapBaseLayerId[];
   tree?: readonly LayerTreeNode[];
-  sourceLayers?: readonly MapLayerOption<string>[];
+  sourceLayers?: readonly MapLayerOption<MapBaseLayerId>[];
 }
 
 function Controls({
@@ -44,7 +47,7 @@ function Controls({
   tree = layerRegistry.tree,
   sourceLayers = emptyRenderState().layers,
 }: ControlsProps) {
-  const [displayedLayer, setDisplayedLayer] = useState('world-shape');
+  const [displayedLayer, setDisplayedLayer] = useState<MapBaseLayerId>('world-shape');
   const [navigation] = useState(
     () => new LayerNavigation(tree, usePreviewStore.getState().layerTree)
   );
@@ -111,19 +114,19 @@ describe('MapLayerControls', () => {
     );
 
     await user.click(screen.getByRole('tab', { name: 'Climate' }));
-    expect(screen.getByLabelText('Displayed layer')).toHaveTextContent('temperature');
-    await user.click(screen.getByRole('radio', { name: 'Moisture' }));
-    expect(screen.getByLabelText('Displayed layer')).toHaveTextContent('moisture');
+    expect(screen.getByLabelText('Displayed layer')).toHaveTextContent('macro-region');
+    await user.click(screen.getByRole('radio', { name: 'Noise' }));
+    expect(screen.getByLabelText('Displayed layer')).toHaveTextContent('noise');
 
-    await user.click(screen.getByRole('tab', { name: 'Noise' }));
+    await user.click(screen.getByRole('tab', { name: 'World shape' }));
     expect(screen.queryByRole('radiogroup', { name: 'Climate view' })).toBeNull();
     await user.click(screen.getByRole('tab', { name: 'Climate' }));
-    expect(screen.getByRole('radio', { name: 'Moisture' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Noise' })).toBeChecked();
 
     unmount();
     render(<Controls tree={MULTI_VIEW_TREE} sourceLayers={MULTI_VIEW_LAYERS} />);
     await user.click(screen.getByRole('tab', { name: 'Climate' }));
-    expect(screen.getByRole('radio', { name: 'Moisture' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Noise' })).toBeChecked();
   });
 
   it('selects an available sibling when a grouped view is unavailable', async () => {
@@ -132,13 +135,13 @@ describe('MapLayerControls', () => {
       <Controls
         tree={MULTI_VIEW_TREE}
         sourceLayers={MULTI_VIEW_LAYERS}
-        unavailable={['temperature']}
+        unavailable={['macro-region']}
       />
     );
 
     await user.click(screen.getByRole('tab', { name: 'Climate' }));
-    expect(screen.getByLabelText('Displayed layer')).toHaveTextContent('moisture');
-    expect(screen.getByRole('radio', { name: 'Temperature' })).toHaveAttribute(
+    expect(screen.getByLabelText('Displayed layer')).toHaveTextContent('noise');
+    expect(screen.getByRole('radio', { name: 'Macro regions' })).toHaveAttribute(
       'aria-disabled',
       'true'
     );

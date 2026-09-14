@@ -1,5 +1,6 @@
 import type { LayerSpec } from './layer-spec';
 import { REGION_COLORS } from './palettes';
+import type { LayerDataRecord, MapRasters } from './types';
 
 /** Ordered catalog of raster layers currently available in the product. */
 export const LAYER_CATALOG = [
@@ -34,3 +35,14 @@ export const LAYER_CATALOG = [
     },
   },
 ] as const satisfies readonly LayerSpec[];
+
+/** Selects only catalog-owned raster sources at the dynamic data boundary. */
+export function selectRasters(data: LayerDataRecord): MapRasters {
+  const selected: Record<string, unknown> = {};
+  for (const spec of LAYER_CATALOG) {
+    if (Object.hasOwn(data, spec.source) && data[spec.source] !== undefined) {
+      selected[spec.source] = data[spec.source];
+    }
+  }
+  return selected as MapRasters;
+}

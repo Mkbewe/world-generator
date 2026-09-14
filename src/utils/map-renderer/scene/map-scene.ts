@@ -1,3 +1,4 @@
+import { type LayerDataRecord, type MapRasters, selectRasters } from '../../map-layers';
 import {
   CatalogLayer,
   type LayerCache,
@@ -6,7 +7,7 @@ import {
   type MapLayer,
   type MapSize,
 } from '../layer';
-import type { MapBaseLayerId, MapLayerOption, MapLayers, SpatialMask } from '../types';
+import type { MapBaseLayerId, MapLayerOption, SpatialMask } from '../types';
 
 /** Owns the current map's layers and readiness; scheduling and drawing belong to the renderer. */
 export class MapScene {
@@ -62,10 +63,11 @@ export class MapScene {
     return this.layers.get(id);
   }
 
-  load(data: MapLayers): readonly MapLayer[] {
+  load(data: MapRasters): readonly MapLayer[] {
+    const values: LayerDataRecord = data;
     return this.registry
-      .presentIn(data)
-      .map(id => this.add(id, data[this.registry.get(id).source]));
+      .presentIn(values)
+      .map(id => this.add(id, values[this.registry.get(id).source]));
   }
 
   readyLayer(id: MapBaseLayerId): MapLayer | undefined {
@@ -107,12 +109,14 @@ export class MapScene {
     return this.registry.order.every(id => this.layers.has(id));
   }
 
-  getLayers(): MapLayers {
-    return Object.fromEntries(
-      [...this.layers.values()].map(layer => {
-        const spec = this.registry.get(layer.id);
-        return [spec.source, layer.data];
-      })
+  getLayers(): MapRasters {
+    return selectRasters(
+      Object.fromEntries(
+        [...this.layers.values()].map(layer => {
+          const spec = this.registry.get(layer.id);
+          return [spec.source, layer.data];
+        })
+      )
     );
   }
 

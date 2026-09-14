@@ -24,12 +24,12 @@ export interface LayerGroupSpec {
 }
 
 /** Declarative description of one renderable raster. */
-export interface LayerSpec {
-  readonly id: string;
+export interface LayerSpec<TId extends string = string> {
+  readonly id: TId;
   readonly label: string;
   readonly source: string;
   readonly dataType: RasterDataType;
-  readonly clipTo?: string;
+  readonly clipTo?: TId;
   readonly providesMask?: { readonly insideValue: number };
   readonly group?: LayerGroupSpec;
   readonly palette: PaletteSpec;

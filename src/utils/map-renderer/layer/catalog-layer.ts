@@ -13,12 +13,12 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   private readonly writePixel: PixelWriter;
 
   constructor(
-    readonly spec: LayerSpec,
+    readonly spec: LayerSpec<MapBaseLayerId>,
     size: MapSize,
     value: unknown,
     private readonly clipMask?: SpatialMask
   ) {
-    super(spec.id as MapBaseLayerId, size);
+    super(spec.id, size);
     this.data = validateRasterData(spec, size, value);
     if (spec.clipTo && !clipMask) {
       throw new Error(`Layer "${spec.id}" requires "${spec.clipTo}".`);
@@ -51,20 +51,76 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     xStart: number,
     xEnd: number
   ): void {
+    if (this.spec.palette.kind === 'solid') {
+      this.paintSolidRow(pixels, offset, y, xStart, xEnd);
+      return;
+    }
+
     let index = y * this.size.width + xStart;
-    for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
-      if (this.clipMask && !this.clipMask.contains(x, y)) {
-        continue;
+    const insideValue = this.spec.providesMask?.insideValue;
+    if (insideValue !== undefined) {
+      for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
+        if (this.data[index] === insideValue) {
+          this.writePixel(pixels, offset, this.data[index]);
+        }
       }
-      if (this.spec.providesMask && !this.contains(x, y)) {
+      return;
+    }
+
+    const clipMask = this.clipMask;
+    for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
+      if (clipMask && !clipMask.contains(x, y)) {
         continue;
       }
       this.writePixel(pixels, offset, this.data[index]);
     }
   }
+
+  private paintSolidRow(
+    pixels: Uint8ClampedArray,
+    offset: number,
+    y: number,
+    xStart: number,
+    xEnd: number
+  ): void {
+    const palette = this.spec.palette;
+    if (palette.kind !== 'solid') {
+      return;
+    }
+    const [red, green, blue] = palette.color;
+    let index = y * this.size.width + xStart;
+    const insideValue = this.spec.providesMask?.insideValue;
+    if (insideValue !== undefined) {
+      for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
+        if (this.data[index] !== insideValue) {
+          continue;
+        }
+        pixels[offset] = red;
+        pixels[offset + 1] = green;
+        pixels[offset + 2] = blue;
+        pixels[offset + 3] = 255;
+      }
+      return;
+    }
+
+    const clipMask = this.clipMask;
+    for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
+      if (clipMask && !clipMask.contains(x, y)) {
+        continue;
+      }
+      pixels[offset] = red;
+      pixels[offset + 1] = green;
+      pixels[offset + 2] = blue;
+      pixels[offset + 3] = 255;
+    }
+  }
 }
 
-function validateRasterData(spec: LayerSpec, size: MapSize, value: unknown): RasterData {
+function validateRasterData(
+  spec: LayerSpec<MapBaseLayerId>,
+  size: MapSize,
+  value: unknown
+): RasterData {
   let data: RasterData;
   if (spec.dataType === 'uint8') {
     if (!(value instanceof Uint8Array)) {

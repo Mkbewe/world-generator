@@ -95,7 +95,7 @@ describe('CatalogLayer', () => {
 
   it('requires a matching mask for clipped layers', () => {
     const clipped = {
-      id: 'clipped',
+      id: 'noise',
       label: 'Clipped',
       source: 'clippedMap',
       dataType: 'uint8',

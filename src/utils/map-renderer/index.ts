@@ -3,16 +3,17 @@ export type { MapRendererOptions, MapRendererState } from './renderer';
 export { MapPersistence, mapPersistence } from './persistence';
 export { mapRepository, MapRepository } from './repository';
 export type { GeneratedMapSnapshot } from './repository';
-export { CatalogLayer, LayerRegistry, layerRegistry } from './layer';
+export { LayerRegistry, layerRegistry } from './layer';
 export type { MapSize } from './layer';
 export type {
+  LayerGroupNode,
   LayerTreeNode,
   MapLayerNavigation,
   MapLayerNode,
   MapLayerOption,
   MapBaseLayerId,
   MapInspection,
-  MapLayers,
+  MapRasters,
   MapMetadata,
   MapOverlayId,
   RenderLayerStatistics,

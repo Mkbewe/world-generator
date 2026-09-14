@@ -26,11 +26,11 @@ describe('usePreviewStore', () => {
         id: 'climate',
         label: 'Climate',
         available: true,
-        selectedChild: 'moisture',
-        selectedLayer: 'moisture',
+        selectedChild: 'macro-region',
+        selectedLayer: 'macro-region',
       },
     ];
-    store.setBaseLayer('moisture', tree);
+    store.setBaseLayer('macro-region', tree);
     store.setBaseLayer('noise');
 
     expect(usePreviewStore.getState().layerTree).toBe(tree);

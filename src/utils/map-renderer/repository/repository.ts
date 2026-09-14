@@ -1,8 +1,8 @@
 ﻿import type { MapSize } from '../layer';
-import type { MapLayers, MapMetadata } from '../types';
+import type { MapMetadata, MapRasters } from '../types';
 
 export interface GeneratedMapSnapshot extends MapSize, MapMetadata {
-  layers: MapLayers;
+  layers: MapRasters;
 }
 
 export class MapRepository {
