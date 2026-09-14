@@ -1,11 +1,11 @@
 import { Button, Flex, Text, TextField } from '@radix-ui/themes';
 
-interface BasicFormProps {
+interface GeneralFormProps {
   seed: string;
   onSeedChange: (seed: string) => void;
 }
 
-export function BasicForm({ seed, onSeedChange }: BasicFormProps) {
+export function GeneralForm({ seed, onSeedChange }: GeneralFormProps) {
   const randomizeSeed = (): void => {
     onSeedChange(
       Math.floor(Math.random() * 1_000_000)
@@ -16,12 +16,12 @@ export function BasicForm({ seed, onSeedChange }: BasicFormProps) {
 
   return (
     <Flex direction='column' gap='2'>
-      <Text as='label' htmlFor='basic-form-seed-input' size='3' color='gray'>
+      <Text as='label' htmlFor='general-form-seed-input' size='3' color='gray'>
         Seed:
       </Text>
       <Flex gap='2'>
         <TextField.Root
-          id='basic-form-seed-input'
+          id='general-form-seed-input'
           value={seed}
           onChange={event => onSeedChange(event.target.value)}
           size='3'

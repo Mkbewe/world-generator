@@ -27,11 +27,11 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
 }
 
 describe('SettingsPanel', () => {
-  it('renders the basic tab with the seed field and the shared generate action', () => {
+  it('renders the general tab with the seed field and the shared generate action', () => {
     renderPanel();
 
     expect(screen.getByRole('heading', { name: 'Map Settings' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Basic' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'General' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'World shape' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Noise' })).toBeInTheDocument();
     expect(screen.getByLabelText('Seed:')).toHaveValue('123456');

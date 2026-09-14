@@ -3,7 +3,7 @@ import { GearIcon, GlobeIcon, LayersIcon, MixerHorizontalIcon } from '@radix-ui/
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
-  BasicForm,
+  GeneralForm,
   MacroRegionForm,
   NoiseForm,
   type WorldShape,
@@ -13,9 +13,9 @@ import {
 import type { NoiseConfig } from '../../utils/map-generator';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
 
-type SettingsTab = 'basic' | 'world-shape' | 'noise' | 'macro-region';
+type SettingsTab = 'general' | 'world-shape' | 'noise' | 'macro-region';
 
-let activeSettingsTab: SettingsTab = 'basic';
+let activeSettingsTab: SettingsTab = 'general';
 
 interface SettingsPanelProps {
   seed: string;
@@ -45,10 +45,10 @@ export function SettingsPanel({
   const [activeTab, setActiveTab] = useState<SettingsTab>(activeSettingsTab);
   const tabs: readonly VerticalTabItem[] = [
     {
-      value: 'basic',
-      label: 'Basic',
+      value: 'general',
+      label: 'General',
       icon: <GearIcon />,
-      content: <BasicForm seed={seed} onSeedChange={onSeedChange} />,
+      content: <GeneralForm seed={seed} onSeedChange={onSeedChange} />,
     },
     {
       value: 'world-shape',

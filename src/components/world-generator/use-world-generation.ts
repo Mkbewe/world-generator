@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { WorldGenerationSession } from './world-generation-session';
 import {
-  useBasicFormStore,
+  useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
   useMacroRegionFormStore,
@@ -23,7 +23,7 @@ export interface WorldGeneration {
 
 /** Wires the generator form to the worker session and tracks the run state. */
 export function useWorldGeneration(): WorldGeneration {
-  const seed = useBasicFormStore(state => state.seed);
+  const seed = useGeneralFormStore(state => state.seed);
   const shape = useWorldShapeFormStore(state => state.shape);
   const size = useWorldShapeFormStore(state => state.size);
   const noise = useNoiseFormStore(state => state.noise);
