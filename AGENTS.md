@@ -12,6 +12,14 @@ See `README.md` and `docs/world-generation-roadmap.md` for architecture.
 - Commits follow Conventional Commits; pre-commit runs typecheck, lint-staged and tests
 - Commit subjects are at most 72 characters (enforced by commitlint)
 
+## Components
+
+- one public component per file, in its own folder with a colocated `module.scss` and test
+- non-component logic, types and hooks live in a `lib/` folder
+- soft limit ~150 lines per component file (ESLint fails above 200)
+- folders stay under ~7 component files
+- prefer `children` over text props when a shared wrapper is genuinely needed
+
 ## GitHub
 
 - Boards (owner `Mkbewe`): **World Generator Board** (project `1`, product work) and **World Generator Infra** (project `2`, `area:infra` tasks)
