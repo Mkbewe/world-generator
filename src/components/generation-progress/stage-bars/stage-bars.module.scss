@@ -1,0 +1,50 @@
+.bars {
+  display: flex;
+  overflow: hidden;
+  height: 21px;
+  background: var(--gray-a4);
+}
+
+.bar {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--yellow-9);
+}
+
+.bar + .bar::before {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: -2px;
+  width: 4px;
+  background: var(--gray-12);
+  content: '';
+}
+
+.barFill {
+  height: 100%;
+  background: transparent;
+  transition: width 0.1s linear;
+}
+
+.bar[data-status='running'] .barFill {
+  background: linear-gradient(90deg, var(--violet-9), var(--violet-10));
+}
+
+.bar[data-status='completed'] .barFill {
+  background: var(--green-9);
+  transition: none;
+}
+
+.bar[data-status='failed'] .barFill {
+  background: var(--red-9);
+  transition: none;
+}
+
+.bars[data-complete='true'] .barFill {
+  background: linear-gradient(90deg, var(--green-9), var(--green-10));
+  box-shadow: 0 0 10px var(--green-a5);
+  transition: none;
+}

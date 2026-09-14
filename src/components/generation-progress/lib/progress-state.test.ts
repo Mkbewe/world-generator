@@ -1,6 +1,6 @@
-import type { GenerationProgressState } from './generation-progress';
 import { ProgressTracker, restartProgress } from './progress-state';
-import type { StageStatistics } from '../../utils/map-generator';
+import type { GenerationProgressState } from './progress-types';
+import type { StageStatistics } from '../../../utils/map-generator';
 
 const stageInfos = [
   { id: 'world-shape', name: 'World shape generation' },
