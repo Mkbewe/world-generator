@@ -16,6 +16,7 @@ export type {
   MapRasters,
   MapMetadata,
   MapOverlayId,
+  MapOverlayOption,
   RenderLayerStatistics,
   RenderStatistics,
   SpatialMask,
