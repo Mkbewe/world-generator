@@ -75,4 +75,36 @@ describe('GenerationStatisticsPanel', () => {
     expect(screen.getByText('Mean')).toBeInTheDocument();
     expect(screen.getByText('0.500')).toBeInTheDocument();
   });
+
+  it('formats macro-region counts as integers', () => {
+    renderPanel({
+      statistics: [
+        createStage({
+          stageId: 'macro-region',
+          stageName: 'Macro region generation',
+          details: {
+            regions: 4,
+            overlays: 0,
+            deformationAmplitude: 0.08,
+            deformationFrequency: 3,
+            deformationOctaves: 2,
+          },
+        }),
+      ],
+      totalDurationMs: 40,
+    });
+
+    expect(screen.getByText('Regions')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('Overlays')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.queryByText('4.000')).not.toBeInTheDocument();
+    expect(screen.queryByText('0.000')).not.toBeInTheDocument();
+    expect(screen.getByText('Deformation amplitude')).toBeInTheDocument();
+    expect(screen.getByText('0.08')).toBeInTheDocument();
+    expect(screen.getByText('Deformation frequency')).toBeInTheDocument();
+    expect(screen.getByText('3.00')).toBeInTheDocument();
+    expect(screen.getByText('Deformation octaves')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
 });

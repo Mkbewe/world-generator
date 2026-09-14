@@ -15,7 +15,7 @@ describe('MapStatisticsPanel', () => {
   it('renders the map summary', () => {
     render(
       <Theme>
-        <MapStatisticsPanel world={world} />
+        <MapStatisticsPanel world={world} totalDurationMs={1234} />
       </Theme>
     );
 
@@ -24,5 +24,7 @@ describe('MapStatisticsPanel', () => {
     expect(screen.getByText('100 × 50')).toBeInTheDocument();
     expect(screen.getByText('disc')).toBeInTheDocument();
     expect(screen.getByText('5,000')).toBeInTheDocument();
+    expect(screen.getByText('Total time')).toBeInTheDocument();
+    expect(screen.getByText('1.23 s')).toBeInTheDocument();
   });
 });

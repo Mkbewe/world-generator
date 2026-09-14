@@ -81,7 +81,7 @@ describe('StatisticsPage', () => {
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();
-    expect(screen.getByText('40.0 ms')).toBeInTheDocument();
+    expect(screen.getAllByText('40.0 ms')).toHaveLength(2);
     expect(screen.queryByText('No statistics yet')).not.toBeInTheDocument();
   });
 });
