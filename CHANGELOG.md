@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.2](https://github.com/Mkbewe/world-generator/compare/v0.5.1...v0.5.2) (2026-09-15)
+
+### Chores
+
+* limit commit subjects to 72 characters ([#251](https://github.com/Mkbewe/world-generator/issues/251)) ([59083b2](https://github.com/Mkbewe/world-generator/commit/59083b23fdcc7e42442792d3f334402526de744a))
+
+### Code Refactoring
+
+* **239:** split preview-map into renderer and readout hooks ([#254](https://github.com/Mkbewe/world-generator/issues/254)) ([27a4b63](https://github.com/Mkbewe/world-generator/commit/27a4b632c77efbc778fbac067343fcfadd0463d7))
+* **243:** define and enforce component conventions ([#253](https://github.com/Mkbewe/world-generator/issues/253)) ([40e533d](https://github.com/Mkbewe/world-generator/commit/40e533d7bc0ce78ceb3e3df1d018af2d3eab5a4a))
+* **246:** rename basic-form to general-form ([#250](https://github.com/Mkbewe/world-generator/issues/250)) ([1e6b5fc](https://github.com/Mkbewe/world-generator/commit/1e6b5fc39391cd975ced1c6653404ca4f3f8b6c4))
+
+### Tests
+
+* **240:** add tests for the general and world-shape forms ([#259](https://github.com/Mkbewe/world-generator/issues/259)) ([a763b99](https://github.com/Mkbewe/world-generator/commit/a763b994ba4ce54a864be3e948997fce17fb8e75))
+* **241:** add tests for dialog, overlays and slider ([#252](https://github.com/Mkbewe/world-generator/issues/252)) ([f19c82a](https://github.com/Mkbewe/world-generator/commit/f19c82a97032053d89aeee032339cb8c3d926686))
+
 ## [0.5.1](https://github.com/Mkbewe/world-generator/compare/v0.5.0...v0.5.1) (2026-09-14)
 
 ### Code Refactoring
