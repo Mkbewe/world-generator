@@ -69,7 +69,19 @@ jobs:
           VERSION=${{ steps.version_check.outputs.current_version }}
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "$VERSION" -m "Release $VERSION"
+
+          # Tag the commit that released this version instead of the current HEAD,
+          # otherwise later merges fall into the previous tag range and disappear
+          # from the changelog.
+          RELEASE_COMMIT=$(git log --format=%H -1 --all --grep="chore(release): ${VERSION#v}" || true)
+          if [ -z "$RELEASE_COMMIT" ]; then
+            echo "::warning::Release commit for $VERSION not found; tagging HEAD"
+            RELEASE_COMMIT=$(git rev-parse HEAD)
+          elif [ "$RELEASE_COMMIT" != "$(git rev-parse HEAD)" ]; then
+            echo "::warning::HEAD is ahead of the $VERSION release commit ($RELEASE_COMMIT)"
+          fi
+
+          git tag -a "$VERSION" "$RELEASE_COMMIT" -m "Release $VERSION"
           git push origin "$VERSION"
 
       - name: Create GitHub Release
