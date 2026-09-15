@@ -40,7 +40,7 @@ describe('selectMapInfo', () => {
   it('rejects configs above the sample budget', () => {
     const config: MapConfig = {
       ...baseConfig,
-      world: { width: 5000, height: 5000, seed: 9 },
+      world: { width: 12_000, height: 12_000, seed: 9 },
     };
 
     expect(() => selectMapInfo(config)).toThrow(RangeError);

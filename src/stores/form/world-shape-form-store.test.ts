@@ -5,19 +5,21 @@ describe('useWorldShapeFormStore', () => {
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
   });
 
-  it('starts with the default shape and size', () => {
+  it('starts with the default shape, size and terrain detail', () => {
     expect(useWorldShapeFormStore.getState()).toMatchObject(WORLD_SHAPE_FORM_DEFAULTS);
   });
 
-  it('updates the shape and size independently', () => {
+  it('updates the shape, size and detail independently', () => {
     const store = useWorldShapeFormStore.getState();
 
     store.setShape('rectangle');
-    store.setSize(2400);
+    store.setSizeMeters(2400);
+    store.setMetersPerSample(2);
 
     expect(useWorldShapeFormStore.getState()).toMatchObject({
       shape: 'rectangle',
-      size: 2400,
+      sizeMeters: 2400,
+      metersPerSample: 2,
     });
   });
 });

@@ -20,8 +20,14 @@ export interface NormalizedPoint {
   readonly v: number;
 }
 
+/** Rough bytes per cell used by the generated layers (mask, noise and region ids). */
+export const BYTES_PER_SAMPLE = 6;
+
+/** Memory budget for the generated layers, in bytes (decimal megabytes). */
+export const MEMORY_BUDGET_BYTES = 600_000_000;
+
 /** Cells above this count are rejected by both the UI and the generator. */
-export const SAMPLE_BUDGET = 16_000_000;
+export const SAMPLE_BUDGET = Math.floor(MEMORY_BUDGET_BYTES / BYTES_PER_SAMPLE);
 
 export interface DimensionRequest {
   readonly widthMeters: number;

@@ -16,9 +16,11 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
         isGenerating={isGenerating}
         onGenerate={() => {}}
         shape='disc'
-        size={300}
+        sizeMeters={300}
+        metersPerSample={2}
         onShapeChange={() => {}}
         onSizeChange={() => {}}
+        onDetailChange={() => {}}
         noise={{ frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 }}
         onNoiseChange={() => {}}
       />
