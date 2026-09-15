@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.6.0](https://github.com/Mkbewe/world-generator/compare/v0.5.3...v0.6.0) (2026-09-15)
+
+### Features
+
+* **[268](https://github.com/Mkbewe/world-generator/issues/268):** add meters and terrain detail to the world shape form ([#280](https://github.com/Mkbewe/world-generator/issues/280)) ([ce9a8ae](https://github.com/Mkbewe/world-generator/commit/ce9a8ae387dcac64f1a344847d14e00fde7182ad))
+
+  - replace pixel size presets and the custom input with meters
+  - add a terrain detail control expressed as meters per sample
+  - show the derived sample grid and the estimated memory
+  - clamp oversized grids to the sample budget and warn about it
+  - derive the sample budget from a 600 MB layer memory budget
+* **[275](https://github.com/Mkbewe/world-generator/issues/275):** show the active preset in the macro region preset picker ([#278](https://github.com/Mkbewe/world-generator/issues/278)) ([b8a1730](https://github.com/Mkbewe/world-generator/commit/b8a17307bb7a190edc325598c7c1ceff498715e5))
+
+### Bug Fixes
+
+* **[274](https://github.com/Mkbewe/world-generator/issues/274):** keep segmented controls scrollable on narrow screens ([#276](https://github.com/Mkbewe/world-generator/issues/276)) ([24abaaa](https://github.com/Mkbewe/world-generator/commit/24abaaabf71c267fe67ad01212d65a2b2ec1ee44))
+
+  - add a shared scroll container for segmented controls
+
+### Code Refactoring
+
+* **[266](https://github.com/Mkbewe/world-generator/issues/266):** define the world dimensions contract and conversions ([#272](https://github.com/Mkbewe/world-generator/issues/272)) ([da8c8ab](https://github.com/Mkbewe/world-generator/commit/da8c8ab5aee1d8d8992ce4d51ae282bf1a6c2f9d))
+* **[267](https://github.com/Mkbewe/world-generator/issues/267):** propagate world dimensions via the config and pipeline ([#273](https://github.com/Mkbewe/world-generator/issues/273)) ([988db9e](https://github.com/Mkbewe/world-generator/commit/988db9efd6b8a3dac05a94fb1da1af7a9fc7adeb))
+
+  - carry meters per sample in the world config with a 1 m default
+  - derive and validate world dimensions when collecting map info
+  - capture dimensions with the snapshot info and expose them to the
+  readout
+  - show position and distance as aligned X/Y rows in the preview readout
+* **[281](https://github.com/Mkbewe/world-generator/issues/281):** resolve the review findings around dimensions ([#282](https://github.com/Mkbewe/world-generator/issues/282)) ([012e95d](https://github.com/Mkbewe/world-generator/commit/012e95d61d9fbefbd02b170b96f319d26b4e20f6))
+
+  - make WorldDimensions canonical in WorldConfig and drop width/height
+  - validate dimensions at the MapGenerator entry before any stage runs
+  - show sample coordinates as cells and keep the readout columns fixed
+  - format bytes as decimal megabytes shared with the statistics
+  - give DetailField and GridSummaryField their own tests
+  - document the generator-only memory budget and the remaining perf work
+  - sync the README, AGENTS.md and the restructured roadmap
+  - keep the 0.6.0 review notes in review.0.6.0.md
+
+### Performance Improvements
+
+* **[256](https://github.com/Mkbewe/world-generator/issues/256):** compute macro regions only inside the world shape ([#271](https://github.com/Mkbewe/world-generator/issues/271)) ([b1d92ad](https://github.com/Mkbewe/world-generator/commit/b1d92adb60adb2df379eb3917233c3318d53b49e))
+
+  - require a valid world mask and skip cells outside the shape
+  - compute normalized coordinates only for masked cells
+
 ## [0.5.3](https://github.com/Mkbewe/world-generator/compare/v0.5.2...v0.5.3) (2026-09-15)
 
 ### Bug Fixes
