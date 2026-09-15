@@ -116,7 +116,7 @@ describe('WorldGenerator', () => {
 
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     runGenerationMock.mockImplementation((config, options) => {
-      const count = config.world.width * config.world.height;
+      const count = config.world.dimensions.sampleWidth * config.world.dimensions.sampleHeight;
       options.onStages([
         { id: 'world-shape', name: 'World shape' },
         { id: 'noise', name: 'Noise' },

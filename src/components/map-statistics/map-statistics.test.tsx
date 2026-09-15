@@ -5,9 +5,8 @@ import { MapStatisticsPanel } from './map-statistics';
 import type { WorldConfig } from '../../utils/map-generator';
 
 const world: WorldConfig = {
+  dimensions: { widthMeters: 100, heightMeters: 50, sampleWidth: 100, sampleHeight: 50 },
   seed: 123456,
-  width: 100,
-  height: 50,
   shape: 'disc',
 };
 

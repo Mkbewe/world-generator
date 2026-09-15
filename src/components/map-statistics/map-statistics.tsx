@@ -8,6 +8,7 @@ interface MapStatisticsPanelProps {
 }
 
 export function MapStatisticsPanel({ world, totalDurationMs }: MapStatisticsPanelProps) {
+  const { sampleWidth, sampleHeight } = world.dimensions;
   const items: StatisticsMetric[] = [
     {
       label: 'Seed',
@@ -16,13 +17,13 @@ export function MapStatisticsPanel({ world, totalDurationMs }: MapStatisticsPane
     },
     {
       label: 'Size',
-      value: `${world.width} × ${world.height}`,
+      value: `${sampleWidth} × ${sampleHeight}`,
       description: 'World grid size in cells.',
     },
     { label: 'Shape', value: world.shape ?? 'disc', description: 'World shape preset.' },
     {
       label: 'Cells',
-      value: formatNumber(world.width * world.height),
+      value: formatNumber(sampleWidth * sampleHeight),
       description: 'Total number of cells (width × height).',
     },
     {

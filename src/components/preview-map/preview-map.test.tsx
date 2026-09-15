@@ -20,8 +20,8 @@ function renderPreview(): void {
 }
 
 function expectPosition(x: number, y: number): void {
-  expect(screen.getByText(`X ${x} px`)).toBeInTheDocument();
-  expect(screen.getByText(`Y ${y} px`)).toBeInTheDocument();
+  expect(screen.getByText(`X ${x} cell`)).toBeInTheDocument();
+  expect(screen.getByText(`Y ${y} cell`)).toBeInTheDocument();
 }
 
 describe('PreviewMap readout', () => {

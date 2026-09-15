@@ -1,5 +1,6 @@
 import { Flex, Text } from '@radix-ui/themes';
 
+import { formatBytes } from '../../../../../utils/format';
 import { summarizeWorldGrid } from '../../../../../utils/map-generator/world-grid';
 
 interface GridSummaryFieldProps {
@@ -15,7 +16,7 @@ export function GridSummaryField({ sizeMeters, metersPerSample }: GridSummaryFie
     <Flex direction='column' gap='1'>
       <Text size='1' color='gray'>
         {grid.dimensions.sampleWidth} × {grid.dimensions.sampleHeight} samples ·{' '}
-        {formatMemory(grid.memoryBytes)}
+        {formatBytes(grid.memoryBytes)} data
       </Text>
       {grid.clamped && (
         <Text size='1' color='orange'>
@@ -24,11 +25,4 @@ export function GridSummaryField({ sizeMeters, metersPerSample }: GridSummaryFie
       )}
     </Flex>
   );
-}
-
-function formatMemory(bytes: number): string {
-  const megabytes = bytes / 1_000_000;
-  return megabytes >= 1
-    ? `${Math.round(megabytes)} MB`
-    : `${Math.max(1, Math.round(bytes / 1000))} KB`;
 }

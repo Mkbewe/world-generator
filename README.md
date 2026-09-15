@@ -44,16 +44,36 @@ Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 
 ## Generation preview
 
-The home page runs the map generation pipeline in a Web Worker. The current
-pipeline contains two implemented stages:
+The home page runs the map generation pipeline in a Web Worker. The pipeline
+contains three implemented stages:
 
 1. `WorldShapeStage` creates a disc or rectangular `worldMask`.
-2. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
+2. `MacroRegionStage` assigns every masked cell to exactly one macro region in
+   `macroRegionIdMap`.
+3. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
 
 The preview exposes these results as base map layers and the `World boundary`
 overlay. The map viewer keeps raw numeric layers separate from rendering, so
 future stages such as height, temperature, moisture, hydrology and biomes can be
 added without changing the rendering layer.
+
+World settings use physical units. The shape form takes a size in meters (1, 2
+and 4 km presets plus a custom value from 100 to 10 000 m) and a terrain detail
+in meters per sample (0.5, 1, 2 or 4 m). The form shows the derived sample grid
+and the estimated generation data before generating. Generation is validated against
+a shared sample budget derived from a 600 MB budget for the generation data
+(stage rasters and their copy sent to the main thread; renderer canvases are
+counted separately by the render statistics). When the requested detail exceeds
+it, the form clamps the grid to the budget and shows a warning while keeping the
+requested physical size.
+
+The cursor readout shows the hovered cell under `Position` and the matching
+distance in meters under `Distance`, using shared `X`/`Y` columns.
+
+Non-raster metadata travels through a generic `MapInfo` channel attached to the
+snapshot: `MAP_INFO_CATALOG` derives entries such as the macro region labels and
+the world dimensions from the generation config, so the readout keeps showing
+labels and scale that match the generated map.
 
 Generation always runs in a Web Worker, which announces its stages up front and
 then streams lifecycle events with each stage's output data and progress; these
@@ -92,8 +112,8 @@ clears it.
 - `src/stores` holds global UI state: form values per settings tab, generation
   progress and statistics, map config, preview selection and render statistics.
 - `src/components/generation-progress` renders the current stage and progress.
-- `docs/world-generation-roadmap.md` describes planned stages and future layer
-  contracts beyond the currently implemented shape and noise stages.
+- `docs/world-generation-roadmap.md` describes the pipeline, the current and
+  planned stages, and future layer contracts, with per-section status markers.
 
 ## Branching strategy
 

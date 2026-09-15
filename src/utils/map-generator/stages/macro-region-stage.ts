@@ -31,29 +31,29 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ macroRegionIdMap: Uint8Array }> {
-    const { width, height } = context.config.world;
+    const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const regions = context.config.macroRegions ?? DEFAULT_MACRO_REGIONS;
     const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
     this.validateConfig(regions);
     this.validateDeformation(deformation);
     const displacement = createDisplacement(context, regions, deformation);
 
-    const macroRegionIdMap = new Uint8Array(width * height);
-    const xDivisor = Math.max(1, width - 1);
-    const yDivisor = Math.max(1, height - 1);
+    const macroRegionIdMap = new Uint8Array(sampleWidth * sampleHeight);
+    const xDivisor = Math.max(1, sampleWidth - 1);
+    const yDivisor = Math.max(1, sampleHeight - 1);
     const worldMask = context.state.worldMask;
-    if (!worldMask || worldMask.length !== width * height) {
+    if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
       throw new Error('A valid world mask must be generated before macro regions.');
     }
 
-    for (let y = 0; y < height; y++) {
+    for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
 
       const normalizedY = y / yDivisor;
-      for (let x = 0; x < width; x++) {
-        const cell = y * width + x;
+      for (let x = 0; x < sampleWidth; x++) {
+        const cell = y * sampleWidth + x;
         if (worldMask[cell] === 0) {
           continue;
         }
@@ -68,7 +68,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
         );
       }
 
-      report((y + 1) / height);
+      report((y + 1) / sampleHeight);
     }
 
     context.state.macroRegionIdMap = macroRegionIdMap;
@@ -76,9 +76,9 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
-    const { width, height } = config.world;
-    assertStageOutput(state.worldMask, 'uint8', width * height);
-    assertStageOutput(state.macroRegionIdMap, 'uint8', width * height);
+    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    assertStageOutput(state.worldMask, 'uint8', sampleWidth * sampleHeight);
+    assertStageOutput(state.macroRegionIdMap, 'uint8', sampleWidth * sampleHeight);
   }
 
   summarize(context: MapContext<MapConfig, MapState>, data: Record<string, unknown>) {

@@ -67,7 +67,11 @@ describe('StatisticsPage', () => {
     });
     useMapConfigStore.setState({
       config: {
-        world: { width: 10, height: 10, seed: 123456, shape: 'disc' },
+        world: {
+          dimensions: { widthMeters: 10, heightMeters: 10, sampleWidth: 10, sampleHeight: 10 },
+          seed: 123456,
+          shape: 'disc',
+        },
         noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
       },
     });

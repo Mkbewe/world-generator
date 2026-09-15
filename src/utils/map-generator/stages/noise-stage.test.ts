@@ -4,7 +4,15 @@ import type { MapConfig } from '../types';
 
 function createConfig(width = 5, height = 5, seed = 123): MapConfig {
   return {
-    world: { width, height, seed },
+    world: {
+      dimensions: {
+        widthMeters: width,
+        heightMeters: height,
+        sampleWidth: width,
+        sampleHeight: height,
+      },
+      seed,
+    },
     noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
   };
 }

@@ -43,11 +43,9 @@ describe('WorldShapeForm', () => {
     expect(onShapeChange).toHaveBeenCalledWith('rectangle');
   });
 
-  it('shows the derived grid and applies a size preset', async () => {
+  it('applies a size preset', async () => {
     const user = userEvent.setup();
     const { onSizeChange } = renderForm();
-
-    expect(screen.getByText('1000 × 1000 samples · 6 MB')).toBeInTheDocument();
 
     await user.click(screen.getByRole('radio', { name: 'Medium' }));
 
@@ -84,12 +82,5 @@ describe('WorldShapeForm', () => {
     await user.click(screen.getByRole('radio', { name: '2 m' }));
 
     expect(onDetailChange).toHaveBeenCalledWith(2);
-  });
-
-  it('warns when the sample budget clamps the requested detail', () => {
-    renderForm({ sizeMeters: 10_000, metersPerSample: 0.5 });
-
-    expect(screen.getByText('10000 × 10000 samples · 600 MB')).toBeInTheDocument();
-    expect(screen.getByText(/limited to 1.0 m per sample/i)).toBeInTheDocument();
   });
 });

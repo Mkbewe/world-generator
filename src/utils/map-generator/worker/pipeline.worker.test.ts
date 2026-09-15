@@ -7,7 +7,11 @@ import type {
 const request: PipelineWorkerGenerateRequest = {
   type: 'generate',
   config: {
-    world: { width: 2, height: 2, seed: 7, shape: 'rectangle' },
+    world: {
+      dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
+      seed: 7,
+      shape: 'rectangle',
+    },
     noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   },
 };

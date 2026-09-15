@@ -33,7 +33,10 @@ class FakeWorker {
 }
 
 const config: MapConfig = {
-  world: { width: 2, height: 2, seed: 7 },
+  world: {
+    dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
+    seed: 7,
+  },
   noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
 };
 

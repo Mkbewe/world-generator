@@ -1,12 +1,9 @@
 import type { MapRasters } from '../map-layers';
+import type { WorldDimensions } from '../world-dimensions';
 
 export interface WorldConfig {
-  /** Sample count along the X axis. */
-  width: number;
-  /** Sample count along the Y axis. */
-  height: number;
-  /** Physical size of one sample in meters; defaults to 1. */
-  metersPerSample?: number;
+  /** Physical world size together with the sample grid derived from it. */
+  dimensions: WorldDimensions;
   seed: number;
   shape?: 'disc' | 'rectangle';
 }
@@ -143,8 +140,10 @@ export interface GenerationOptions {
   onEvent?: (event: GenerationEvent) => void;
 }
 
-export interface MapGeneratorOptions {
+export interface MapGeneratorOptions<TConfig = unknown> {
   stageDelayMs?: number;
+  /** Runs before the first stage so an invalid config never allocates data. */
+  validateConfig?: (config: Readonly<TConfig>) => void;
 }
 
 export interface GenerationResult<TContext> {
