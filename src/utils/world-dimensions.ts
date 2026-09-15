@@ -106,6 +106,12 @@ export function cellCenterMeters(dimensions: WorldDimensions, x: number, y: numb
   return { xMeters: (x + 0.5) * perSample.x, yMeters: (y + 0.5) * perSample.y };
 }
 
+/** Lower-left corner of a cell in meters. */
+export function cellOriginMeters(dimensions: WorldDimensions, x: number, y: number): MeterPoint {
+  const perSample = metersPerSample(dimensions);
+  return { xMeters: x * perSample.x, yMeters: y * perSample.y };
+}
+
 export function metersToNormalized(
   dimensions: WorldDimensions,
   xMeters: number,

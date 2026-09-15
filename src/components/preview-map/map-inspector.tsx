@@ -13,7 +13,7 @@ interface MapInspectorProps {
 export function MapInspector({ items, pinned = false }: MapInspectorProps) {
   return (
     <Flex
-      align='center'
+      align='start'
       gap='4'
       wrap='wrap'
       className={styles.inspector}
@@ -27,9 +27,31 @@ export function MapInspector({ items, pinned = false }: MapInspectorProps) {
         </span>
       )}
       {items.map(item => (
-        <Text key={item.id} size='1' color='gray'>
-          <span className={styles.label}>{item.label}:</span>{' '}
-          <span className={styles.value}>{item.value}</span>
+        <Text
+          key={item.id}
+          size='1'
+          color='gray'
+          as='span'
+          className={item.lines ? `${styles.item} ${styles.axes}` : styles.item}
+        >
+          {item.lines ? (
+            item.lines.flatMap(line => [
+              <span key={`${line.label}-label`} className={styles.label}>
+                {line.label}:
+              </span>,
+              <span key={`${line.label}-x`} className={styles.value}>
+                {line.x}
+              </span>,
+              <span key={`${line.label}-y`} className={styles.value}>
+                {line.y}
+              </span>,
+            ])
+          ) : (
+            <>
+              <span className={styles.label}>{item.label}:</span>
+              <span className={styles.value}>{item.value}</span>
+            </>
+          )}
         </Text>
       ))}
     </Flex>

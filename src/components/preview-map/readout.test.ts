@@ -1,4 +1,4 @@
-import { type InspectorReadout, readoutItems, samplePointer } from './readout';
+import { type InspectorReadout, type ReadoutItem, readoutItems, samplePointer } from './readout';
 import type { MapInspection } from '../../utils/map-renderer';
 
 const SIZE = { width: 2400, height: 2400 };
@@ -51,8 +51,20 @@ function readout(inspection?: MapInspection): InspectorReadout {
   };
 }
 
-function itemValue(readoutValue: InspectorReadout | undefined, id: string): string | undefined {
-  return readoutItems(readoutValue).find(item => item.id === id)?.value;
+function item(
+  readoutValue: InspectorReadout | undefined,
+  id: string,
+  info?: Parameters<typeof readoutItems>[1]
+): ReadoutItem | undefined {
+  return readoutItems(readoutValue, info).find(readoutItem => readoutItem.id === id);
+}
+
+function itemValue(
+  readoutValue: InspectorReadout | undefined,
+  id: string,
+  info?: Parameters<typeof readoutItems>[1]
+): string | undefined {
+  return item(readoutValue, id, info)?.value;
 }
 
 describe('readoutItems', () => {
@@ -60,16 +72,62 @@ describe('readoutItems', () => {
     expect(readoutItems(undefined).map(item => item.value)).toEqual(['—', '—']);
   });
 
-  it('shows labelled source coordinates instead of percentages', () => {
+  it('shows pixel coordinates as an X/Y row without a distance', () => {
     const items = readoutItems(readout());
 
     expect(items[0]).toMatchObject({
       id: 'position',
       label: 'Position',
-      value: 'X 50, Y 25',
+      lines: [{ label: 'Position', x: 'X 50 px', y: 'Y 25 px' }],
     });
     expect(items[1]).toMatchObject({ id: 'value', label: 'Value', value: '—' });
     expect(items.map(item => item.value).join(' ')).not.toContain('%');
+  });
+
+  it('adds the distance in meters as a second row', () => {
+    const info = {
+      worldDimensions: {
+        widthMeters: 4000,
+        heightMeters: 2000,
+        sampleWidth: 2000,
+        sampleHeight: 1000,
+      },
+    };
+
+    expect(item(readout(), 'position', info)?.lines).toEqual([
+      { label: 'Position', x: 'X 50 px', y: 'Y 25 px' },
+      { label: 'Distance', x: 'X 100 m', y: 'Y 50 m' },
+    ]);
+  });
+
+  it('rounds fractional meters to one decimal place', () => {
+    const info = {
+      worldDimensions: {
+        widthMeters: 1000,
+        heightMeters: 1000,
+        sampleWidth: 300,
+        sampleHeight: 300,
+      },
+    };
+
+    expect(item(readout(), 'position', info)?.lines?.[1]).toEqual({
+      label: 'Distance',
+      x: 'X 166.7 m',
+      y: 'Y 83.3 m',
+    });
+  });
+
+  it('omits the distance row for malformed dimensions', () => {
+    const malformed = {
+      worldDimensions: { widthMeters: 100, heightMeters: 100, sampleWidth: 0, sampleHeight: 0 },
+    };
+
+    expect(item(readout(), 'position', { worldDimensions: 'nope' })?.lines).toEqual([
+      { label: 'Position', x: 'X 50 px', y: 'Y 25 px' },
+    ]);
+    expect(item(readout(), 'position', malformed)?.lines).toEqual([
+      { label: 'Position', x: 'X 50 px', y: 'Y 25 px' },
+    ]);
   });
 
   it('describes world shape values', () => {

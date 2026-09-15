@@ -1,8 +1,12 @@
 import type { MapRasters } from '../map-layers';
 
 export interface WorldConfig {
+  /** Sample count along the X axis. */
   width: number;
+  /** Sample count along the Y axis. */
   height: number;
+  /** Physical size of one sample in meters; defaults to 1. */
+  metersPerSample?: number;
   seed: number;
   shape?: 'disc' | 'rectangle';
 }

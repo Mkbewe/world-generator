@@ -19,6 +19,11 @@ function renderPreview(): void {
   );
 }
 
+function expectPosition(x: number, y: number): void {
+  expect(screen.getByText(`X ${x} px`)).toBeInTheDocument();
+  expect(screen.getByText(`Y ${y} px`)).toBeInTheDocument();
+}
+
 describe('PreviewMap readout', () => {
   beforeEach(() => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
@@ -52,20 +57,20 @@ describe('PreviewMap readout', () => {
     await act(async () => {});
 
     fireEvent.pointerMove(canvas, { clientX: 100, clientY: 100 });
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expectPosition(1, 1);
     expect(screen.getByText('Inside')).toBeInTheDocument();
 
     fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
     expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
 
     fireEvent.pointerMove(canvas, { clientX: 300, clientY: 300 });
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expectPosition(1, 1);
 
     fireEvent.pointerLeave(canvas);
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expectPosition(1, 1);
 
     fireEvent.pointerDown(canvas, { button: 0, clientX: 300, clientY: 300 });
-    expect(screen.getByText('X 3, Y 3')).toBeInTheDocument();
+    expectPosition(3, 3);
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
   });
 
@@ -78,7 +83,7 @@ describe('PreviewMap readout', () => {
     fireEvent.pointerMove(canvas, { pointerType: 'touch', clientX: 300, clientY: 300 });
     fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
 
-    expect(screen.getByText('X 3, Y 3')).toBeInTheDocument();
+    expectPosition(3, 3);
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
   });
 
@@ -89,12 +94,12 @@ describe('PreviewMap readout', () => {
 
     fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
     fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expectPosition(1, 1);
     expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
 
     fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
     fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
-    expect(screen.getByText('X 3, Y 3')).toBeInTheDocument();
+    expectPosition(3, 3);
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
   });
 
@@ -109,7 +114,7 @@ describe('PreviewMap readout', () => {
     fireEvent.pointerMove(canvas, { pointerType: 'touch', clientX: 350, clientY: 350 });
     fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 350, clientY: 350 });
 
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expectPosition(1, 1);
     expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
   });
 
@@ -121,6 +126,6 @@ describe('PreviewMap readout', () => {
     fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
     fireEvent.pointerLeave(canvas, { pointerType: 'touch' });
 
-    expect(screen.getByText('X 1, Y 1')).toBeInTheDocument();
+    expectPosition(1, 1);
   });
 });

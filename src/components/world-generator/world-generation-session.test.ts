@@ -162,6 +162,7 @@ describe('WorldGenerationSession', () => {
 
     expect(mapRepository.get()?.info).toEqual({
       macroRegionLabels: DEFAULT_MACRO_REGIONS.map(region => region.label),
+      worldDimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
     });
   });
 
