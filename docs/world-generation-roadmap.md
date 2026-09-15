@@ -503,21 +503,23 @@ Przykładowo świat `4000 × 4000 m` może mieć bazową `heightmap` o rozdzielc
 
 PNG powinien pozostać wizualizacją albo formatem eksportu, a nie źródłem prawdy dla świata. Źródłem prawdy powinny być seed, konfiguracja oraz numeryczne warstwy generatora. W pierwszej wersji cały teren może zostać wygenerowany raz i trzymany w pamięci. Podział na kafelki lub deterministycznie odtwarzane chunki należy wprowadzić dopiero wtedy, gdy pomiary wykażą problemy z czasem generowania albo zużyciem pamięci.
 
-## Interaktywna eksploracja świata
+## Demo eksploracji świata
 
-Planowana osobna podstrona, np. `/explore/:seed`, powinna pozwalać otworzyć wygenerowany świat w trybie zwiedzania z kamerą z góry. Nie jest to pełna gra: użytkownik nie zbiera zasobów, nie modyfikuje świata i nie wymaga zapisywania stanu rozgrywki. Generator pozostaje niezależny od widoku, a podstrona korzysta z jego warstw danych.
+Planowana osobna podstrona, np. `/explore/:seed`, otwiera wygenerowany świat w trybie zwiedzania z kamerą z góry. To proste demo: docelowa gra powstanie w Godocie, a ta aplikacja jest rozgrzewką i generatorem danych, nie pełnym silnikiem gry.
 
 Zakres pierwszej wersji:
 
-1. Przejście z generatora do podstrony eksploracji z seedem i konfiguracją świata.
-2. Jednorazowe wygenerowanie całej mapy terenu i jej numerycznych warstw.
-3. Kamera z góry śledząca postać, zoom oraz minimapa całego świata.
-4. Postać sterowana klawiaturą, poruszająca się we współrzędnych świata wyrażonych w metrach.
-5. Renderowanie tylko obszaru widocznego przez kamerę, mimo że dane całej mapy pozostają w pamięci.
-6. Podstawowa kolizja wynikająca z warstw terenu, np. woda, strome zbocza i granice świata.
-7. Punkt startowy wybrany przez `LocationStage`.
+1. Przejście z generatora do podstrony z seedem i konfiguracją świata.
+2. Jednorazowe wygenerowanie mapy i jej warstw numerycznych.
+3. Postać to na razie prosty znacznik (np. kółko) w naturalnej skali świata, sterowany klawiaturą, poruszający się we współrzędnych w metrach.
+4. Kamera z góry śledząca postać oraz zoom.
+5. Renderowanie tylko obszaru widocznego przez kamerę, mimo że dane pozostają w pamięci.
 
-Tryb eksploracji nie potrzebuje ekwipunku, zasobów, NPC, symulacji odległych obszarów ani zapisywania zmian w świecie. Kolejne iteracje mogą dodać animacje postaci, wizualne obiekty i dekoracje terenu. Chunkowanie oraz poziomy szczegółowości pozostają opcjonalną optymalizacją dla większych map. Skala postaci i kamery powinna wynikać z metrów świata oraz zoomu, a nie z liczby pikseli źródłowego obrazu.
+Poza zakresem na teraz: kolizje, minimapa, animacje, ekwipunek, NPC i zapisywanie stanu. Kolizje, punkt startowy z `LocationStage` i minimapa wrócą, gdy powstaną warstwy terenu i lokacji. Chunkowanie oraz poziomy szczegółowości pozostają opcjonalną optymalizacją dla większych map. Skala postaci i kamery wynika z metrów świata oraz zoomu, a nie z liczby pikseli źródłowego obrazu.
+
+### Eksport danych do Godota — pomysł (bez tasków)
+
+Jeśli kiedyś okaże się potrzebny, eksport to paczka danych, nie integracja: warstwy jako pliki (np. 16-bit PNG albo binaria) oraz `manifest.json` z seedem, wymiarami w metrach, `m/sample`, listą warstw, paletą, regionami, biomami i lokacjami w metrach. Godot budowałby teren i kolizje z tych samych danych, a nasz podgląd pozostałby narzędziem deweloperskim. Na razie bez zadań.
 
 ## Wydajność — dalszy plan
 Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
