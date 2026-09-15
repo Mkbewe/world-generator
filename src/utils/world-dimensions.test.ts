@@ -57,8 +57,8 @@ describe('validateDimensions', () => {
       validateDimensions({
         widthMeters: 4000,
         heightMeters: 4000,
-        sampleWidth: 8000,
-        sampleHeight: 8000,
+        sampleWidth: 12_000,
+        sampleHeight: 12_000,
       })
     ).toThrow(`budget of ${SAMPLE_BUDGET} cells`);
   });

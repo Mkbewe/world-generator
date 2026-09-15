@@ -29,7 +29,7 @@ export function SizeInputField({ value, onChange, onCommit }: SizeInputFieldProp
           }
         }}
       >
-        <TextField.Slot side='right'>px</TextField.Slot>
+        <TextField.Slot side='right'>m</TextField.Slot>
       </TextField.Root>
     </Flex>
   );

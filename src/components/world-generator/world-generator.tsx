@@ -14,9 +14,11 @@ export function WorldGenerator() {
   const seed = useGeneralFormStore(state => state.seed);
   const setSeed = useGeneralFormStore(state => state.setSeed);
   const shape = useWorldShapeFormStore(state => state.shape);
-  const size = useWorldShapeFormStore(state => state.size);
+  const sizeMeters = useWorldShapeFormStore(state => state.sizeMeters);
+  const metersPerSample = useWorldShapeFormStore(state => state.metersPerSample);
   const setShape = useWorldShapeFormStore(state => state.setShape);
-  const setSize = useWorldShapeFormStore(state => state.setSize);
+  const setSizeMeters = useWorldShapeFormStore(state => state.setSizeMeters);
+  const setMetersPerSample = useWorldShapeFormStore(state => state.setMetersPerSample);
   const noise = useNoiseFormStore(state => state.noise);
   const setNoise = useNoiseFormStore(state => state.setNoise);
   const progress = useGenerationProgressStore(state => state.progress);
@@ -31,9 +33,11 @@ export function WorldGenerator() {
           isGenerating={isGenerating}
           onGenerate={generate}
           shape={shape}
-          size={size}
+          sizeMeters={sizeMeters}
+          metersPerSample={metersPerSample}
           onShapeChange={setShape}
-          onSizeChange={setSize}
+          onSizeChange={setSizeMeters}
+          onDetailChange={setMetersPerSample}
           noise={noise}
           onNoiseChange={setNoise}
         />

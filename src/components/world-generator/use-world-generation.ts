@@ -10,6 +10,7 @@ import {
   useNoiseFormStore,
   useWorldShapeFormStore,
 } from '../../stores';
+import { summarizeWorldGrid } from '../../utils/map-generator/world-grid';
 import type { MapRenderer } from '../../utils/map-renderer';
 import { restartProgress } from '../generation-progress';
 
@@ -25,7 +26,8 @@ export interface WorldGeneration {
 export function useWorldGeneration(): WorldGeneration {
   const seed = useGeneralFormStore(state => state.seed);
   const shape = useWorldShapeFormStore(state => state.shape);
-  const size = useWorldShapeFormStore(state => state.size);
+  const sizeMeters = useWorldShapeFormStore(state => state.sizeMeters);
+  const metersPerSample = useWorldShapeFormStore(state => state.metersPerSample);
   const noise = useNoiseFormStore(state => state.noise);
   const macroRegions = useMacroRegionFormStore(state => state.regions);
   const macroRegionDeformation = useMacroRegionFormStore(state => state.deformation);
@@ -62,8 +64,15 @@ export function useWorldGeneration(): WorldGeneration {
     const previousProgress = useGenerationProgressStore.getState().progress;
     setProgress(previousProgress ? restartProgress(previousProgress) : undefined);
 
+    const grid = summarizeWorldGrid(sizeMeters, metersPerSample);
     const config = {
-      world: { width: size, height: size, seed: parsedSeed, shape },
+      world: {
+        width: grid.dimensions.sampleWidth,
+        height: grid.dimensions.sampleHeight,
+        metersPerSample: grid.metersPerSample,
+        seed: parsedSeed,
+        shape,
+      },
       noise,
       macroRegions,
       macroRegionDeformation,
@@ -89,13 +98,14 @@ export function useWorldGeneration(): WorldGeneration {
   }, [
     macroRegionDeformation,
     macroRegions,
+    metersPerSample,
     noise,
     seed,
     setConfig,
     setProgress,
     setResult,
     shape,
-    size,
+    sizeMeters,
   ]);
 
   return { isGenerating, generationRun, error, onRendererReady, generate };

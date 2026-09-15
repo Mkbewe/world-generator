@@ -23,9 +23,11 @@ interface SettingsPanelProps {
   isGenerating: boolean;
   onGenerate: () => void;
   shape: WorldShape;
-  size: WorldSize;
+  sizeMeters: WorldSize;
+  metersPerSample: number;
   onShapeChange: (shape: WorldShape) => void;
-  onSizeChange: (size: WorldSize) => void;
+  onSizeChange: (sizeMeters: WorldSize) => void;
+  onDetailChange: (metersPerSample: number) => void;
   noise: NoiseConfig;
   onNoiseChange: (noise: NoiseConfig) => void;
 }
@@ -36,9 +38,11 @@ export function SettingsPanel({
   isGenerating,
   onGenerate,
   shape,
-  size,
+  sizeMeters,
+  metersPerSample,
   onShapeChange,
   onSizeChange,
+  onDetailChange,
   noise,
   onNoiseChange,
 }: SettingsPanelProps) {
@@ -57,9 +61,11 @@ export function SettingsPanel({
       content: (
         <WorldShapeForm
           shape={shape}
-          size={size}
+          sizeMeters={sizeMeters}
+          metersPerSample={metersPerSample}
           onShapeChange={onShapeChange}
           onSizeChange={onSizeChange}
+          onDetailChange={onDetailChange}
         />
       ),
     },
