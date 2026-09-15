@@ -16,6 +16,13 @@ const types = [
 const { writer } = createPreset({ types });
 const baseCommitPartial = writer.commitPartial;
 
+const REPO_URL = 'https://github.com/Mkbewe/world-generator';
+
+/** Links a numeric scope (task number) to its issue; named scopes stay plain. */
+function linkScope(entry) {
+  return entry.replace(/\*\*(\d+):\*\*/, (_, id) => `**[${id}](${REPO_URL}/issues/${id}):**`);
+}
+
 export default {
   plugins: {
     '@release-it/conventional-changelog': {
@@ -23,7 +30,7 @@ export default {
       infile: 'CHANGELOG.md',
       writerOpts: {
         commitPartial: (context, commit) => {
-          const entry = baseCommitPartial(context, commit);
+          const entry = linkScope(baseCommitPartial(context, commit));
           const body = typeof commit.body === 'string' ? commit.body.trim() : '';
           return body ? `${entry}\n\n${body}` : entry;
         },

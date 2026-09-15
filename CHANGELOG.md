@@ -21,7 +21,11 @@
 
 ### Code Refactoring
 
-* **238:** split world-shape-form into one component per file ([#248](https://github.com/Mkbewe/world-generator/issues/248)) ([9c1287c](https://github.com/Mkbewe/world-generator/commit/9c1287cbec6de8e773c834450ab4f924a3f08b6a))
+* **[238](https://github.com/Mkbewe/world-generator/issues/238):** split world-shape-form into one component per file ([#248](https://github.com/Mkbewe/world-generator/issues/248)) ([9c1287c](https://github.com/Mkbewe/world-generator/commit/9c1287cbec6de8e773c834450ab4f924a3f08b6a))
+* **[237](https://github.com/Mkbewe/world-generator/issues/237):** split mobile-menu into sections ([#247](https://github.com/Mkbewe/world-generator/issues/247)) ([67afee0](https://github.com/Mkbewe/world-generator/commit/67afee0ba96c109762a3889cb52e3cff274772d1))
+* **[236](https://github.com/Mkbewe/world-generator/issues/236):** split generation-progress into stage list and bar ([#245](https://github.com/Mkbewe/world-generator/issues/245)) ([f580a7a](https://github.com/Mkbewe/world-generator/commit/f580a7aa46a4712daf34eaa43536450c1ee802ec))
+* **[235](https://github.com/Mkbewe/world-generator/issues/235):** split region-distribution into bar and handle components ([#244](https://github.com/Mkbewe/world-generator/issues/244)) ([7b4d048](https://github.com/Mkbewe/world-generator/commit/7b4d048fb1eb1ff57157fd7b4a42285b6bcb969e))
+* **[233](https://github.com/Mkbewe/world-generator/issues/233):** remove the unused dummy form ([#234](https://github.com/Mkbewe/world-generator/issues/234)) ([61eae00](https://github.com/Mkbewe/world-generator/commit/61eae00967faa289ba40ae1661cffad7b036a7e5))
 
 ## [0.5.0](https://github.com/Mkbewe/world-generator/compare/v0.4.1...v0.5.0) (2026-09-14)
 
