@@ -98,6 +98,31 @@ describe('MacroRegionForm', () => {
     expect(overlayRegions(state.regions)).toHaveLength(0);
   });
 
+  it('marks the active preset and clears it after manual changes', async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const rings = screen.getByRole('button', { name: 'Rings' });
+    expect(rings).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Horizontal' }));
+    expect(screen.getByRole('button', { name: 'Horizontal' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(rings).toHaveAttribute('aria-pressed', 'false');
+
+    const [firstHandle] = within(screen.getByLabelText('Region boundaries')).getAllByRole('slider');
+    firstHandle.focus();
+    await user.keyboard('{ArrowRight}');
+
+    expect(screen.getByRole('button', { name: 'Horizontal' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+    expect(screen.getByText(/edited manually/i)).toBeInTheDocument();
+  });
+
   it('adds horizontal and vertical bands as overlay regions', async () => {
     const user = userEvent.setup();
     renderForm();
