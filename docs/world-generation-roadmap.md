@@ -367,17 +367,19 @@ Podglądy koncepcyjne:
 
 - [trzy presety świata](world-presets.jpg).
 
-### Etykiety regionów — plan C, możliwy refactor
+### Etykiety regionów — generyczny kanał informacji (#255)
 
 Nazwy regionów z formularza są metadanymi podglądu, a nie rastrem: `macroRegionIdMap`
-przechowuje indeks regionu. Obecnie (plan C) snapshot zapisuje listę `{ index, label }`
-z konfiguracji użytej do generacji, restore ją odtwarza, a odczyt pod kursorem pokazuje
-etykietę z fallbackiem `Region N`. Dzięki temu nazwy są spójne z wygenerowanym obrazem,
-nawet gdy formularz zmieni się bez ponownej generacji.
+przechowuje indeks regionu. Zamiast pól per funkcja działa generyczny kanał `MapInfo`:
+`MAP_INFO_CATALOG` w `map-generator` wyprowadza informacje nierastrowe z konfiguracji
+generacji (pierwszy wpis to `macroRegionLabels`), a snapshot i stan renderera niosą ten
+sam rekord. Odczyt pod kursorem rozwiązuje etykietę po indeksie regionu z fallbackiem
+`Region N`, więc nazwy pasują do wygenerowanego obrazu, nawet gdy formularz zmieni się
+bez ponownej generacji.
 
-Docelowo metadane regionów mogą płynąć z pipeline'u razem z danymi etapu (plan B).
-Gdy etap zacznie je emitować, przejście na ten wariant nie będzie wymagało zmian w UI —
-wystarczy podmienić źródło etykiet w snapshocie i rendererze. Zadanie: #255.
+Nowa informacja to wpis w katalogu i jej użycie — bez zmian w repository, rendererze
+i persistence. Docelowo ten sam kanał mogą zasilać metadane emitowane przez pipeline
+(plan B), bez zmian w UI.
 
 ### Pierścienie dzielone z rotacją — planowane
 
