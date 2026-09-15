@@ -151,6 +151,17 @@ przeliczanie etapów i osobna rozdzielczość danych roboczego podglądu.
 - Weryfikacja obejmuje serię szybkich zmian kontrolek, anulowanie, zgodność
   seedu i układu przy różnych rozdzielczościach oraz pomiary czasu i pamięci.
 
+### Selektywne przeliczanie etapów — fundament
+
+Automatyczne odświeżanie wymaga, aby przy zmianie konfiguracji uruchamiały się tylko
+etapy, których ta zmiana dotyczy. Fundament jest rozbity na osobne zadania:
+
+- ograniczenie `MacroRegionStage` do obszaru kształtu świata (#256),
+- deklaracje zależności etapów i ponowne użycie wyników (#257),
+- prezentacja pominiętych etapów w progressie i statystykach (#258).
+
+Zadanie automatycznego odświeżania pozostaje zablokowane do czasu ich ukończenia.
+
 ## Planowany pipeline
 
 Poniżej opisano docelowy pipeline. Aktualna fabryka uruchamia wyłącznie
@@ -356,6 +367,18 @@ Podglądy koncepcyjne:
 
 - [trzy presety świata](world-presets.jpg).
 
+### Etykiety regionów — plan C, możliwy refactor
+
+Nazwy regionów z formularza są metadanymi podglądu, a nie rastrem: `macroRegionIdMap`
+przechowuje indeks regionu. Obecnie (plan C) snapshot zapisuje listę `{ index, label }`
+z konfiguracji użytej do generacji, restore ją odtwarza, a odczyt pod kursorem pokazuje
+etykietę z fallbackiem `Region N`. Dzięki temu nazwy są spójne z wygenerowanym obrazem,
+nawet gdy formularz zmieni się bez ponownej generacji.
+
+Docelowo metadane regionów mogą płynąć z pipeline'u razem z danymi etapu (plan B).
+Gdy etap zacznie je emitować, przejście na ten wariant nie będzie wymagało zmian w UI —
+wystarczy podmienić źródło etykiet w snapshocie i rendererze. Zadanie: #255.
+
 ### Pierścienie dzielone z rotacją — planowane
 
 Układ radialny można rozszerzyć o pierścienie dzielone na dwa naprzemienne
@@ -519,6 +542,10 @@ Pozostałe zadania:
   od dostępnego budżetu.
 - Rozszerzyć statystyki o rozdzielczość źródłową i wynikową oraz szacowany rozmiar
   buforów i cache.
+- Ograniczyć etapy do obszaru kształtu świata: `MacroRegionStage` obecnie liczy całą
+  siatkę, mimo że poza kształtem wartości nie są widoczne (#256).
+- Selektywnie przeliczać etapy: deklaracje zależności na stage'ach, diff konfiguracji
+  i ponowne użycie wyników, z pominiętymi etapami oznaczonymi w progressie (#257, #258).
 - Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary
   wykażą, że koszt startu jest istotny.
 - Po pomiarach rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami
