@@ -1,5 +1,6 @@
 import {
   cellCenterMeters,
+  cellOriginMeters,
   dimensionsFromMeters,
   metersPerSample,
   metersToCell,
@@ -91,6 +92,25 @@ describe('metersToCell', () => {
 
     expect(Math.abs(center.xMeters - point.xMeters)).toBeLessThanOrEqual(2);
     expect(Math.abs(center.yMeters - point.yMeters)).toBeLessThanOrEqual(2);
+  });
+});
+
+describe('cellOriginMeters', () => {
+  it('maps cell indices to the start of the cell in meters', () => {
+    expect(cellOriginMeters(square, 0, 0)).toEqual({ xMeters: 0, yMeters: 0 });
+    expect(cellOriginMeters(square, 50, 25)).toEqual({ xMeters: 100, yMeters: 50 });
+    expect(cellOriginMeters(square, 1999, 1999)).toEqual({ xMeters: 3998, yMeters: 3998 });
+  });
+
+  it('uses meters per sample per axis', () => {
+    const wide: WorldDimensions = {
+      widthMeters: 4000,
+      heightMeters: 1000,
+      sampleWidth: 2000,
+      sampleHeight: 1000,
+    };
+
+    expect(cellOriginMeters(wide, 3, 4)).toEqual({ xMeters: 6, yMeters: 4 });
   });
 });
 

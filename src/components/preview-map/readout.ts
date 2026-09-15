@@ -1,4 +1,5 @@
 import type { MapInfo, MapInspection, MapSize } from '../../utils/map-renderer';
+import { cellOriginMeters, type WorldDimensions } from '../../utils/world-dimensions';
 
 export interface PointerSample {
   /** Source raster cell under the pointer. */
@@ -42,10 +43,19 @@ export interface InspectorReadout {
   readonly inspection?: MapInspection;
 }
 
+/** Labelled pair of X/Y values rendered as aligned columns. */
+export interface ReadoutLine {
+  readonly label: string;
+  readonly x: string;
+  readonly y: string;
+}
+
 export interface ReadoutItem {
   readonly id: string;
   readonly label: string;
   readonly value: string;
+  /** When present, rendered as aligned X/Y columns instead of a single value. */
+  readonly lines?: readonly ReadoutLine[];
 }
 
 const EMPTY = '—';
@@ -58,7 +68,8 @@ export function readoutItems(
     {
       id: 'position',
       label: 'Position',
-      value: readout ? `X ${readout.position.x}, Y ${readout.position.y}` : EMPTY,
+      value: EMPTY,
+      lines: readout ? describePositionLines(readout.position, info) : undefined,
     },
     {
       id: 'value',
@@ -66,6 +77,23 @@ export function readoutItems(
       value: describeValue(readout?.inspection, info),
     },
   ];
+}
+
+/** Pixel coordinates with the cell origin in meters when dimensions are known. */
+function describePositionLines(position: PointerSample, info: MapInfo): readonly ReadoutLine[] {
+  const lines: ReadoutLine[] = [
+    { label: 'Position', x: `X ${position.x} px`, y: `Y ${position.y} px` },
+  ];
+  const dimensions = worldDimensions(info);
+  if (dimensions) {
+    const meters = cellOriginMeters(dimensions, position.x, position.y);
+    lines.push({
+      label: 'Distance',
+      x: `X ${formatMeters(meters.xMeters)} m`,
+      y: `Y ${formatMeters(meters.yMeters)} m`,
+    });
+  }
+  return lines;
 }
 
 function describeValue(inspection: MapInspection | undefined, info: MapInfo): string {
@@ -92,6 +120,27 @@ function macroRegionLabel(info: MapInfo, value: number): string | undefined {
   }
   const label: unknown = labels[value];
   return typeof label === 'string' && label.trim().length > 0 ? label : undefined;
+}
+
+/** Reads the world dimensions captured with the generated map, if they are well formed. */
+function worldDimensions(info: MapInfo): WorldDimensions | undefined {
+  const value: unknown = info.worldDimensions;
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+  const { widthMeters, heightMeters, sampleWidth, sampleHeight } = value as WorldDimensions;
+  const numbers = [widthMeters, heightMeters, sampleWidth, sampleHeight];
+  if (!numbers.every(entry => typeof entry === 'number' && Number.isFinite(entry))) {
+    return undefined;
+  }
+  if (widthMeters <= 0 || heightMeters <= 0 || sampleWidth < 1 || sampleHeight < 1) {
+    return undefined;
+  }
+  return { widthMeters, heightMeters, sampleWidth, sampleHeight };
+}
+
+function formatMeters(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function clamp01(value: number): number {
