@@ -38,5 +38,9 @@ Every change in the project requires the user's explicit confirmation before it
 is made. Do not edit files, commit, push, or modify GitHub issues/board items
 without approval.
 
+Pushing branches and creating pull requests are always the user's job. Never run
+`git push` or `gh pr create` for a branch without an explicit instruction for
+that specific branch.
+
 Tests are only updated or fixed once work on a task is finished — not after
 every small change while the task is still in progress.

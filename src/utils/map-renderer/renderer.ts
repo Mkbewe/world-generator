@@ -3,11 +3,12 @@ import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
 import {
   type MapBaseLayerId,
+  type MapInfo,
   type MapInspection,
   type MapLayerOption,
   type MapOverlayId,
   type MapOverlayOption,
-  type MapRasters,
+  type MapSnapshotData,
   OVERLAY_IDS,
   OVERLAY_LAYERS,
   type RenderStatistics,
@@ -18,6 +19,8 @@ export interface MapRendererState {
   layers: readonly MapLayerOption<MapBaseLayerId>[];
   overlays: readonly MapOverlayOption[];
   displayedLayer?: MapBaseLayerId;
+  /** Non-raster information captured with the map, e.g. macro region labels. */
+  info: MapInfo;
   error?: string;
 }
 
@@ -41,6 +44,7 @@ export function emptyRenderState(): MapRendererState {
       available: false,
       visible: true,
     })),
+    info: {},
   };
 }
 
@@ -53,6 +57,7 @@ export class MapRenderer {
   private lifetime = new AbortController();
   private error?: string;
   private mapSize?: MapSize;
+  private info: MapInfo = {};
 
   constructor(
     elements: MapViewElements,
@@ -92,6 +97,7 @@ export class MapRenderer {
       layers: this.scene.options,
       overlays: this.view.overlayOptions,
       displayedLayer: this.view.displayedLayer,
+      info: this.info,
       error: this.error,
     };
   }
@@ -106,10 +112,11 @@ export class MapRenderer {
   }
 
   /** Displays existing layer data without progressive drawing or generation statistics. */
-  load(size: MapSize, data: MapRasters): void {
-    this.start(size);
+  load(snapshot: MapSnapshotData): void {
+    this.start(snapshot);
+    this.setInfo(snapshot.info ?? {});
     this.metrics.reset();
-    const layers = this.scene.load(data);
+    const layers = this.scene.load(snapshot.layers);
     this.view.restoreSelection(layers.at(-1)?.id);
     for (const layer of layers) {
       this.queue.enqueue(layer);
@@ -161,6 +168,12 @@ export class MapRenderer {
     this.emitState();
   }
 
+  /** Keeps non-raster information captured with the current map. */
+  setInfo(info: MapInfo): void {
+    this.info = info;
+    this.emitState();
+  }
+
   /** Stops drawing and accepting data for this run, keeping the current preview. */
   cancel(): void {
     this.lifetime.abort();
@@ -171,6 +184,7 @@ export class MapRenderer {
     this.cancel();
     this.scene.reset();
     this.mapSize = undefined;
+    this.info = {};
     this.error = undefined;
     this.metrics.reset();
     this.view.reset();

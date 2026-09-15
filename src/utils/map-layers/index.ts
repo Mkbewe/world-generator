@@ -12,4 +12,4 @@ export type {
   RasterDataType,
   TypedArrayFor,
 } from './layer-spec';
-export type { LayerDataRecord, LayerSource, MapBaseLayerId, MapRasters } from './types';
+export type { LayerDataRecord, LayerSource, MapBaseLayerId, MapInfo, MapRasters } from './types';

@@ -356,6 +356,17 @@ Podglądy koncepcyjne:
 
 - [trzy presety świata](world-presets.jpg).
 
+### Informacje mapy — generyczny kanał (#255)
+
+Dane nierastrowe (np. etykiety regionów) nie dostają własnych pól w snapshocie ani
+rendererze. Katalog `MAP_INFO_CATALOG` w `map-generator` wyprowadza je z konfiguracji
+generacji do luźnego rekordu `MapInfo`, który niosą snapshot i stan renderera. Odczyt
+pod kursorem rozwiązuje etykietę regionu po indeksie z fallbackiem `Region N`.
+
+Nowa informacja to wpis w katalogu i jej użycie — bez zmian w repository, rendererze
+i persistence. Docelowo ten sam kanał mogą zasilać metadane emitowane przez pipeline
+(plan B), bez zmian w UI.
+
 ### Pierścienie dzielone z rotacją — planowane
 
 Układ radialny można rozszerzyć o pierścienie dzielone na dwa naprzemienne

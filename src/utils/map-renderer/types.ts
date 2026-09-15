@@ -1,8 +1,8 @@
 import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
-import type { MapBaseLayerId } from '../map-layers';
+import type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
 
-export type { MapBaseLayerId, MapRasters } from '../map-layers';
+export type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
 
 /** Immutable spatial data usable by layers and overlays. */
 export interface SpatialMask {
@@ -13,6 +13,12 @@ export interface SpatialMask {
 export interface MapMetadata {
   seed: string;
   shape: 'disc' | 'rectangle';
+}
+
+/** Everything the renderer needs to display an existing map. */
+export interface MapSnapshotData extends MapSize {
+  layers: MapRasters;
+  info?: MapInfo;
 }
 
 export const OVERLAY_LAYERS = {

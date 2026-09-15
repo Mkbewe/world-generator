@@ -1,8 +1,10 @@
 ﻿import type { MapSize } from '../layer';
-import type { MapMetadata, MapRasters } from '../types';
+import type { MapInfo, MapMetadata, MapRasters } from '../types';
 
 export interface GeneratedMapSnapshot extends MapSize, MapMetadata {
   layers: MapRasters;
+  /** Non-raster information captured with the map, e.g. macro region labels. */
+  info?: MapInfo;
 }
 
 export class MapRepository {
