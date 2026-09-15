@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.3](https://github.com/Mkbewe/world-generator/compare/v0.5.2...v0.5.3) (2026-09-15)
+
+### Bug Fixes
+
+* **[255](https://github.com/Mkbewe/world-generator/issues/255):** show macro region labels from the generated map ([#265](https://github.com/Mkbewe/world-generator/issues/265)) ([bdd6a50](https://github.com/Mkbewe/world-generator/commit/bdd6a50d8a2eadbb0761673fd1d6c97704539dd4))
+
+  - add a generic MapInfo channel shared by the snapshot and renderer
+  state
+  - derive map info from the generation config through MAP_INFO_CATALOG
+  - resolve macro region labels by index in the readout with a Region N
+  fallback
+  - document the info channel in the roadmap
+
+### Documentation
+
+* update roadmap notes ([#269](https://github.com/Mkbewe/world-generator/issues/269)) ([09bf274](https://github.com/Mkbewe/world-generator/commit/09bf274a8b698aee62fbe1935231e44e1ad2f176))
+
 ## [0.5.2](https://github.com/Mkbewe/world-generator/compare/v0.5.1...v0.5.2) (2026-09-15)
 
 ### Chores
