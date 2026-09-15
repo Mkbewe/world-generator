@@ -5,6 +5,7 @@ import { RegionHeader } from './region-header';
 import { useMacroRegionFormStore } from '../../../../../stores';
 import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
 import { InfoLabel } from '../../../../info-label';
+import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
 import { SliderField } from '../../../../slider-field';
 import { irregularityLabel, MAX_IRREGULARITY } from '../border-settings';
 
@@ -29,14 +30,16 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
             label='Direction'
             description='A horizontal band crosses west to east; a vertical band crosses north to south.'
           />
-          <SegmentedControl.Root
-            size='1'
-            value={geometry.axis}
-            onValueChange={axis => updateOverlay(region.id, { axis: axis as 'x' | 'y' })}
-          >
-            <SegmentedControl.Item value='y'>Horizontal</SegmentedControl.Item>
-            <SegmentedControl.Item value='x'>Vertical</SegmentedControl.Item>
-          </SegmentedControl.Root>
+          <SegmentedControlScroll>
+            <SegmentedControl.Root
+              size='1'
+              value={geometry.axis}
+              onValueChange={axis => updateOverlay(region.id, { axis: axis as 'x' | 'y' })}
+            >
+              <SegmentedControl.Item value='y'>Horizontal</SegmentedControl.Item>
+              <SegmentedControl.Item value='x'>Vertical</SegmentedControl.Item>
+            </SegmentedControl.Root>
+          </SegmentedControlScroll>
         </Flex>
         <SliderField
           label='Position'
