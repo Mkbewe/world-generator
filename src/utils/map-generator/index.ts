@@ -1,5 +1,5 @@
 export { createMapGenerator } from './pipeline-factory';
-export { resolveWorldDimensions, selectMapInfo } from './info-definitions';
+export { selectMapInfo } from './info-definitions';
 export type { StageInfo } from './stage-definitions';
 export { runGeneration } from './worker';
 export type {

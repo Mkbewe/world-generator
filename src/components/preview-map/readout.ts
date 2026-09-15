@@ -82,7 +82,7 @@ export function readoutItems(
 /** Pixel coordinates with the cell origin in meters when dimensions are known. */
 function describePositionLines(position: PointerSample, info: MapInfo): readonly ReadoutLine[] {
   const lines: ReadoutLine[] = [
-    { label: 'Position', x: `X ${position.x} px`, y: `Y ${position.y} px` },
+    { label: 'Position', x: `X ${position.x} cell`, y: `Y ${position.y} cell` },
   ];
   const dimensions = worldDimensions(info);
   if (dimensions) {

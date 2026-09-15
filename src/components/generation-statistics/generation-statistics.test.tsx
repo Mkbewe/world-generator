@@ -44,7 +44,7 @@ describe('GenerationStatisticsPanel', () => {
     });
 
     expect(screen.getByText('Total data')).toBeInTheDocument();
-    expect(screen.getByText('5.0 KB')).toBeInTheDocument();
+    expect(screen.getByText('5.1 KB')).toBeInTheDocument();
   });
 
   it('renders stage names and durations', () => {

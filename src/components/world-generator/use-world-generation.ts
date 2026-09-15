@@ -66,13 +66,7 @@ export function useWorldGeneration(): WorldGeneration {
 
     const grid = summarizeWorldGrid(sizeMeters, metersPerSample);
     const config = {
-      world: {
-        width: grid.dimensions.sampleWidth,
-        height: grid.dimensions.sampleHeight,
-        metersPerSample: grid.metersPerSample,
-        seed: parsedSeed,
-        shape,
-      },
+      world: { dimensions: grid.dimensions, seed: parsedSeed, shape },
       noise,
       macroRegions,
       macroRegionDeformation,

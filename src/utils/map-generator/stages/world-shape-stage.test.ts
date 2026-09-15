@@ -1,11 +1,23 @@
 import { WorldShapeStage } from './world-shape-stage';
 import { MapGenerator } from '../pipeline';
-import type { MapConfig, MapState } from '../types';
+import type { MapConfig, MapState, WorldConfig } from '../types';
+
+function worldConfig(sampleWidth: number, sampleHeight: number): WorldConfig {
+  return {
+    dimensions: {
+      widthMeters: sampleWidth,
+      heightMeters: sampleHeight,
+      sampleWidth,
+      sampleHeight,
+    },
+    seed: 123,
+  };
+}
 
 describe('WorldShapeStage', () => {
   it('creates a circular mask within the rectangular data grid', async () => {
     const config: MapConfig = {
-      world: { width: 5, height: 5, seed: 123 },
+      world: worldConfig(5, 5),
       noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
     const pipeline = new MapGenerator<MapConfig, MapState>([new WorldShapeStage()]);
@@ -21,7 +33,7 @@ describe('WorldShapeStage', () => {
   it('validates the world mask output type and size', () => {
     const stage = new WorldShapeStage();
     const config: MapConfig = {
-      world: { width: 5, height: 5, seed: 123 },
+      world: worldConfig(5, 5),
       noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
 
@@ -34,7 +46,7 @@ describe('WorldShapeStage', () => {
 
   it('summarizes the generated world shape', async () => {
     const config: MapConfig = {
-      world: { width: 5, height: 5, seed: 123 },
+      world: worldConfig(5, 5),
       noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
     const pipeline = new MapGenerator<MapConfig, MapState>([new WorldShapeStage()]);

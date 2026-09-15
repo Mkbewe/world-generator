@@ -12,7 +12,15 @@ const noise = { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 };
 
 function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 5): MapConfig {
   return {
-    world: { width, height, seed: 123 },
+    world: {
+      dimensions: {
+        widthMeters: width,
+        heightMeters: height,
+        sampleWidth: width,
+        sampleHeight: height,
+      },
+      seed: 123,
+    },
     noise,
     macroRegions,
     macroRegionDeformation: { amplitude: 0 },
@@ -20,8 +28,8 @@ function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 
 }
 
 async function generate(source: MapConfig, mask?: Uint8Array) {
-  const { width, height } = source.world;
-  const worldMask = mask ?? new Uint8Array(width * height).fill(1);
+  const { sampleWidth, sampleHeight } = source.world.dimensions;
+  const worldMask = mask ?? new Uint8Array(sampleWidth * sampleHeight).fill(1);
   const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
   return pipeline.generate(source, { worldMask });
 }

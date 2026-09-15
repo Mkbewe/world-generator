@@ -23,7 +23,11 @@ export interface NormalizedPoint {
 /** Rough bytes per cell used by the generated layers (mask, noise and region ids). */
 export const BYTES_PER_SAMPLE = 6;
 
-/** Memory budget for the generated layers, in bytes (decimal megabytes). */
+/**
+ * Budget for the generator data only (stage rasters in the worker and the copy
+ * sent to the main thread), in bytes (decimal megabytes). Renderer canvases and
+ * GPU memory are counted separately by the render statistics.
+ */
 export const MEMORY_BUDGET_BYTES = 600_000_000;
 
 /** Cells above this count are rejected by both the UI and the generator. */
@@ -110,6 +114,14 @@ export function metersToCell(
 export function cellCenterMeters(dimensions: WorldDimensions, x: number, y: number): MeterPoint {
   const perSample = metersPerSample(dimensions);
   return { xMeters: (x + 0.5) * perSample.x, yMeters: (y + 0.5) * perSample.y };
+}
+
+/** Sample grid size of the world as plain width and height numbers. */
+export function sampleSize(dimensions: WorldDimensions): {
+  readonly width: number;
+  readonly height: number;
+} {
+  return { width: dimensions.sampleWidth, height: dimensions.sampleHeight };
 }
 
 /** Lower-left corner of a cell in meters. */

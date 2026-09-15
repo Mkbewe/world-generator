@@ -7,6 +7,7 @@ import {
 } from '../../utils/map-generator';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../utils/map-layers';
 import { mapPersistence, type MapRenderer, mapRepository } from '../../utils/map-renderer';
+import { sampleSize } from '../../utils/world-dimensions';
 import { type GenerationProgressState, ProgressTracker } from '../generation-progress';
 
 /** Coordinates generation and preview, with independent cancellation for each. */
@@ -41,7 +42,7 @@ export class WorldGenerationSession {
 
     try {
       const info = selectMapInfo(config);
-      this.renderer.start(config.world);
+      this.renderer.start(sampleSize(config.world.dimensions));
       this.renderer.setInfo(info);
       const renderSignal = this.renderer.signal;
       mapRepository.clear();
@@ -63,8 +64,8 @@ export class WorldGenerationSession {
 
       signal.throwIfAborted();
       mapPersistence.save({
-        width: config.world.width,
-        height: config.world.height,
+        width: config.world.dimensions.sampleWidth,
+        height: config.world.dimensions.sampleHeight,
         seed: String(config.world.seed),
         shape: config.world.shape ?? 'disc',
         layers,

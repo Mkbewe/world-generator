@@ -15,7 +15,7 @@ import type {
 export class MapGenerator<TConfig extends SeededWorldConfig, TState extends object> {
   constructor(
     readonly stages: readonly MapStage<TConfig, TState>[],
-    private readonly options: MapGeneratorOptions = {}
+    private readonly options: MapGeneratorOptions<TConfig> = {}
   ) {
     const ids = new Set<string>();
     for (const stage of stages) {
@@ -31,6 +31,7 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
     initialState: TState,
     options: GenerationOptions = {}
   ): Promise<GenerationResult<MapContext<TConfig, TState>>> {
+    this.options.validateConfig?.(config);
     const context = new MapContext(config, initialState);
     const signal = options.signal ?? new AbortController().signal;
     const generationStartedAt = performance.now();

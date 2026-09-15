@@ -16,31 +16,31 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ noiseMap: Float32Array }> {
-    const { width, height } = context.config.world;
+    const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const { frequency, octaves, persistence, lacunarity } = context.config.noise;
     const worldMask = context.state.worldMask;
 
     this.validateConfig(context.config);
 
-    if (!worldMask || worldMask.length !== width * height) {
+    if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
       throw new Error('A valid world mask must be generated before noise.');
     }
 
     const random = context.random.create(this.id);
     const noise2D = createNoise2D(() => random.next());
-    const noiseMap = new Float32Array(width * height);
-    const xDivisor = Math.max(1, width - 1);
-    const yDivisor = Math.max(1, height - 1);
+    const noiseMap = new Float32Array(sampleWidth * sampleHeight);
+    const xDivisor = Math.max(1, sampleWidth - 1);
+    const yDivisor = Math.max(1, sampleHeight - 1);
 
-    for (let y = 0; y < height; y++) {
+    for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
 
       const worldY = y / yDivisor;
 
-      for (let x = 0; x < width; x++) {
-        const index = y * width + x;
+      for (let x = 0; x < sampleWidth; x++) {
+        const index = y * sampleWidth + x;
 
         if (worldMask[index] === 0) {
           continue;
@@ -63,7 +63,7 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
         noiseMap[index] = (normalizedNoise + 1) / 2;
       }
 
-      report((y + 1) / height);
+      report((y + 1) / sampleHeight);
     }
 
     context.state.noiseMap = noiseMap;
@@ -71,8 +71,8 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
-    const { width, height } = config.world;
-    assertStageOutput(state.noiseMap, 'float32', width * height);
+    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    assertStageOutput(state.noiseMap, 'float32', sampleWidth * sampleHeight);
   }
 
   summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {
@@ -123,12 +123,8 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
   }
 
   private validateConfig(config: MapConfig): void {
-    const { width, height, seed } = config.world;
+    const { seed } = config.world;
     const { frequency, octaves, persistence, lacunarity } = config.noise;
-
-    if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) {
-      throw new RangeError('World width and height must be positive integers.');
-    }
 
     if (!Number.isFinite(seed)) {
       throw new RangeError('World seed must be a finite number.');

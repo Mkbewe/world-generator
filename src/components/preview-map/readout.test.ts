@@ -72,13 +72,13 @@ describe('readoutItems', () => {
     expect(readoutItems(undefined).map(item => item.value)).toEqual(['—', '—']);
   });
 
-  it('shows pixel coordinates as an X/Y row without a distance', () => {
+  it('shows cell coordinates as an X/Y row without a distance', () => {
     const items = readoutItems(readout());
 
     expect(items[0]).toMatchObject({
       id: 'position',
       label: 'Position',
-      lines: [{ label: 'Position', x: 'X 50 px', y: 'Y 25 px' }],
+      lines: [{ label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' }],
     });
     expect(items[1]).toMatchObject({ id: 'value', label: 'Value', value: '—' });
     expect(items.map(item => item.value).join(' ')).not.toContain('%');
@@ -95,7 +95,7 @@ describe('readoutItems', () => {
     };
 
     expect(item(readout(), 'position', info)?.lines).toEqual([
-      { label: 'Position', x: 'X 50 px', y: 'Y 25 px' },
+      { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
       { label: 'Distance', x: 'X 100 m', y: 'Y 50 m' },
     ]);
   });
@@ -123,10 +123,10 @@ describe('readoutItems', () => {
     };
 
     expect(item(readout(), 'position', { worldDimensions: 'nope' })?.lines).toEqual([
-      { label: 'Position', x: 'X 50 px', y: 'Y 25 px' },
+      { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
     ]);
     expect(item(readout(), 'position', malformed)?.lines).toEqual([
-      { label: 'Position', x: 'X 50 px', y: 'Y 25 px' },
+      { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
     ]);
   });
 

@@ -14,34 +14,30 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ worldMask: Uint8Array }> {
-    const { width, height } = context.config.world;
+    const { sampleWidth, sampleHeight } = context.config.world.dimensions;
 
-    if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) {
-      throw new RangeError('World width and height must be positive integers.');
-    }
-
-    const worldMask = new Uint8Array(width * height);
-    const xDivisor = Math.max(1, width - 1);
-    const yDivisor = Math.max(1, height - 1);
+    const worldMask = new Uint8Array(sampleWidth * sampleHeight);
+    const xDivisor = Math.max(1, sampleWidth - 1);
+    const yDivisor = Math.max(1, sampleHeight - 1);
     const shape = context.config.world.shape ?? 'disc';
 
-    for (let y = 0; y < height; y++) {
+    for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
 
       const normalizedY = (2 * y) / yDivisor - 1;
 
-      for (let x = 0; x < width; x++) {
+      for (let x = 0; x < sampleWidth; x++) {
         const normalizedX = (2 * x) / xDivisor - 1;
         const isInsideWorld =
           shape === 'rectangle'
             ? Math.abs(normalizedX) <= 1 && Math.abs(normalizedY) <= 1
             : normalizedX * normalizedX + normalizedY * normalizedY <= 1;
-        worldMask[y * width + x] = isInsideWorld ? 1 : 0;
+        worldMask[y * sampleWidth + x] = isInsideWorld ? 1 : 0;
       }
 
-      report((y + 1) / height);
+      report((y + 1) / sampleHeight);
     }
 
     context.state.worldMask = worldMask;
@@ -49,8 +45,8 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
-    const { width, height } = config.world;
-    assertStageOutput(state.worldMask, 'uint8', width * height);
+    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    assertStageOutput(state.worldMask, 'uint8', sampleWidth * sampleHeight);
   }
 
   summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {
@@ -59,8 +55,8 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
       return undefined;
     }
 
-    const { width, height } = context.config.world;
-    const cells = width * height;
+    const { sampleWidth, sampleHeight } = context.config.world.dimensions;
+    const cells = sampleWidth * sampleHeight;
     let filledCells = 0;
 
     for (let index = 0; index < mask.length; index++) {
@@ -71,8 +67,8 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
 
     return {
       shape: context.config.world.shape ?? 'disc',
-      width,
-      height,
+      width: sampleWidth,
+      height: sampleHeight,
       cells,
       filledCells,
       coverage: cells === 0 ? 0 : filledCells / cells,

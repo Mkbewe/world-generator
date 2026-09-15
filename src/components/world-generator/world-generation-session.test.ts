@@ -10,9 +10,13 @@ import { DEFAULT_MACRO_REGIONS } from '../../utils/map-generator/stages/macro-re
 import { MapRenderer, mapRepository } from '../../utils/map-renderer';
 import { MapLayer } from '../../utils/map-renderer/layer';
 import { Viewport } from '../../utils/map-renderer/viewport';
+import { sampleSize } from '../../utils/world-dimensions';
 
 const config: MapConfig = {
-  world: { width: 2, height: 2, seed: 17 },
+  world: {
+    dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
+    seed: 17,
+  },
   noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
 };
 
@@ -253,7 +257,7 @@ describe('WorldGenerationSession', () => {
       const add = vi.spyOn(renderer, 'add');
 
       if (action === 'restart') {
-        renderer.start(config.world);
+        renderer.start(sampleSize(config.world.dimensions));
       } else {
         renderer[action]();
       }
