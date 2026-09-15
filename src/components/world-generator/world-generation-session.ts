@@ -3,6 +3,7 @@ import {
   type MapConfig,
   type RunGeneration,
   runGeneration as runGenerationInWorker,
+  selectMapInfo,
 } from '../../utils/map-generator';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../utils/map-layers';
 import { mapPersistence, type MapRenderer, mapRepository } from '../../utils/map-renderer';
@@ -39,7 +40,9 @@ export class WorldGenerationSession {
     let progress: ProgressTracker | undefined;
 
     try {
+      const info = selectMapInfo(config);
       this.renderer.start(config.world);
+      this.renderer.setInfo(info);
       const renderSignal = this.renderer.signal;
       mapRepository.clear();
       signal.throwIfAborted();
@@ -65,6 +68,7 @@ export class WorldGenerationSession {
         seed: String(config.world.seed),
         shape: config.world.shape ?? 'disc',
         layers,
+        info,
       });
       progress?.complete(result.totalDurationMs);
       return {

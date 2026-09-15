@@ -11,3 +11,6 @@ export type MapRasters = Partial<{
 
 /** Loose representation used only where source keys are discovered at runtime. */
 export type LayerDataRecord = Readonly<Record<string, unknown>>;
+
+/** Non-raster information kept with the generated map, e.g. region labels or land definitions. */
+export type MapInfo = Readonly<Record<string, unknown>>;

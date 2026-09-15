@@ -6,6 +6,7 @@ import {
   type RunGeneration,
   type StageInfo,
 } from '../../utils/map-generator';
+import { DEFAULT_MACRO_REGIONS } from '../../utils/map-generator/stages/macro-region-defaults';
 import { MapRenderer, mapRepository } from '../../utils/map-renderer';
 import { MapLayer } from '../../utils/map-renderer/layer';
 import { Viewport } from '../../utils/map-renderer/viewport';
@@ -145,6 +146,23 @@ describe('WorldGenerationSession', () => {
 
     expect(renderer.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
     expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regionIds);
+  });
+
+  it('captures macro region labels with the snapshot', async () => {
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      return {
+        statistics: [],
+        totalDurationMs: 1,
+      };
+    });
+
+    await session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
+
+    expect(mapRepository.get()?.info).toEqual({
+      macroRegionLabels: DEFAULT_MACRO_REGIONS.map(region => region.label),
+    });
   });
 
   it('saves generated stage data even when the preview is cancelled', async () => {

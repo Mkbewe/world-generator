@@ -1,4 +1,4 @@
-import type { MapInspection, MapSize } from '../../utils/map-renderer';
+import type { MapInfo, MapInspection, MapSize } from '../../utils/map-renderer';
 
 export interface PointerSample {
   /** Source raster cell under the pointer. */
@@ -50,7 +50,10 @@ export interface ReadoutItem {
 
 const EMPTY = '—';
 
-export function readoutItems(readout: InspectorReadout | undefined): readonly ReadoutItem[] {
+export function readoutItems(
+  readout: InspectorReadout | undefined,
+  info: MapInfo = {}
+): readonly ReadoutItem[] {
   return [
     {
       id: 'position',
@@ -60,23 +63,35 @@ export function readoutItems(readout: InspectorReadout | undefined): readonly Re
     {
       id: 'value',
       label: readout?.inspection?.label ?? 'Value',
-      value: describeValue(readout?.inspection),
+      value: describeValue(readout?.inspection, info),
     },
   ];
 }
 
-function describeValue(inspection: MapInspection | undefined): string {
+function describeValue(inspection: MapInspection | undefined, info: MapInfo): string {
   if (!inspection || inspection.value === undefined) {
     return EMPTY;
   }
   switch (inspection.id) {
     case 'world-shape':
       return inspection.value === 1 ? 'Inside' : 'Outside';
-    case 'macro-region':
-      return `Region ${inspection.value}`;
+    case 'macro-region': {
+      const label = macroRegionLabel(info, inspection.value);
+      return label ?? `Region ${inspection.value}`;
+    }
     default:
       return inspection.value.toFixed(3);
   }
+}
+
+/** Reads the label captured with the generated map for the given region index. */
+function macroRegionLabel(info: MapInfo, value: number): string | undefined {
+  const labels = info.macroRegionLabels;
+  if (!Array.isArray(labels)) {
+    return undefined;
+  }
+  const label: unknown = labels[value];
+  return typeof label === 'string' && label.trim().length > 0 ? label : undefined;
 }
 
 function clamp01(value: number): number {
