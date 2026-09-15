@@ -59,6 +59,7 @@ function Controls({
     displayedLayer,
     layers,
     overlays: [],
+    info: {},
   };
 
   return (

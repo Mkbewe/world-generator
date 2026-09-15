@@ -88,6 +88,23 @@ describe('readoutItems', () => {
     expect(itemValue(readout({ id: 'noise', label: 'Noise', value: 0.25 }), 'value')).toBe('0.250');
   });
 
+  it('shows macro region labels captured with the generated map', () => {
+    const inspection = { id: 'macro-region', label: 'Macro regions', value: 1 } as const;
+
+    expect(
+      readoutItems(readout(inspection), { macroRegionLabels: ['Safe haven', 'Wasteland'] })[1].value
+    ).toBe('Wasteland');
+    expect(readoutItems(readout(inspection), { macroRegionLabels: ['Safe'] })[1].value).toBe(
+      'Region 1'
+    );
+    expect(readoutItems(readout(inspection), { macroRegionLabels: ['', ' '] })[1].value).toBe(
+      'Region 1'
+    );
+    expect(readoutItems(readout(inspection), { macroRegionLabels: 'nope' })[1].value).toBe(
+      'Region 1'
+    );
+  });
+
   it('keeps the layer label while the value is unavailable', () => {
     const items = readoutItems(readout({ id: 'noise', label: 'Noise' }));
 

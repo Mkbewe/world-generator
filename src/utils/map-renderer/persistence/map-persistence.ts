@@ -8,7 +8,7 @@ export class MapPersistence {
   restore(renderer: MapRenderer): void {
     const snapshot = this.repository.get();
     if (snapshot) {
-      renderer.load(snapshot, snapshot.layers);
+      renderer.load(snapshot);
     }
   }
 

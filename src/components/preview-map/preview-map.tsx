@@ -83,7 +83,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
             />
           </div>
         </MapLayerControls>
-        <MapInspector items={readoutItems(readout.readout)} pinned={readout.pinned} />
+        <MapInspector items={readoutItems(readout.readout, preview.info)} pinned={readout.pinned} />
         {preview.error && (
           <Text size='2' color='red' role='alert'>
             {preview.error}
