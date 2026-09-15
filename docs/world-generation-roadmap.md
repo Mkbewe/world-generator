@@ -151,6 +151,17 @@ przeliczanie etapów i osobna rozdzielczość danych roboczego podglądu.
 - Weryfikacja obejmuje serię szybkich zmian kontrolek, anulowanie, zgodność
   seedu i układu przy różnych rozdzielczościach oraz pomiary czasu i pamięci.
 
+### Selektywne przeliczanie etapów — fundament
+
+Automatyczne odświeżanie wymaga, aby przy zmianie konfiguracji uruchamiały się tylko
+etapy, których ta zmiana dotyczy. Fundament jest rozbity na osobne zadania:
+
+- ograniczenie `MacroRegionStage` do obszaru kształtu świata (#256),
+- deklaracje zależności etapów i ponowne użycie wyników (#257),
+- prezentacja pominiętych etapów w progressie i statystykach (#258).
+
+Zadanie automatycznego odświeżania pozostaje zablokowane do czasu ich ukończenia.
+
 ## Planowany pipeline
 
 Poniżej opisano docelowy pipeline. Aktualna fabryka uruchamia wyłącznie
@@ -356,12 +367,15 @@ Podglądy koncepcyjne:
 
 - [trzy presety świata](world-presets.jpg).
 
-### Informacje mapy — generyczny kanał (#255)
+### Etykiety regionów — generyczny kanał informacji (#255)
 
-Dane nierastrowe (np. etykiety regionów) nie dostają własnych pól w snapshocie ani
-rendererze. Katalog `MAP_INFO_CATALOG` w `map-generator` wyprowadza je z konfiguracji
-generacji do luźnego rekordu `MapInfo`, który niosą snapshot i stan renderera. Odczyt
-pod kursorem rozwiązuje etykietę regionu po indeksie z fallbackiem `Region N`.
+Nazwy regionów z formularza są metadanymi podglądu, a nie rastrem: `macroRegionIdMap`
+przechowuje indeks regionu. Zamiast pól per funkcja działa generyczny kanał `MapInfo`:
+`MAP_INFO_CATALOG` w `map-generator` wyprowadza informacje nierastrowe z konfiguracji
+generacji (pierwszy wpis to `macroRegionLabels`), a snapshot i stan renderera niosą ten
+sam rekord. Odczyt pod kursorem rozwiązuje etykietę po indeksie regionu z fallbackiem
+`Region N`, więc nazwy pasują do wygenerowanego obrazu, nawet gdy formularz zmieni się
+bez ponownej generacji.
 
 Nowa informacja to wpis w katalogu i jej użycie — bez zmian w repository, rendererze
 i persistence. Docelowo ten sam kanał mogą zasilać metadane emitowane przez pipeline
@@ -491,21 +505,23 @@ Przykładowo świat `4000 × 4000 m` może mieć bazową `heightmap` o rozdzielc
 
 PNG powinien pozostać wizualizacją albo formatem eksportu, a nie źródłem prawdy dla świata. Źródłem prawdy powinny być seed, konfiguracja oraz numeryczne warstwy generatora. W pierwszej wersji cały teren może zostać wygenerowany raz i trzymany w pamięci. Podział na kafelki lub deterministycznie odtwarzane chunki należy wprowadzić dopiero wtedy, gdy pomiary wykażą problemy z czasem generowania albo zużyciem pamięci.
 
-## Interaktywna eksploracja świata
+## Demo eksploracji świata
 
-Planowana osobna podstrona, np. `/explore/:seed`, powinna pozwalać otworzyć wygenerowany świat w trybie zwiedzania z kamerą z góry. Nie jest to pełna gra: użytkownik nie zbiera zasobów, nie modyfikuje świata i nie wymaga zapisywania stanu rozgrywki. Generator pozostaje niezależny od widoku, a podstrona korzysta z jego warstw danych.
+Planowana osobna podstrona, np. `/explore/:seed`, otwiera wygenerowany świat w trybie zwiedzania z kamerą z góry. To proste demo: docelowa gra powstanie w Godocie, a ta aplikacja jest rozgrzewką i generatorem danych, nie pełnym silnikiem gry.
 
 Zakres pierwszej wersji:
 
-1. Przejście z generatora do podstrony eksploracji z seedem i konfiguracją świata.
-2. Jednorazowe wygenerowanie całej mapy terenu i jej numerycznych warstw.
-3. Kamera z góry śledząca postać, zoom oraz minimapa całego świata.
-4. Postać sterowana klawiaturą, poruszająca się we współrzędnych świata wyrażonych w metrach.
-5. Renderowanie tylko obszaru widocznego przez kamerę, mimo że dane całej mapy pozostają w pamięci.
-6. Podstawowa kolizja wynikająca z warstw terenu, np. woda, strome zbocza i granice świata.
-7. Punkt startowy wybrany przez `LocationStage`.
+1. Przejście z generatora do podstrony z seedem i konfiguracją świata.
+2. Jednorazowe wygenerowanie mapy i jej warstw numerycznych.
+3. Postać to na razie prosty znacznik (np. kółko) w naturalnej skali świata, sterowany klawiaturą, poruszający się we współrzędnych w metrach.
+4. Kamera z góry śledząca postać oraz zoom.
+5. Renderowanie tylko obszaru widocznego przez kamerę, mimo że dane pozostają w pamięci.
 
-Tryb eksploracji nie potrzebuje ekwipunku, zasobów, NPC, symulacji odległych obszarów ani zapisywania zmian w świecie. Kolejne iteracje mogą dodać animacje postaci, wizualne obiekty i dekoracje terenu. Chunkowanie oraz poziomy szczegółowości pozostają opcjonalną optymalizacją dla większych map. Skala postaci i kamery powinna wynikać z metrów świata oraz zoomu, a nie z liczby pikseli źródłowego obrazu.
+Poza zakresem na teraz: kolizje, minimapa, animacje, ekwipunek, NPC i zapisywanie stanu. Kolizje, punkt startowy z `LocationStage` i minimapa wrócą, gdy powstaną warstwy terenu i lokacji. Chunkowanie oraz poziomy szczegółowości pozostają opcjonalną optymalizacją dla większych map. Skala postaci i kamery wynika z metrów świata oraz zoomu, a nie z liczby pikseli źródłowego obrazu.
+
+### Eksport danych do Godota — pomysł (bez tasków)
+
+Jeśli kiedyś okaże się potrzebny, eksport to paczka danych, nie integracja: warstwy jako pliki (np. 16-bit PNG albo binaria) oraz `manifest.json` z seedem, wymiarami w metrach, `m/sample`, listą warstw, paletą, regionami, biomami i lokacjami w metrach. Godot budowałby teren i kolizje z tych samych danych, a nasz podgląd pozostałby narzędziem deweloperskim. Na razie bez zadań.
 
 ## Wydajność — dalszy plan
 Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
@@ -530,6 +546,10 @@ Pozostałe zadania:
   od dostępnego budżetu.
 - Rozszerzyć statystyki o rozdzielczość źródłową i wynikową oraz szacowany rozmiar
   buforów i cache.
+- Ograniczyć etapy do obszaru kształtu świata: `MacroRegionStage` obecnie liczy całą
+  siatkę, mimo że poza kształtem wartości nie są widoczne (#256).
+- Selektywnie przeliczać etapy: deklaracje zależności na stage'ach, diff konfiguracji
+  i ponowne użycie wyników, z pominiętymi etapami oznaczonymi w progressie (#257, #258).
 - Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary
   wykażą, że koszt startu jest istotny.
 - Po pomiarach rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami
