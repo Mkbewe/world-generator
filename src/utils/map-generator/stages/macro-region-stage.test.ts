@@ -19,9 +19,11 @@ function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 
   };
 }
 
-async function generate(source: MapConfig) {
+async function generate(source: MapConfig, mask?: Uint8Array) {
+  const { width, height } = source.world;
+  const worldMask = mask ?? new Uint8Array(width * height).fill(1);
   const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
-  return pipeline.generate(source, {});
+  return pipeline.generate(source, { worldMask });
 }
 
 describe('MacroRegionStage', () => {
@@ -138,13 +140,37 @@ describe('MacroRegionStage', () => {
     expect(first.context.state.macroRegionIdMap).toEqual(second.context.state.macroRegionIdMap);
   });
 
+  it('leaves cells outside the world shape at zero', async () => {
+    const regions = createHorizontalLayout(3);
+    const outsideMiddleRow = new Uint8Array([1, 1, 1, 0, 0, 0, 1, 1, 1]);
+    const result = await generate(config(regions, 3, 3), outsideMiddleRow);
+
+    expect([...result.context.state.macroRegionIdMap!]).toEqual([0, 0, 0, 0, 0, 0, 2, 2, 2]);
+  });
+
+  it('requires a valid world mask', async () => {
+    const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
+
+    await expect(pipeline.generate(config(createRadialLayout(2)), {})).rejects.toMatchObject({
+      cause: { message: expect.stringContaining('world mask') },
+    });
+  });
+
   it('validates output size and reports region counts', async () => {
     const stage = new MacroRegionStage();
     const source = config(createRadialPolesLayout(6), 4, 3);
     const result = await generate(source);
 
     expect(() => stage.validate({}, source)).toThrow('required map data');
-    expect(() => stage.validate({ macroRegionIdMap: new Uint8Array(12) }, source)).not.toThrow();
+    expect(() =>
+      stage.validate(
+        { worldMask: new Uint8Array(12), macroRegionIdMap: new Uint8Array(12) },
+        source
+      )
+    ).not.toThrow();
+    expect(() => stage.validate({ macroRegionIdMap: new Uint8Array(12) }, source)).toThrow(
+      'required map data'
+    );
     expect(result.statistics[0].details).toEqual({
       regions: 6,
       overlays: 2,
