@@ -2,6 +2,7 @@ import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../stores';
 import type { MacroRegionLayout } from '../../../../utils/map-generator/stages/macro-region-presets';
+import { SegmentedControlScroll } from '../../../segmented-control-scroll';
 
 export function BaseLayoutField() {
   const layout = useMacroRegionFormStore(state => state.layout);
@@ -12,14 +13,16 @@ export function BaseLayoutField() {
       <Text size='2' weight='bold' color='gray'>
         Base layout
       </Text>
-      <SegmentedControl.Root
-        value={layout}
-        onValueChange={value => applyLayout(value as MacroRegionLayout)}
-      >
-        <SegmentedControl.Item value='radial'>Radial</SegmentedControl.Item>
-        <SegmentedControl.Item value='horizontal'>Horizontal</SegmentedControl.Item>
-        <SegmentedControl.Item value='vertical'>Vertical</SegmentedControl.Item>
-      </SegmentedControl.Root>
+      <SegmentedControlScroll>
+        <SegmentedControl.Root
+          value={layout}
+          onValueChange={value => applyLayout(value as MacroRegionLayout)}
+        >
+          <SegmentedControl.Item value='radial'>Radial</SegmentedControl.Item>
+          <SegmentedControl.Item value='horizontal'>Horizontal</SegmentedControl.Item>
+          <SegmentedControl.Item value='vertical'>Vertical</SegmentedControl.Item>
+        </SegmentedControl.Root>
+      </SegmentedControlScroll>
       <Text size='1' color='gray'>
         Base regions cover the world without overlapping.
       </Text>
