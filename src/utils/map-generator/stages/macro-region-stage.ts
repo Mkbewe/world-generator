@@ -41,6 +41,10 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     const macroRegionIdMap = new Uint8Array(width * height);
     const xDivisor = Math.max(1, width - 1);
     const yDivisor = Math.max(1, height - 1);
+    const worldMask = context.state.worldMask;
+    if (!worldMask || worldMask.length !== width * height) {
+      throw new Error('A valid world mask must be generated before macro regions.');
+    }
 
     for (let y = 0; y < height; y++) {
       if (signal.aborted) {
@@ -49,9 +53,12 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
 
       const normalizedY = y / yDivisor;
       for (let x = 0; x < width; x++) {
+        const cell = y * width + x;
+        if (worldMask[cell] === 0) {
+          continue;
+        }
         const normalizedX = x / xDivisor;
         const offset = displacement ? displacement(normalizedX, normalizedY) : { x: 0, y: 0 };
-        const cell = y * width + x;
         macroRegionIdMap[cell] = ownerIndex(
           regions,
           normalizedX,
@@ -70,6 +77,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
     const { width, height } = config.world;
+    assertStageOutput(state.worldMask, 'uint8', width * height);
     assertStageOutput(state.macroRegionIdMap, 'uint8', width * height);
   }
 
