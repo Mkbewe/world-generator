@@ -4,7 +4,6 @@ import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 import { useMapReadout } from './lib/use-map-readout';
 import { useMapRenderer } from './lib/use-map-renderer';
 import { LayerNavigation } from './layer-navigation';
-import { MapInspector } from './map-inspector';
 import { readoutItems } from './readout';
 import { usePreviewStore } from '../../stores';
 import {
@@ -33,6 +32,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
   });
   const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer);
   const readout = useMapReadout(rendererRef, preview);
+  const hasMap = preview.layers.some(layer => layer.available);
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
     const renderer = rendererRef.current;
@@ -64,13 +64,31 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
           navigation={navigationState}
           onBaseLayerChange={handleBaseLayerChange}
           onOverlayChange={handleOverlayChange}
+          inspector={{
+            items: readoutItems(readout.readout, preview.info),
+            pinned: readout.pinned,
+          }}
         >
           <div ref={wrapperRef} className={styles.previewWrapper}>
+            {!hasMap && (
+              <div className={styles.placeholder}>
+                <img
+                  src='/preview-placeholder.svg'
+                  alt=''
+                  aria-hidden='true'
+                  className={styles.placeholderIcon}
+                />
+                <Text size='2' color='gray'>
+                  Generate a map to see the preview.
+                </Text>
+              </div>
+            )}
             <canvas
               ref={canvasRef}
               width={0}
               height={0}
               className={styles.canvas}
+              data-ready={hasMap || undefined}
               aria-label='Generated map preview'
               {...readout.handlers}
             />
@@ -83,7 +101,6 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
             />
           </div>
         </MapLayerControls>
-        <MapInspector items={readoutItems(readout.readout, preview.info)} pinned={readout.pinned} />
         {preview.error && (
           <Text size='2' color='red' role='alert'>
             {preview.error}
