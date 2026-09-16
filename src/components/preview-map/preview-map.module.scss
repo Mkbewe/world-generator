@@ -3,8 +3,36 @@
   width: min(600px, 100%);
   margin-inline: auto;
   aspect-ratio: 1;
-  border: 2px solid var(--gray-6);
-  background: var(--gray-3);
+}
+
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+
+.placeholderIcon {
+  width: 5rem;
+  height: 5rem;
+  opacity: 0.35;
+  animation: spin 40s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholderIcon {
+    animation: none;
+  }
 }
 
 .canvas,
@@ -18,8 +46,12 @@
 
 .canvas {
   image-rendering: auto;
-  cursor: crosshair;
+  cursor: default;
   touch-action: none;
+}
+
+.canvas[data-ready] {
+  cursor: crosshair;
 }
 
 .overlayCanvas {
