@@ -26,7 +26,7 @@ export function WorldGenerator() {
 
   return (
     <>
-      <Grid columns={{ initial: '1', md: '4fr 8fr' }} gap='7' align='start'>
+      <Grid columns={{ initial: '1', md: '4fr 8fr' }} gap='5' align='start'>
         <SettingsPanel
           seed={seed}
           onSeedChange={setSeed}

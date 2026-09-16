@@ -23,7 +23,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         appearance={appearance}
         accentColor='violet'
         grayColor='gray'
-        radius='large'
+        radius='medium'
         scaling='100%'
         panelBackground='solid'
       >
