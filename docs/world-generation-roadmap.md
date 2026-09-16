@@ -187,6 +187,23 @@ tylko etapy, których ta zmiana dotyczy. Fundament jest rozbity na osobne zadani
 
 Zadanie automatycznego odświeżania pozostaje zablokowane do czasu ich ukończenia.
 
+### 2.9. Odświeżenie wyglądu shella — [planowane]
+
+Aplikacja działa, ale warstwa wizualna jest płaska (nieprzezroczyste panele,
+pas `gray-1`/`gray-2` z 1px liniami, dużo pustego miejsca). Kierunek zmian
+(#288):
+
+- header niższy i kompaktowy, spójny z trybem fullscreen (`p='compact'`),
+  **bez zmiany szerokości** — kontener 1600 px zostaje,
+- mniej pasów chromu; do rozważenia scalenie nawigacji z headerem,
+- głębia: `panelBackground='translucent'` z `Card variant='surface'`, spójna
+  skala odstępów i delikatne cienie; ewentualnie powrót do `radius='large'`,
+- typografia: mniejsze nagłówki sekcji, drobne etykiety z rozstrzeleniem,
+  jeden akcent do akcji (teal pozostaje kolorem brandu).
+
+Poza zakresem: placeholder pustego podglądu (osobny task, później) oraz
+dekoracyjne tło (#286).
+
 ## 3. Fizyczna skala świata — [działa]
 
 Kanonicznym elementem `WorldConfig` jest `dimensions`, a etapy korzystają
@@ -670,6 +687,9 @@ a nasz podgląd pozostałby narzędziem deweloperskim. Na razie bez zadań.
 
 ## 9. Wydajność i pamięć — [częściowo]
 
+Techniczne podstawy, pomiary i pomysły (formaty danych, kopie, canvasy, koszty
+etapów) są w osobnym dokumencie: [generator-performance-notes.md](generator-performance-notes.md).
+
 Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
 progresywne rysowanie podglądu, postęp raportowany z wnętrza etapów oraz
 statystyki generowania i renderowania pokazywane na stronie statystyk. Anulowanie
@@ -682,20 +702,21 @@ Pozostałe zadania:
 - Rasteryzować warstwy bazowe bezpośrednio do rozdzielczości viewportu × DPR
   (z limitem DPR 2), zachowując pełne dane generatora. Dla widoku 600 × 600 CSS px
   przy DPR 2 bufor RGBA 1200 × 1200 zajmuje około 5,76 MB zamiast 400 MB dla
-  mapy 10 000 × 10 000. Nie tworzyć pośrednich obrazów w pełnej rozdzielczości.
+  mapy 10 000 × 10 000. Nie tworzyć pośrednich obrazów w pełnej rozdzielczości
+  (#285).
 - Zmniejszyć szczyt pamięci poza budżetem generatora: rasteryzacja do rozmiaru
   viewportu usuwa pełnowymiarowe canvasy warstw i prezentacji, a jednorazowa
   wysyłka wyników albo `SharedArrayBuffer` (nagłówki COOP/COEP) usuwa kopię
   `postMessage`. Transfer buforów per etap nie wchodzi w grę, bo worker potrzebuje
   ich w kolejnych etapach.
 - Dobrać próbkowanie maski i filtrowanie szumu; zachować zgodność warstw z granicą
-  świata po zmianie rozmiaru viewportu lub DPR.
+  świata po zmianie rozmiaru viewportu lub DPR (#285).
 - Po ukończeniu rasteryzacji do viewportu dodać automatyczne odświeżanie po
   zmianie kontrolek, zgodnie z sekcją 2.7.
 - Wprowadzić budżet pamięci cache i uzależnić przygotowanie nieaktywnych warstw
-  od dostępnego budżetu.
+  od dostępnego budżetu (#158).
 - Rozszerzyć statystyki o rozdzielczość źródłową i wynikową oraz szacowany rozmiar
-  buforów i cache.
+  buforów i cache (#158, #285).
 - Selektywnie przeliczać etapy: deklaracje zależności na stage'ach, diff konfiguracji
   i ponowne użycie wyników, z pominiętymi etapami oznaczonymi w progressie (#257, #258).
 - Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary
