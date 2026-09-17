@@ -7,6 +7,11 @@ interface HeaderActions {
   confirmExport: () => void;
   isMapGenerated: boolean;
   setIsMapGenerated: (generated: boolean) => void;
+  /** Whether the mounted preview can be shown fullscreen; registered by the preview. */
+  canFullscreen: boolean;
+  setCanFullscreen: (can: boolean) => void;
+  isFullscreen: boolean;
+  setIsFullscreen: (fullscreen: boolean) => void;
 }
 
 export const HeaderActionsContext = createContext<HeaderActions>({
@@ -16,6 +21,10 @@ export const HeaderActionsContext = createContext<HeaderActions>({
   confirmExport: () => {},
   isMapGenerated: false,
   setIsMapGenerated: () => {},
+  canFullscreen: false,
+  setCanFullscreen: () => {},
+  isFullscreen: false,
+  setIsFullscreen: () => {},
 });
 
 export function useHeaderActions() {
@@ -26,6 +35,8 @@ export function HeaderActionsProvider({ children }: { children: ReactNode }) {
   const exportMapRef = useRef<(() => void) | undefined>(undefined);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isMapGenerated, setIsMapGenerated] = useState(false);
+  const [canFullscreen, setCanFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const confirmExport = () => {
     exportMapRef.current?.();
@@ -41,6 +52,10 @@ export function HeaderActionsProvider({ children }: { children: ReactNode }) {
         confirmExport,
         isMapGenerated,
         setIsMapGenerated,
+        canFullscreen,
+        setCanFullscreen,
+        isFullscreen,
+        setIsFullscreen,
       }}
     >
       {children}

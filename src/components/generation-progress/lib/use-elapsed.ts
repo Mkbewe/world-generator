@@ -2,18 +2,19 @@ import { useEffect, useState } from 'react';
 
 import type { GenerationProgressState } from './progress-types';
 
-/** Wall-clock time since the component started, ticking while the run is active. */
-export function useElapsed(status: GenerationProgressState['status']): number {
-  const [startedAt] = useState(() => performance.now());
-  const [elapsed, setElapsed] = useState(0);
+/** Wall-clock time since the run started, ticking while the run is active. */
+export function useElapsed(status: GenerationProgressState['status'], startedAt?: number): number {
+  const [mountedAt] = useState(() => performance.now());
+  const [now, setNow] = useState(() => performance.now());
+  const start = startedAt ?? mountedAt;
 
   useEffect(() => {
     if (status !== 'running') {
       return;
     }
-    const id = setInterval(() => setElapsed(performance.now() - startedAt), 100);
+    const id = setInterval(() => setNow(performance.now()), 100);
     return () => clearInterval(id);
-  }, [status, startedAt]);
+  }, [status]);
 
-  return elapsed;
+  return Math.max(0, now - start);
 }

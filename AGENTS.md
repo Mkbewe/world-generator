@@ -43,4 +43,6 @@ Pushing branches and creating pull requests are always the user's job. Never run
 that specific branch.
 
 Tests are only updated or fixed once work on a task is finished — not after
-every small change while the task is still in progress.
+every small change while the task is still in progress. Do not run the test
+suite or `check:all` after every small edit either; run the full check once, at
+the end of the task.

@@ -1,3 +1,8 @@
+.root[data-fullscreen] {
+  position: relative;
+  z-index: 60;
+}
+
 .headerContent {
   height: 48px;
 }

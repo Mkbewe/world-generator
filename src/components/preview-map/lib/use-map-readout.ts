@@ -18,7 +18,7 @@ interface TouchGesture {
   moved: boolean;
 }
 
-function isTouchPointer(event: ReactPointerEvent<HTMLCanvasElement>): boolean {
+function isTouchPointer(event: { pointerType: string }): boolean {
   return event.pointerType === 'touch';
 }
 
@@ -129,12 +129,17 @@ export function useMapReadout(
     setPinned(current => !current);
   };
 
-  const handlePointerLeave = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+  const clearReadout = (): void => {
+    positionRef.current = undefined;
+    setReadout(undefined);
+  };
+
+  /** Clears the readout only when the pointer leaves the whole preview, not just the canvas. */
+  const handlePointerLeave = (event: ReactPointerEvent<HTMLElement>): void => {
     if (pinned || isTouchPointer(event)) {
       return;
     }
-    positionRef.current = undefined;
-    setReadout(undefined);
+    clearReadout();
   };
 
   const handlePointerCancel = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
@@ -142,17 +147,17 @@ export function useMapReadout(
       gestureRef.current = undefined;
       return;
     }
-    handlePointerLeave(event);
+    clearReadout();
   };
 
   return {
     readout,
     pinned,
+    handlePointerLeave,
     handlers: {
       onPointerMove: handlePointerMove,
       onPointerDown: handlePointerDown,
       onPointerUp: handlePointerUp,
-      onPointerLeave: handlePointerLeave,
       onPointerCancel: handlePointerCancel,
     },
   };

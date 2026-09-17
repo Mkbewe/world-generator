@@ -36,6 +36,7 @@ describe('ProgressTracker', () => {
 
     expect(latest()).toEqual({
       status: 'running',
+      startedAt: expect.any(Number),
       stages: [
         { id: 'world-shape', name: 'World shape generation', status: 'pending', percentage: 0 },
         { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },
@@ -158,6 +159,7 @@ describe('restartProgress', () => {
 
     expect(restartProgress(previous)).toEqual({
       status: 'running',
+      startedAt: expect.any(Number),
       stages: [
         { id: 'world-shape', name: 'World shape generation', status: 'pending', percentage: 0 },
         { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },

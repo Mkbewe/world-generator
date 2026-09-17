@@ -3,6 +3,7 @@ import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { useMapReadout } from './lib/use-map-readout';
 import { useMapRenderer } from './lib/use-map-renderer';
+import { usePreviewFullscreen } from './lib/use-preview-fullscreen';
 import { LayerNavigation } from './layer-navigation';
 import { readoutItems } from './readout';
 import { usePreviewStore } from '../../stores';
@@ -23,6 +24,7 @@ interface PreviewMapProps {
 }
 
 export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) {
+  const isFullscreen = usePreviewFullscreen();
   const [navigation] = useState(
     () => new LayerNavigation(layerRegistry.tree, usePreviewStore.getState().layerTree)
   );
@@ -53,17 +55,23 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
   };
 
   return (
-    <Card size={{ initial: '2', sm: '3' }}>
-      <Flex direction='column' gap='4'>
-        <Heading size='5' color='violet'>
+    <Card
+      size={{ initial: '2', sm: '3' }}
+      className={styles.card}
+      data-fullscreen={isFullscreen || undefined}
+      onPointerLeave={readout.handlePointerLeave}
+    >
+      <Flex direction='column' gap='4' className={styles.body}>
+        <Heading size='5' color='violet' className={styles.heading}>
           Preview
         </Heading>
-        <Separator size='4' />
+        <Separator size='4' className={styles.separator} />
         <MapLayerControls
           preview={preview}
           navigation={navigationState}
           onBaseLayerChange={handleBaseLayerChange}
           onOverlayChange={handleOverlayChange}
+          expanded={isFullscreen}
           inspector={{
             items: readoutItems(readout.readout, preview.info),
             pinned: readout.pinned,
@@ -106,7 +114,7 @@ export function PreviewMap({ onReady, progress, progressKey }: PreviewMapProps) 
             {preview.error}
           </Text>
         )}
-        {progress && <GenerationProgress key={progressKey} progress={progress} />}
+        {progress && !isFullscreen && <GenerationProgress key={progressKey} progress={progress} />}
       </Flex>
     </Card>
   );

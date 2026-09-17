@@ -1,0 +1,36 @@
+.sidebar {
+  flex: 0 0 16rem;
+  min-width: 0;
+  padding: 0 0 0 var(--space-3);
+  border-left: 1px solid var(--gray-6);
+}
+
+.panel[data-position] {
+  position: absolute;
+  top: calc(50% - var(--layer-strip-half-height));
+  right: 0;
+  width: 16rem;
+}
+
+.panel[data-position='top'] {
+  top: 0;
+}
+
+.panel[data-position='bottom'] {
+  top: auto;
+  bottom: 0;
+}
+
+.panel[data-collapsed] {
+  width: auto;
+}
+
+@include mobile {
+  .sidebar {
+    flex: 0 0 auto;
+    order: 1;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--gray-6);
+    border-left: 0;
+  }
+}
