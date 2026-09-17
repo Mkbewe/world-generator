@@ -14,6 +14,7 @@ import {
   type RenderStatistics,
 } from './types';
 import { MapView, type MapViewElements } from './view';
+import type { WorldShape } from '../world-shape';
 
 export interface MapRendererState {
   layers: readonly MapLayerOption<MapBaseLayerId>[];
@@ -102,18 +103,18 @@ export class MapRenderer {
     };
   }
 
-  start(size: MapSize): void {
+  start(size: MapSize, shape?: WorldShape): void {
     this.reset();
     this.lifetime = new AbortController();
     this.scene.start(size);
     this.mapSize = size;
     this.metrics.start();
-    this.view.start(size);
+    this.view.start(size, shape);
   }
 
   /** Displays existing layer data without progressive drawing or generation statistics. */
   load(snapshot: MapSnapshotData): void {
-    this.start(snapshot);
+    this.start(snapshot, snapshot.shape);
     this.setInfo(snapshot.info ?? {});
     this.metrics.reset();
     const layers = this.scene.load(snapshot.layers);

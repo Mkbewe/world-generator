@@ -42,7 +42,7 @@ export class WorldGenerationSession {
 
     try {
       const info = selectMapInfo(config);
-      this.renderer.start(sampleSize(config.world.dimensions));
+      this.renderer.start(sampleSize(config.world.dimensions), config.world.shape);
       this.renderer.setInfo(info);
       const renderSignal = this.renderer.signal;
       mapRepository.clear();
@@ -67,7 +67,7 @@ export class WorldGenerationSession {
         width: config.world.dimensions.sampleWidth,
         height: config.world.dimensions.sampleHeight,
         seed: String(config.world.seed),
-        shape: config.world.shape ?? 'disc',
+        shape: config.world.shape,
         layers,
         info,
       });

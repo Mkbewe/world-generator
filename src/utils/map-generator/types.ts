@@ -1,11 +1,12 @@
 import type { MapRasters } from '../map-layers';
 import type { WorldDimensions } from '../world-dimensions';
+import type { WorldShape } from '../world-shape';
 
 export interface WorldConfig {
   /** Physical world size together with the sample grid derived from it. */
   dimensions: WorldDimensions;
   seed: number;
-  shape?: 'disc' | 'rectangle';
+  shape: WorldShape;
 }
 
 export interface SeededWorldConfig {

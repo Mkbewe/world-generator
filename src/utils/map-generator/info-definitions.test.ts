@@ -5,7 +5,7 @@ import type { MapConfig } from './types';
 const dimensions = { widthMeters: 8, heightMeters: 4, sampleWidth: 4, sampleHeight: 2 };
 
 const baseConfig: MapConfig = {
-  world: { dimensions, seed: 9 },
+  world: { dimensions, seed: 9, shape: 'disc' },
   noise: { frequency: 2, octaves: 2, persistence: 0.5, lacunarity: 2 },
 };
 

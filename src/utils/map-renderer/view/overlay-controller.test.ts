@@ -27,11 +27,15 @@ describe('OverlayController', () => {
     const world = {} as SpatialMask;
     controller.render(world);
     expect(controller.size()?.devicePixelRatio).toBe(effective);
-    expect(render).toHaveBeenCalledWith(world, {
-      width: 10,
-      height: 10,
-      devicePixelRatio: effective,
-    });
+    expect(render).toHaveBeenCalledWith(
+      world,
+      {
+        width: 10,
+        height: 10,
+        devicePixelRatio: effective,
+      },
+      undefined
+    );
     controller.dispose();
   });
 
@@ -63,8 +67,8 @@ describe('OverlayController', () => {
     const controller = setup();
     const world = {} as SpatialMask;
 
-    controller.render(world);
-    expect(render).toHaveBeenCalledWith(world, expect.anything());
+    controller.render(world, 'disc');
+    expect(render).toHaveBeenCalledWith(world, expect.anything(), 'disc');
 
     controller.setVisible('world-boundary', false);
     controller.render(world);

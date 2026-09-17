@@ -11,6 +11,7 @@ function worldConfig(sampleWidth: number, sampleHeight: number): WorldConfig {
       sampleHeight,
     },
     seed: 123,
+    shape: 'disc',
   };
 }
 

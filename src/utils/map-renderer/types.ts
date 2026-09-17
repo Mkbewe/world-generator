@@ -1,6 +1,7 @@
 import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
 import type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
+import type { WorldShape } from '../world-shape';
 
 export type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
 
@@ -12,11 +13,11 @@ export interface SpatialMask {
 
 export interface MapMetadata {
   seed: string;
-  shape: 'disc' | 'rectangle';
+  shape: WorldShape;
 }
 
 /** Everything the renderer needs to display an existing map. */
-export interface MapSnapshotData extends MapSize {
+export interface MapSnapshotData extends MapSize, MapMetadata {
   layers: MapRasters;
   info?: MapInfo;
 }

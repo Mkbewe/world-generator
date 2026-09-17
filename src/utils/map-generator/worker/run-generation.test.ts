@@ -36,6 +36,7 @@ const config: MapConfig = {
   world: {
     dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
     seed: 7,
+    shape: 'disc',
   },
   noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
 };

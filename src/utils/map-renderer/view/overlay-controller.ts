@@ -1,3 +1,4 @@
+import type { WorldShape } from '../../world-shape';
 import type { MapOverlayId, SpatialMask } from '../types';
 import { Viewport, type ViewportSize } from '../viewport';
 import { WorldBoundaryRenderer } from '../world-boundary-renderer';
@@ -8,7 +9,7 @@ export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly viewport: Viewport;
   private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
-  private rendered?: { world: SpatialMask; viewport: ViewportSize };
+  private rendered?: { world: SpatialMask; viewport: ViewportSize; shape?: WorldShape };
   renderDurationMs = 0;
 
   constructor(
@@ -39,7 +40,7 @@ export class OverlayController {
       : undefined;
   }
 
-  render(world: SpatialMask | undefined): void {
+  render(world: SpatialMask | undefined, shape?: WorldShape): void {
     const viewport = this.size();
     if (!viewport || !world || !this.visible['world-boundary']) {
       if (this.rendered) {
@@ -52,6 +53,7 @@ export class OverlayController {
     }
     if (
       this.rendered?.world === world &&
+      this.rendered.shape === shape &&
       this.rendered.viewport.width === viewport.width &&
       this.rendered.viewport.height === viewport.height &&
       this.rendered.viewport.devicePixelRatio === viewport.devicePixelRatio
@@ -62,8 +64,8 @@ export class OverlayController {
     const startedAt = performance.now();
     this.rendered = undefined;
     try {
-      this.boundary.render(world, viewport);
-      this.rendered = { world, viewport };
+      this.boundary.render(world, viewport, shape);
+      this.rendered = { world, viewport, shape };
     } catch {
       // The boundary is a best-effort overlay; base layer errors are reported elsewhere.
       this.boundary.clear();

@@ -1,4 +1,4 @@
-export type WorldShape = 'disc' | 'rectangle';
+export type { WorldShape } from '../../../../../utils/world-shape';
 /** Physical world side length in meters. */
 export type WorldSize = number;
 
