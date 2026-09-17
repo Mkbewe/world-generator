@@ -12,7 +12,6 @@ export function effectivePixelRatio(devicePixelRatio: number): number {
 }
 
 export class Viewport {
-  private animationFrame?: number;
   private resizeObserver?: ResizeObserver;
 
   constructor(
@@ -22,18 +21,16 @@ export class Viewport {
 
   start(): void {
     this.dispose();
-    this.scheduleMeasurement();
+    this.report();
     if (typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(() => this.scheduleMeasurement());
+      this.resizeObserver = new ResizeObserver(() => this.report());
       this.resizeObserver.observe(this.element);
     }
   }
 
   dispose(): void {
     this.resizeObserver?.disconnect();
-    if (this.animationFrame !== undefined) {
-      cancelAnimationFrame(this.animationFrame);
-    }
+    this.resizeObserver = undefined;
   }
 
   measure(): ViewportSize | undefined {
@@ -49,16 +46,15 @@ export class Viewport {
     };
   }
 
-  private scheduleMeasurement(): void {
-    if (this.animationFrame !== undefined) {
-      cancelAnimationFrame(this.animationFrame);
+  /**
+   * Resize observers run after layout and before paint, so measuring here keeps
+   * the canvas in sync with its element without a frame of the old bitmap
+   * stretched by the new box.
+   */
+  private report(): void {
+    const size = this.measure();
+    if (size) {
+      this.onResize(size);
     }
-    this.animationFrame = requestAnimationFrame(() => {
-      this.animationFrame = undefined;
-      const size = this.measure();
-      if (size) {
-        this.onResize(size);
-      }
-    });
   }
 }

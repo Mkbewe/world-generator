@@ -1,4 +1,4 @@
-import { Flex, SegmentedControl, Separator, Text } from '@radix-ui/themes';
+import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
 import type { MapBaseLayerId, MapLayerNavigation, MapLayerNode } from '../../../utils/map-renderer';
 import styles from './layer-views.module.scss';
@@ -27,7 +27,6 @@ export function LayerViews({ tabs, activeTab, onViewChange }: LayerViewsProps) {
           aria-hidden={group.id !== activeTab}
           inert={group.id !== activeTab}
         >
-          <Separator size='4' />
           <Text size='2' weight='bold' color='gray'>
             {group.label}
           </Text>

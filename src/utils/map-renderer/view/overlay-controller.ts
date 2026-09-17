@@ -1,3 +1,4 @@
+import type { ViewTransform } from './view-transform';
 import type { WorldShape } from '../../world-shape';
 import type { MapOverlayId, SpatialMask } from '../types';
 import { effectivePixelRatio, type Viewport, type ViewportSize } from '../viewport';
@@ -8,7 +9,12 @@ const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = { 'world-boundary': true 
 export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
-  private rendered?: { world: SpatialMask; viewport: ViewportSize; shape?: WorldShape };
+  private rendered?: {
+    world: SpatialMask;
+    viewport: ViewportSize;
+    shape?: WorldShape;
+    view: ViewTransform;
+  };
   renderDurationMs = 0;
 
   constructor(
@@ -33,7 +39,7 @@ export class OverlayController {
       : undefined;
   }
 
-  render(world: SpatialMask | undefined, shape?: WorldShape): void {
+  render(world: SpatialMask | undefined, shape: WorldShape | undefined, view: ViewTransform): void {
     const viewport = this.size();
     if (!viewport || !world || !this.visible['world-boundary']) {
       if (this.rendered) {
@@ -47,6 +53,9 @@ export class OverlayController {
     if (
       this.rendered?.world === world &&
       this.rendered.shape === shape &&
+      this.rendered.view.scale === view.scale &&
+      this.rendered.view.centerX === view.centerX &&
+      this.rendered.view.centerY === view.centerY &&
       this.rendered.viewport.width === viewport.width &&
       this.rendered.viewport.height === viewport.height &&
       this.rendered.viewport.devicePixelRatio === viewport.devicePixelRatio
@@ -57,8 +66,8 @@ export class OverlayController {
     const startedAt = performance.now();
     this.rendered = undefined;
     try {
-      this.boundary.render(world, viewport, shape);
-      this.rendered = { world, viewport, shape };
+      this.boundary.render(world, viewport, shape, view);
+      this.rendered = { world, viewport, shape, view };
     } catch {
       // The boundary is a best-effort overlay; base layer errors are reported elsewhere.
       this.boundary.clear();

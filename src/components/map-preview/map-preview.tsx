@@ -36,14 +36,16 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     onReady,
   });
   const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer);
-  const readout = useMapReadout(rendererRef, preview);
+  const readout = useMapReadout(rendererRef, canvasRef, preview, { zoomable: isFullscreen });
   const hasMap = preview.layers.some(layer => layer.available);
 
   useEffect(() => {
     if (isFullscreen) {
       cardRef.current?.focus();
+      return;
     }
-  }, [isFullscreen]);
+    rendererRef.current?.resetView();
+  }, [isFullscreen, rendererRef]);
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
     const renderer = rendererRef.current;
@@ -89,6 +91,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             overlayRef={overlayRef}
             handlers={readout.handlers}
             ready={hasMap}
+            panning={readout.panning}
             expanded={isFullscreen}
           />
           <div className={styles.spacer} aria-hidden='true' />
@@ -100,6 +103,12 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             inspector={{
               items: readoutItems(readout.readout, preview.info),
               pinned: readout.pinned,
+            }}
+            view={{
+              zoom: preview.zoom,
+              onZoomIn: () => rendererRef.current?.zoomIn(),
+              onZoomOut: () => rendererRef.current?.zoomOut(),
+              onReset: () => rendererRef.current?.resetView(),
             }}
             expanded={isFullscreen}
           />

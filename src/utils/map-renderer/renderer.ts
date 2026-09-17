@@ -1,3 +1,4 @@
+import type { ViewTransform } from './view/view-transform';
 import { layerCache, LayerQueue, layerRegistry, type MapLayer, type MapSize } from './layer';
 import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
@@ -13,7 +14,7 @@ import {
   OVERLAY_LAYERS,
   type RenderStatistics,
 } from './types';
-import { MapView, type MapViewElements } from './view';
+import { type MapPointerSample, MapView, type MapViewElements } from './view';
 import type { WorldShape } from '../world-shape';
 
 export interface MapRendererState {
@@ -22,6 +23,8 @@ export interface MapRendererState {
   displayedLayer?: MapBaseLayerId;
   /** Non-raster information captured with the map, e.g. macro region labels. */
   info: MapInfo;
+  /** Current zoom relative to the fitted view; 1 shows the whole map. */
+  zoom: number;
   error?: string;
 }
 
@@ -46,6 +49,7 @@ export function emptyRenderState(): MapRendererState {
       visible: true,
     })),
     info: {},
+    zoom: 1,
   };
 }
 
@@ -99,6 +103,7 @@ export class MapRenderer {
       overlays: this.view.overlayOptions,
       displayedLayer: this.view.displayedLayer,
       info: this.info,
+      zoom: this.view.viewTransform.scale,
       error: this.error,
     };
   }
@@ -131,6 +136,11 @@ export class MapRenderer {
   /** Size of the current map, or undefined before the first run. */
   get currentSize(): MapSize | undefined {
     return this.mapSize;
+  }
+
+  /** Current zoom and pan of the preview. */
+  get viewTransform(): ViewTransform {
+    return this.view.viewTransform;
   }
 
   /** Reads the displayed layer's raw value at a source raster cell. */
@@ -167,6 +177,46 @@ export class MapRenderer {
   setOverlay(id: MapOverlayId, visible: boolean): void {
     this.view.setOverlay(id, visible);
     this.emitState();
+  }
+
+  /** Zooms around a client point, keeping the map cell under it in place. */
+  zoomAtPointer(clientX: number, clientY: number, factor: number): void {
+    if (this.view.zoomAtPointer(clientX, clientY, factor)) {
+      this.emitState();
+    }
+  }
+
+  /** Pans the map by a pointer delta in CSS pixels. */
+  panByPixels(deltaX: number, deltaY: number): void {
+    if (this.view.panByPixels(deltaX, deltaY)) {
+      this.emitState();
+    }
+  }
+
+  /** Zooms to the next discrete step around the preview centre. */
+  zoomIn(): void {
+    if (this.view.zoomIn()) {
+      this.emitState();
+    }
+  }
+
+  /** Zooms to the previous discrete step around the preview centre. */
+  zoomOut(): void {
+    if (this.view.zoomOut()) {
+      this.emitState();
+    }
+  }
+
+  /** Returns the view to the fitted map. */
+  resetView(): void {
+    if (this.view.resetView()) {
+      this.emitState();
+    }
+  }
+
+  /** Cell and map coordinates of a client point, clamped to the map bounds. */
+  samplePointer(clientX: number, clientY: number): MapPointerSample | undefined {
+    return this.view.samplePointer(clientX, clientY);
   }
 
   /** Keeps non-raster information captured with the current map. */

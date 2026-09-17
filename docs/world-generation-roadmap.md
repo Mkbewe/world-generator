@@ -107,16 +107,26 @@ traktować każdą kombinację jako osobny typ mapy.
   pokazuje się dopiero dla grupy z co najmniej dwoma podwidokami. `Macro regions`
   jest obecnie pojedynczą warstwą bez podwidoków.
 - Rysowanie jest progresywne, a wybór pamiętany między widokami.
+- Granica świata jest rysowana analitycznie (`arc`/`rect`) w rozdzielczości
+  ekranu, niezależnie od siatki próbek.
+- Podgląd otwiera się w trybie pełnoekranowym (przełącznik w nagłówku lub `Esc`)
+  jako nakładka nad stroną; canvas wypełnia wtedy cały obszar roboczy
+  z zachowaniem proporcji mapy, więc na szerokich ekranach zoom 1x-4x (kółko
+  myszy oraz kroki `-`/`+` w sekcji `View`) odsłania więcej mapy po bokach.
+- Przeciągnięcie myszą lub palcem przesuwa mapę, a tap lub klik przypina odczyt;
+  widok wraca do całości przy wyjściu z trybu pełnoekranowego.
 - Inspekcja mapy pokazuje pod kursorem pozycję w komórkach (`cell`) i odległość
   w metrach (wiersze `Position` i `Distance`, wspólne kolumny `X`/`Y`) oraz
   wartość wybranej warstwy; odczyt można przypiąć na urządzeniach dotykowych.
 - Ostatnia ukończona mapa i jej konfiguracja są trzymane w pamięci na czas
   działania aplikacji i odtwarzane po powrocie; odświeżenie strony czyści stan.
 
-Obecnie nakładki bazują na przełącznikach (`Switch`) w `MapOverlayControls`,
-a wybór warstw na poziomych tabach w `MapLayerControls`. W przyszłości nakładki
-numeryczne, takie jak temperatura i wilgotność, powinny otrzymać także kontrolę
-przezroczystości oraz ustaloną paletę kolorów.
+Obecnie nakładki bazują na przełącznikach (`Switch`) w `OverlayControls`, wybór
+warstw na pionowym pasku `LayerTabs`, a sekcje i odczyt trzyma `MapSidebar`.
+W przyszłości nakładki numeryczne, takie jak temperatura i wilgotność, powinny
+otrzymać także kontrolę przezroczystości oraz ustaloną paletę kolorów.
+Wygładzanie krawędzi regionów i render warstw w rozdzielczości viewportu czekają
+na osobne zadania (#285, #306).
 
 ### 2.5. Statystyki i progres — [działa]
 

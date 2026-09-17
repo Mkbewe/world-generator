@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Card, Flex } from '@radix-ui/themes';
+import { Card, Flex, Separator } from '@radix-ui/themes';
 
 import { CursorReadout, type CursorReadoutProps } from './cursor-readout';
 import { LayerViews } from './layer-views';
 import { OverlayControls } from './overlay-controls';
 import { PanelHeader, type PanelPosition } from './panel-header';
+import { ViewControls } from './view-controls';
 import type {
   MapBaseLayerId,
   MapLayerNavigation,
@@ -20,6 +21,13 @@ interface MapSidebarProps {
   onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
   /** Cursor readout rendered below the layer sections. */
   inspector?: CursorReadoutProps;
+  /** Zoom controls rendered above the overlays; only the fullscreen mode can zoom. */
+  view?: {
+    zoom: number;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+    onReset: () => void;
+  };
   /** Floats the sidebar over the map; used by the fullscreen mode. */
   expanded?: boolean;
 }
@@ -30,17 +38,36 @@ export function MapSidebar({
   onLayerChange,
   onOverlayChange,
   inspector,
+  view,
   expanded = false,
 }: MapSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [position, setPosition] = useState<PanelPosition>('middle');
   const { tabs, activeTab } = navigation;
 
+  const divider = expanded ? <Separator size='4' /> : null;
+  const rendersViews = tabs.some(tab => (tab.children?.length ?? 0) > 1);
   const sections = (
     <>
+      {expanded && view && (
+        <>
+          <ViewControls {...view} bare />
+          {divider}
+        </>
+      )}
       <OverlayControls preview={preview} onOverlayChange={onOverlayChange} bare={expanded} />
-      <LayerViews tabs={tabs} activeTab={activeTab} onViewChange={onLayerChange} />
-      {inspector && <CursorReadout {...inspector} bare={expanded} />}
+      {rendersViews && (
+        <>
+          {divider}
+          <LayerViews tabs={tabs} activeTab={activeTab} onViewChange={onLayerChange} />
+        </>
+      )}
+      {inspector && (
+        <>
+          {divider}
+          <CursorReadout {...inspector} bare={expanded} />
+        </>
+      )}
     </>
   );
 

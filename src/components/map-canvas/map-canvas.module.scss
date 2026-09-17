@@ -17,7 +17,9 @@
   aspect-ratio: 1;
 
   .area[data-expanded] & {
-    width: min(100cqw, 100cqh);
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
   }
 }
 
@@ -68,6 +70,10 @@
 
 .canvas[data-ready] {
   cursor: crosshair;
+}
+
+.canvas[data-panning] {
+  cursor: grabbing;
 }
 
 .overlayCanvas {

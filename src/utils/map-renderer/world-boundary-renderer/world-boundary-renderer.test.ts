@@ -1,6 +1,7 @@
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
 import { LAYER_CATALOG } from '../../map-layers';
 import { CatalogLayer } from '../layer';
+import { fitView } from '../view/view-transform';
 
 function createContext(extra: Record<string, unknown> = {}): CanvasRenderingContext2D {
   return {
@@ -34,14 +35,14 @@ describe('WorldBoundaryRenderer', () => {
     const canvas = createCanvas(context);
     const world = createWorld();
 
-    new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, 'disc');
+    new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, 'disc', fitView());
     world.dispose();
 
     expect(canvas.width).toBe(8);
     expect(canvas.height).toBe(8);
-    expect(context.arc).toHaveBeenCalledWith(4, 4, 2, 0, Math.PI * 2);
+    expect(context.arc).toHaveBeenCalledWith(4, 4, 3, 0, Math.PI * 2);
     expect(context.stroke).toHaveBeenCalledOnce();
-    expect(context.lineWidth).toBe(4);
+    expect(context.lineWidth).toBe(6);
     expect(context.strokeStyle).toBe('rgba(49, 155, 0, 0.9)');
   });
 
@@ -50,10 +51,10 @@ describe('WorldBoundaryRenderer', () => {
     const canvas = createCanvas(context);
     const world = createWorld();
 
-    new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, 'rectangle');
+    new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, 'rectangle', fitView());
     world.dispose();
 
-    expect(context.rect).toHaveBeenCalledWith(2, 2, 4, 4);
+    expect(context.rect).toHaveBeenCalledWith(3, 3, 2, 2);
     expect(context.stroke).toHaveBeenCalledOnce();
   });
 
@@ -65,7 +66,7 @@ describe('WorldBoundaryRenderer', () => {
     const canvas = createCanvas(context);
     const world = createWorld();
 
-    new WorldBoundaryRenderer(canvas).render(world, VIEWPORT);
+    new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, undefined, fitView());
     world.dispose();
 
     expect(context.putImageData).toHaveBeenCalledOnce();

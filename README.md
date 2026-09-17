@@ -70,6 +70,12 @@ requested physical size.
 The cursor readout shows the hovered cell under `Position` and the matching
 distance in meters under `Distance`, using shared `X`/`Y` columns.
 
+The preview opens in a fullscreen overlay from the header toggle or with `Esc`.
+There the map canvas fills the workspace while keeping the map's aspect ratio, so
+on wide screens zooming (mouse wheel or the `-`/`+` steps in the `View` section)
+reveals more of the map to the sides. Dragging pans, a tap or click pins the
+cursor readout, and leaving the mode resets the view to the whole map.
+
 Non-raster metadata travels through a generic `MapInfo` channel attached to the
 snapshot: `MAP_INFO_CATALOG` derives entries such as the macro region labels and
 the world dimensions from the generation config, so the readout keeps showing
