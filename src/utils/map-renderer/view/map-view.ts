@@ -1,4 +1,5 @@
 import { OverlayController } from './overlay-controller';
+import type { WorldShape } from '../../world-shape';
 import type { MapLayer, MapSize, TileReporter } from '../layer';
 import type { RenderMetrics } from '../metrics';
 import {
@@ -19,6 +20,7 @@ export interface MapViewElements {
 export class MapView {
   private readonly overlays: OverlayController;
   private mask?: SpatialMask;
+  private shape?: WorldShape;
   private progressive = true;
   private selectedLayer?: MapBaseLayerId;
   private displayed?: MapBaseLayerId;
@@ -31,7 +33,7 @@ export class MapView {
   ) {
     this.selectedLayer = selectedLayer;
     this.overlays = new OverlayController(elements.overlayCanvas, elements.viewportElement, () =>
-      this.overlays.render(this.mask)
+      this.overlays.render(this.mask, this.shape)
     );
   }
 
@@ -54,8 +56,9 @@ export class MapView {
     }));
   }
 
-  start(size: MapSize): void {
+  start(size: MapSize, shape?: WorldShape): void {
     this.progressive = true;
+    this.shape = shape;
     this.elements.canvas.width = size.width;
     this.elements.canvas.height = size.height;
   }
@@ -67,7 +70,7 @@ export class MapView {
 
   setMasks(masks: ReadonlyMap<MapBaseLayerId, SpatialMask>): void {
     this.mask = masks.get(OVERLAY_LAYERS['world-boundary'].source);
-    this.overlays.render(this.mask);
+    this.overlays.render(this.mask, this.shape);
   }
 
   /** Marks a layer as current as soon as its progressive drawing starts. */
@@ -90,7 +93,7 @@ export class MapView {
 
   setOverlay(id: MapOverlayId, visible: boolean): void {
     this.overlays.setVisible(id, visible);
-    this.overlays.render(this.mask);
+    this.overlays.render(this.mask, this.shape);
   }
 
   tilePainter(layer: MapLayer): TileReporter | undefined {
@@ -109,6 +112,7 @@ export class MapView {
 
   reset(): void {
     this.mask = undefined;
+    this.shape = undefined;
     this.displayed = undefined;
     this.elements.canvas.width = this.elements.canvas.height = 0;
     this.overlays.reset();

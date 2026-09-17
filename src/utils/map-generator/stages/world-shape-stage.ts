@@ -19,7 +19,7 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
     const worldMask = new Uint8Array(sampleWidth * sampleHeight);
     const xDivisor = Math.max(1, sampleWidth - 1);
     const yDivisor = Math.max(1, sampleHeight - 1);
-    const shape = context.config.world.shape ?? 'disc';
+    const shape = context.config.world.shape;
 
     for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
@@ -66,7 +66,7 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
     }
 
     return {
-      shape: context.config.world.shape ?? 'disc',
+      shape: context.config.world.shape,
       width: sampleWidth,
       height: sampleHeight,
       cells,

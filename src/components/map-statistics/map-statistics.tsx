@@ -20,7 +20,7 @@ export function MapStatisticsPanel({ world, totalDurationMs }: MapStatisticsPane
       value: `${sampleWidth} × ${sampleHeight}`,
       description: 'World grid size in cells.',
     },
-    { label: 'Shape', value: world.shape ?? 'disc', description: 'World shape preset.' },
+    { label: 'Shape', value: world.shape, description: 'World shape preset.' },
     {
       label: 'Cells',
       value: formatNumber(sampleWidth * sampleHeight),

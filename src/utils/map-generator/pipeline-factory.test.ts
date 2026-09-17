@@ -15,6 +15,7 @@ describe('createMapGenerator', () => {
       world: {
         dimensions: { widthMeters: 5, heightMeters: 5, sampleWidth: 5, sampleHeight: 5 },
         seed: 123,
+        shape: 'disc',
       },
       noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
@@ -43,6 +44,7 @@ describe('createMapGenerator', () => {
           sampleHeight: 20_000,
         },
         seed: 123,
+        shape: 'disc',
       },
       noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };

@@ -20,6 +20,7 @@ function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 
         sampleHeight: height,
       },
       seed: 123,
+      shape: 'disc',
     },
     noise,
     macroRegions,

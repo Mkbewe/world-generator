@@ -1,4 +1,5 @@
 import type { WorldShape, WorldSize } from '../../components/settings-panel/forms';
+import { DEFAULT_WORLD_SHAPE } from '../../utils/world-shape';
 import { createStore } from '../create-store';
 
 export const DEFAULT_WORLD_SIZE = 1000;
@@ -9,7 +10,7 @@ export const WORLD_SHAPE_FORM_DEFAULTS: {
   sizeMeters: WorldSize;
   metersPerSample: number;
 } = {
-  shape: 'disc',
+  shape: DEFAULT_WORLD_SHAPE,
   sizeMeters: DEFAULT_WORLD_SIZE,
   metersPerSample: DEFAULT_TERRAIN_DETAIL,
 };

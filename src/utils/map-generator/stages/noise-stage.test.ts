@@ -12,6 +12,7 @@ function createConfig(width = 5, height = 5, seed = 123): MapConfig {
         sampleHeight: height,
       },
       seed,
+      shape: 'disc',
     },
     noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
   };
