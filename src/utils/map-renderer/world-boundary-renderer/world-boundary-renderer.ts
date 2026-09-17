@@ -1,16 +1,11 @@
 import type { WorldShape } from '../../world-shape';
 import type { SpatialMask } from '../types';
-import type { ViewportSize } from '../viewport';
+import { effectivePixelRatio, type ViewportSize } from '../viewport';
 
-const MAX_DEVICE_PIXEL_RATIO = 2;
-const BOUNDARY_COLOR = 'rgba(100, 255, 218, 0.9)';
+const BOUNDARY_COLOR = 'rgba(49, 155, 0, 0.9)';
 const BOUNDARY_LINE_WIDTH = 2;
 
 export class WorldBoundaryRenderer {
-  static pixelRatio(devicePixelRatio: number): number {
-    return Math.min(MAX_DEVICE_PIXEL_RATIO, Math.max(1, devicePixelRatio));
-  }
-
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
   clear(): void {
@@ -22,7 +17,7 @@ export class WorldBoundaryRenderer {
     if (!context) {
       throw new Error('Overlay canvas is not available.');
     }
-    const ratio = WorldBoundaryRenderer.pixelRatio(viewport.devicePixelRatio);
+    const ratio = effectivePixelRatio(viewport.devicePixelRatio);
     const width = Math.max(1, Math.round(viewport.width * ratio));
     const height = Math.max(1, Math.round(viewport.height * ratio));
     this.canvas.width = width;

@@ -1,25 +1,21 @@
 import type { WorldShape } from '../../world-shape';
 import type { MapOverlayId, SpatialMask } from '../types';
-import { Viewport, type ViewportSize } from '../viewport';
+import { effectivePixelRatio, type Viewport, type ViewportSize } from '../viewport';
 import { WorldBoundaryRenderer } from '../world-boundary-renderer';
 
 const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = { 'world-boundary': true };
 
 export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
-  private readonly viewport: Viewport;
   private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
   private rendered?: { world: SpatialMask; viewport: ViewportSize; shape?: WorldShape };
   renderDurationMs = 0;
 
   constructor(
     overlayCanvas: HTMLCanvasElement,
-    viewportElement: HTMLElement,
-    onViewportChange: () => void
+    private readonly viewport: Viewport
   ) {
     this.boundary = new WorldBoundaryRenderer(overlayCanvas);
-    this.viewport = new Viewport(viewportElement, onViewportChange);
-    this.viewport.start();
   }
 
   isVisible(id: MapOverlayId): boolean {
@@ -33,10 +29,7 @@ export class OverlayController {
   size(): ViewportSize | undefined {
     const viewport = this.viewport.measure();
     return viewport
-      ? {
-          ...viewport,
-          devicePixelRatio: WorldBoundaryRenderer.pixelRatio(viewport.devicePixelRatio),
-        }
+      ? { ...viewport, devicePixelRatio: effectivePixelRatio(viewport.devicePixelRatio) }
       : undefined;
   }
 
@@ -79,9 +72,5 @@ export class OverlayController {
     this.renderDurationMs = 0;
     this.visible = { ...DEFAULT_VISIBLE };
     this.boundary.clear();
-  }
-
-  dispose(): void {
-    this.viewport.dispose();
   }
 }

@@ -208,7 +208,7 @@ export class MapRenderer {
   }
 
   private emitRenderStatistics(): void {
-    this.metrics.report(this.scene.values(), this.view.overlayDurationMs, this.view.viewport);
+    this.metrics.report(this.scene.values(), this.view.overlayDurationMs, this.view.viewportSize);
   }
 
   private reportError(error: unknown): void {

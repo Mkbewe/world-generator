@@ -4,6 +4,13 @@ export interface ViewportSize {
   devicePixelRatio: number;
 }
 
+export const MAX_DEVICE_PIXEL_RATIO = 2;
+
+/** Device pixel ratio used for drawing, capped to keep canvas memory sane. */
+export function effectivePixelRatio(devicePixelRatio: number): number {
+  return Math.min(MAX_DEVICE_PIXEL_RATIO, Math.max(1, devicePixelRatio));
+}
+
 export class Viewport {
   private animationFrame?: number;
   private resizeObserver?: ResizeObserver;
@@ -14,6 +21,7 @@ export class Viewport {
   ) {}
 
   start(): void {
+    this.dispose();
     this.scheduleMeasurement();
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.scheduleMeasurement());

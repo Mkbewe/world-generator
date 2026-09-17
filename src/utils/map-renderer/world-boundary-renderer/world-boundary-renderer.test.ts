@@ -42,7 +42,7 @@ describe('WorldBoundaryRenderer', () => {
     expect(context.arc).toHaveBeenCalledWith(4, 4, 2, 0, Math.PI * 2);
     expect(context.stroke).toHaveBeenCalledOnce();
     expect(context.lineWidth).toBe(4);
-    expect(context.strokeStyle).toBe('rgba(100, 255, 218, 0.9)');
+    expect(context.strokeStyle).toBe('rgba(49, 155, 0, 0.9)');
   });
 
   it('strokes a rectangle inset by half the line width', () => {
