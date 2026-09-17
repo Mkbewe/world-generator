@@ -14,7 +14,7 @@ interface GenerationProgressProps {
 export function GenerationProgress({ progress }: GenerationProgressProps) {
   const total = progress.stages.length;
   const completed = progress.stages.filter(stage => stage.status === 'completed').length;
-  const elapsed = useElapsed(progress.status);
+  const elapsed = useElapsed(progress.status, progress.startedAt);
   const time = progress.totalDurationMs ?? elapsed;
 
   return (

@@ -37,6 +37,30 @@
   border-block: 1px solid var(--gray-6);
 }
 
+.root[data-fluid] .content {
+  max-width: none;
+}
+
+.root[data-px='compact'] .content {
+  padding-inline: 0.5rem;
+
+  @media (min-width: $breakpoint-sm) {
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: $breakpoint-lg) {
+    padding-inline: 1.5rem;
+  }
+}
+
+.root[data-pt='compact'] .content {
+  padding-top: 0.5rem;
+}
+
+.root[data-pb='compact'] .content {
+  padding-bottom: 0.5rem;
+}
+
 .root[data-pt='small'] .content {
   padding-top: 0.75rem;
 }

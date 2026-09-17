@@ -11,13 +11,14 @@ import { useTheme } from '../../theme';
 import styles from './main-layout.module.scss';
 
 function MainLayoutContent() {
-  const { isExportDialogOpen, setIsExportDialogOpen, confirmExport } = useHeaderActions();
+  const { isExportDialogOpen, setIsExportDialogOpen, confirmExport, isFullscreen } =
+    useHeaderActions();
   const { appearance, toggleTheme } = useTheme();
   const showBreadcrumbs = useFlag('breadcrumbs');
 
   return (
     <>
-      <div className={styles.layout}>
+      <div className={styles.layout} data-fullscreen={isFullscreen || undefined}>
         <Header onToggleTheme={toggleTheme} currentTheme={appearance} />
         {showBreadcrumbs && (
           <PageSection p='small' pb='none'>

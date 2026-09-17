@@ -11,6 +11,7 @@ export class ProgressTracker {
     this.state = {
       stages: stages.map(({ id, name }) => ({ id, name, status: 'pending', percentage: 0 })),
       status: 'running',
+      startedAt: performance.now(),
     };
   }
 
@@ -50,6 +51,7 @@ function applyEvent(
 export function restartProgress(progress: GenerationProgressState): GenerationProgressState {
   return {
     status: 'running',
+    startedAt: performance.now(),
     stages: progress.stages.map(stage => ({
       id: stage.id,
       name: stage.name,

@@ -8,3 +8,19 @@ class ResizeObserverStub {
 }
 
 globalThis.ResizeObserver = ResizeObserverStub;
+
+// jsdom lacks matchMedia, which the fullscreen preview uses to detect mobile viewports.
+function matchMediaStub(query: string): MediaQueryList {
+  return {
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  } as unknown as MediaQueryList;
+}
+
+globalThis.matchMedia = matchMediaStub;

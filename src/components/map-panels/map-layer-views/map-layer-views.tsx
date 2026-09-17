@@ -1,6 +1,6 @@
 import { Flex, SegmentedControl, Separator, Text } from '@radix-ui/themes';
 
-import type { MapBaseLayerId, MapLayerNavigation, MapLayerNode } from '../../utils/map-renderer';
+import type { MapBaseLayerId, MapLayerNavigation, MapLayerNode } from '../../../utils/map-renderer';
 import styles from './map-layer-views.module.scss';
 
 interface MapLayerViewsProps extends MapLayerNavigation {

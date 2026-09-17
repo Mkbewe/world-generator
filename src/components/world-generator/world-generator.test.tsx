@@ -182,6 +182,7 @@ describe('WorldGenerator', () => {
 
     expect(useGenerationProgressStore.getState().progress).toEqual({
       status: 'running',
+      startedAt: expect.any(Number),
       stages: [
         { id: 'world-shape', name: 'World shape generation', status: 'pending', percentage: 0 },
         { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },

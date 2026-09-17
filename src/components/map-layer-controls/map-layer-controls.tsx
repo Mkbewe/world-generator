@@ -2,15 +2,14 @@
 import { FrameIcon, GlobeIcon, LayersIcon, MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Flex, Tabs } from '@radix-ui/themes';
 
-import { MapLayerViews } from './map-layer-views';
 import type {
   MapBaseLayerId,
   MapLayerNavigation,
   MapOverlayId,
   MapRendererState,
 } from '../../utils/map-renderer';
-import { MapInspector, type MapInspectorProps } from '../map-inspector';
-import { MapOverlayControls } from '../map-overlay-controls';
+import type { MapInspectorProps } from '../map-inspector';
+import { MapPanels } from '../map-panels';
 import styles from './map-layer-controls.module.scss';
 
 const LAYER_ICONS: Record<string, ReactNode> = {
@@ -25,8 +24,10 @@ interface MapLayerControlsProps {
   children: ReactNode;
   onBaseLayerChange: (layer: MapBaseLayerId) => void;
   onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
-  /** Cursor readout rendered in the sidebar footer; needs the preview readout data. */
+  /** Cursor readout rendered in the panels; needs the preview readout data. */
   inspector?: MapInspectorProps;
+  /** Stretches the map area to the available height, used by the fullscreen mode. */
+  expanded?: boolean;
 }
 
 export function MapLayerControls({
@@ -36,6 +37,7 @@ export function MapLayerControls({
   onBaseLayerChange,
   onOverlayChange,
   inspector,
+  expanded = false,
 }: MapLayerControlsProps) {
   const { tabs, activeTab } = navigation;
   const selectTab = (id: string): void => {
@@ -46,7 +48,7 @@ export function MapLayerControls({
   };
 
   return (
-    <Flex direction='column' gap='3'>
+    <Flex direction='column' gap='3' className={expanded ? styles.expanded : undefined}>
       <Flex align='stretch' gap='3' className={styles.mapArea}>
         <Tabs.Root
           orientation='vertical'
@@ -70,11 +72,15 @@ export function MapLayerControls({
           </Tabs.List>
         </Tabs.Root>
         <div className={styles.canvasArea}>{children}</div>
-        <Flex direction='column' gap='3' className={styles.sidebar}>
-          <MapOverlayControls preview={preview} onOverlayChange={onOverlayChange} />
-          <MapLayerViews tabs={tabs} activeTab={activeTab} onViewChange={onBaseLayerChange} />
-          {inspector && <MapInspector {...inspector} />}
-        </Flex>
+        <div className={styles.spacer} aria-hidden='true' />
+        <MapPanels
+          preview={preview}
+          navigation={navigation}
+          onBaseLayerChange={onBaseLayerChange}
+          onOverlayChange={onOverlayChange}
+          inspector={inspector}
+          expanded={expanded}
+        />
       </Flex>
     </Flex>
   );

@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PreviewMap } from './preview-map';
 import type { MapRenderer } from '../../utils/map-renderer';
 
-function renderPreview(): void {
+function renderPreview() {
   const onReady = (renderer: MapRenderer | undefined): void => {
     if (!renderer) {
       return;
@@ -12,7 +12,7 @@ function renderPreview(): void {
     renderer.start({ width: 4, height: 4 });
     renderer.add('world-shape', new Uint8Array(16).fill(1));
   };
-  render(
+  return render(
     <Theme>
       <PreviewMap onReady={onReady} progressKey={0} />
     </Theme>
@@ -127,5 +127,26 @@ describe('PreviewMap readout', () => {
     fireEvent.pointerLeave(canvas, { pointerType: 'touch' });
 
     expectPosition(1, 1);
+  });
+
+  it('freezes the readout over the panels and clears it outside the preview', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    fireEvent.pointerMove(canvas, { clientX: 100, clientY: 100 });
+    expectPosition(1, 1);
+
+    fireEvent.pointerOut(canvas, {
+      relatedTarget: screen.getByRole('group', { name: 'Cursor readout' }),
+    });
+    expectPosition(1, 1);
+
+    const card = canvas.closest('.rt-Card');
+    expect(card).not.toBeNull();
+    fireEvent.pointerOut(card as HTMLElement, { relatedTarget: document.body });
+
+    expect(screen.queryByText('X 1 cell')).toBeNull();
+    expect(screen.queryByText('Inside')).toBeNull();
   });
 });

@@ -5,3 +5,7 @@
   flex-direction: column;
   background: var(--gray-1);
 }
+
+.layout[data-fullscreen] {
+  --fullscreen-header-offset: 4.25rem;
+}

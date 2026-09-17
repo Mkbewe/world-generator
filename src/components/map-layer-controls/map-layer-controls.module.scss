@@ -28,6 +28,17 @@
     background: var(--gray-a4);
   }
 
+  &:focus-visible {
+    outline: 2px solid var(--focus-8);
+    outline-offset: -2px;
+  }
+
+  &:hover > span,
+  &:focus-visible > span {
+    background-color: transparent;
+    outline: none;
+  }
+
   &[data-state='active'] {
     color: var(--violet-11);
     background: var(--violet-a5);
@@ -58,6 +69,9 @@
 }
 
 .mapArea {
+  --layer-strip-size: 3.5rem;
+  --layer-strip-half-height: 5rem;
+
   min-width: 0;
 }
 
@@ -66,11 +80,48 @@
   flex: 1 1 auto;
 }
 
-.sidebar {
-  flex: 0 0 16rem;
-  min-width: 0;
-  padding: 0 0 0 var(--space-3);
-  border-left: 1px solid var(--gray-6);
+.expanded .canvasArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+
+.expanded {
+  flex: 1;
+  min-height: 0;
+}
+
+.expanded .mapArea {
+  flex: 1;
+  min-height: 0;
+}
+
+.expanded .layerTabs {
+  display: flex;
+  align-items: center;
+}
+
+.expanded .mapArea .layerStrip {
+  height: auto;
+}
+
+.spacer {
+  display: none;
+}
+
+.expanded .mapArea {
+  position: relative;
+}
+
+.expanded .mapArea .layerStrip,
+.expanded .spacer {
+  width: var(--layer-strip-size);
+}
+
+.expanded .spacer {
+  display: block;
+  flex: 0 0 auto;
 }
 
 @include mobile {
@@ -86,12 +137,5 @@
     flex-direction: row;
     width: fit-content;
     height: auto;
-  }
-
-  .sidebar {
-    flex: 0 0 auto;
-    order: -1;
-    border-left: 0;
-    border-bottom: 1px solid var(--gray-6);
   }
 }
