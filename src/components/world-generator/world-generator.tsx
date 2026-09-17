@@ -7,6 +7,7 @@ import {
   useNoiseFormStore,
   useWorldShapeFormStore,
 } from '../../stores';
+import { useHeaderActions } from '../header';
 import { MapPreview } from '../map-preview';
 import { SettingsPanel } from '../settings-panel';
 
@@ -23,24 +24,27 @@ export function WorldGenerator() {
   const setNoise = useNoiseFormStore(state => state.setNoise);
   const progress = useGenerationProgressStore(state => state.progress);
   const { isGenerating, generationRun, error, onRendererReady, generate } = useWorldGeneration();
+  const { isFullscreen } = useHeaderActions();
 
   return (
     <>
       <Grid columns={{ initial: '1', md: '4fr 8fr' }} gap='5' align='start'>
-        <SettingsPanel
-          seed={seed}
-          onSeedChange={setSeed}
-          isGenerating={isGenerating}
-          onGenerate={generate}
-          shape={shape}
-          sizeMeters={sizeMeters}
-          metersPerSample={metersPerSample}
-          onShapeChange={setShape}
-          onSizeChange={setSizeMeters}
-          onDetailChange={setMetersPerSample}
-          noise={noise}
-          onNoiseChange={setNoise}
-        />
+        <div inert={isFullscreen || undefined}>
+          <SettingsPanel
+            seed={seed}
+            onSeedChange={setSeed}
+            isGenerating={isGenerating}
+            onGenerate={generate}
+            shape={shape}
+            sizeMeters={sizeMeters}
+            metersPerSample={metersPerSample}
+            onShapeChange={setShape}
+            onSizeChange={setSizeMeters}
+            onDetailChange={setMetersPerSample}
+            noise={noise}
+            onNoiseChange={setNoise}
+          />
+        </div>
         <MapPreview onReady={onRendererReady} progress={progress} progressKey={generationRun} />
       </Grid>
       {error && (

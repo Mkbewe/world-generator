@@ -1,21 +1,36 @@
 import { Theme } from '@radix-ui/themes';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { MapPreview } from './map-preview';
 import type { MapRenderer } from '../../utils/map-renderer';
+import { HeaderActionsProvider, useHeaderActions } from '../header';
 
-function renderPreview() {
-  const onReady = (renderer: MapRenderer | undefined): void => {
+function createOnReady(): (renderer: MapRenderer | undefined) => void {
+  return renderer => {
     if (!renderer) {
       return;
     }
     renderer.start({ width: 4, height: 4 });
     renderer.add('world-shape', new Uint8Array(16).fill(1));
   };
+}
+
+function renderPreview() {
   return render(
     <Theme>
-      <MapPreview onReady={onReady} progressKey={0} />
+      <MapPreview onReady={createOnReady()} progressKey={0} />
     </Theme>
+  );
+}
+
+function FullscreenBridge() {
+  const { setIsFullscreen } = useHeaderActions();
+
+  return (
+    <button type='button' onClick={() => setIsFullscreen(true)}>
+      Enter fullscreen
+    </button>
   );
 }
 
@@ -148,5 +163,23 @@ describe('MapPreview readout', () => {
 
     expect(screen.queryByText('X 1 cell')).toBeNull();
     expect(screen.queryByText('Inside')).toBeNull();
+  });
+
+  it('moves focus into the overlay when fullscreen opens', async () => {
+    const user = userEvent.setup();
+    render(
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <MapPreview onReady={createOnReady()} progressKey={0} />
+        </HeaderActionsProvider>
+      </Theme>
+    );
+    await act(async () => {});
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
+    const overlay = screen.getByLabelText('Generated map preview').closest('.rt-Card');
+    expect(overlay).toHaveFocus();
   });
 });
