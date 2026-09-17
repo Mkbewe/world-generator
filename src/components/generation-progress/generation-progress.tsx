@@ -1,7 +1,7 @@
 import { Flex } from '@radix-ui/themes';
 
+import { useElapsed } from './hooks/use-elapsed';
 import type { GenerationProgressState } from './lib/progress-types';
-import { useElapsed } from './lib/use-elapsed';
 import { ProgressHeader } from './progress-header';
 import { StageBars } from './stage-bars';
 import { StageList } from './stage-list';

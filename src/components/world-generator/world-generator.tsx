@@ -1,13 +1,13 @@
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
-import { useWorldGeneration } from './use-world-generation';
+import { useWorldGeneration } from './hooks/use-world-generation';
 import {
   useGeneralFormStore,
   useGenerationProgressStore,
   useNoiseFormStore,
   useWorldShapeFormStore,
 } from '../../stores';
-import { PreviewMap } from '../preview-map';
+import { MapPreview } from '../map-preview';
 import { SettingsPanel } from '../settings-panel';
 
 export function WorldGenerator() {
@@ -41,7 +41,7 @@ export function WorldGenerator() {
           noise={noise}
           onNoiseChange={setNoise}
         />
-        <PreviewMap onReady={onRendererReady} progress={progress} progressKey={generationRun} />
+        <MapPreview onReady={onRendererReady} progress={progress} progressKey={generationRun} />
       </Grid>
       {error && (
         <Flex justify='center'>

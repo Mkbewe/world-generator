@@ -105,8 +105,8 @@ clears it.
   worker transport.
 - `src/components/world-generator` is the generator view: settings, generation
   orchestration and the map preview.
-- `src/components/preview-map` contains the map canvas and the layer/overlay
-  controls.
+- `src/components/map-preview` is the preview view: the preview card, the layer
+  tabs, the map canvas and the sidebar with overlays and the cursor readout.
 - `src/utils/map-renderer` renders layers and overlays (scene, view, layer cache,
   metrics and persistence).
 - `src/stores` holds global UI state: form values per settings tab, generation
