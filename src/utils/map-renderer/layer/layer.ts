@@ -76,7 +76,17 @@ export abstract class MapLayer {
       throw new Error('Canvas is not available.');
     }
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(this.canvas, 0, 0);
+    context.drawImage(
+      this.canvas,
+      0,
+      0,
+      this.canvas.width,
+      this.canvas.height,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
   }
 
   dispose(): void {

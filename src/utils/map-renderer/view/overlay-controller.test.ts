@@ -4,11 +4,8 @@ import { Viewport } from '../viewport';
 import { WorldBoundaryRenderer } from '../world-boundary-renderer';
 
 function setup() {
-  return new OverlayController(
-    document.createElement('canvas'),
-    document.createElement('div'),
-    vi.fn()
-  );
+  const viewport = new Viewport(document.createElement('div'), vi.fn());
+  return new OverlayController(document.createElement('canvas'), viewport);
 }
 
 describe('OverlayController', () => {
@@ -36,7 +33,6 @@ describe('OverlayController', () => {
       },
       undefined
     );
-    controller.dispose();
   });
 
   beforeEach(() => {
@@ -53,7 +49,6 @@ describe('OverlayController', () => {
     expect(controller.isVisible('world-boundary')).toBe(true);
     controller.setVisible('world-boundary', false);
     expect(controller.isVisible('world-boundary')).toBe(false);
-    controller.dispose();
   });
 
   it('renders the boundary only when a world and viewport are available', () => {
@@ -76,7 +71,6 @@ describe('OverlayController', () => {
 
     controller.render(undefined);
     expect(clear).toHaveBeenCalledOnce();
-    controller.dispose();
   });
 
   it('redraws only when the world, viewport or effective DPR changes', () => {
@@ -102,7 +96,6 @@ describe('OverlayController', () => {
     controller.render(world);
     controller.render({} as SpatialMask);
     expect(render).toHaveBeenCalledTimes(5);
-    controller.dispose();
   });
 
   it('redraws after hiding, losing the viewport and resetting', () => {
@@ -123,7 +116,6 @@ describe('OverlayController', () => {
     controller.reset();
     controller.render(world);
     expect(render).toHaveBeenCalledTimes(4);
-    controller.dispose();
   });
 
   it('retries failed drawing instead of caching it', () => {
@@ -144,7 +136,6 @@ describe('OverlayController', () => {
     controller.render(world);
     controller.render(world);
     expect(render).toHaveBeenCalledTimes(2);
-    controller.dispose();
   });
 
   it('clears the overlay and restores defaults on reset', () => {
@@ -156,6 +147,5 @@ describe('OverlayController', () => {
 
     expect(controller.isVisible('world-boundary')).toBe(true);
     expect(clear).toHaveBeenCalledOnce();
-    controller.dispose();
   });
 });
