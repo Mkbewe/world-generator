@@ -3,15 +3,12 @@ import { LAYER_CATALOG } from '../../map-layers';
 import { CatalogLayer } from '../layer';
 import { fitView } from '../view/view-transform';
 
-function createContext(extra: Record<string, unknown> = {}): CanvasRenderingContext2D {
+function createContext(): CanvasRenderingContext2D {
   return {
     beginPath: vi.fn(),
     arc: vi.fn(),
     rect: vi.fn(),
     stroke: vi.fn(),
-    createImageData: vi.fn(),
-    putImageData: vi.fn(),
-    ...extra,
   } as unknown as CanvasRenderingContext2D;
 }
 
@@ -56,20 +53,5 @@ describe('WorldBoundaryRenderer', () => {
 
     expect(context.rect).toHaveBeenCalledWith(3, 3, 2, 2);
     expect(context.stroke).toHaveBeenCalledOnce();
-  });
-
-  it('traces the mask cells when the world shape is unknown', () => {
-    const data = new Uint8ClampedArray(8 * 8 * 4);
-    const context = createContext({
-      createImageData: vi.fn(() => ({ data, width: 8, height: 8 })),
-    });
-    const canvas = createCanvas(context);
-    const world = createWorld();
-
-    new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, undefined, fitView());
-    world.dispose();
-
-    expect(context.putImageData).toHaveBeenCalledOnce();
-    expect(data.some(value => value === 230)).toBe(true);
   });
 });

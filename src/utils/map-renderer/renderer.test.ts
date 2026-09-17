@@ -28,7 +28,7 @@ function snapshot(layers: GeneratedMapSnapshot['layers']): GeneratedMapSnapshot 
 function setup(options: MapRendererOptions = {}) {
   const onChange = vi.fn();
   const preview = new MapRenderer(elements(), onChange, options);
-  preview.start({ width: 2, height: 2 });
+  preview.start({ width: 2, height: 2 }, 'disc');
   return { preview, onChange };
 }
 
@@ -163,7 +163,7 @@ describe('MapRenderer', () => {
     vi.spyOn(MapLayer.prototype, 'prepare').mockReturnValue(pending.promise);
     preview.add('world-shape', new Uint8Array(4));
     const previousSignal = preview.signal;
-    preview.start({ width: 3, height: 3 });
+    preview.start({ width: 3, height: 3 }, 'disc');
     expect(previousSignal.aborted).toBe(true);
     onChange.mockClear();
     pending.resolve();
@@ -252,7 +252,7 @@ describe('MapRenderer', () => {
     await preview.ready;
     expect(onRenderStatistics).not.toHaveBeenCalled();
 
-    preview.start({ width: 2, height: 2 });
+    preview.start({ width: 2, height: 2 }, 'disc');
     preview.add('world-shape', new Uint8Array(4).fill(1));
     preview.add('noise', new Float32Array(4));
     await vi.runAllTimersAsync();
@@ -283,7 +283,7 @@ describe('MapRenderer', () => {
   it('reports render statistics for each presented layer', async () => {
     const onRenderStatistics = vi.fn();
     const renderer = new MapRenderer(elements(), vi.fn(), { onRenderStatistics });
-    renderer.start({ width: 2, height: 2 });
+    renderer.start({ width: 2, height: 2 }, 'disc');
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
 
     renderer.add('world-shape', new Uint8Array(4).fill(1));
@@ -345,7 +345,7 @@ describe('MapRenderer', () => {
       ],
     });
 
-    preview.start({ width: 2, height: 2 });
+    preview.start({ width: 2, height: 2 }, 'disc');
     preview.add('world-shape', mask);
     preview.add('noise', noise);
     await vi.runAllTimersAsync();

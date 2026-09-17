@@ -55,14 +55,14 @@ export function CursorReadout({ items, pinned = false, bare = false }: CursorRea
 
 function renderItemContent(item: ReadoutItem): ReactNode {
   if (item.lines) {
-    return item.lines.flatMap(line => [
-      <span key={`${line.label}-label`} className={styles.label}>
+    return item.lines.flatMap((line, index) => [
+      <span key={`line-${index}-label`} className={styles.label}>
         {line.label}:
       </span>,
-      <span key={`${line.label}-x`} className={styles.value}>
+      <span key={`line-${index}-x`} className={styles.value}>
         {line.x}
       </span>,
-      <span key={`${line.label}-y`} className={styles.value}>
+      <span key={`line-${index}-y`} className={styles.value}>
         {line.y}
       </span>,
     ]);

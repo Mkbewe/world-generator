@@ -91,7 +91,7 @@ export class MapView {
     }));
   }
 
-  start(size: MapSize, shape?: WorldShape): void {
+  start(size: MapSize, shape: WorldShape): void {
     this.progressive = true;
     this.shape = shape;
     this.size = size;

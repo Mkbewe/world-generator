@@ -18,7 +18,7 @@ function createOnReady(): {
       if (!next) {
         return;
       }
-      next.start({ width: 4, height: 4 });
+      next.start({ width: 4, height: 4 }, 'disc');
       next.add('world-shape', new Uint8Array(16).fill(1));
     },
   };

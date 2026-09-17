@@ -28,4 +28,32 @@ describe('CursorReadout', () => {
 
     expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
   });
+
+  it('renders repeated line labels without duplicate keys', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const items: readonly ReadoutItem[] = [
+      {
+        id: 'position',
+        label: 'Position',
+        value: 'X 1',
+        lines: [
+          { label: 'Position', x: 'X 1 cell', y: 'Y 2 cell' },
+          { label: 'Position', x: 'X 3 m', y: 'Y 4 m' },
+        ],
+      },
+    ];
+
+    try {
+      render(
+        <Theme>
+          <CursorReadout items={items} />
+        </Theme>
+      );
+
+      expect(screen.getByText('X 3 m')).toBeInTheDocument();
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+    }
+  });
 });
