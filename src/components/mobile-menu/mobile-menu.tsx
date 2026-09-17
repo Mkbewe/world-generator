@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Flex } from '@radix-ui/themes';
 
-import { useEscapeClose } from './lib/use-escape-close';
+import { useEscapeClose } from './hooks/use-escape-close';
 import { MenuDrawer } from './menu-drawer';
 import { MenuTrigger } from './menu-trigger';
 

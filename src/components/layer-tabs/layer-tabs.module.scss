@@ -1,0 +1,93 @@
+.root {
+  flex: 0 0 auto;
+
+  &[data-expanded] {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.root .strip {
+  flex-direction: column;
+  gap: var(--space-1);
+  height: 100%;
+  padding: var(--space-1);
+  background: var(--gray-a3);
+  border-radius: var(--radius-3);
+  box-shadow: none;
+}
+
+.root[data-expanded] .strip {
+  width: var(--layer-strip-size);
+  height: auto;
+}
+
+.root .trigger {
+  --tab-inner-padding-x: 0;
+  --tab-inner-padding-y: 0;
+
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-2);
+  color: var(--gray-11);
+
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  &:hover {
+    color: var(--violet-11);
+    background: var(--gray-a4);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-8);
+    outline-offset: -2px;
+  }
+
+  &:hover > span,
+  &:focus-visible > span {
+    background-color: transparent;
+    outline: none;
+  }
+
+  &[data-state='active'] {
+    color: var(--violet-11);
+    background: var(--violet-a5);
+    box-shadow: inset 0 0 0 1px var(--violet-a7);
+  }
+
+  &::before {
+    display: none;
+  }
+
+  > span {
+    padding: 0;
+  }
+
+  > span:first-of-type {
+    position: static;
+  }
+
+  > span:last-of-type {
+    display: none;
+  }
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@include mobile {
+  .root .strip {
+    flex-direction: row;
+    height: auto;
+  }
+
+  .root .trigger {
+    flex: 1 1 0;
+  }
+}

@@ -1,6 +1,6 @@
 import { Flex } from '@radix-ui/themes';
 
-import { useSizeInput } from './lib/use-size-input';
+import { useSizeInput } from './hooks/use-size-input';
 import type { WorldShape, WorldSize } from './lib/world-shape';
 import { DetailField } from './detail-field';
 import { GridSummaryField } from './grid-summary-field';

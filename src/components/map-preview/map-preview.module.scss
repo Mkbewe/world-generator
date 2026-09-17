@@ -1,0 +1,54 @@
+.card[data-fullscreen] {
+  --base-card-border-radius: 0px;
+  --base-card-border-width: 0px;
+
+  position: fixed;
+  inset: var(--fullscreen-header-offset, 0) 0 0;
+  z-index: 50;
+  overflow: hidden;
+  border-radius: 0;
+  background-color: var(--color-background);
+}
+
+.card[data-fullscreen]::after {
+  box-shadow: none;
+}
+
+.card[data-fullscreen] .heading,
+.card[data-fullscreen] .separator {
+  display: none;
+}
+
+.card[data-fullscreen] .body {
+  height: 100%;
+  min-height: 0;
+}
+
+.workspace {
+  --layer-strip-size: 3.5rem;
+  --layer-strip-half-height: 5rem;
+
+  min-width: 0;
+}
+
+.card[data-fullscreen] .workspace {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.spacer {
+  display: none;
+}
+
+.card[data-fullscreen] .spacer {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--layer-strip-size);
+}
+
+@include mobile {
+  .workspace {
+    flex-direction: column;
+  }
+}
