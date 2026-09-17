@@ -198,6 +198,12 @@ A GitHub release therefore always corresponds to something live in production,
 rollbacks do not create releases, and promoting the same version twice is a
 no-op.
 
+Every promoted release also gets a permanent alias in the form
+`wg-<version with dashes>.vercel.app` (for example `wg-0-6-0.vercel.app`), and
+the release notes link both the deployment URL and its alias. Aliased
+deployments are kept outside the retention policy, so any past release can be
+opened straight from its GitHub release page.
+
 ## Deployment
 
 Deployment is decoupled from merging: every push to `master` ships to **dev**,

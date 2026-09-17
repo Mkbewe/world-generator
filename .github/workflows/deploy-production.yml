@@ -31,6 +31,8 @@ jobs:
     name: Promote deployment to Production
     runs-on: ubuntu-latest
     needs: validate
+    outputs:
+      deployment_url: ${{ steps.promote.outputs.url }}
 
     steps:
       - name: Checkout code
@@ -44,6 +46,20 @@ jobs:
           vercel_token: ${{ secrets.VERCEL_TOKEN }}
           vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
           vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Alias the promoted deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DEPLOYMENT_URL: ${{ steps.promote.outputs.url }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          ALIAS="wg-$(echo "$VERSION" | tr . -).vercel.app"
+
+          # The alias keeps the release deployment out of the retention policy,
+          # so old releases stay reachable from their GitHub release page.
+          npx vercel@latest alias set "$DEPLOYMENT_URL" "$ALIAS" \
+            --token="$VERCEL_TOKEN" \
+            --scope=mkbewepp
 
       - name: Create deployment comment
         uses: actions/github-script@v7
@@ -60,6 +76,8 @@ jobs:
     name: Create GitHub Release
     needs: promote
     uses: ./.github/workflows/create-release.yml
+    with:
+      deployment_url: ${{ needs.promote.outputs.deployment_url }}
     permissions:
       contents: write
       pull-requests: write
