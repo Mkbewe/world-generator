@@ -33,17 +33,18 @@ export function usePreviewFullscreen(): boolean {
     if (!isFullscreen) {
       return;
     }
+    const root = document.documentElement;
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setIsFullscreen(false);
       }
     };
-    const previousOverflow = document.body.style.overflow;
+    const previousOverflow = root.style.overflow;
     document.addEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = 'hidden';
+    root.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      root.style.overflow = previousOverflow;
     };
   }, [isFullscreen, setIsFullscreen]);
 
