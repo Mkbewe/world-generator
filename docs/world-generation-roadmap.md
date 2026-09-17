@@ -109,12 +109,14 @@ traktować każdą kombinację jako osobny typ mapy.
 - Rysowanie jest progresywne, a wybór pamiętany między widokami.
 - Granica świata jest rysowana analitycznie (`arc`/`rect`) w rozdzielczości
   ekranu, niezależnie od siatki próbek.
-- Podgląd otwiera się w trybie pełnoekranowym (przełącznik w nagłówku lub `Esc`)
-  jako nakładka nad stroną; canvas wypełnia wtedy cały obszar roboczy
-  z zachowaniem proporcji mapy, więc na szerokich ekranach zoom 1x-4x (kółko
-  myszy oraz kroki `-`/`+` w sekcji `View`) odsłania więcej mapy po bokach.
-- Przeciągnięcie myszą lub palcem przesuwa mapę, a tap lub klik przypina odczyt;
-  widok wraca do całości przy wyjściu z trybu pełnoekranowego.
+- Podgląd otwiera się w trybie pełnoekranowym (przełącznik w nagłówku), a zamyka
+  go ten sam przełącznik lub `Esc`, jako nakładka nad stroną; canvas wypełnia
+  wtedy cały obszar roboczy z zachowaniem proporcji mapy, więc na szerokich
+  ekranach zoom 1x-4x (kółko myszy oraz kroki `-`/`+` w sekcji `View`) odsłania
+  więcej mapy po bokach.
+- Przeciągnięcie myszą lub palcem przesuwa mapę, a tap lub klik przypina odczyt
+  (również poza trybem pełnoekranowym); widok wraca do całości przy wyjściu
+  z trybu pełnoekranowego.
 - Inspekcja mapy pokazuje pod kursorem pozycję w komórkach (`cell`) i odległość
   w metrach (wiersze `Position` i `Distance`, wspólne kolumny `X`/`Y`) oraz
   wartość wybranej warstwy; odczyt można przypiąć na urządzeniach dotykowych.
@@ -211,8 +213,8 @@ pas `gray-1`/`gray-2` z 1px liniami, dużo pustego miejsca). Kierunek zmian
 - typografia: mniejsze nagłówki sekcji, drobne etykiety z rozstrzeleniem,
   jeden akcent do akcji (teal pozostaje kolorem brandu).
 
-Poza zakresem: placeholder pustego podglądu (osobny task, później) oraz
-dekoracyjne tło (#286).
+Poza zakresem: dekoracyjne tło (#286). Placeholder pustego podglądu został już
+wdrożony osobno (#289/#290).
 
 ## 3. Fizyczna skala świata — [działa]
 
@@ -251,12 +253,14 @@ Wymiary trafiają też do kanału informacji jako `worldDimensions`, więc snaps
 i odczyt pod kursorem znają skalę. Rozdzielczość podglądu i eksportowanego obrazu
 pozostaje niezależna od rozdzielczości danych.
 
-Pamięć renderera jest poza tym budżetem: każdy canvas warstwy i canvas
-prezentacji ma pełny rozmiar rastra (przy maksymalnej siatce ~400 MB każdy), więc
-szczyt całej aplikacji jest wyższy i widać go w statystykach renderowania.
-Świadomie nie uwalniamy canvasów nieaktywnych warstw — przełączanie warstw ma
-być natychmiastowe, bez migania. Redukcję tych buforów (rasteryzacja do rozmiaru
-viewportu) oraz kopii `postMessage` opisuje sekcja 9.
+Pamięć renderera jest poza tym budżetem: canvas każdej warstwy ma pełny rozmiar
+rastra (przy maksymalnej siatce ~400 MB), natomiast canvas prezentacji jest od
+#305 rysowany w rozmiarze viewportu × DPR (z limitem DPR 2), więc to warstwy,
+a nie prezentacja, odpowiadają za większość szczytu. Szczyt całej aplikacji jest
+wyższy od budżetu generatora i widać go w statystykach renderowania. Świadomie
+nie uwalniamy canvasów nieaktywnych warstw — przełączanie warstw ma być
+natychmiastowe, bez migania. Redukcję tych buforów (rasteryzacja warstw do
+rozmiaru viewportu) oraz kopii `postMessage` opisuje sekcja 9.
 
 ## 4. Kolejne etapy pipeline'u — [częściowo]
 

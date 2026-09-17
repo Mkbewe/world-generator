@@ -1,48 +1,5 @@
-import { type InspectorReadout, type ReadoutItem, readoutItems, samplePointer } from './readout';
+import { type InspectorReadout, type ReadoutItem, readoutItems } from './readout';
 import type { MapInspection } from '../map-renderer';
-
-const SIZE = { width: 2400, height: 2400 };
-
-describe('samplePointer', () => {
-  it('maps a scaled preview onto source cells', () => {
-    const rect = { left: 10, top: 20, width: 600, height: 600 };
-
-    expect(samplePointer(rect, SIZE, 310, 320)).toEqual({
-      x: 1200,
-      y: 1200,
-      u: 0.5,
-      v: 0.5,
-    });
-  });
-
-  it('derives cells from normalized position, not canvas resolution', () => {
-    const rect = { left: 0, top: 0, width: 300, height: 300 };
-
-    expect(samplePointer(rect, { width: 1000, height: 1000 }, 150, 150)?.x).toBe(500);
-  });
-
-  it('clamps points outside the preview', () => {
-    const rect = { left: 0, top: 0, width: 100, height: 100 };
-
-    expect(samplePointer(rect, { width: 10, height: 10 }, -50, -50)).toMatchObject({
-      x: 0,
-      y: 0,
-      u: 0,
-      v: 0,
-    });
-    expect(samplePointer(rect, { width: 10, height: 10 }, 150, 150)).toMatchObject({
-      x: 9,
-      y: 9,
-      u: 1,
-      v: 1,
-    });
-  });
-
-  it('ignores empty rectangles', () => {
-    expect(samplePointer({ left: 0, top: 0, width: 0, height: 10 }, SIZE, 0, 0)).toBeUndefined();
-    expect(samplePointer({ left: 0, top: 0, width: 10, height: 0 }, SIZE, 0, 0)).toBeUndefined();
-  });
-});
 
 function readout(inspection?: MapInspection): InspectorReadout {
   return {

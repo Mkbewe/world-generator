@@ -15,7 +15,7 @@ See `README.md` and `docs/world-generation-roadmap.md` for architecture.
 ## Components
 
 - one public component per file, in its own folder with a colocated test; add a `module.scss` only when the component has its own styles
-- non-component logic, types and hooks live in a `lib/` folder
+- non-component logic and types live in a `lib/` folder; hooks live in a `hooks/` folder, which is the preferred place for them (a `lib/` folder is still acceptable, but prefer `hooks/`)
 - soft limit ~150 lines per component file (ESLint fails above 200)
 - folders stay under ~7 component files
 - prefer `children` over text props when a shared wrapper is genuinely needed
