@@ -1,5 +1,115 @@
 # Changelog
 
+## [0.7.0](https://github.com/Mkbewe/world-generator/compare/v0.6.0...v0.7.0) (2026-09-17)
+
+### Features
+
+* **[262](https://github.com/Mkbewe/world-generator/issues/262):** open the preview in a fullscreen overlay ([#295](https://github.com/Mkbewe/world-generator/issues/295)) ([490ded7](https://github.com/Mkbewe/world-generator/commit/490ded77e4455db4318048d6aa96c05005d1f40b))
+
+  - add a fullscreen toggle and badges to the header and lock the body
+  scroll
+  - stretch the preview to the viewport, drop the card chrome and center
+  the layer strip
+  - float the panels over the map with collapse and top/middle/bottom
+  anchors
+  - keep the cursor readout while the pointer is over the panels
+  - keep fullscreen desktop-only, with the panels flowing below the map on
+  mobile
+  - extract the panels, their header and the layer views into MapPanels
+* **[263](https://github.com/Mkbewe/world-generator/issues/263):** keep focus inside the fullscreen preview ([#298](https://github.com/Mkbewe/world-generator/issues/298)) ([b8a7ca0](https://github.com/Mkbewe/world-generator/commit/b8a7ca0976fcc570a4a5c7f3f89149e5e6119ac4))
+
+  - move focus into the preview overlay when fullscreen opens
+  - keep the page behind the overlay out of the tab order with inert
+  - cover the overlay focus, the trigger focus return and the inert
+  background
+* **[264](https://github.com/Mkbewe/world-generator/issues/264):** render the map at the viewport resolution ([#305](https://github.com/Mkbewe/world-generator/issues/305)) ([92e2ab3](https://github.com/Mkbewe/world-generator/commit/92e2ab376be2c4a6098c70cb609e589bc3bbe1d9))
+* **[289](https://github.com/Mkbewe/world-generator/issues/289):** refresh the preview layout and empty state ([#290](https://github.com/Mkbewe/world-generator/issues/290)) ([6d19871](https://github.com/Mkbewe/world-generator/commit/6d198718164532e6ee16a66adf44e631dff4a925))
+
+  - move the cursor readout into a card pinned to the sidebar footer
+  - replace the layer tabs with a vertical icon strip
+  - style the overlays section as a card with an icon
+  - drop the gray square and frame around the map
+  - add a slowly spinning placeholder before the first generation
+  - tighten the panel gap and keep the crosshair only once a map exists
+* **[299](https://github.com/Mkbewe/world-generator/issues/299):** draw the world boundary analytically ([#301](https://github.com/Mkbewe/world-generator/issues/301)) ([d5a89b1](https://github.com/Mkbewe/world-generator/commit/d5a89b1cf4e460bcfa9e0e70f2eb669d2a23b95c))
+
+  - stroke the disc and rectangle at display resolution instead of tracing
+  mask cells
+  - pass the world shape from the config and from restored snapshots to
+  the overlay renderer
+  - make the world shape required in the config with a single default
+  constant
+  - keep the cell trace as a fallback for renderers without a known shape
+* **[64](https://github.com/Mkbewe/world-generator/issues/64):** add fullscreen zoom and pan to the preview ([#307](https://github.com/Mkbewe/world-generator/issues/307)) ([215e743](https://github.com/Mkbewe/world-generator/commit/215e74346a5d7d9e248c4289eb8edd38dff1bdc2))
+
+  - model the view as a normalized transform (1x-4x, centre) and project
+  the map into the canvas preserving its aspect ratio
+  - zoom with the wheel at the cursor or with the minus/plus steps in the
+  fullscreen View section
+  - pan with a drag (mouse and touch), while a tap or click pins the
+  readout
+  - fill the fullscreen workspace with the canvas so zooming reveals more
+  of the map, and reset the view when the mode closes
+  - widen the world boundary to 3 px and separate the panel sections
+  - measure the viewport synchronously so entering fullscreen no longer
+  paints a stretched frame
+
+### Bug Fixes
+
+* **[302](https://github.com/Mkbewe/world-generator/issues/302):** lock the page scroll on the html element in fullscreen ([#303](https://github.com/Mkbewe/world-generator/issues/303)) ([0eb59f7](https://github.com/Mkbewe/world-generator/commit/0eb59f72f56be1d53235ff2503a53ecf0abf43ca))
+
+### Documentation
+
+* sync the roadmap and add generator performance notes ([#291](https://github.com/Mkbewe/world-generator/issues/291)) ([d8d6158](https://github.com/Mkbewe/world-generator/commit/d8d6158a40da23b0db4530c53aef32681ae60bd2)), references [#285](https://github.com/Mkbewe/world-generator/issues/285) [#158](https://github.com/Mkbewe/world-generator/issues/158) [#288](https://github.com/Mkbewe/world-generator/issues/288)
+
+  - reference the split preview tasks (#285, #158) in the performance
+  section
+  - describe the planned shell refresh (#288) and its out-of-scope items
+  - add notes about data formats, memory copies and stage costs
+
+### Code Refactoring
+
+* **[294](https://github.com/Mkbewe/world-generator/issues/294):** split and rename the preview and generator components ([#297](https://github.com/Mkbewe/world-generator/issues/297)) ([701528d](https://github.com/Mkbewe/world-generator/commit/701528d4f1a112c2241bdc2d711c9ba254e61613))
+
+  - move the layer tabs, canvas and sidebar out of the preview map
+  - rename MapLayerControls, MapPanels and MapInspector to LayerTabs,
+  MapCanvas, MapSidebar and CursorReadout
+  - rename preview-map to map-preview with hooks and lib folders
+  - split useWorldGeneration into a config builder, a session hook and run
+  state
+  - move readout to utils so the sidebar no longer imports preview
+  internals
+  - update the README structure notes and redistribute the tests
+* **[65](https://github.com/Mkbewe/world-generator/issues/65):** add map fullscreen mode plus review ([#310](https://github.com/Mkbewe/world-generator/issues/310)) ([a607a77](https://github.com/Mkbewe/world-generator/commit/a607a775a8c94e37e7f9c09d1de888a1a4f5634e))
+
+  - sync the README and roadmap with the shipped fullscreen mode: Esc only
+  closes it, the readout pin works outside it, the preview placeholder and
+    the viewport-sized presentation canvas are documented
+  - prefer the hooks/ folder for hooks in AGENTS.md
+  - remove the dead samplePointer from map-readout and stop sampling
+  pointer
+    cells outside the projected map
+  - read the layer selection from the preview store instead of mutating
+  the
+    navigation tree, and type the layer tab icons with MapBaseLayerId
+  - require the world shape for the boundary overlay and drop the
+  pixel-traced
+    fallback
+  - key the cursor readout lines by index and silence the act warnings in
+  the
+    world generator tests
+  - keep the 0.7.0 review notes in review.0.7.0.md
+
+### Continuous Integration
+
+* **[292](https://github.com/Mkbewe/world-generator/issues/292):** alias release deployments and link them in releases ([#293](https://github.com/Mkbewe/world-generator/issues/293)) ([aab60c2](https://github.com/Mkbewe/world-generator/commit/aab60c2c6c974439bc16bbefe5266055c1b59160))
+
+  - create a wg-<version> alias for every promoted deployment
+  - append the deployment URL and alias to the GitHub release notes
+  - pass the promoted deployment URL from the promote job to the release
+  job
+  - document the alias scheme in the README
+
 ## [0.6.0](https://github.com/Mkbewe/world-generator/compare/v0.5.3...v0.6.0) (2026-09-15)
 
 ### Features
