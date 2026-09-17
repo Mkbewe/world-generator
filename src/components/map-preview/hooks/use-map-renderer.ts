@@ -34,7 +34,7 @@ export function useMapRenderer({ navigation, onReady }: UseMapRendererOptions) {
     const { baseLayer, overlays } = usePreviewStore.getState();
     const renderer = new MapRenderer({ canvas, overlayCanvas, viewportElement }, setPreview, {
       selectedLayer: baseLayer,
-      shouldDisplay: id => navigation.leadsToSelection(id),
+      shouldDisplay: id => navigation.leadsToSelection(id, usePreviewStore.getState().layerTree),
       onRenderStatistics: setRenderStatistics,
     });
     for (const [id, visible] of Object.entries(overlays)) {

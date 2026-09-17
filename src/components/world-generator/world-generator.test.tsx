@@ -66,15 +66,17 @@ describe('WorldGenerator', () => {
     } as unknown as CanvasRenderingContext2D);
   });
 
-  afterEach(() => {
-    mapRepository.clear();
-    useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
-    useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
-    useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
-    useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
-    useGenerationProgressStore.getState().setProgress(undefined);
-    useGenerationStatisticsStore.getState().setResult(undefined);
-    usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
+  afterEach(async () => {
+    await act(async () => {
+      mapRepository.clear();
+      useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
+      useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
+      useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
+      useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
+      useGenerationProgressStore.getState().setProgress(undefined);
+      useGenerationStatisticsStore.getState().setResult(undefined);
+      usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
+    });
     vi.restoreAllMocks();
   });
 
@@ -163,6 +165,7 @@ describe('WorldGenerator', () => {
     );
 
     await user.click(screen.getByTestId('generate-map-button'));
+    await act(async () => {});
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Canvas is not available.');
     expect(useGenerationProgressStore.getState().progress?.status).toBe('completed');
@@ -190,6 +193,7 @@ describe('WorldGenerator', () => {
       </Theme>
     );
     await userEvent.setup().click(screen.getByTestId('generate-map-button'));
+    await act(async () => {});
 
     expect(useGenerationProgressStore.getState().progress).toEqual({
       status: 'running',

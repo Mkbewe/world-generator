@@ -258,7 +258,7 @@ describe('WorldGenerationSession', () => {
       const add = vi.spyOn(renderer, 'add');
 
       if (action === 'restart') {
-        renderer.start(sampleSize(config.world.dimensions));
+        renderer.start(sampleSize(config.world.dimensions), config.world.shape);
       } else {
         renderer[action]();
       }

@@ -91,7 +91,7 @@ export class MapView {
     }));
   }
 
-  start(size: MapSize, shape?: WorldShape): void {
+  start(size: MapSize, shape: WorldShape): void {
     this.progressive = true;
     this.shape = shape;
     this.size = size;
@@ -177,7 +177,7 @@ export class MapView {
     );
   }
 
-  /** Cell and map coordinates of a client point, clamped to the map bounds. */
+  /** Cell and map coordinates of a client point, or undefined outside the map. */
   samplePointer(clientX: number, clientY: number): MapPointerSample | undefined {
     const size = this.size;
     const anchor = this.pointerAnchor(clientX, clientY);
@@ -185,13 +185,14 @@ export class MapView {
       return undefined;
     }
     const cell = canvasToCell(project(this.view, this.canvasSize(), size), anchor.x, anchor.y);
-    const u = clamp01(cell.x / size.width);
-    const v = clamp01(cell.y / size.height);
+    if (cell.x < 0 || cell.x >= size.width || cell.y < 0 || cell.y >= size.height) {
+      return undefined;
+    }
     return {
-      x: Math.min(size.width - 1, Math.floor(u * size.width)),
-      y: Math.min(size.height - 1, Math.floor(v * size.height)),
-      u,
-      v,
+      x: Math.floor(cell.x),
+      y: Math.floor(cell.y),
+      u: cell.x / size.width,
+      v: cell.y / size.height,
     };
   }
 
@@ -312,8 +313,4 @@ export class MapView {
   private canvasSize(): CanvasSize {
     return { width: this.elements.canvas.width, height: this.elements.canvas.height };
   }
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

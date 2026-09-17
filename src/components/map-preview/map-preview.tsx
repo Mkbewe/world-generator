@@ -28,14 +28,13 @@ interface MapPreviewProps {
 export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) {
   const isFullscreen = usePreviewFullscreen();
   const cardRef = useRef<HTMLDivElement>(null);
-  const [navigation] = useState(
-    () => new LayerNavigation(layerRegistry.tree, usePreviewStore.getState().layerTree)
-  );
+  const layerTree = usePreviewStore(state => state.layerTree);
+  const [navigation] = useState(() => new LayerNavigation(layerRegistry.tree));
   const { preview, rendererRef, canvasRef, overlayRef, wrapperRef } = useMapRenderer({
     navigation,
     onReady,
   });
-  const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer);
+  const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer, layerTree);
   const readout = useMapReadout(rendererRef, canvasRef, preview, { zoomable: isFullscreen });
   const hasMap = preview.layers.some(layer => layer.available);
 
@@ -54,9 +53,9 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     }
     renderer.select(layer);
     if (renderer.state.displayedLayer === layer) {
-      navigation.select(layer);
       const { layers } = renderer.state;
-      usePreviewStore.getState().setBaseLayer(layer, navigation.toViewState(layers, layer).tabs);
+      const { layerTree: saved, setBaseLayer } = usePreviewStore.getState();
+      setBaseLayer(layer, navigation.toViewState(layers, layer, saved).tabs);
     }
   };
 

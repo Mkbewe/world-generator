@@ -83,6 +83,34 @@ describe('MapView', () => {
     view.dispose();
   });
 
+  it('samples the pointer only inside the projected map', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 4,
+      height: 2,
+      devicePixelRatio: 1,
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 200,
+      right: 400,
+      bottom: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    const elements = createElements();
+    const view = new MapView(elements, new RenderMetrics(layerRegistry));
+
+    view.start({ width: 2, height: 2 }, 'disc');
+
+    expect(view.samplePointer(200, 100)).toMatchObject({ x: 1, y: 1, u: 0.5, v: 0.5 });
+    expect(view.samplePointer(50, 100)).toBeUndefined();
+    expect(view.samplePointer(350, 100)).toBeUndefined();
+    view.dispose();
+  });
+
   it('repaints at the new resolution after a viewport change', async () => {
     const measure = vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 4,

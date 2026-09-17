@@ -41,7 +41,7 @@ export class OverlayController {
 
   render(world: SpatialMask | undefined, shape: WorldShape | undefined, view: ViewTransform): void {
     const viewport = this.size();
-    if (!viewport || !world || !this.visible['world-boundary']) {
+    if (!viewport || !world || !shape || !this.visible['world-boundary']) {
       if (this.rendered) {
         const startedAt = performance.now();
         this.boundary.clear();

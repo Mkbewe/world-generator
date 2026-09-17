@@ -108,7 +108,7 @@ export class MapRenderer {
     };
   }
 
-  start(size: MapSize, shape?: WorldShape): void {
+  start(size: MapSize, shape: WorldShape): void {
     this.reset();
     this.lifetime = new AbortController();
     this.scene.start(size);

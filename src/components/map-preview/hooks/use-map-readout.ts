@@ -84,6 +84,7 @@ export function useMapReadout(
         Math.exp(-event.deltaY * WHEEL_ZOOM_SPEED)
       );
     };
+    // Native listener: the wheel handler needs `passive: false` to call preventDefault.
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, [canvasRef, rendererRef, zoomable]);

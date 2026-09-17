@@ -35,31 +35,31 @@ describe('LayerNavigation', () => {
     ).toEqual(['world-shape', 'macro-region']);
   });
 
-  it('remembers a selected child for automatic previews', () => {
+  it('uses the remembered child from the saved tree', () => {
     const navigation = new LayerNavigation(tree);
-    navigation.select('noise');
+    const saved = navigation.toViewState(layers, 'noise').tabs;
 
-    const state = navigation.toViewState(layers, 'noise');
+    const state = navigation.toViewState(layers, 'noise', saved);
     expect(state.activeTab).toBe('climate');
     expect(state.tabs[1]).toMatchObject({
       selectedChild: 'noise',
       selectedLayer: 'noise',
     });
     expect(
-      layers.filter(layer => navigation.leadsToSelection(layer.id)).map(layer => layer.id)
+      layers.filter(layer => navigation.leadsToSelection(layer.id, saved)).map(layer => layer.id)
     ).toEqual(['world-shape', 'noise']);
 
-    navigation.select('world-shape');
-    expect(navigation.toViewState(layers).tabs[1].selectedLayer).toBe('noise');
+    expect(navigation.toViewState(layers, 'world-shape', saved).tabs[1].selectedLayer).toBe(
+      'noise'
+    );
   });
 
   it('restores remembered selections from saved view state', () => {
     const navigation = new LayerNavigation(tree);
-    navigation.select('noise');
-    const saved = navigation.toViewState(layers).tabs;
+    const saved = navigation.toViewState(layers, 'noise').tabs;
+    const unavailable = layers.map(layer => ({ ...layer, available: false }));
 
-    const restored = new LayerNavigation(tree, saved);
-    const state = restored.toViewState(layers.map(layer => ({ ...layer, available: false })));
+    const state = navigation.toViewState(unavailable, undefined, saved);
 
     expect(state.tabs.every(node => !node.available)).toBe(true);
     expect(state.tabs[1]).toMatchObject({
@@ -67,7 +67,20 @@ describe('LayerNavigation', () => {
       selectedLayer: 'noise',
     });
     expect(saved[1].available).toBe(true);
-    expect(restored.leadsToSelection('noise')).toBe(true);
+    expect(navigation.leadsToSelection('noise', saved)).toBe(true);
+  });
+
+  it('follows an externally updated saved tree without mutating it', () => {
+    const navigation = new LayerNavigation(tree);
+    expect(navigation.leadsToSelection('noise')).toBe(false);
+
+    const saved = navigation.toViewState(layers, 'noise').tabs;
+    const snapshot = structuredClone(saved);
+
+    expect(navigation.leadsToSelection('noise', saved)).toBe(true);
+    expect(navigation.leadsToSelection('macro-region', saved)).toBe(false);
+    expect(navigation.toViewState(layers, undefined, saved).tabs[1].selectedChild).toBe('noise');
+    expect(saved).toEqual(snapshot);
   });
 
   it('falls back to an available view without changing the remembered child', () => {

@@ -47,12 +47,14 @@ Detal liczony jest na obu osiach, więc podwojenie rozdzielczości to 4× pamię
 - Worker wysyła dane przez `postMessage`, które **kopiuje** (`generation-worker.ts:34`),
   a sam zachowuje bufory dla kolejnych etapów → dane istnieją dwa razy.
 - Canvasy: każda wyświetlana warstwa ma pełnowymiarowy canvas RGBA
-  (`layer.ts:108`), a canvas prezentacji drugi (`map-view.ts:59`). 4 B/piksel
-  bez kompresji, plus kopia po stronie GPU.
+  (`layer.ts:108`). Canvas prezentacji jest od #305 rysowany w rozmiarze
+  viewportu × DPR (`map-view.ts`), więc nie jest pełnowymiarowy i nie dominuje
+  w szczycie. 4 B/piksel bez kompresji, plus kopia po stronie GPU.
 - Cache warstw trzyma canvasy nieaktywnych warstw; `mapRepository` trzyma
   ostatni przebieg do końca sesji.
 - Efekt: szczyt potrafi być ~3× większy od liczby „surowej".
-  Dla 64M próbek: 384 MB danych, ~1,7 GB szczytu (mask + kopie + canvasy).
+  Dla 64M próbek: 384 MB danych, ~1,7 GB szczytu (maska + kopie + pełnowymiarowe
+  canvasy warstw; canvas prezentacji jest pomijalny, bo ma rozmiar viewportu).
 
 ### I.5. Canvas to nie obrazek
 

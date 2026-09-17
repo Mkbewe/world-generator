@@ -1,4 +1,4 @@
-import type { MapInfo, MapInspection, MapSize } from '../map-renderer';
+import type { MapInfo, MapInspection } from '../map-renderer';
 import { cellOriginMeters, type WorldDimensions } from '../world-dimensions';
 
 export interface PointerSample {
@@ -8,34 +8,6 @@ export interface PointerSample {
   /** Normalized position within the source map, in the 0..1 range. */
   readonly u: number;
   readonly v: number;
-}
-
-interface ClientRect {
-  readonly left: number;
-  readonly top: number;
-  readonly width: number;
-  readonly height: number;
-}
-
-/** Maps a client point onto the source raster, independent of CSS scaling and DPR. */
-export function samplePointer(
-  rect: ClientRect,
-  size: MapSize,
-  clientX: number,
-  clientY: number
-): PointerSample | undefined {
-  if (rect.width <= 0 || rect.height <= 0) {
-    return undefined;
-  }
-  const u = clamp01((clientX - rect.left) / rect.width);
-  const v = clamp01((clientY - rect.top) / rect.height);
-
-  return {
-    x: Math.min(size.width - 1, Math.floor(u * size.width)),
-    y: Math.min(size.height - 1, Math.floor(v * size.height)),
-    u,
-    v,
-  };
 }
 
 export interface InspectorReadout {
@@ -141,8 +113,4 @@ function worldDimensions(info: MapInfo): WorldDimensions | undefined {
 
 function formatMeters(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

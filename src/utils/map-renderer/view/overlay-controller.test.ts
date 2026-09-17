@@ -23,7 +23,7 @@ describe('OverlayController', () => {
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     expect(controller.size()?.devicePixelRatio).toBe(effective);
     expect(render).toHaveBeenCalledWith(
       world,
@@ -32,7 +32,7 @@ describe('OverlayController', () => {
         height: 10,
         devicePixelRatio: effective,
       },
-      undefined,
+      'disc',
       fitView()
     );
   });
@@ -67,12 +67,19 @@ describe('OverlayController', () => {
     controller.render(world, 'disc', fitView());
     expect(render).toHaveBeenCalledWith(world, expect.anything(), 'disc', fitView());
 
-    controller.setVisible('world-boundary', false);
     controller.render(world, undefined, fitView());
     expect(clear).toHaveBeenCalledOnce();
+    expect(render).toHaveBeenCalledOnce();
+
+    controller.render(world, 'disc', fitView());
+    expect(render).toHaveBeenCalledTimes(2);
+
+    controller.setVisible('world-boundary', false);
+    controller.render(world, 'disc', fitView());
+    expect(clear).toHaveBeenCalledTimes(2);
 
     controller.render(undefined, undefined, fitView());
-    expect(clear).toHaveBeenCalledOnce();
+    expect(clear).toHaveBeenCalledTimes(2);
   });
 
   it('redraws only when the world, viewport or effective DPR changes', () => {
@@ -84,19 +91,19 @@ describe('OverlayController', () => {
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, undefined, fitView());
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
+    controller.render(world, 'disc', fitView());
     measure.mockReturnValue({ width: 10, height: 10, devicePixelRatio: 4 });
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     expect(render).toHaveBeenCalledOnce();
 
     measure.mockReturnValue({ width: 12, height: 10, devicePixelRatio: 4 });
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     measure.mockReturnValue({ width: 12, height: 14, devicePixelRatio: 4 });
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     measure.mockReturnValue({ width: 12, height: 14, devicePixelRatio: 1 });
-    controller.render(world, undefined, fitView());
-    controller.render({} as SpatialMask, undefined, fitView());
+    controller.render(world, 'disc', fitView());
+    controller.render({} as SpatialMask, 'disc', fitView());
     expect(render).toHaveBeenCalledTimes(5);
   });
 
@@ -106,17 +113,17 @@ describe('OverlayController', () => {
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     controller.setVisible('world-boundary', false);
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     controller.setVisible('world-boundary', true);
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     measure.mockReturnValue(undefined);
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     measure.mockReturnValue(viewport);
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     controller.reset();
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
     expect(render).toHaveBeenCalledTimes(4);
   });
 
@@ -134,9 +141,9 @@ describe('OverlayController', () => {
       .mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, undefined, fitView());
-    controller.render(world, undefined, fitView());
-    controller.render(world, undefined, fitView());
+    controller.render(world, 'disc', fitView());
+    controller.render(world, 'disc', fitView());
+    controller.render(world, 'disc', fitView());
     expect(render).toHaveBeenCalledTimes(2);
   });
 

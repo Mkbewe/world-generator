@@ -1,6 +1,6 @@
 import type { WorldShape } from '../../world-shape';
 import type { SpatialMask } from '../types';
-import { canvasToCell, project, type ViewTransform } from '../view/view-transform';
+import { project, type ViewTransform } from '../view/view-transform';
 import { effectivePixelRatio, type ViewportSize } from '../viewport';
 
 const BOUNDARY_COLOR = 'rgba(49, 155, 0, 0.9)';
@@ -13,12 +13,7 @@ export class WorldBoundaryRenderer {
     this.canvas.width = this.canvas.height = 0;
   }
 
-  render(
-    world: SpatialMask,
-    viewport: ViewportSize,
-    shape: WorldShape | undefined,
-    view: ViewTransform
-  ): void {
+  render(world: SpatialMask, viewport: ViewportSize, shape: WorldShape, view: ViewTransform): void {
     const context = this.canvas.getContext('2d');
     if (!context) {
       throw new Error('Overlay canvas is not available.');
@@ -28,12 +23,7 @@ export class WorldBoundaryRenderer {
     const height = Math.max(1, Math.round(viewport.height * ratio));
     this.canvas.width = width;
     this.canvas.height = height;
-
-    if (shape) {
-      this.strokeShape(context, shape, width, height, ratio, view, world);
-      return;
-    }
-    this.traceCells(world, context, width, height, ratio, view);
+    this.strokeShape(context, shape, width, height, ratio, view, world);
   }
 
   private strokeShape(
@@ -72,60 +62,5 @@ export class WorldBoundaryRenderer {
       );
     }
     context.stroke();
-  }
-
-  private traceCells(
-    world: SpatialMask,
-    context: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    ratio: number,
-    view: ViewTransform
-  ): void {
-    const image = context.createImageData(width, height);
-    const radius = Math.max(1, Math.round(ratio));
-    const projection = project(view, { width, height }, world.size);
-    const contains = (x: number, y: number): boolean => {
-      if (x < 0 || x >= width || y < 0 || y >= height) {
-        return false;
-      }
-      const cell = canvasToCell(projection, x, y);
-      return world.contains(Math.floor(cell.x), Math.floor(cell.y));
-    };
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (
-          contains(x, y) &&
-          (!contains(x - 1, y) || !contains(x + 1, y) || !contains(x, y - 1) || !contains(x, y + 1))
-        ) {
-          this.paintDisc(image, x, y, radius);
-        }
-      }
-    }
-    context.putImageData(image, 0, 0);
-  }
-
-  private paintDisc(image: ImageData, centerX: number, centerY: number, radius: number): void {
-    for (let offsetY = -radius; offsetY <= radius; offsetY++) {
-      for (let offsetX = -radius; offsetX <= radius; offsetX++) {
-        const x = centerX + offsetX;
-        const y = centerY + offsetY;
-        if (
-          offsetX * offsetX + offsetY * offsetY > radius * radius ||
-          x < 0 ||
-          x >= image.width ||
-          y < 0 ||
-          y >= image.height
-        ) {
-          continue;
-        }
-        const index = (y * image.width + x) * 4;
-        image.data[index] = 100;
-        image.data[index + 1] = 255;
-        image.data[index + 2] = 218;
-        image.data[index + 3] = 230;
-      }
-    }
   }
 }
