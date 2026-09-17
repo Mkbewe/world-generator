@@ -18,6 +18,7 @@ import {
 } from '../../stores';
 import type * as WorldGenerationPipeline from '../../utils/map-generator';
 import { MapRenderer, mapRepository } from '../../utils/map-renderer';
+import { HeaderActionsProvider, useHeaderActions } from '../header';
 
 const { runGenerationMock } = vi.hoisted(() => ({
   runGenerationMock: vi.fn(),
@@ -35,6 +36,16 @@ vi.mock('../../utils/map-generator', async importOriginal => {
 import { WorldGenerator } from './world-generator';
 
 const previewSize = 300;
+
+function FullscreenBridge() {
+  const { setIsFullscreen } = useHeaderActions();
+
+  return (
+    <button type='button' onClick={() => setIsFullscreen(true)}>
+      Enter fullscreen
+    </button>
+  );
+}
 
 describe('WorldGenerator', () => {
   beforeEach(() => {
@@ -230,5 +241,23 @@ describe('WorldGenerator', () => {
     );
 
     expect(screen.getByText('Complete')).toBeInTheDocument();
+  });
+
+  it('removes the settings column from the tab order while fullscreen is open', async () => {
+    const user = userEvent.setup();
+    render(
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <WorldGenerator />
+        </HeaderActionsProvider>
+      </Theme>
+    );
+
+    expect(screen.getByText('Map Settings').closest('[inert]')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
+    expect(screen.getByText('Map Settings').closest('[inert]')).not.toBeNull();
   });
 });

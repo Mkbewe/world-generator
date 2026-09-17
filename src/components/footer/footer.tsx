@@ -4,11 +4,16 @@ import { appConfig } from '../../config';
 import { PageSection } from '../page-section';
 import styles from './footer.module.scss';
 
-export function Footer() {
+export interface FooterProps {
+  /** Removes the footer from the tab order while the fullscreen overlay is open. */
+  inert?: boolean;
+}
+
+export function Footer({ inert = false }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className={styles.footer}>
+    <footer className={styles.footer} inert={inert || undefined}>
       <PageSection as='div' background='subtle' border='top' p='medium'>
         <Flex direction='column' align='center' gap='2'>
           <Text size='2' weight='medium'>

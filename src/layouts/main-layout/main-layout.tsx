@@ -21,15 +21,15 @@ function MainLayoutContent() {
       <div className={styles.layout} data-fullscreen={isFullscreen || undefined}>
         <Header onToggleTheme={toggleTheme} currentTheme={appearance} />
         {showBreadcrumbs && (
-          <PageSection p='small' pb='none'>
+          <PageSection p='small' pb='none' inert={isFullscreen || undefined}>
             <Breadcrumbs />
           </PageSection>
         )}
-        <Navigation />
+        <Navigation inert={isFullscreen} />
         <PageSection as='main' p='large' pt='medium'>
           <Outlet />
         </PageSection>
-        <Footer />
+        <Footer inert={isFullscreen} />
       </div>
       <ExportDialog
         isOpen={isExportDialogOpen}

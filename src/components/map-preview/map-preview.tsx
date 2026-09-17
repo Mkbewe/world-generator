@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { useMapReadout } from './hooks/use-map-readout';
@@ -27,6 +27,7 @@ interface MapPreviewProps {
 
 export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) {
   const isFullscreen = usePreviewFullscreen();
+  const cardRef = useRef<HTMLDivElement>(null);
   const [navigation] = useState(
     () => new LayerNavigation(layerRegistry.tree, usePreviewStore.getState().layerTree)
   );
@@ -37,6 +38,12 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
   const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer);
   const readout = useMapReadout(rendererRef, preview);
   const hasMap = preview.layers.some(layer => layer.available);
+
+  useEffect(() => {
+    if (isFullscreen) {
+      cardRef.current?.focus();
+    }
+  }, [isFullscreen]);
 
   const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
     const renderer = rendererRef.current;
@@ -58,6 +65,8 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
 
   return (
     <Card
+      ref={cardRef}
+      tabIndex={-1}
       size={{ initial: '2', sm: '3' }}
       className={styles.card}
       data-fullscreen={isFullscreen || undefined}

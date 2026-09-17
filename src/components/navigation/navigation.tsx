@@ -23,11 +23,16 @@ export function isActivePath(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
 }
 
-export function Navigation() {
+export interface NavigationProps {
+  /** Removes the bar from the tab order while the fullscreen overlay is open. */
+  inert?: boolean;
+}
+
+export function Navigation({ inert = false }: NavigationProps) {
   const { pathname } = useLocation();
 
   return (
-    <div className={styles.navBar}>
+    <div className={styles.navBar} inert={inert || undefined}>
       <PageSection as='section' background='subtle' border='bottom' p='none'>
         <NavigationMenu.Root>
           <NavigationMenu.List className={styles.list}>
