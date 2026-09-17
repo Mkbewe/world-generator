@@ -6,31 +6,48 @@ import { MapPreview } from './map-preview';
 import type { MapRenderer } from '../../utils/map-renderer';
 import { HeaderActionsProvider, useHeaderActions } from '../header';
 
-function createOnReady(): (renderer: MapRenderer | undefined) => void {
-  return renderer => {
-    if (!renderer) {
-      return;
-    }
-    renderer.start({ width: 4, height: 4 });
-    renderer.add('world-shape', new Uint8Array(16).fill(1));
+function createOnReady(): {
+  onReady: (renderer: MapRenderer | undefined) => void;
+  renderer: { current?: MapRenderer };
+} {
+  const renderer: { current?: MapRenderer } = {};
+  return {
+    renderer,
+    onReady: next => {
+      renderer.current = next;
+      if (!next) {
+        return;
+      }
+      next.start({ width: 4, height: 4 });
+      next.add('world-shape', new Uint8Array(16).fill(1));
+    },
   };
 }
 
 function renderPreview() {
-  return render(
-    <Theme>
-      <MapPreview onReady={createOnReady()} progressKey={0} />
-    </Theme>
-  );
+  const { onReady, renderer } = createOnReady();
+  return {
+    ...render(
+      <Theme>
+        <MapPreview onReady={onReady} progressKey={0} />
+      </Theme>
+    ),
+    renderer,
+  };
 }
 
 function FullscreenBridge() {
   const { setIsFullscreen } = useHeaderActions();
 
   return (
-    <button type='button' onClick={() => setIsFullscreen(true)}>
-      Enter fullscreen
-    </button>
+    <>
+      <button type='button' onClick={() => setIsFullscreen(true)}>
+        Enter fullscreen
+      </button>
+      <button type='button' onClick={() => setIsFullscreen(false)}>
+        Leave fullscreen
+      </button>
+    </>
   );
 }
 
@@ -76,6 +93,7 @@ describe('MapPreview readout', () => {
     expect(screen.getByText('Inside')).toBeInTheDocument();
 
     fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 100, clientY: 100 });
     expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
 
     fireEvent.pointerMove(canvas, { clientX: 300, clientY: 300 });
@@ -85,6 +103,7 @@ describe('MapPreview readout', () => {
     expectPosition(1, 1);
 
     fireEvent.pointerDown(canvas, { button: 0, clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 300, clientY: 300 });
     expectPosition(3, 3);
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
   });
@@ -171,7 +190,7 @@ describe('MapPreview readout', () => {
       <Theme>
         <HeaderActionsProvider>
           <FullscreenBridge />
-          <MapPreview onReady={createOnReady()} progressKey={0} />
+          <MapPreview onReady={createOnReady().onReady} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>
     );
@@ -181,5 +200,36 @@ describe('MapPreview readout', () => {
 
     const overlay = screen.getByLabelText('Generated map preview').closest('.rt-Card');
     expect(overlay).toHaveFocus();
+  });
+
+  it('zooms and pans only in the fullscreen mode', async () => {
+    const user = userEvent.setup();
+    const { onReady, renderer } = createOnReady();
+    render(
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <MapPreview onReady={onReady} progressKey={0} />
+        </HeaderActionsProvider>
+      </Theme>
+    );
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    fireEvent.wheel(canvas, { deltaY: -500, clientX: 200, clientY: 200 });
+    expect(renderer.current?.viewTransform.scale).toBe(1);
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    fireEvent.wheel(canvas, { deltaY: -500, clientX: 200, clientY: 200 });
+    expect(renderer.current?.viewTransform.scale).toBeGreaterThan(1);
+
+    const centerBefore = renderer.current?.viewTransform.centerX ?? 0;
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(canvas, { clientX: 260, clientY: 200 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 260, clientY: 200 });
+    expect(renderer.current?.viewTransform.centerX).toBeLessThan(centerBefore);
+
+    await user.click(screen.getByRole('button', { name: 'Leave fullscreen' }));
+    expect(renderer.current?.viewTransform).toEqual({ scale: 1, centerX: 0.5, centerY: 0.5 });
   });
 });

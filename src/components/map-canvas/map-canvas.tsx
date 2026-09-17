@@ -17,6 +17,8 @@ interface MapCanvasProps {
   handlers: MapCanvasHandlers;
   /** Whether a map is displayed; toggles the placeholder and the cursor. */
   ready: boolean;
+  /** Whether the pointer is currently panning the map. */
+  panning?: boolean;
   /** Centers the square in the available space, used by the fullscreen mode. */
   expanded?: boolean;
 }
@@ -27,6 +29,7 @@ export function MapCanvas({
   overlayRef,
   handlers,
   ready,
+  panning = false,
   expanded = false,
 }: MapCanvasProps) {
   return (
@@ -51,6 +54,7 @@ export function MapCanvas({
           height={0}
           className={styles.canvas}
           data-ready={ready || undefined}
+          data-panning={panning || undefined}
           aria-label='Generated map preview'
           {...handlers}
         />

@@ -7,18 +7,23 @@ import {
   useState,
 } from 'react';
 
-import {
-  type InspectorReadout,
-  type PointerSample,
-  samplePointer,
-} from '../../../utils/map-readout';
+import type { InspectorReadout, PointerSample } from '../../../utils/map-readout';
 import type { MapRenderer, MapRendererState } from '../../../utils/map-renderer';
 
 const TAP_MOVE_TOLERANCE_PX = 8;
+const WHEEL_ZOOM_SPEED = 0.0015;
 
-interface TouchGesture {
+interface ReadoutOptions {
+  /** Zoom and pan are part of the fullscreen mode; outside it the map stays fitted. */
+  zoomable: boolean;
+}
+
+interface PointerGesture {
+  pointerId: number;
   startX: number;
   startY: number;
+  lastX: number;
+  lastY: number;
   moved: boolean;
 }
 
@@ -26,15 +31,18 @@ function isTouchPointer(event: { pointerType: string }): boolean {
   return event.pointerType === 'touch';
 }
 
-/** Pointer and touch readout for the preview canvas, including the pinned inspection. */
+/** Pointer, wheel and touch gestures for the preview canvas, including the readout. */
 export function useMapReadout(
   rendererRef: RefObject<MapRenderer | null>,
-  preview: MapRendererState
+  canvasRef: RefObject<HTMLCanvasElement | null>,
+  preview: MapRendererState,
+  { zoomable }: ReadoutOptions
 ) {
   const positionRef = useRef<PointerSample | undefined>(undefined);
-  const gestureRef = useRef<TouchGesture | undefined>(undefined);
+  const gestureRef = useRef<PointerGesture | undefined>(undefined);
   const [readout, setReadout] = useState<InspectorReadout | undefined>(undefined);
   const [pinned, setPinned] = useState(false);
+  const [panning, setPanning] = useState(false);
 
   const refreshReadout = useCallback(
     (position: PointerSample): void => {
@@ -46,6 +54,9 @@ export function useMapReadout(
     [rendererRef]
   );
 
+  const sampleAt = (event: { clientX: number; clientY: number }): PointerSample | undefined =>
+    rendererRef.current?.samplePointer(event.clientX, event.clientY);
+
   useEffect(() => {
     if (pinned) {
       return;
@@ -56,28 +67,28 @@ export function useMapReadout(
     }
   }, [pinned, preview.displayedLayer, refreshReadout, rendererRef]);
 
-  const sampleAt = (event: ReactPointerEvent<HTMLCanvasElement>): PointerSample | undefined => {
-    const size = rendererRef.current?.currentSize;
-    if (!size) {
-      return undefined;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !zoomable) {
+      return;
     }
-    return samplePointer(
-      event.currentTarget.getBoundingClientRect(),
-      size,
-      event.clientX,
-      event.clientY
-    );
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-    const gesture = gestureRef.current;
-    if (gesture && !gesture.moved) {
-      const dx = event.clientX - gesture.startX;
-      const dy = event.clientY - gesture.startY;
-      if (Math.hypot(dx, dy) > TAP_MOVE_TOLERANCE_PX) {
-        gesture.moved = true;
+    const handleWheel = (event: WheelEvent): void => {
+      event.preventDefault();
+      const renderer = rendererRef.current;
+      if (!renderer || !renderer.currentSize) {
+        return;
       }
-    }
+      renderer.zoomAtPointer(
+        event.clientX,
+        event.clientY,
+        Math.exp(-event.deltaY * WHEEL_ZOOM_SPEED)
+      );
+    };
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, [canvasRef, rendererRef, zoomable]);
+
+  const trackReadout = (event: { clientX: number; clientY: number }): void => {
     if (pinned) {
       return;
     }
@@ -97,66 +108,85 @@ export function useMapReadout(
     if (event.button !== 0) {
       return;
     }
-    if (isTouchPointer(event)) {
-      gestureRef.current = { startX: event.clientX, startY: event.clientY, moved: false };
-      if (pinned) {
+    gestureRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      moved: false,
+    };
+    trackReadout(event);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+    const gesture = gestureRef.current;
+    if (gesture?.pointerId === event.pointerId) {
+      const deltaX = event.clientX - gesture.lastX;
+      const deltaY = event.clientY - gesture.lastY;
+      if (
+        !gesture.moved &&
+        Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >
+          TAP_MOVE_TOLERANCE_PX
+      ) {
+        gesture.moved = true;
+        setPanning(zoomable);
+      }
+      if (gesture.moved) {
+        gesture.lastX = event.clientX;
+        gesture.lastY = event.clientY;
+        if (zoomable) {
+          rendererRef.current?.panByPixels(deltaX, deltaY);
+        }
+        trackReadout(event);
         return;
       }
     }
-    const position = sampleAt(event);
-    if (!position) {
-      return;
-    }
-    positionRef.current = position;
-    refreshReadout(position);
-    if (!isTouchPointer(event)) {
-      setPinned(current => !current);
-    }
+    trackReadout(event);
   };
 
-  /** A touch tap toggles the pin; a touch drag keeps following the finger. */
+  /** A tap toggles the pin; a drag pans the map. */
   const handlePointerUp = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-    if (!isTouchPointer(event)) {
+    const gesture = gestureRef.current;
+    if (gesture?.pointerId !== event.pointerId) {
       return;
     }
-    const gesture = gestureRef.current;
     gestureRef.current = undefined;
-    if (!gesture || gesture.moved) {
+    setPanning(false);
+    if (gesture.moved) {
       return;
     }
     const position = sampleAt(event);
-    if (!position) {
-      return;
+    if (position) {
+      positionRef.current = position;
+      refreshReadout(position);
     }
-    positionRef.current = position;
-    refreshReadout(position);
     setPinned(current => !current);
   };
 
-  const clearReadout = (): void => {
+  const handlePointerCancel = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+    gestureRef.current = undefined;
+    setPanning(false);
+    if (isTouchPointer(event)) {
+      return;
+    }
     positionRef.current = undefined;
     setReadout(undefined);
   };
 
-  /** Clears the readout only when the pointer leaves the whole preview, not just the canvas. */
+  /** Keeps the readout while the pointer moves onto the panels; clears it outside. */
   const handlePointerLeave = (event: ReactPointerEvent<HTMLElement>): void => {
     if (pinned || isTouchPointer(event)) {
       return;
     }
-    clearReadout();
-  };
-
-  const handlePointerCancel = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-    if (isTouchPointer(event)) {
-      gestureRef.current = undefined;
-      return;
-    }
-    clearReadout();
+    positionRef.current = undefined;
+    setReadout(undefined);
   };
 
   return {
     readout,
     pinned,
+    panning,
     handlePointerLeave,
     handlers: {
       onPointerMove: handlePointerMove,

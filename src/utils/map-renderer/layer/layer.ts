@@ -1,4 +1,5 @@
 import type { MapBaseLayerId } from '../types';
+import { cellToCanvas, project, type ViewTransform, visibleCells } from '../view/view-transform';
 
 export interface MapSize {
   width: number;
@@ -70,22 +71,26 @@ export abstract class MapLayer {
     return preparation;
   }
 
-  show(canvas: HTMLCanvasElement): void {
+  show(canvas: HTMLCanvasElement, view: ViewTransform): void {
     const context = canvas.getContext('2d');
     if (!context) {
       throw new Error('Canvas is not available.');
     }
+    const canvasSize = { width: canvas.width, height: canvas.height };
+    const projection = project(view, canvasSize, this.size);
+    const cells = visibleCells(projection, canvasSize, this.size);
+    const origin = cellToCanvas(projection, cells.x, cells.y);
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(
       this.canvas,
-      0,
-      0,
-      this.canvas.width,
-      this.canvas.height,
-      0,
-      0,
-      canvas.width,
-      canvas.height
+      cells.x,
+      cells.y,
+      cells.width,
+      cells.height,
+      origin.x,
+      origin.y,
+      cells.width * projection.cellSize,
+      cells.height * projection.cellSize
     );
   }
 

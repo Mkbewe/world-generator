@@ -1,4 +1,18 @@
 import { OverlayController } from './overlay-controller';
+import {
+  type CanvasSize,
+  canvasToCell,
+  cellToCanvas,
+  fitView,
+  isFitted,
+  nextZoomScale,
+  panBy,
+  previousZoomScale,
+  project,
+  type ViewTransform,
+  withScale,
+  zoomAt,
+} from './view-transform';
 import type { WorldShape } from '../../world-shape';
 import type { MapLayer, MapSize, TileReporter } from '../layer';
 import type { RenderMetrics } from '../metrics';
@@ -17,7 +31,15 @@ export interface MapViewElements {
   viewportElement: HTMLElement;
 }
 
-/** Owns the preview surfaces and the user's layer selection. */
+/** Cell and map coordinates of a pointer position. */
+export interface MapPointerSample {
+  readonly x: number;
+  readonly y: number;
+  readonly u: number;
+  readonly v: number;
+}
+
+/** Owns the preview surfaces, the view transform and the user's layer selection. */
 export class MapView {
   private readonly overlays: OverlayController;
   private readonly viewport: Viewport;
@@ -25,6 +47,7 @@ export class MapView {
   private shape?: WorldShape;
   private size?: MapSize;
   private presented?: MapLayer;
+  private view: ViewTransform = fitView();
   private progressive = true;
   private selectedLayer?: MapBaseLayerId;
 
@@ -47,6 +70,14 @@ export class MapView {
     return this.overlays.size();
   }
 
+  get viewTransform(): ViewTransform {
+    return this.view;
+  }
+
+  get zoomed(): boolean {
+    return !isFitted(this.view);
+  }
+
   get overlayDurationMs(): number {
     return this.overlays.renderDurationMs;
   }
@@ -64,6 +95,7 @@ export class MapView {
     this.progressive = true;
     this.shape = shape;
     this.size = size;
+    this.view = fitView();
     this.viewport.start();
     this.applyTargetSize();
   }
@@ -75,7 +107,7 @@ export class MapView {
 
   setMasks(masks: ReadonlyMap<MapBaseLayerId, SpatialMask>): void {
     this.mask = masks.get(OVERLAY_LAYERS['world-boundary'].source);
-    this.overlays.render(this.mask, this.shape);
+    this.overlays.render(this.mask, this.shape, this.view);
   }
 
   /** Marks a layer as current as soon as its progressive drawing starts. */
@@ -98,7 +130,69 @@ export class MapView {
 
   setOverlay(id: MapOverlayId, visible: boolean): void {
     this.overlays.setVisible(id, visible);
-    this.overlays.render(this.mask, this.shape);
+    this.overlays.render(this.mask, this.shape, this.view);
+  }
+
+  /** Zooms around a client point; returns whether the view changed. */
+  zoomAtPointer(clientX: number, clientY: number, factor: number): boolean {
+    const size = this.size;
+    const anchor = this.pointerAnchor(clientX, clientY);
+    if (!size || !anchor) {
+      return false;
+    }
+    return this.applyView(zoomAt(this.view, this.canvasSize(), size, anchor.x, anchor.y, factor));
+  }
+
+  /** Zooms to the next discrete step around the preview centre. */
+  zoomIn(): boolean {
+    return this.setScale(nextZoomScale(this.view.scale));
+  }
+
+  /** Zooms to the previous discrete step around the preview centre. */
+  zoomOut(): boolean {
+    return this.setScale(previousZoomScale(this.view.scale));
+  }
+
+  /** Returns the view to the fitted map. */
+  resetView(): boolean {
+    return this.applyView(fitView());
+  }
+
+  /** Pans the map by a pointer delta in CSS pixels. */
+  panByPixels(deltaX: number, deltaY: number): boolean {
+    const size = this.size;
+    const rect = this.elements.canvas.getBoundingClientRect();
+    if (!size || rect.width <= 0 || rect.height <= 0) {
+      return false;
+    }
+    const canvas = this.canvasSize();
+    return this.applyView(
+      panBy(
+        this.view,
+        canvas,
+        size,
+        deltaX * (canvas.width / rect.width),
+        deltaY * (canvas.height / rect.height)
+      )
+    );
+  }
+
+  /** Cell and map coordinates of a client point, clamped to the map bounds. */
+  samplePointer(clientX: number, clientY: number): MapPointerSample | undefined {
+    const size = this.size;
+    const anchor = this.pointerAnchor(clientX, clientY);
+    if (!size || !anchor) {
+      return undefined;
+    }
+    const cell = canvasToCell(project(this.view, this.canvasSize(), size), anchor.x, anchor.y);
+    const u = clamp01(cell.x / size.width);
+    const v = clamp01(cell.y / size.height);
+    return {
+      x: Math.min(size.width - 1, Math.floor(u * size.width)),
+      y: Math.min(size.height - 1, Math.floor(v * size.height)),
+      u,
+      v,
+    };
   }
 
   tilePainter(layer: MapLayer): TileReporter | undefined {
@@ -110,19 +204,18 @@ export class MapView {
       if (!context || !this.shouldDisplay(layer.id)) {
         return;
       }
-      const canvas = this.elements.canvas;
-      const scaleX = canvas.width / layer.size.width;
-      const scaleY = canvas.height / layer.size.height;
+      const projection = project(this.view, this.canvasSize(), layer.size);
+      const origin = cellToCanvas(projection, x, y);
       context.drawImage(
         layer.canvas,
         x,
         y,
         width,
         height,
-        x * scaleX,
-        y * scaleY,
-        width * scaleX,
-        height * scaleY
+        origin.x,
+        origin.y,
+        width * projection.cellSize,
+        height * projection.cellSize
       );
       this.metrics.tileDrawn();
     };
@@ -133,6 +226,7 @@ export class MapView {
     this.shape = undefined;
     this.size = undefined;
     this.presented = undefined;
+    this.view = fitView();
     this.elements.canvas.width = this.elements.canvas.height = 0;
     this.overlays.reset();
   }
@@ -146,7 +240,29 @@ export class MapView {
     if (this.applyTargetSize() && this.presented) {
       this.represent();
     }
-    this.overlays.render(this.mask, this.shape);
+    this.overlays.render(this.mask, this.shape, this.view);
+  }
+
+  private setScale(scale: number): boolean {
+    const size = this.size;
+    return size ? this.applyView(withScale(this.view, this.canvasSize(), size, scale)) : false;
+  }
+
+  private applyView(next: ViewTransform): boolean {
+    const current = this.view;
+    if (
+      next.scale === current.scale &&
+      next.centerX === current.centerX &&
+      next.centerY === current.centerY
+    ) {
+      return false;
+    }
+    this.view = next;
+    if (this.presented) {
+      this.represent();
+    }
+    this.overlays.render(this.mask, this.shape, this.view);
+    return true;
   }
 
   private represent(): void {
@@ -154,7 +270,7 @@ export class MapView {
     if (!layer) {
       return;
     }
-    this.metrics.present(() => layer.show(this.elements.canvas));
+    this.metrics.present(() => layer.show(this.elements.canvas, this.view));
   }
 
   /** Sizes the canvas to the measured viewport, or to the raster before the first measurement. */
@@ -176,7 +292,28 @@ export class MapView {
 
   private show(layer: MapLayer): void {
     this.applyTargetSize();
-    this.metrics.present(() => layer.show(this.elements.canvas));
+    this.metrics.present(() => layer.show(this.elements.canvas, this.view));
     this.presented = layer;
   }
+
+  /** Canvas point in device pixels of a client position. */
+  private pointerAnchor(clientX: number, clientY: number): { x: number; y: number } | undefined {
+    const canvas = this.elements.canvas;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return undefined;
+    }
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height),
+    };
+  }
+
+  private canvasSize(): CanvasSize {
+    return { width: this.elements.canvas.width, height: this.elements.canvas.height };
+  }
+}
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }
