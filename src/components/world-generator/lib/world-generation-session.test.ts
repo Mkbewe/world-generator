@@ -55,6 +55,10 @@ describe('WorldGenerationSession', () => {
     vi.spyOn(Viewport.prototype, 'start').mockImplementation(() => {});
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue(undefined);
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: vi.fn(),
       clearRect: vi.fn(),
       drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D);

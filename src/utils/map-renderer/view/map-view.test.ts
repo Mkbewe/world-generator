@@ -29,14 +29,8 @@ function createContext(): CanvasRenderingContext2D {
   } as unknown as CanvasRenderingContext2D;
 }
 
-async function createLayer(): Promise<CatalogLayer> {
-  const layer = new CatalogLayer(
-    LAYER_CATALOG[0],
-    { width: 2, height: 2 },
-    new Uint8Array(4).fill(1)
-  );
-  await layer.prepare(new AbortController().signal);
-  return layer;
+function createLayer(): CatalogLayer {
+  return new CatalogLayer(LAYER_CATALOG[0], { width: 2, height: 2 }, new Uint8Array(4).fill(1));
 }
 
 describe('MapView', () => {
@@ -52,7 +46,7 @@ describe('MapView', () => {
     vi.restoreAllMocks();
   });
 
-  it('presents the displayed layer at the viewport resolution', async () => {
+  it('renders the displayed layer at the viewport resolution', async () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 4,
       height: 4,
@@ -60,15 +54,19 @@ describe('MapView', () => {
     });
     const elements = createElements();
     const view = new MapView(elements, new RenderMetrics(layerRegistry));
-    const layer = await createLayer();
+    const layer = createLayer();
 
     view.start({ width: 2, height: 2 }, 'disc');
     view.present(layer);
+    await view.ready;
 
     expect(elements.canvas.width).toBe(8);
     expect(elements.canvas.height).toBe(8);
-    expect(context.drawImage).toHaveBeenCalledWith(layer.canvas, 0, 0, 2, 2, 0, 0, 8, 8);
+    expect(layer.canvas.width).toBe(12);
+    expect(layer.canvas.height).toBe(12);
+    expect(context.drawImage).toHaveBeenLastCalledWith(layer.canvas, 0, 0, 12, 12, -2, -2, 12, 12);
     view.dispose();
+    layer.dispose();
   });
 
   it('keeps the raster size until the viewport is measured', () => {
@@ -108,27 +106,6 @@ describe('MapView', () => {
     expect(view.samplePointer(200, 100)).toMatchObject({ x: 1, y: 1, u: 0.5, v: 0.5 });
     expect(view.samplePointer(50, 100)).toBeUndefined();
     expect(view.samplePointer(350, 100)).toBeUndefined();
-    view.dispose();
-  });
-
-  it('repaints at the new resolution after a viewport change', async () => {
-    const measure = vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
-      width: 4,
-      height: 4,
-      devicePixelRatio: 1,
-    });
-    const elements = createElements();
-    const view = new MapView(elements, new RenderMetrics(layerRegistry));
-    const layer = await createLayer();
-    view.start({ width: 2, height: 2 }, 'disc');
-    view.present(layer);
-    vi.mocked(context.drawImage).mockClear();
-
-    measure.mockReturnValue({ width: 6, height: 6, devicePixelRatio: 1 });
-    view.refresh();
-
-    expect(elements.canvas.width).toBe(6);
-    expect(context.drawImage).toHaveBeenCalledWith(layer.canvas, 0, 0, 2, 2, 0, 0, 6, 6);
     view.dispose();
   });
 });

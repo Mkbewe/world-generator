@@ -46,15 +46,18 @@ Detal liczony jest na obu osiach, więc podwojenie rozdzielczości to 4× pamię
 
 - Worker wysyła dane przez `postMessage`, które **kopiuje** (`generation-worker.ts:34`),
   a sam zachowuje bufory dla kolejnych etapów → dane istnieją dwa razy.
-- Canvasy: każda wyświetlana warstwa ma pełnowymiarowy canvas RGBA
-  (`layer.ts:108`). Canvas prezentacji jest od #305 rysowany w rozmiarze
-  viewportu × DPR (`map-view.ts`), więc nie jest pełnowymiarowy i nie dominuje
-  w szczycie. 4 B/piksel bez kompresji, plus kopia po stronie GPU.
-- Cache warstw trzyma canvasy nieaktywnych warstw; `mapRepository` trzyma
-  ostatni przebieg do końca sesji.
-- Efekt: szczyt potrafi być ~3× większy od liczby „surowej".
-  Dla 64M próbek: 384 MB danych, ~1,7 GB szczytu (maska + kopie + pełnowymiarowe
-  canvasy warstw; canvas prezentacji jest pomijalny, bo ma rozmiar viewportu).
+- Canvasy: od #285 warstwy i prezentacja są rasteryzowane w rozmiarze
+  viewportu × DPR, a nie rastra — warstwa trzyma stabilną klatkę, bufor renderu
+  w toku (`stage`) i mały `overview` całej mapy. Bufory nie rosną więc z mapą,
+  ale mają stały koszt viewportu: przy 600 × 600 CSS px i DPR 2 to ~27 MB na
+  warstwę (margines 1,5× na oś i double buffer), więc małe mapy wypadają drożej
+  niż przy pełnym rastrze, a duże ~13× taniej. 4 B/piksel bez kompresji, plus
+  kopia po stronie GPU.
+- Cache warstw trzyma viewportowe powierzchnie nieaktywnych warstw;
+  `mapRepository` trzyma ostatni przebieg do końca sesji.
+- Efekt: przy dużych mapach szczyt ograniczają dane i ich kopie, nie canvasy.
+  Dla 64M próbek: 384 MB danych, ~0,8 GB szczytu (maska + kopie; bufory
+  viewportu są pomijalne obok dawnych pełnowymiarowych canvasów).
 
 ### I.5. Canvas to nie obrazek
 
@@ -150,10 +153,13 @@ z Noise. Zachowuje pełną kontrolę nad charakterem granic.
 
 ### II.6. Rasteryzacja do viewportu i budżet cache
 
-- Rasteryzacja do rozdzielczości viewportu usuwa pełnowymiarowe canvasy warstw
-  i prezentacji (#285) — to największy zysk pamięciowy po stronie renderera.
-- Budżet pamięci cache i przygotowywanie nieaktywnych warstw tylko w budżecie
-  (#158).
+- Rdzeń zrobiony (#285): warstwy renderują się bezpośrednio w buforze
+  viewportu × DPR, bez pośrednich obrazów w pełnej rozdzielczości.
+- Zostało (#315): ograniczyć bufor do liczby widocznych komórek źródła
+  (data-limited), dobrać filtrowanie maski i szumu oraz rozszerzyć statystyki
+  o rozdzielczości i rozmiary buforów.
+- Budżet pamięci cache, zwalnianie `stage` po commicie i przygotowywanie
+  nieaktywnych warstw tylko w budżecie (#158).
 - Koszt: każde odświeżenie widoku maluje widoczny obszar od nowa
   (przy ~1200×1200 to 1,44M komórek zamiast 16M całej siatki).
 
@@ -184,5 +190,6 @@ i próbkowaniu. Wracamy do tematu tylko, jeśli pomiary pokażą, że to koniecz
 - Otwarte: format szumu (`Uint8` vs `Uint16`, II.4), czy wchodzimy w
   `SharedArrayBuffer` (II.5), czy `macroRegionIdMap` ma być liczony na żądanie
   (II.7).
-- Powiązane zadania: #285 (rasteryzacja do viewportu), #158 (budżet cache),
-  #286 (tło dekoracyjne — niezależne).
+- Powiązane zadania: #315 (filtrowanie, data-limited buffer i statystyki
+  buforów — reszta zakresu #285), #158 (budżet cache), #286 (tło dekoracyjne —
+  niezależne).

@@ -4,6 +4,7 @@ import {
   type MapLayer,
   type TileReporter,
 } from '../layer';
+import type { RenderTarget } from '../preview-targets';
 import type { MapBaseLayerId, RenderStatistics } from '../types';
 import type { ViewportSize } from '../viewport';
 
@@ -31,10 +32,15 @@ export class RenderMetrics {
     this.layers.clear();
   }
 
-  async prepare(layer: MapLayer, signal: AbortSignal, onTile?: TileReporter): Promise<void> {
+  async prepare(
+    layer: MapLayer,
+    signal: AbortSignal,
+    target: RenderTarget,
+    onTile?: TileReporter
+  ): Promise<void> {
     const previous = layer.statistics;
     try {
-      await layer.prepare(signal, onTile);
+      await layer.prepare(signal, target, onTile);
     } finally {
       if (!signal.aborted && layer.statistics && layer.statistics !== previous) {
         this.layers.set(layer.id, { ...layer.statistics });

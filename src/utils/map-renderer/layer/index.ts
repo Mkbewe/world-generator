@@ -4,4 +4,4 @@ export { LayerRegistry, layerRegistry } from './layer-registry';
 export { MapLayer } from './layer';
 export { LayerQueue } from './layer-queue';
 export type { LayerQueueHandlers } from './layer-queue';
-export type { LayerRenderStatistics, MapSize, TileReporter } from './layer';
+export type { LayerRenderStatistics, LayerTile, MapSize, TileReporter } from './layer';

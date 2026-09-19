@@ -78,7 +78,19 @@ export class MapRenderer {
         this.view.begin(layer);
         this.emitState();
       },
-      load: (layer, signal) => this.metrics.prepare(layer, signal, this.view.tilePainter(layer)),
+      load: async (layer, signal) => {
+        const target = this.view.renderTarget();
+        if (!target) {
+          return;
+        }
+        try {
+          await this.metrics.prepare(layer, signal, target, this.view.tilePainter(layer));
+          this.view.markRendered(layer, target);
+        } catch (error) {
+          // Rendering failed; the queue discards the layer and reports the error.
+          throw error;
+        }
+      },
       present: layer => this.present(layer),
       fail: (layer, error) => {
         this.scene.discard(layer);

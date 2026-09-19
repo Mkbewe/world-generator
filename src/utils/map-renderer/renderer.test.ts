@@ -127,7 +127,7 @@ describe('MapRenderer', () => {
     const regionsIndex = prepare.mock.contexts.findIndex(
       layer => layer instanceof MapLayer && layer.id === 'macro-region'
     );
-    expect(prepare.mock.calls[regionsIndex][1]).toBeUndefined();
+    expect(prepare.mock.calls[regionsIndex][2]).toBeUndefined();
     expect(preview.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
 
     preview.select('macro-region');
@@ -334,14 +334,14 @@ describe('MapRenderer', () => {
     await preview.ready;
 
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 153,
-      firstTileDurationMs: 105,
-      presentationDurationMs: 6,
+      elapsedDurationMs: 1129,
+      firstTileDurationMs: 108,
+      presentationDurationMs: 12,
       overlayDurationMs: 7,
       viewport: { devicePixelRatio: 2 },
       layers: [
-        { durationMs: 20, tiles: 4, pixels: 4 },
-        { durationMs: 20, tiles: 4, pixels: 4 },
+        { durationMs: 502, tiles: 100, pixels: 900 },
+        { durationMs: 502, tiles: 100, pixels: 900 },
       ],
     });
 
@@ -351,9 +351,9 @@ describe('MapRenderer', () => {
     await vi.runAllTimersAsync();
     await preview.ready;
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 11,
+      elapsedDurationMs: 15,
       firstTileDurationMs: undefined,
-      presentationDurationMs: 4,
+      presentationDurationMs: 8,
       overlayDurationMs: 7,
       layers: [
         { durationMs: 0, tiles: 0, pixels: 0 },
