@@ -1,10 +1,11 @@
-import { MapLayer, type MapSize } from './layer';
+import { type LayerTile, MapLayer, type MapSize } from './layer';
 import {
   compilePalette,
   type LayerSpec,
   type PixelWriter,
   type RasterData,
 } from '../../map-layers';
+import type { RenderTarget } from '../preview-targets';
 import type { MapBaseLayerId, SpatialMask } from '../types';
 
 /** Generic validated raster rendered through a catalog palette. */
@@ -44,74 +45,36 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     return this.data[y * this.size.width + x];
   }
 
-  protected paintRow(
-    pixels: Uint8ClampedArray,
-    offset: number,
-    y: number,
-    xStart: number,
-    xEnd: number
-  ): void {
-    if (this.spec.palette.kind === 'solid') {
-      this.paintSolidRow(pixels, offset, y, xStart, xEnd);
-      return;
-    }
-
-    let index = y * this.size.width + xStart;
+  /** Samples the nearest source cell for every pixel of the output tile. */
+  protected paintTile(pixels: Uint8ClampedArray, target: RenderTarget, tile: LayerTile): void {
+    const { projection } = target;
+    const inverseCellSize = 1 / projection.cellSize;
     const insideValue = this.spec.providesMask?.insideValue;
-    if (insideValue !== undefined) {
-      for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
-        if (this.data[index] === insideValue) {
-          this.writePixel(pixels, offset, this.data[index]);
-        }
-      }
-      return;
-    }
-
     const clipMask = this.clipMask;
-    for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
-      if (clipMask && !clipMask.contains(x, y)) {
+    const mapWidth = this.size.width;
+    const mapHeight = this.size.height;
+
+    for (let row = 0; row < tile.height; row++) {
+      const cellY = Math.floor((tile.y + row + 0.5 - projection.top) * inverseCellSize);
+      if (cellY < 0 || cellY >= mapHeight) {
         continue;
       }
-      this.writePixel(pixels, offset, this.data[index]);
-    }
-  }
-
-  private paintSolidRow(
-    pixels: Uint8ClampedArray,
-    offset: number,
-    y: number,
-    xStart: number,
-    xEnd: number
-  ): void {
-    const palette = this.spec.palette;
-    if (palette.kind !== 'solid') {
-      return;
-    }
-    const [red, green, blue] = palette.color;
-    let index = y * this.size.width + xStart;
-    const insideValue = this.spec.providesMask?.insideValue;
-    if (insideValue !== undefined) {
-      for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
-        if (this.data[index] !== insideValue) {
+      const rowIndex = cellY * mapWidth;
+      let offset = row * tile.width * 4;
+      for (let column = 0; column < tile.width; column++, offset += 4) {
+        const cellX = Math.floor((tile.x + column + 0.5 - projection.left) * inverseCellSize);
+        if (cellX < 0 || cellX >= mapWidth) {
           continue;
         }
-        pixels[offset] = red;
-        pixels[offset + 1] = green;
-        pixels[offset + 2] = blue;
-        pixels[offset + 3] = 255;
+        const value = this.data[rowIndex + cellX];
+        if (insideValue !== undefined && value !== insideValue) {
+          continue;
+        }
+        if (clipMask && !clipMask.contains(cellX, cellY)) {
+          continue;
+        }
+        this.writePixel(pixels, offset, value);
       }
-      return;
-    }
-
-    const clipMask = this.clipMask;
-    for (let x = xStart; x < xEnd; x++, index++, offset += 4) {
-      if (clipMask && !clipMask.contains(x, y)) {
-        continue;
-      }
-      pixels[offset] = red;
-      pixels[offset + 1] = green;
-      pixels[offset + 2] = blue;
-      pixels[offset + 3] = 255;
     }
   }
 }

@@ -1,5 +1,16 @@
 import { CatalogLayer } from './catalog-layer';
 import { LAYER_CATALOG, type LayerSpec } from '../../map-layers';
+import type { RenderTarget } from '../preview-targets';
+
+/** Output buffer mapped one pixel per source cell. */
+function targetFor(width: number, height: number): RenderTarget {
+  return { width, height, projection: { cellSize: 1, left: 0, top: 0, width, height } };
+}
+
+/** The first image is the whole-map overview; the rest are output tiles. */
+function targetPixels(images: readonly ImageData[]): number[] {
+  return images.slice(1).flatMap(image => [...image.data]);
+}
 
 function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
   const images: ImageData[] = [];
@@ -14,6 +25,7 @@ function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
       return image;
     },
     putImageData: vi.fn(),
+    drawImage: vi.fn(),
   } as unknown as CanvasRenderingContext2D);
   return { images, restore: () => spy.mockRestore() };
 }
@@ -47,8 +59,8 @@ describe('CatalogLayer', () => {
       expect(layer.contains(1, 0)).toBe(true);
       expect(layer.contains(2, 0)).toBe(false);
 
-      await layer.prepare(new AbortController().signal);
-      const pixels = images.flatMap(image => [...image.data]);
+      await layer.prepare(new AbortController().signal, targetFor(3, 1));
+      const pixels = targetPixels(images);
       expect(pixels).toEqual([0, 0, 0, 0, 16, 42, 67, 255, 0, 0, 0, 0]);
     } finally {
       layer.dispose();
@@ -65,8 +77,8 @@ describe('CatalogLayer', () => {
     try {
       expect(noise.sample(0, 0)).toBe(0.5);
       expect(noise.sample(1, 0)).toBeUndefined();
-      await noise.prepare(new AbortController().signal);
-      const pixels = images.flatMap(image => [...image.data]);
+      await noise.prepare(new AbortController().signal, targetFor(2, 1));
+      const pixels = targetPixels(images);
       expect(pixels).toEqual([128, 128, 128, 255, 0, 0, 0, 0]);
     } finally {
       world.dispose();
@@ -83,8 +95,8 @@ describe('CatalogLayer', () => {
 
     try {
       expect(regions.sample(1, 0)).toBe(1);
-      await regions.prepare(new AbortController().signal);
-      const pixels = images.flatMap(image => [...image.data]);
+      await regions.prepare(new AbortController().signal, targetFor(3, 1));
+      const pixels = targetPixels(images);
       expect(pixels).toEqual([46, 125, 50, 255, 124, 179, 66, 255, 46, 125, 50, 255]);
     } finally {
       world.dispose();

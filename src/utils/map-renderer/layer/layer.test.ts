@@ -1,6 +1,7 @@
 import { CatalogLayer } from './catalog-layer';
 import type { MapSize } from './layer';
 import { LAYER_CATALOG } from '../../map-layers';
+import type { RenderTarget } from '../preview-targets';
 
 function worldLayer(size: MapSize, data: Uint8Array): CatalogLayer {
   return new CatalogLayer(LAYER_CATALOG[0], size, data);
@@ -8,6 +9,15 @@ function worldLayer(size: MapSize, data: Uint8Array): CatalogLayer {
 
 function noiseLayer(world: CatalogLayer, data: Float32Array): CatalogLayer {
   return new CatalogLayer(LAYER_CATALOG[2], world.size, data, world);
+}
+
+/** Output buffer mapped one pixel per source cell. */
+function targetFor(size: MapSize): RenderTarget {
+  return {
+    width: size.width,
+    height: size.height,
+    projection: { cellSize: 1, left: 0, top: 0, width: size.width, height: size.height },
+  };
 }
 
 describe('MapLayer.sample', () => {
@@ -48,15 +58,20 @@ describe('MapLayer rendering lifecycle', () => {
         return { data: new Uint8ClampedArray(width * height * 4) };
       },
       putImageData: vi.fn(),
+      drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     const layer = worldLayer({ width: 2, height: 1 }, new Uint8Array(2).fill(1));
     try {
-      const preparation = layer.prepare(new AbortController().signal, () => {
-        now += 3;
-      });
+      const preparation = layer.prepare(
+        new AbortController().signal,
+        targetFor({ width: 2, height: 1 }),
+        () => {
+          now += 3;
+        }
+      );
       now += 100;
       await preparation;
-      expect(now).toBe(110);
+      expect(now).toBe(112);
       expect(layer.statistics).toEqual({ durationMs: 10, tiles: 2, pixels: 2 });
     } finally {
       layer.dispose();
@@ -72,18 +87,51 @@ describe('MapLayer rendering lifecycle', () => {
       }),
       putImageData: vi.fn(),
       clearRect: vi.fn(),
+      drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     const layer = worldLayer({ width: 4, height: 4 }, new Uint8Array(16).fill(1));
     try {
+      const target = targetFor({ width: 4, height: 4 });
       const aborted = new AbortController();
-      const first = layer.prepare(aborted.signal);
+      const first = layer.prepare(aborted.signal, target);
       aborted.abort();
 
-      const second = layer.prepare(new AbortController().signal);
+      const second = layer.prepare(new AbortController().signal, target);
 
       await expect(second).resolves.toBeUndefined();
       await expect(first).rejects.toThrow();
       expect(layer.statistics?.tiles).toBe(16);
+    } finally {
+      layer.dispose();
+      getContext.mockRestore();
+    }
+  });
+
+  it('keeps the committed frame until the next render completes', async () => {
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const layer = worldLayer({ width: 2, height: 1 }, new Uint8Array(2).fill(1));
+    try {
+      await layer.prepare(new AbortController().signal, targetFor({ width: 2, height: 1 }));
+      expect(layer.canvas.width).toBe(2);
+
+      const pending = layer.prepare(
+        new AbortController().signal,
+        targetFor({ width: 4, height: 4 })
+      );
+      expect(layer.busy).toBe(true);
+      expect(layer.renderingTarget?.width).toBe(4);
+      expect(layer.canvas.width).toBe(2);
+
+      await pending;
+      expect(layer.canvas.width).toBe(4);
+      await vi.waitFor(() => expect(layer.busy).toBe(false));
+      expect(layer.renderingTarget).toBeUndefined();
     } finally {
       layer.dispose();
       getContext.mockRestore();
@@ -103,6 +151,7 @@ describe('MapLayer rendering lifecycle', () => {
         return image;
       },
       putImageData: vi.fn(),
+      drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D;
     const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context);
     const layer = worldLayer(
@@ -110,7 +159,7 @@ describe('MapLayer rendering lifecycle', () => {
       new Uint8Array([0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0])
     );
     try {
-      await layer.prepare(new AbortController().signal);
+      await layer.prepare(new AbortController().signal, targetFor({ width: 4, height: 4 }));
       const opaque = images.some(image =>
         image.data.some((value, index) => index % 4 === 3 && value === 255)
       );

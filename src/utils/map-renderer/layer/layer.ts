@@ -1,5 +1,5 @@
+import { type RenderTarget, targetKey } from '../preview-targets';
 import type { MapBaseLayerId } from '../types';
-import { cellToCanvas, project, type ViewTransform, visibleCells } from '../view/view-transform';
 
 export interface MapSize {
   width: number;
@@ -12,6 +12,14 @@ export interface LayerRenderStatistics {
   durationMs: number;
   tiles: number;
   pixels: number;
+}
+
+/** Output tile of the preview buffer, in canvas pixels. */
+export interface LayerTile {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
 }
 
 const TILES_PER_AXIS = 10;
@@ -33,11 +41,22 @@ function createYieldToBrowser(): () => Promise<void> {
 
 const yieldToBrowser = createYieldToBrowser();
 
+/** Longest side of the whole-map fallback surface, in pixels. */
+const OVERVIEW_MAX_PX = 512;
+
 export abstract class MapLayer {
+  /** Stable surface with the last completed frame; only `commit` writes here. */
   readonly canvas = document.createElement('canvas');
+  /** Render buffer for the frame in flight; visible only through progressive tiles. */
+  readonly stage = document.createElement('canvas');
+  /** Whole-map fallback drawn under the sharp frame while the view outruns it. */
+  readonly overview = document.createElement('canvas');
+  private overviewSurfaceTarget?: RenderTarget;
   private preparation?: Promise<void>;
   private preparationSignal?: AbortSignal;
+  private preparationKey?: string;
   private preparing = false;
+  private activeTarget?: RenderTarget;
   statistics?: LayerRenderStatistics;
 
   protected constructor(
@@ -45,83 +64,93 @@ export abstract class MapLayer {
     readonly size: MapSize
   ) {}
 
-  prepare(signal: AbortSignal, onTile?: TileReporter): Promise<void> {
-    if (this.preparation) {
+  /** Whether a render is currently writing into this layer's stage buffer. */
+  get busy(): boolean {
+    return this.preparing;
+  }
+
+  /** Target of the render in flight, or undefined when the layer is idle. */
+  get renderingTarget(): RenderTarget | undefined {
+    return this.preparing ? this.activeTarget : undefined;
+  }
+
+  /** Projection of the whole-map fallback, or undefined before the first render. */
+  get overviewTarget(): RenderTarget | undefined {
+    return this.overviewSurfaceTarget;
+  }
+
+  prepare(signal: AbortSignal, target: RenderTarget, onTile?: TileReporter): Promise<void> {
+    const key = targetKey(target);
+    if (this.preparation && this.preparationKey === key) {
       const reusable =
         !this.preparing || this.preparationSignal === signal || !this.preparationSignal?.aborted;
       if (reusable) {
         return this.preparation;
       }
     }
-    const preparation = this.render(signal, onTile);
-    this.preparation = preparation;
     this.preparationSignal = signal;
+    this.preparationKey = key;
     this.preparing = true;
-    void preparation
-      .catch(() => {
+    this.activeTarget = target;
+    const preparation = this.render(signal, target, onTile);
+    this.preparation = preparation;
+    void preparation.then(
+      () => this.settle(preparation),
+      () => {
         if (this.preparation === preparation) {
           this.preparation = undefined;
         }
-      })
-      .finally(() => {
-        if (this.preparation === preparation) {
-          this.preparing = false;
-        }
-      });
+        this.settle(preparation);
+      }
+    );
     return preparation;
   }
 
-  show(canvas: HTMLCanvasElement, view: ViewTransform): void {
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('Canvas is not available.');
+  /** Releases the in-flight state unless a newer render already took it over. */
+  private settle(preparation: Promise<void>): void {
+    if (this.preparation !== preparation && this.preparation !== undefined) {
+      return;
     }
-    const canvasSize = { width: canvas.width, height: canvas.height };
-    const projection = project(view, canvasSize, this.size);
-    const cells = visibleCells(projection, canvasSize, this.size);
-    const origin = cellToCanvas(projection, cells.x, cells.y);
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(
-      this.canvas,
-      cells.x,
-      cells.y,
-      cells.width,
-      cells.height,
-      origin.x,
-      origin.y,
-      cells.width * projection.cellSize,
-      cells.height * projection.cellSize
-    );
+    this.preparing = false;
+    this.activeTarget = undefined;
   }
 
   dispose(): void {
     this.canvas.width = this.canvas.height = 0;
+    this.stage.width = this.stage.height = 0;
+    this.overview.width = this.overview.height = 0;
+    this.overviewSurfaceTarget = undefined;
     this.preparation = undefined;
     this.preparationSignal = undefined;
+    this.preparationKey = undefined;
     this.preparing = false;
+    this.activeTarget = undefined;
   }
 
   /** Raw value at a source raster cell, or undefined outside the layer's valid area. */
   abstract sample(x: number, y: number): number | undefined;
 
-  protected abstract paintRow(
+  protected abstract paintTile(
     pixels: Uint8ClampedArray,
-    offset: number,
-    y: number,
-    xStart: number,
-    xEnd: number
+    target: RenderTarget,
+    tile: LayerTile
   ): void;
 
-  private async render(signal: AbortSignal, onTile?: TileReporter): Promise<void> {
+  private async render(
+    signal: AbortSignal,
+    target: RenderTarget,
+    onTile?: TileReporter
+  ): Promise<void> {
     signal.throwIfAborted();
+    this.renderOverview(signal);
     const startedAt = performance.now();
-    const { width, height } = this.size;
-    const context = this.canvas.getContext('2d');
+    const { width, height } = target;
+    const context = this.stage.getContext('2d');
     if (!context) {
       throw new Error('Canvas is not available.');
     }
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.stage.width = width;
+    this.stage.height = height;
 
     const statistics = { durationMs: performance.now() - startedAt, tiles: 0, pixels: 0 };
     this.statistics = statistics;
@@ -134,9 +163,7 @@ export abstract class MapLayer {
         const tileStartedAt = performance.now();
         const tileW = Math.min(tileWidth, width - left);
         const image = context.createImageData(tileW, tileH);
-        for (let row = 0; row < tileH; row++) {
-          this.paintRow(image.data, row * tileW * 4, top + row, left, left + tileW);
-        }
+        this.paintTile(image.data, target, { x: left, y: top, width: tileW, height: tileH });
         context.putImageData(image, left, top);
         onTile?.(left, top, tileW, tileH);
         statistics.tiles++;
@@ -146,5 +173,53 @@ export abstract class MapLayer {
       }
     }
     signal.throwIfAborted();
+    const commitStartedAt = performance.now();
+    this.commit(target);
+    statistics.durationMs += performance.now() - commitStartedAt;
+  }
+
+  /** Paints the whole map once into a small surface, the fallback for fast view changes. */
+  private renderOverview(signal: AbortSignal): void {
+    const { width, height } = this.size;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+    const cellSize = OVERVIEW_MAX_PX / Math.max(width, height);
+    const target: RenderTarget = {
+      width: Math.max(1, Math.round(width * cellSize)),
+      height: Math.max(1, Math.round(height * cellSize)),
+      projection: {
+        cellSize,
+        left: 0,
+        top: 0,
+        width: width * cellSize,
+        height: height * cellSize,
+      },
+    };
+    if (this.overviewSurfaceTarget && targetKey(this.overviewSurfaceTarget) === targetKey(target)) {
+      return;
+    }
+    signal.throwIfAborted();
+    const context = this.overview.getContext('2d');
+    if (!context) {
+      throw new Error('Canvas is not available.');
+    }
+    this.overview.width = target.width;
+    this.overview.height = target.height;
+    const image = context.createImageData(target.width, target.height);
+    this.paintTile(image.data, target, { x: 0, y: 0, width: target.width, height: target.height });
+    context.putImageData(image, 0, 0);
+    this.overviewSurfaceTarget = target;
+  }
+
+  /** Copies the finished frame onto the stable surface; the display never sees a partial one. */
+  private commit(target: RenderTarget): void {
+    const context = this.canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Canvas is not available.');
+    }
+    this.canvas.width = target.width;
+    this.canvas.height = target.height;
+    context.drawImage(this.stage, 0, 0);
   }
 }

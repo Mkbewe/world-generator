@@ -91,24 +91,6 @@ export function canvasToCell(
   };
 }
 
-/** Cell rectangle visible on the canvas, clamped to the map. */
-export function visibleCells(
-  projection: MapProjection,
-  canvas: CanvasSize,
-  size: MapSize
-): { x: number; y: number; width: number; height: number } {
-  const x0 = Math.max(0, (0 - projection.left) / projection.cellSize);
-  const y0 = Math.max(0, (0 - projection.top) / projection.cellSize);
-  const x1 = Math.min(size.width, (canvas.width - projection.left) / projection.cellSize);
-  const y1 = Math.min(size.height, (canvas.height - projection.top) / projection.cellSize);
-  return {
-    x: x0,
-    y: y0,
-    width: Math.max(0, x1 - x0),
-    height: Math.max(0, y1 - y0),
-  };
-}
-
 /** Zooms around a canvas point, keeping the map cell under it in place. */
 export function zoomAt(
   view: ViewTransform,
