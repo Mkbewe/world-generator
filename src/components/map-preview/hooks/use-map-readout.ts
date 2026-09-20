@@ -95,6 +95,8 @@ export function useMapReadout(
     }
     const position = sampleAt(event);
     if (!position) {
+      positionRef.current = undefined;
+      setReadout(undefined);
       return;
     }
     const last = positionRef.current;
@@ -106,9 +108,11 @@ export function useMapReadout(
   };
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-    if (event.button !== 0) {
+    if (event.button !== 0 || gestureRef.current) {
       return;
     }
+    // Keep move and up events on the canvas when a drag leaves its bounds.
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     gestureRef.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -158,10 +162,11 @@ export function useMapReadout(
       return;
     }
     const position = sampleAt(event);
-    if (position) {
-      positionRef.current = position;
-      refreshReadout(position);
+    if (!position) {
+      return;
     }
+    positionRef.current = position;
+    refreshReadout(position);
     setPinned(current => !current);
   };
 
