@@ -85,7 +85,12 @@ export abstract class MapLayer {
       this.canvas.width * this.canvas.height +
       this.stage.width * this.stage.height +
       this.overview.width * this.overview.height;
-    return pixels * 4;
+    return pixels * 4 + this.extraBufferBytes();
+  }
+
+  /** Bytes held outside the canvases, e.g. precomputed masks; subclasses may extend. */
+  protected extraBufferBytes(): number {
+    return 0;
   }
 
   prepare(signal: AbortSignal, target: RenderTarget, onTile?: TileReporter): Promise<void> {
@@ -219,6 +224,7 @@ export abstract class MapLayer {
     this.overview.height = target.height;
     const image = context.createImageData(target.width, target.height);
     this.paintTile(image.data, target, { x: 0, y: 0, width: target.width, height: target.height });
+    extendOverviewColors(image.data, target.width, target.height);
     context.putImageData(image, 0, 0);
     this.overviewSurfaceTarget = target;
   }
@@ -232,5 +238,59 @@ export abstract class MapLayer {
     this.canvas.width = target.width;
     this.canvas.height = target.height;
     context.drawImage(this.stage, 0, 0);
+  }
+}
+
+/** Extends edge colors outside the world so a screen-space clip has no transparent fringe. */
+function extendOverviewColors(pixels: Uint8ClampedArray, width: number, height: number): void {
+  const count = width * height;
+  let empty = false;
+  for (let index = 0; index < count; index++) {
+    const alpha = index * 4 + 3;
+    if (pixels[alpha] === 0) {
+      empty = true;
+    } else {
+      pixels[alpha] = 255;
+    }
+  }
+  if (!empty) {
+    return;
+  }
+  const queue = new Uint32Array(count);
+  let tail = 0;
+  for (let index = 0; index < count; index++) {
+    if (pixels[index * 4 + 3] === 255) {
+      queue[tail++] = index;
+    }
+  }
+  for (let head = 0; head < tail; head++) {
+    const index = queue[head];
+    const x = index % width;
+    const y = Math.floor(index / width);
+    if (x > 0) {
+      fillNeighbor(index - 1, index);
+    }
+    if (x + 1 < width) {
+      fillNeighbor(index + 1, index);
+    }
+    if (y > 0) {
+      fillNeighbor(index - width, index);
+    }
+    if (y + 1 < height) {
+      fillNeighbor(index + width, index);
+    }
+  }
+
+  function fillNeighbor(index: number, source: number): void {
+    const offset = index * 4;
+    if (pixels[offset + 3] !== 0) {
+      return;
+    }
+    const from = source * 4;
+    pixels[offset] = pixels[from];
+    pixels[offset + 1] = pixels[from + 1];
+    pixels[offset + 2] = pixels[from + 2];
+    pixels[offset + 3] = 255;
+    queue[tail++] = index;
   }
 }

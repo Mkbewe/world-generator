@@ -1,19 +1,27 @@
+import type { WorldShape } from '../../world-shape';
 import type { MapLayer } from '../layer';
 import type { RenderMetrics } from '../metrics';
 import { type RenderTarget, targetKey } from '../preview-targets';
+import { traceWorldBoundary } from '../world-boundary-renderer/world-boundary-renderer';
 
 /**
  * Draws the displayed layer and schedules re-renders for the current target.
  *
- * The presentation never reads a partially rendered buffer: layers commit to a
- * stable surface and the whole-map overview covers the gaps during gestures.
+ * The overview and last complete frame cover gaps while finished stage tiles
+ * are composited progressively in the current view. A frame in flight is never
+ * aborted: aborting on every pointer sample starves catch-up during gestures,
+ * so a changed target only schedules one follow-up render and intermediate
+ * targets are collapsed.
  */
 export class LayerPresenter {
   private renderedTargets = new WeakMap<MapLayer, RenderTarget>();
-  private viewRender?: AbortController;
+  private viewRender?: { controller: AbortController; target: RenderTarget };
   private renderTask?: Promise<void>;
   private renderPending = false;
   private current?: MapLayer;
+  private hasBase = false;
+  private fallbackClipped = false;
+  private shape?: WorldShape;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -21,6 +29,10 @@ export class LayerPresenter {
     private readonly target: () => RenderTarget | undefined,
     private readonly view: () => RenderTarget | undefined
   ) {}
+
+  setShape(shape: WorldShape): void {
+    this.shape = shape;
+  }
 
   /** Completes when the displayed layer has caught up with the current target. */
   get ready(): Promise<void> {
@@ -34,11 +46,15 @@ export class LayerPresenter {
 
   /** Makes the layer the displayed one and draws it for the current view. */
   show(layer: MapLayer): void {
+    if (this.current !== layer) {
+      this.hasBase = false;
+      this.fallbackClipped = false;
+    }
     this.current = layer;
     this.draw();
   }
 
-  /** Draws the current layer: whole-map overview first, then the last completed frame. */
+  /** Rebuilds the view from the overview, complete frame and finished stage tiles. */
   draw(): void {
     const layer = this.current;
     if (!layer) {
@@ -50,7 +66,11 @@ export class LayerPresenter {
     }
     const overview = layer.overviewTarget;
     const rendered = this.renderedTargets.get(layer);
-    if (!overview && !rendered) {
+    const rendering = layer.renderingTarget;
+    const target = this.target();
+    const currentFrame = rendered && target && targetKey(rendered) === targetKey(target);
+    const useOverview = !currentFrame && overview;
+    if (!useOverview && !rendered && !rendering) {
       return;
     }
     this.metrics.present(() => {
@@ -60,30 +80,87 @@ export class LayerPresenter {
       }
       const { width, height } = this.canvas;
       context.clearRect(0, 0, width, height);
-      if (overview) {
-        this.drawSurface(context, layer.overview, overview, view, true);
+      const clipped = Boolean(useOverview && this.clipWorld(context, view, layer));
+      if (useOverview) {
+        this.drawSurface(context, layer.overview, useOverview, view, true);
       }
       if (rendered) {
         const smooth = view.projection.cellSize <= rendered.projection.cellSize;
         this.drawSurface(context, layer.canvas, rendered, view, smooth);
       }
+      if (rendering) {
+        const smooth = view.projection.cellSize <= rendering.projection.cellSize;
+        this.drawSurface(context, layer.stage, rendering, view, smooth);
+      }
+      if (clipped) {
+        context.restore();
+      }
+      this.fallbackClipped = clipped;
     });
+    this.hasBase = true;
   }
 
-  /** Renders the layer for the target, replacing an outdated render at once. */
+  /** Copies one completed tile without rebuilding the entire presentation. */
+  tileReady(layer: MapLayer, x: number, y: number, width: number, height: number): void {
+    if (this.current !== layer) {
+      return;
+    }
+    if (!this.hasBase) {
+      this.draw();
+      this.metrics.tileDrawn();
+      return;
+    }
+    const render = layer.renderingTarget;
+    const view = this.view();
+    if (!render || !view) {
+      return;
+    }
+    const context = this.canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Canvas is not available.');
+    }
+    const scale = view.projection.cellSize / render.projection.cellSize;
+    const offsetX = view.projection.left - render.projection.left * scale;
+    const offsetY = view.projection.top - render.projection.top * scale;
+    if (this.fallbackClipped) {
+      this.clipWorld(context, view, layer);
+    }
+    context.imageSmoothingEnabled = view.projection.cellSize <= render.projection.cellSize;
+    context.drawImage(
+      layer.stage,
+      x,
+      y,
+      width,
+      height,
+      offsetX + x * scale,
+      offsetY + y * scale,
+      width * scale,
+      height * scale
+    );
+    if (this.fallbackClipped) {
+      context.restore();
+    }
+    this.metrics.tileDrawn();
+  }
+
+  /**
+   * Finishes an in-flight frame before catching up with the latest view.
+   * Intermediate targets collapse into a single follow-up render.
+   */
   ensure(layer: MapLayer): void {
     const target = this.target();
     if (!target) {
       return;
     }
-    const rendered = this.renderedTargets.get(layer);
-    if (rendered && targetKey(rendered) === targetKey(target)) {
+    const render = this.viewRender;
+    if (render) {
+      if (targetKey(render.target) !== targetKey(target)) {
+        this.renderPending = true;
+      }
       return;
     }
-    if (this.viewRender) {
-      // Our own frame is already outdated; stop it and restart for the latest view.
-      this.renderPending = true;
-      this.viewRender.abort();
+    const rendered = this.renderedTargets.get(layer);
+    if (rendered && targetKey(rendered) === targetKey(target)) {
       return;
     }
     if (layer.busy) {
@@ -92,9 +169,11 @@ export class LayerPresenter {
       return;
     }
     const controller = new AbortController();
-    this.viewRender = controller;
+    this.viewRender = { controller, target };
     this.renderTask = layer
-      .prepare(controller.signal, target)
+      .prepare(controller.signal, target, (x, y, width, height) =>
+        this.tileReady(layer, x, y, width, height)
+      )
       .then(() => {
         if (controller.signal.aborted) {
           return;
@@ -106,7 +185,7 @@ export class LayerPresenter {
       })
       .catch(() => {})
       .finally(() => {
-        if (this.viewRender !== controller) {
+        if (this.viewRender?.controller !== controller) {
           return;
         }
         this.viewRender = undefined;
@@ -121,9 +200,12 @@ export class LayerPresenter {
   }
 
   reset(): void {
-    this.viewRender?.abort();
+    this.viewRender?.controller.abort();
     this.viewRender = undefined;
     this.renderPending = false;
+    this.hasBase = false;
+    this.fallbackClipped = false;
+    this.shape = undefined;
     this.renderTask = undefined;
     this.renderedTargets = new WeakMap();
     this.current = undefined;
@@ -152,6 +234,21 @@ export class LayerPresenter {
       surface.width * scale,
       surface.height * scale
     );
+  }
+
+  private clipWorld(
+    context: CanvasRenderingContext2D,
+    view: RenderTarget,
+    layer: MapLayer
+  ): boolean {
+    if (!this.shape) {
+      return false;
+    }
+    context.save();
+    context.beginPath();
+    traceWorldBoundary(context, view.projection, layer.size, this.shape);
+    context.clip();
+    return true;
   }
 
   private async waitForRender(): Promise<void> {

@@ -1,5 +1,6 @@
 import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
+import type { MacroRegionConfig, MacroRegionDeformation } from '../map-generator/types';
 import type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
 import type { WorldShape } from '../world-shape';
 
@@ -14,6 +15,11 @@ export interface SpatialMask {
 export interface MapMetadata {
   seed: string;
   shape: WorldShape;
+  regionGeometry?: {
+    seed: number;
+    regions: readonly MacroRegionConfig[];
+    deformation: MacroRegionDeformation;
+  };
 }
 
 /** Everything the renderer needs to display an existing map. */

@@ -1,6 +1,6 @@
 import type { MapProjection } from '../view/view-transform';
 
-/** Viewport-sized output buffer together with the projection it was drawn with. */
+/** Output buffer (presentation size plus margin) with the projection it was drawn with. */
 export interface RenderTarget {
   readonly width: number;
   readonly height: number;

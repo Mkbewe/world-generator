@@ -1,3 +1,5 @@
+import { RandomFactory } from '../../map-generator/random/random-factory';
+import { createMacroRegionSampler } from '../../map-generator/stages/macro-region-stage';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../map-layers';
 import {
   CatalogLayer,
@@ -7,11 +9,14 @@ import {
   type MapLayer,
   type MapSize,
 } from '../layer';
-import type { MapBaseLayerId, MapLayerOption, SpatialMask } from '../types';
+import type { SmoothGeometry } from '../layer/smooth-geometry';
+import type { MapBaseLayerId, MapLayerOption, MapMetadata, SpatialMask } from '../types';
 
 /** Owns the current map's layers and readiness; scheduling and drawing belong to the renderer. */
 export class MapScene {
   private currentSize?: MapSize;
+  private geometry?: SmoothGeometry;
+  private regionConfig?: MapMetadata['regionGeometry'];
   private readonly layers = new Map<MapBaseLayerId, CatalogLayer>();
   private readonly available = new Set<MapBaseLayerId>();
 
@@ -35,9 +40,23 @@ export class MapScene {
     }));
   }
 
-  start(size: MapSize): void {
+  start(size: MapSize, metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry'>): void {
     this.reset();
     this.currentSize = size;
+    if (metadata) {
+      const region = metadata.regionGeometry;
+      this.regionConfig = region;
+      this.geometry = {
+        shape: metadata.shape,
+        regionAt: region
+          ? createMacroRegionSampler(
+              new RandomFactory(region.seed),
+              region.regions,
+              region.deformation
+            )
+          : undefined,
+      };
+    }
   }
 
   add(id: MapBaseLayerId, value: unknown): MapLayer {
@@ -52,8 +71,8 @@ export class MapScene {
     }
     const layer = this.cache.getOrCreate(
       id,
-      [spec, value, size.width, size.height, clipMask],
-      () => new CatalogLayer(spec, size, value, clipMask)
+      [spec, value, size.width, size.height, clipMask, this.geometry?.shape, this.regionConfig],
+      () => new CatalogLayer(spec, size, value, clipMask, this.geometry)
     );
     this.layers.set(id, layer);
     return layer;
@@ -122,6 +141,8 @@ export class MapScene {
 
   reset(): void {
     this.currentSize = undefined;
+    this.geometry = undefined;
+    this.regionConfig = undefined;
     this.layers.clear();
     this.available.clear();
   }

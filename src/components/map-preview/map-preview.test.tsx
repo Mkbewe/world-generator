@@ -65,6 +65,12 @@ describe('MapPreview readout', () => {
       putImageData: vi.fn(),
       clearRect: vi.fn(),
       drawImage: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({
       left: 0,

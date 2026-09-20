@@ -7,6 +7,7 @@ import {
   type MapInfo,
   type MapInspection,
   type MapLayerOption,
+  type MapMetadata,
   type MapOverlayId,
   type MapOverlayOption,
   type MapSnapshotData,
@@ -120,10 +121,10 @@ export class MapRenderer {
     };
   }
 
-  start(size: MapSize, shape: WorldShape): void {
+  start(size: MapSize, shape: WorldShape, regionGeometry?: MapMetadata['regionGeometry']): void {
     this.reset();
     this.lifetime = new AbortController();
-    this.scene.start(size);
+    this.scene.start(size, { shape, regionGeometry });
     this.mapSize = size;
     this.metrics.start();
     this.view.start(size, shape);
@@ -131,7 +132,7 @@ export class MapRenderer {
 
   /** Displays existing layer data without progressive drawing or generation statistics. */
   load(snapshot: MapSnapshotData): void {
-    this.start(snapshot, snapshot.shape);
+    this.start(snapshot, snapshot.shape, snapshot.regionGeometry);
     this.setInfo(snapshot.info ?? {});
     this.metrics.reset();
     const layers = this.scene.load(snapshot.layers);

@@ -1,3 +1,4 @@
+import { containsWorld } from '../../world-shape';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import { assertStageOutput, type MapStage } from '../stage';
@@ -30,10 +31,7 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
 
       for (let x = 0; x < sampleWidth; x++) {
         const normalizedX = (2 * x) / xDivisor - 1;
-        const isInsideWorld =
-          shape === 'rectangle'
-            ? Math.abs(normalizedX) <= 1 && Math.abs(normalizedY) <= 1
-            : normalizedX * normalizedX + normalizedY * normalizedY <= 1;
+        const isInsideWorld = containsWorld(shape, normalizedX, normalizedY);
         worldMask[y * sampleWidth + x] = isInsideWorld ? 1 : 0;
       }
 
