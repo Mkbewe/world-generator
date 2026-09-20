@@ -1,4 +1,6 @@
 import { type LayerTile, MapLayer, type MapSize } from './layer';
+import type { SmoothGeometry } from './smooth-geometry';
+import { SmoothLayerPainter } from './smooth-layer-painter';
 import {
   compilePalette,
   type LayerSpec,
@@ -12,12 +14,15 @@ import type { MapBaseLayerId, SpatialMask } from '../types';
 export class CatalogLayer extends MapLayer implements SpatialMask {
   readonly data: RasterData;
   private readonly writePixel: PixelWriter;
+  private readonly smoothPainter?: SmoothLayerPainter;
+  private readonly smoothInterior: boolean;
 
   constructor(
     readonly spec: LayerSpec<MapBaseLayerId>,
     size: MapSize,
     value: unknown,
-    private readonly clipMask?: SpatialMask
+    private readonly clipMask?: SpatialMask,
+    geometry?: SmoothGeometry
   ) {
     super(spec.id, size);
     this.data = validateRasterData(spec, size, value);
@@ -28,11 +33,33 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
       throw new Error(`Layer "${spec.id}" received an invalid clip mask size.`);
     }
     this.writePixel = compilePalette(spec.palette);
+    const mode =
+      spec.id === 'macro-region' && geometry?.regionAt
+        ? 'region'
+        : spec.providesMask
+          ? 'world'
+          : 'clipped';
+    this.smoothInterior = mode !== 'clipped';
+    if (geometry && (spec.providesMask || clipMask)) {
+      this.smoothPainter = new SmoothLayerPainter(
+        size,
+        this.data,
+        clipMask,
+        spec.providesMask?.insideValue,
+        this.writePixel,
+        geometry,
+        mode
+      );
+    }
   }
 
   contains(x: number, y: number): boolean {
     const insideValue = this.spec.providesMask?.insideValue;
     return insideValue !== undefined && this.data[y * this.size.width + x] === insideValue;
+  }
+
+  protected extraBufferBytes(): number {
+    return this.smoothPainter?.boundaryBytes ?? 0;
   }
 
   sample(x: number, y: number): number | undefined {
@@ -46,13 +73,18 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   }
 
   protected paintTile(pixels: Uint8ClampedArray, target: RenderTarget, tile: LayerTile): void {
+    if (this.smoothPainter && this.smoothInterior) {
+      this.smoothPainter.paint(pixels, target, tile);
+      return;
+    }
     const samples =
       this.spec.palette.kind === 'ramp' ? filterSamplesPerAxis(target.projection.cellSize) : 1;
     if (samples > 1) {
       this.paintFilteredTile(pixels, target, tile, samples);
-      return;
+    } else {
+      this.paintNearestTile(pixels, target, tile);
     }
-    this.paintNearestTile(pixels, target, tile);
+    this.smoothPainter?.paint(pixels, target, tile);
   }
 
   /** Samples the nearest source cell for every pixel of the output tile. */

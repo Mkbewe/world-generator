@@ -52,6 +52,21 @@ describe('CatalogLayer', () => {
     );
   });
 
+  it('counts the precomputed boundary in the layer buffers', () => {
+    const size = { width: 4, height: 4 };
+    const plain = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array(16));
+    const smooth = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array(16), undefined, {
+      shape: 'disc',
+    });
+
+    try {
+      expect(smooth.bufferBytes - plain.bufferBytes).toBe(16);
+    } finally {
+      plain.dispose();
+      smooth.dispose();
+    }
+  });
+
   it('samples raw mask values but paints only the exact inside value', async () => {
     const { images, restore } = mockCanvasContext();
     const layer = new CatalogLayer(
@@ -89,6 +104,41 @@ describe('CatalogLayer', () => {
       await noise.prepare(new AbortController().signal, targetFor(2, 1));
       const pixels = targetPixels(images);
       expect(pixels).toEqual([128, 128, 128, 255, 0, 0, 0, 0]);
+    } finally {
+      world.dispose();
+      noise.dispose();
+      restore();
+    }
+  });
+
+  it('uses the continuous world edge when painting a clipped noise layer', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 4, height: 4 };
+    const mask = new Uint8Array(16);
+    mask[5] = mask[6] = mask[9] = mask[10] = 1;
+    const values = new Float32Array(16);
+    values.fill(0.5);
+    const geometry = { shape: 'disc' as const };
+    const world = new CatalogLayer(LAYER_CATALOG[0], size, mask, undefined, geometry);
+    const noise = new CatalogLayer(LAYER_CATALOG[2], size, values, world, geometry);
+    const screen: RenderTarget = {
+      width: 16,
+      height: 16,
+      projection: { cellSize: 4, left: 0, top: 0, width: 16, height: 16 },
+    };
+
+    try {
+      await noise.prepare(new AbortController().signal, screen);
+      const partial = images
+        .slice(1)
+        .flatMap(image =>
+          Array.from({ length: image.data.length / 4 }, (_, index) => [
+            ...image.data.slice(index * 4, index * 4 + 4),
+          ])
+        )
+        .filter(([, , , alpha]) => alpha > 0 && alpha < 255);
+      expect(partial.length).toBeGreaterThan(0);
+      expect(partial.every(([red]) => red === 128)).toBe(true);
     } finally {
       world.dispose();
       noise.dispose();

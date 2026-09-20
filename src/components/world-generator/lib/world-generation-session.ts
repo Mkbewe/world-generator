@@ -1,5 +1,7 @@
 import type { GenerationStatistics } from '../../../stores';
 import {
+  DEFAULT_MACRO_DEFORMATION,
+  DEFAULT_MACRO_REGIONS,
   type MapConfig,
   type RunGeneration,
   runGeneration as runGenerationInWorker,
@@ -42,7 +44,12 @@ export class WorldGenerationSession {
 
     try {
       const info = selectMapInfo(config);
-      this.renderer.start(sampleSize(config.world.dimensions), config.world.shape);
+      const regionGeometry = {
+        seed: config.world.seed,
+        regions: config.macroRegions ?? DEFAULT_MACRO_REGIONS,
+        deformation: config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION,
+      };
+      this.renderer.start(sampleSize(config.world.dimensions), config.world.shape, regionGeometry);
       this.renderer.setInfo(info);
       const renderSignal = this.renderer.signal;
       mapRepository.clear();
@@ -68,6 +75,7 @@ export class WorldGenerationSession {
         height: config.world.dimensions.sampleHeight,
         seed: String(config.world.seed),
         shape: config.world.shape,
+        regionGeometry,
         layers,
         info,
       });

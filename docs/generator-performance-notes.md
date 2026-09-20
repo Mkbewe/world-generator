@@ -49,11 +49,12 @@ Detal liczony jest na obu osiach, więc podwojenie rozdzielczości to 4× pamię
 - Canvasy: od #285 warstwy i prezentacja są rasteryzowane w rozmiarze
   viewportu × DPR, a nie rastra — warstwa trzyma stabilną klatkę i mały
   `overview` całej mapy, a bufor renderu w toku (`stage`) jest zwalniany po
-  commicie. Od #315 bufor jest ograniczony liczbą widocznych komórek: przy
-  powiększeniu 1 px na komórkę, przy pomniejszeniu trzyma skalę ekranu i filtruje
-  próbkowanie. Przy 600 × 600 CSS px i DPR 2 mapa 1 km to ~5 MB canvasów na
-  warstwę, a 10 000 × 10 000 ~14 MB (dawniej odpowiednio 4 MB i 400 MB).
-  4 B/piksel bez kompresji, plus kopia po stronie GPU.
+  commicie. Od #319 każda warstwa maluje w rozdzielczości ekranu z marginesem
+  1,5× także przy powiększeniu (gładkie granice), a przy pomniejszeniu filtruje
+  próbkowanie. Przy 600 × 600 CSS px i DPR 2 canvas warstwy ma ~1800 × 1800 px,
+  czyli ~13 MB plus ~1 MB `overview`; rozmiar nie zależy od rastra, więc
+  10 000 × 10 000 nie zajmuje już 400 MB. 4 B/piksel bez kompresji, plus kopia
+  po stronie GPU.
 - Cache warstw trzyma viewportowe powierzchnie nieaktywnych warstw;
   `mapRepository` trzyma ostatni przebieg do końca sesji.
 - Efekt: przy dużych mapach szczyt ograniczają dane i ich kopie, nie canvasy.
@@ -154,16 +155,18 @@ z Noise. Zachowuje pełną kontrolę nad charakterem granic.
 
 ### II.6. Rasteryzacja do viewportu i budżet cache
 
-- Zrobione (#285, #315): warstwy renderują się w buforze viewportu × DPR
-  ograniczonym liczbą widocznych komórek (przy powiększeniu 1 px na komórkę),
-  bez pośrednich obrazów w pełnej rozdzielczości; próbkowanie szumu jest
-  filtrowane przy pomniejszeniu, a statystyki pokazują rozdzielczości i rozmiary
-  buforów.
+- Zrobione (#285, #315, #319): warstwy renderują się w buforze viewportu × DPR
+  z marginesem, bez pośrednich obrazów w pełnej rozdzielczości; każda warstwa
+  maluje w rozdzielczości ekranu także przy powiększeniu (gładkie granice),
+  próbkowanie szumu jest filtrowane przy pomniejszeniu, a statystyki pokazują
+  rozdzielczości i rozmiary buforów.
 - Zostało (#158, odłożone do większej liczby warstw): budżet pamięci cache
   i przygotowywanie nieaktywnych warstw tylko w budżecie.
 - Koszt: każde odświeżenie widoku maluje widoczny obszar od nowa
-  (przy ~1200×1200 to 1,44M komórek zamiast 16M całej siatki); przy
-  pomniejszeniu dochodzi filtr kilku próbek na piksel.
+  w rozdzielczości ekranu (~1800 × 1800 px bufora z marginesem przy 600 × 600
+  CSS px i DPR 2), niezależnie od rozmiaru rastra; przy pomniejszeniu dochodzi
+  filtr kilku próbek na piksel, a przy powiększeniu praca bywa większa niż przy
+  dawnym buforze 1 px na komórkę.
 
 ### II.7. Rastry pochodne liczone na żądanie
 

@@ -7,6 +7,7 @@ import {
 } from './macro-region-defaults';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
+import type { RandomFactory } from '../random/random-factory';
 import { assertStageOutput, type MapStage } from '../stage';
 import type {
   MacroRegionConfig,
@@ -36,7 +37,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
     this.validateConfig(regions);
     this.validateDeformation(deformation);
-    const displacement = createDisplacement(context, regions, deformation);
+    const regionAt = createMacroRegionSampler(context.random, regions, deformation);
 
     const macroRegionIdMap = new Uint8Array(sampleWidth * sampleHeight);
     const xDivisor = Math.max(1, sampleWidth - 1);
@@ -58,14 +59,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
           continue;
         }
         const normalizedX = x / xDivisor;
-        const offset = displacement ? displacement(normalizedX, normalizedY) : { x: 0, y: 0 };
-        macroRegionIdMap[cell] = ownerIndex(
-          regions,
-          normalizedX,
-          normalizedY,
-          offset,
-          deformation.amplitude
-        );
+        macroRegionIdMap[cell] = regionAt(normalizedX, normalizedY);
       }
 
       report((y + 1) / sampleHeight);
@@ -152,6 +146,19 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
   }
 }
 
+/** Shared continuous classification for generation and screen-space painting. */
+export function createMacroRegionSampler(
+  random: RandomFactory,
+  regions: readonly MacroRegionConfig[],
+  deformation: MacroRegionDeformation
+): (x: number, y: number) => number {
+  const displacement = createDisplacement(random, regions, deformation);
+  return (x, y) => {
+    const offset = displacement ? displacement(x, y) : { x: 0, y: 0 };
+    return ownerIndex(regions, x, y, offset, deformation.amplitude);
+  };
+}
+
 function ownerIndex(
   regions: readonly MacroRegionConfig[],
   x: number,
@@ -232,7 +239,7 @@ function validateGeometry(id: string, geometry: MacroRegionGeometry): void {
 }
 
 function createDisplacement(
-  context: MapContext<MapConfig, MapState>,
+  factory: RandomFactory,
   regions: readonly MacroRegionConfig[],
   deformation: MacroRegionDeformation
 ): ((x: number, y: number) => { x: number; y: number }) | undefined {
@@ -245,7 +252,7 @@ function createDisplacement(
 
   const frequency = deformation.frequency ?? DEFAULT_DEFORMATION_FREQUENCY;
   const octaves = deformation.octaves ?? DEFAULT_DEFORMATION_OCTAVES;
-  const random = context.random.create(deformation.seed || 'macro-region');
+  const random = factory.create(deformation.seed || 'macro-region');
   const displacementX = createNoise2D(() => random.next());
   const displacementY = createNoise2D(() => random.next());
 

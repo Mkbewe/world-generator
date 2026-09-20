@@ -1,10 +1,38 @@
 import type { WorldShape } from '../../world-shape';
+import type { MapSize } from '../layer';
 import type { SpatialMask } from '../types';
-import { project, type ViewTransform } from '../view/view-transform';
+import { type MapProjection, project, type ViewTransform } from '../view/view-transform';
 import { effectivePixelRatio, type ViewportSize } from '../viewport';
 
 const BOUNDARY_COLOR = 'rgba(49, 155, 0, 0.9)';
 const BOUNDARY_LINE_WIDTH = 3;
+
+/** Shared outline for the visible stroke and the presentation clip. */
+export function traceWorldBoundary(
+  context: CanvasRenderingContext2D,
+  projection: MapProjection,
+  size: MapSize,
+  shape: WorldShape
+): void {
+  if (shape === 'disc') {
+    context.ellipse(
+      projection.left + projection.width / 2,
+      projection.top + projection.height / 2,
+      ((size.width - 1) * projection.cellSize) / 2,
+      ((size.height - 1) * projection.cellSize) / 2,
+      0,
+      0,
+      Math.PI * 2
+    );
+  } else {
+    context.rect(
+      projection.left + projection.cellSize / 2,
+      projection.top + projection.cellSize / 2,
+      projection.width - projection.cellSize,
+      projection.height - projection.cellSize
+    );
+  }
+}
 
 export class WorldBoundaryRenderer {
   constructor(private readonly canvas: HTMLCanvasElement) {}
@@ -41,26 +69,7 @@ export class WorldBoundaryRenderer {
     context.strokeStyle = BOUNDARY_COLOR;
     context.lineWidth = lineWidth;
     context.beginPath();
-    if (shape === 'disc') {
-      const radius = Math.max(
-        lineWidth / 2,
-        Math.min(projection.width, projection.height) / 2 - lineWidth / 2
-      );
-      context.arc(
-        projection.left + projection.width / 2,
-        projection.top + projection.height / 2,
-        radius,
-        0,
-        Math.PI * 2
-      );
-    } else {
-      context.rect(
-        projection.left + lineWidth / 2,
-        projection.top + lineWidth / 2,
-        projection.width - lineWidth,
-        projection.height - lineWidth
-      );
-    }
+    traceWorldBoundary(context, projection, world.size, shape);
     context.stroke();
   }
 }

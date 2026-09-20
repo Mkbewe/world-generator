@@ -6,7 +6,7 @@ import { fitView } from '../view/view-transform';
 function createContext(): CanvasRenderingContext2D {
   return {
     beginPath: vi.fn(),
-    arc: vi.fn(),
+    ellipse: vi.fn(),
     rect: vi.fn(),
     stroke: vi.fn(),
   } as unknown as CanvasRenderingContext2D;
@@ -37,13 +37,13 @@ describe('WorldBoundaryRenderer', () => {
 
     expect(canvas.width).toBe(8);
     expect(canvas.height).toBe(8);
-    expect(context.arc).toHaveBeenCalledWith(4, 4, 3, 0, Math.PI * 2);
+    expect(context.ellipse).toHaveBeenCalledWith(4, 4, 3, 3, 0, 0, Math.PI * 2);
     expect(context.stroke).toHaveBeenCalledOnce();
     expect(context.lineWidth).toBe(6);
     expect(context.strokeStyle).toBe('rgba(49, 155, 0, 0.9)');
   });
 
-  it('strokes a rectangle inset by half the line width', () => {
+  it('strokes a rectangle along the generated mask boundary', () => {
     const context = createContext();
     const canvas = createCanvas(context);
     const world = createWorld();
@@ -51,7 +51,7 @@ describe('WorldBoundaryRenderer', () => {
     new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, 'rectangle', fitView());
     world.dispose();
 
-    expect(context.rect).toHaveBeenCalledWith(3, 3, 2, 2);
+    expect(context.rect).toHaveBeenCalledWith(1, 1, 6, 6);
     expect(context.stroke).toHaveBeenCalledOnce();
   });
 });

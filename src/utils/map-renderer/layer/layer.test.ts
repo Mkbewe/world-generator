@@ -49,6 +49,29 @@ describe('MapLayer.sample', () => {
 });
 
 describe('MapLayer rendering lifecycle', () => {
+  it('extends overview edge colors for an opaque clipped fallback', async () => {
+    const images: Uint8ClampedArray[] = [];
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => {
+        const data = new Uint8ClampedArray(width * height * 4);
+        images.push(data);
+        return { data };
+      },
+      putImageData: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const layer = worldLayer({ width: 2, height: 2 }, new Uint8Array([1, 0, 0, 0]));
+    try {
+      await layer.prepare(new AbortController().signal, targetFor(layer.size));
+      const overview = images[0];
+      const farCorner = (511 * 512 + 511) * 4;
+      expect([...overview.slice(farCorner, farCorner + 4)]).toEqual([16, 42, 67, 255]);
+    } finally {
+      layer.dispose();
+      getContext.mockRestore();
+    }
+  });
+
   it('excludes time yielded to the browser from drawing time', async () => {
     let now = 0;
     const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);

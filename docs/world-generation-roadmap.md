@@ -255,15 +255,16 @@ pozostaje niezależna od rozdzielczości danych.
 
 Pamięć renderera jest poza tym budżetem: od #285 warstwy i prezentacja są
 rasteryzowane w rozmiarze viewportu × DPR (z limitem DPR 2), a nie w rozmiarze
-rastra. Od #315 bufor warstwy jest dodatkowo ograniczony liczbą widocznych
-komórek: przy powiększeniu to 1 piksel na komórkę z marginesem na gesty, przy
-pomniejszeniu bufor trzyma skalę ekranu i filtruje próbkowanie, żeby ograniczyć
-aliasing. Każda warstwa trzyma stabilną klatkę (`canvas`) i mały `overview`
-całej mapy (~512 px); bufor renderu w toku (`stage`) istnieje tylko na czas
-malowania i jest zwalniany po commicie. Canvas prezentacji pozostaje
-viewportowy. Dane generatora nadal mają pełną rozdzielczość. Efekt: mapa 1 km to
-~5 MB canvasów na warstwę (canvas 4 MB + `overview` 1 MB, dawniej 4 MB), a
-10 000 × 10 000 to ~14 MB na warstwę (dawniej 400 MB). Szczyt całej
+rastra. Od #319 każda warstwa maluje w rozdzielczości ekranu z marginesem na
+gesty także przy powiększeniu, żeby ciągłe granice regionów i świata były
+gładkie; przy pomniejszeniu próbkowanie szumu pozostaje filtrowane, żeby
+ograniczyć aliasing. Każda warstwa trzyma stabilną klatkę (`canvas`) i mały
+`overview` całej mapy (~512 px); bufor renderu w toku (`stage`) istnieje tylko
+na czas malowania i jest zwalniany po commicie. Canvas prezentacji pozostaje
+viewportowy. Dane generatora nadal mają pełną rozdzielczość. Efekt: rozmiar
+canvasu warstwy zależy od viewportu i DPR, nie od rastra; przy 600 × 600 CSS px
+i DPR 2 to ~14 MB na warstwę (canvas ~13 MB + `overview` ~1 MB), dawniej 400 MB
+przy mapie 10 000 × 10 000. Szczyt całej
 aplikacji jest wyższy od budżetu generatora i widać go w statystykach
 renderowania, razem z rozdzielczością źródłową i wynikową każdej warstwy.
 Świadomie nie uwalniamy canvasów nieaktywnych warstw — przełączanie warstw ma
@@ -720,10 +721,11 @@ przez renderery, a renderer przerywa nieaktualne rysowanie przy starcie nowego
 przebiegu. `MacroRegionStage` liczy tylko komórki wewnątrz maski świata (#256).
 Warstwy renderują się bezpośrednio w buforze viewportu × DPR z marginesem i
 małym `overview` całej mapy, a render w tle nie wyciera wyświetlanej klatki
-(double buffer, anulowanie nieaktualnych przebiegów) — #285. Od #315 bufor jest
-ograniczony liczbą widocznych komórek (przy powiększeniu 1 px na komórkę),
-próbkowanie szumu jest filtrowane przy pomniejszeniu, a statystyki renderowania
-pokazują rozdzielczość źródłową i wynikową oraz rozmiar buforów każdej warstwy.
+(double buffer, anulowanie nieaktualnych przebiegów) — #285. Od #319 każda
+warstwa maluje w rozdzielczości ekranu z marginesem, także przy powiększeniu
+(gładkie granice), próbkowanie szumu jest filtrowane przy pomniejszeniu,
+a statystyki renderowania pokazują rozdzielczość źródłową i wynikową oraz
+rozmiar buforów każdej warstwy.
 Bufor renderu w toku jest zwalniany po commicie, więc w spoczynku warstwa trzyma
 tylko klatkę i `overview`.
 

@@ -50,7 +50,7 @@ export class MapView {
 
   constructor(
     private readonly elements: MapViewElements,
-    private readonly metrics: RenderMetrics,
+    metrics: RenderMetrics,
     selectedLayer?: MapBaseLayerId,
     private readonly shouldDisplay: (id: MapBaseLayerId) => boolean = () => true
   ) {
@@ -102,6 +102,7 @@ export class MapView {
   start(size: MapSize, shape: WorldShape): void {
     this.progressive = true;
     this.shape = shape;
+    this.presenter.setShape(shape);
     this.size = size;
     this.view = fitView();
     this.viewport.start();
@@ -122,6 +123,7 @@ export class MapView {
   begin(layer: MapLayer): void {
     if (this.progressive && this.shouldDisplay(layer.id)) {
       this.presented = layer;
+      this.presenter.show(layer);
     }
   }
 
@@ -208,28 +210,10 @@ export class MapView {
     if (!this.progressive || !this.shouldDisplay(layer.id)) {
       return undefined;
     }
-    const context = this.elements.canvas.getContext('2d');
     return (x, y, width, height) => {
-      const render = layer.renderingTarget;
-      const view = this.viewTarget();
-      if (!context || !render || !view || !this.shouldDisplay(layer.id)) {
-        return;
+      if (this.shouldDisplay(layer.id)) {
+        this.presenter.tileReady(layer, x, y, width, height);
       }
-      const scale = view.projection.cellSize / render.projection.cellSize;
-      const offsetX = view.projection.left - render.projection.left * scale;
-      const offsetY = view.projection.top - render.projection.top * scale;
-      context.drawImage(
-        layer.stage,
-        x,
-        y,
-        width,
-        height,
-        offsetX + x * scale,
-        offsetY + y * scale,
-        width * scale,
-        height * scale
-      );
-      this.metrics.tileDrawn();
     };
   }
 

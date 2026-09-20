@@ -61,6 +61,12 @@ describe('WorldGenerationSession', () => {
       putImageData: vi.fn(),
       clearRect: vi.fn(),
       drawImage: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     renderer = new MapRenderer(

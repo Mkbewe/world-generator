@@ -24,20 +24,46 @@ describe('preview targets', () => {
     expect(render?.projection.top).toBe((display?.projection.top ?? 0) + 2);
   });
 
-  it('caps magnified buffers to one pixel per source cell', () => {
-    const measured = { width: 8, height: 8, devicePixelRatio: 1 };
-    const magnified = renderTarget(fitView(), { width: 4, height: 4 }, measured);
+  it('covers the whole viewport for a panned, magnified view', () => {
+    const size = { width: 8, height: 8 };
+    const view = { scale: 4, centerX: 0.75, centerY: 0.25 };
+    const display = viewTarget(view, size, MEASURED);
+    const render = renderTarget(view, size, MEASURED);
 
-    expect(magnified).toMatchObject({ width: 4, height: 4 });
-    expect(magnified?.projection).toMatchObject({ cellSize: 1, left: 0, top: 0 });
+    expect(render).toMatchObject({
+      width: 12,
+      height: 12,
+      projection: { cellSize: 4, left: -18, top: -2 },
+    });
+    if (!display || !render) {
+      throw new Error('Expected measured render targets.');
+    }
+    const scale = display.projection.cellSize / render.projection.cellSize;
+    const left = display.projection.left - render.projection.left * scale;
+    const top = display.projection.top - render.projection.top * scale;
 
-    const zoomed = renderTarget(
+    expect({
+      left,
+      top,
+      right: left + render.width * scale,
+      bottom: top + render.height * scale,
+    }).toEqual({
+      left: -2,
+      top: -2,
+      right: 10,
+      bottom: 10,
+    });
+  });
+
+  it('renders magnified views at display resolution', () => {
+    const target = renderTarget(
       { scale: 4, centerX: 0.5, centerY: 0.5 },
       { width: 4, height: 4 },
-      measured
+      MEASURED
     );
-    expect(zoomed).toMatchObject({ width: 2, height: 2 });
-    expect(zoomed?.projection).toMatchObject({ cellSize: 1, left: 1, top: 1 });
+
+    expect(target).toMatchObject({ width: 12, height: 12 });
+    expect(target?.projection.cellSize).toBe(8);
   });
 
   it('does not overscan before the first measurement', () => {

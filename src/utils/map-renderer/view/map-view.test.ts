@@ -22,7 +22,11 @@ function createContext(): CanvasRenderingContext2D {
     putImageData: vi.fn(),
     clearRect: vi.fn(),
     drawImage: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    clip: vi.fn(),
     beginPath: vi.fn(),
+    ellipse: vi.fn(),
     arc: vi.fn(),
     rect: vi.fn(),
     stroke: vi.fn(),
@@ -46,7 +50,7 @@ describe('MapView', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders a magnified layer at one pixel per cell and scales it up', async () => {
+  it('renders a magnified layer at display resolution', async () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 4,
       height: 4,
@@ -62,9 +66,44 @@ describe('MapView', () => {
 
     expect(elements.canvas.width).toBe(8);
     expect(elements.canvas.height).toBe(8);
-    expect(layer.canvas.width).toBe(2);
-    expect(layer.canvas.height).toBe(2);
-    expect(context.drawImage).toHaveBeenLastCalledWith(layer.canvas, 0, 0, 2, 2, 0, 0, 8, 8);
+    expect(layer.canvas.width).toBe(12);
+    expect(layer.canvas.height).toBe(12);
+    expect(context.drawImage).toHaveBeenLastCalledWith(layer.canvas, 0, 0, 12, 12, -2, -2, 12, 12);
+    view.dispose();
+    layer.dispose();
+  });
+
+  it('retains progressive tiles when zoom changes during rendering', async () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 4,
+      height: 4,
+      devicePixelRatio: 1,
+    });
+    const view = new MapView(createElements(), new RenderMetrics(layerRegistry));
+    const layer = createLayer();
+    view.start({ width: 2, height: 2 }, 'disc');
+    view.begin(layer);
+    const target = view.renderTarget();
+    if (!target) {
+      throw new Error('Expected a render target.');
+    }
+    const rendering = layer.prepare(new AbortController().signal, target, view.tilePainter(layer));
+    vi.mocked(context.drawImage).mockClear();
+
+    view.zoomIn();
+
+    expect(context.drawImage).toHaveBeenCalledWith(
+      layer.stage,
+      0,
+      0,
+      target.width,
+      target.height,
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number)
+    );
+    await rendering;
     view.dispose();
     layer.dispose();
   });

@@ -58,6 +58,12 @@ describe('MapRenderer', () => {
       putImageData: vi.fn(),
       clearRect: vi.fn(),
       drawImage: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
   });
 
@@ -319,6 +325,12 @@ describe('MapRenderer', () => {
       drawImage: () => {
         now += 2;
       },
+      save: vi.fn(),
+      restore: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     const onRenderStatistics = vi.fn();
     const { preview } = setup({ onRenderStatistics });
@@ -334,30 +346,30 @@ describe('MapRenderer', () => {
     await preview.ready;
 
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 169,
-      firstTileDurationMs: 108,
-      presentationDurationMs: 12,
+      elapsedDurationMs: 1127,
+      firstTileDurationMs: 110,
+      presentationDurationMs: 14,
       overlayDurationMs: 7,
-      bufferBytes: 2_097_184,
+      bufferBytes: 2_104_360,
       viewport: { devicePixelRatio: 2 },
       layers: [
         {
-          durationMs: 22,
-          tiles: 4,
-          pixels: 4,
+          durationMs: 504,
+          tiles: 100,
+          pixels: 900,
           sourceWidth: 2,
           sourceHeight: 2,
-          outputWidth: 2,
-          outputHeight: 2,
+          outputWidth: 30,
+          outputHeight: 30,
         },
         {
-          durationMs: 22,
-          tiles: 4,
-          pixels: 4,
+          durationMs: 504,
+          tiles: 100,
+          pixels: 900,
           sourceWidth: 2,
           sourceHeight: 2,
-          outputWidth: 2,
-          outputHeight: 2,
+          outputWidth: 30,
+          outputHeight: 30,
         },
       ],
     });
