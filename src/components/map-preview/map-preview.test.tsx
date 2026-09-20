@@ -184,6 +184,39 @@ describe('MapPreview readout', () => {
     expect(screen.queryByText('Inside')).toBeNull();
   });
 
+  it('clears the readout over empty map margins and ignores clicks there', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview') as HTMLCanvasElement;
+    await act(async () => {});
+    canvas.width = 400;
+    canvas.height = 200;
+    vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 200,
+      right: 400,
+      bottom: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    fireEvent.pointerMove(canvas, { clientX: 200, clientY: 100 });
+    expectPosition(2, 2);
+
+    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 100 });
+    expect(screen.queryByText('X 2 cell')).toBeNull();
+    expect(screen.queryByText('Inside')).toBeNull();
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 50, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 50, clientY: 100 });
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+
+    fireEvent.pointerMove(canvas, { clientX: 200, clientY: 100 });
+    expectPosition(2, 2);
+  });
+
   it('moves focus into the overlay when fullscreen opens', async () => {
     const user = userEvent.setup();
     render(
@@ -231,5 +264,36 @@ describe('MapPreview readout', () => {
 
     await user.click(screen.getByRole('button', { name: 'Leave fullscreen' }));
     expect(renderer.current?.viewTransform).toEqual({ scale: 1, centerX: 0.5, centerY: 0.5 });
+  });
+
+  it('captures a drag so releasing outside the canvas stops panning', async () => {
+    const user = userEvent.setup();
+    const { onReady, renderer } = createOnReady();
+    render(
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <MapPreview onReady={onReady} progressKey={0} />
+        </HeaderActionsProvider>
+      </Theme>
+    );
+    const canvas = screen.getByLabelText('Generated map preview') as HTMLCanvasElement;
+    const capturePointer = vi.fn();
+    Object.defineProperty(canvas, 'setPointerCapture', {
+      configurable: true,
+      value: capturePointer,
+    });
+    await act(async () => {});
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    fireEvent.wheel(canvas, { deltaY: -500, clientX: 200, clientY: 200 });
+    fireEvent.pointerDown(canvas, { pointerId: 7, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(canvas, { pointerId: 7, buttons: 1, clientX: 260, clientY: 200 });
+    expect(capturePointer).toHaveBeenCalledWith(7);
+
+    fireEvent.pointerUp(canvas, { pointerId: 7, button: 0, clientX: 500, clientY: 200 });
+    const centerAfterRelease = renderer.current?.viewTransform.centerX;
+    fireEvent.pointerMove(canvas, { pointerId: 7, buttons: 0, clientX: 240, clientY: 200 });
+    expect(renderer.current?.viewTransform.centerX).toBe(centerAfterRelease);
   });
 });

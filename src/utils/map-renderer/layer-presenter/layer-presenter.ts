@@ -61,10 +61,11 @@ export class LayerPresenter {
       const { width, height } = this.canvas;
       context.clearRect(0, 0, width, height);
       if (overview) {
-        this.drawSurface(context, layer.overview, overview, view);
+        this.drawSurface(context, layer.overview, overview, view, true);
       }
       if (rendered) {
-        this.drawSurface(context, layer.canvas, rendered, view);
+        const smooth = view.projection.cellSize <= rendered.projection.cellSize;
+        this.drawSurface(context, layer.canvas, rendered, view, smooth);
       }
     });
   }
@@ -133,11 +134,13 @@ export class LayerPresenter {
     context: CanvasRenderingContext2D,
     surface: HTMLCanvasElement,
     source: RenderTarget,
-    view: RenderTarget
+    view: RenderTarget,
+    smooth: boolean
   ): void {
     const scale = view.projection.cellSize / source.projection.cellSize;
     const offsetX = view.projection.left - source.projection.left * scale;
     const offsetY = view.projection.top - source.projection.top * scale;
+    context.imageSmoothingEnabled = smooth;
     context.drawImage(
       surface,
       0,

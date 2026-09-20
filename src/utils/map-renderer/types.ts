@@ -85,6 +85,13 @@ export interface RenderLayerStatistics {
   tiles: number;
   /** Pixels drawn in this run, including transparent pixels. */
   pixels: number;
+  /** Resolution of the generator raster this layer samples. */
+  sourceWidth: number;
+  sourceHeight: number;
+  /** Resolution of the viewport buffer drawn for this layer. */
+  outputWidth: number;
+  outputHeight: number;
+  /** Estimated RGBA bytes of all surfaces held for this layer. */
   bytes: number;
 }
 
@@ -98,5 +105,7 @@ export interface RenderStatistics {
   overlayDurationMs: number;
   /** Cumulative time copying complete layers to the preview canvas. */
   presentationDurationMs: number;
+  /** Estimated RGBA bytes of the buffers held for the rendered layers. */
+  bufferBytes: number;
   layers: readonly RenderLayerStatistics[];
 }

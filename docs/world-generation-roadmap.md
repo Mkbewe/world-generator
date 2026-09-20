@@ -127,8 +127,8 @@ Obecnie nakładki bazują na przełącznikach (`Switch`) w `OverlayControls`, wy
 warstw na pionowym pasku `LayerTabs`, a sekcje i odczyt trzyma `MapSidebar`.
 W przyszłości nakładki numeryczne, takie jak temperatura i wilgotność, powinny
 otrzymać także kontrolę przezroczystości oraz ustaloną paletę kolorów.
-Wygładzanie krawędzi regionów czeka na #306, a filtrowanie próbkowania warstw
-w rozdzielczości viewportu i statystyki buforów na #315.
+Filtrowanie próbkowania i statystyki buforów są już wdrożone (#315);
+wygładzanie krawędzi regionów czeka na #306.
 
 ### 2.5. Statystyki i progres — [działa]
 
@@ -255,18 +255,19 @@ pozostaje niezależna od rozdzielczości danych.
 
 Pamięć renderera jest poza tym budżetem: od #285 warstwy i prezentacja są
 rasteryzowane w rozmiarze viewportu × DPR (z limitem DPR 2), a nie w rozmiarze
-rastra, więc canvasy przestały rosnąć z rozmiarem mapy. Każda warstwa trzyma
-stabilną klatkę, bufor renderu w toku (`stage`) z marginesem 1,5× na oś oraz
-mały `overview` całej mapy (~512 px), a canvas prezentacji pozostaje
-viewportowy. Dane generatora nadal mają pełną rozdzielczość. Koszt: bufory mają
-stały rozmiar zależny od viewportu, więc przy małych mapach (np. 1 km) zajmują
-więcej niż dawne pełnowymiarowe canvasy, a przy dużych ~13× mniej (mapa
-10 000 × 10 000: ~90 MB zamiast ~1,2 GB). Szczyt całej aplikacji jest wyższy od
-budżetu generatora i widać go w statystykach renderowania. Świadomie nie
-uwalniamy canvasów nieaktywnych warstw — przełączanie warstw ma być
-natychmiastowe, bez migania. Docięcie tych buforów (rasteryzacja ograniczona
-liczbą widocznych komórek, zwalnianie `stage`, budżet cache) oraz kopii
-`postMessage` opisuje sekcja 9.
+rastra. Od #315 bufor warstwy jest dodatkowo ograniczony liczbą widocznych
+komórek: przy powiększeniu to 1 piksel na komórkę z marginesem na gesty, przy
+pomniejszeniu bufor trzyma skalę ekranu i filtruje próbkowanie, żeby ograniczyć
+aliasing. Każda warstwa trzyma stabilną klatkę, bufor renderu w toku (`stage`)
+i mały `overview` całej mapy (~512 px), a canvas prezentacji pozostaje
+viewportowy. Dane generatora nadal mają pełną rozdzielczość. Efekt: mapa 1 km to
+~9 MB canvasów na warstwę (canvas 4 MB + `stage` 4 MB + `overview` 1 MB, dawniej
+4 MB), a 10 000 × 10 000 to ~27 MB na warstwę (dawniej 400 MB). Szczyt całej
+aplikacji jest wyższy od budżetu generatora i widać go w statystykach
+renderowania, razem z rozdzielczością źródłową i wynikową każdej warstwy.
+Świadomie nie uwalniamy canvasów nieaktywnych warstw — przełączanie warstw ma
+być natychmiastowe, bez migania. Zwolnienie `stage` po commicie, budżet cache
+oraz kopie `postMessage` opisuje sekcja 9.
 
 ## 4. Kolejne etapy pipeline'u — [częściowo]
 
@@ -718,29 +719,21 @@ przez renderery, a renderer przerywa nieaktualne rysowanie przy starcie nowego
 przebiegu. `MacroRegionStage` liczy tylko komórki wewnątrz maski świata (#256).
 Warstwy renderują się bezpośrednio w buforze viewportu × DPR z marginesem i
 małym `overview` całej mapy, a render w tle nie wyciera wyświetlanej klatki
-(double buffer, anulowanie nieaktualnych przebiegów) — #285.
+(double buffer, anulowanie nieaktualnych przebiegów) — #285. Od #315 bufor jest
+ograniczony liczbą widocznych komórek (przy powiększeniu 1 px na komórkę),
+próbkowanie szumu jest filtrowane przy pomniejszeniu, a statystyki renderowania
+pokazują rozdzielczość źródłową i wynikową oraz rozmiar buforów każdej warstwy.
 
 Pozostałe zadania:
 
-- Domknąć rasteryzację do viewportu (#285): rdzeń działa — warstwy mają stały
-  bufor zależny od viewportu zamiast pełnego rastra, a mapa 10 000 × 10 000
-  schodzi z ~1,2 GB canvasów do ~90 MB. Zostało: ograniczyć bufor do liczby
-  widocznych komórek źródła (data-limited), żeby małe mapy nie płaciły stałego
-  kosztu viewportu (#315).
 - Zmniejszyć szczyt pamięci poza budżetem generatora: pełnowymiarowe canvasy już
   zniknęły (#285); zostały kopie `postMessage` — usuwa je jednorazowa wysyłka
   wyników albo `SharedArrayBuffer` (nagłówki COOP/COEP). Transfer buforów per
   etap nie wchodzi w grę, bo worker potrzebuje ich w kolejnych etapach.
-- Dobrać próbkowanie maski i filtrowanie szumu w rozdzielczości viewportu
-  (minifikacja przy oddalaniu) — #315. Wyrównanie warstw do granicy świata po
-  zmianie rozmiaru lub DPR utrzymują wspólna projekcja, margines bufora i
-  `overview`.
 - Automatyczne odświeżanie po zmianie kontrolek może startować — rasteryzacja do
   viewportu jest gotowa (sekcja 2.7).
 - Wprowadzić budżet pamięci cache, zwalnianie `stage` po commicie i uzależnić
   przygotowanie nieaktywnych warstw od dostępnego budżetu (#158).
-- Rozszerzyć statystyki o rozdzielczość źródłową i wynikową, zajętość buforów
-  (`canvas`, `stage`, `overview`) i cache (#315, #158).
 - Selektywnie przeliczać etapy: deklaracje zależności na stage'ach, diff konfiguracji
   i ponowne użycie wyników, z pominiętymi etapami oznaczonymi w progressie (#257, #258).
 - Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary

@@ -7,6 +7,15 @@ function targetFor(width: number, height: number): RenderTarget {
   return { width, height, projection: { cellSize: 1, left: 0, top: 0, width, height } };
 }
 
+/** Single output pixel covering two source cells (minification). */
+function targetForHalf(left = 0, top = 0): RenderTarget {
+  return {
+    width: 1,
+    height: 1,
+    projection: { cellSize: 0.5, left, top, width: 1, height: 0.5 },
+  };
+}
+
 /** The first image is the whole-map overview; the rest are output tiles. */
 function targetPixels(images: readonly ImageData[]): number[] {
   return images.slice(1).flatMap(image => [...image.data]);
@@ -98,6 +107,54 @@ describe('CatalogLayer', () => {
       await regions.prepare(new AbortController().signal, targetFor(3, 1));
       const pixels = targetPixels(images);
       expect(pixels).toEqual([46, 125, 50, 255, 124, 179, 66, 255, 46, 125, 50, 255]);
+    } finally {
+      world.dispose();
+      regions.dispose();
+      restore();
+    }
+  });
+
+  it('averages float noise when minifying', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 2, height: 1 };
+    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 1]));
+    const noise = new CatalogLayer(LAYER_CATALOG[2], size, new Float32Array([0, 1]), world);
+
+    try {
+      await noise.prepare(new AbortController().signal, targetForHalf());
+      expect(targetPixels(images)).toEqual([128, 128, 128, 255]);
+    } finally {
+      world.dispose();
+      noise.dispose();
+      restore();
+    }
+  });
+
+  it('skips cells outside the clip mask when averaging', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 2, height: 1 };
+    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 0]));
+    const noise = new CatalogLayer(LAYER_CATALOG[2], size, new Float32Array([1, 1]), world);
+
+    try {
+      await noise.prepare(new AbortController().signal, targetForHalf());
+      expect(targetPixels(images)).toEqual([255, 255, 255, 255]);
+    } finally {
+      world.dispose();
+      noise.dispose();
+      restore();
+    }
+  });
+
+  it('keeps discrete palettes nearest-neighbour when minifying', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 2, height: 1 };
+    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 1]));
+    const regions = new CatalogLayer(LAYER_CATALOG[1], size, new Uint8Array([0, 1]), world);
+
+    try {
+      await regions.prepare(new AbortController().signal, targetForHalf(0.25, 0.25));
+      expect(targetPixels(images)).toEqual([46, 125, 50, 255]);
     } finally {
       world.dispose();
       regions.dispose();

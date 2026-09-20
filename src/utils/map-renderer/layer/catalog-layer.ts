@@ -45,8 +45,18 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     return this.data[y * this.size.width + x];
   }
 
-  /** Samples the nearest source cell for every pixel of the output tile. */
   protected paintTile(pixels: Uint8ClampedArray, target: RenderTarget, tile: LayerTile): void {
+    const samples =
+      this.spec.palette.kind === 'ramp' ? filterSamplesPerAxis(target.projection.cellSize) : 1;
+    if (samples > 1) {
+      this.paintFilteredTile(pixels, target, tile, samples);
+      return;
+    }
+    this.paintNearestTile(pixels, target, tile);
+  }
+
+  /** Samples the nearest source cell for every pixel of the output tile. */
+  private paintNearestTile(pixels: Uint8ClampedArray, target: RenderTarget, tile: LayerTile): void {
     const { projection } = target;
     const inverseCellSize = 1 / projection.cellSize;
     const insideValue = this.spec.providesMask?.insideValue;
@@ -77,6 +87,70 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
       }
     }
   }
+
+  /** Averages a sample grid over the cells covered by each output pixel (minification). */
+  private paintFilteredTile(
+    pixels: Uint8ClampedArray,
+    target: RenderTarget,
+    tile: LayerTile,
+    samples: number
+  ): void {
+    const { projection } = target;
+    const inverse = 1 / projection.cellSize;
+    const footprint = inverse;
+    const step = footprint / samples;
+    const firstOffset = step / 2 - footprint / 2;
+    const clipMask = this.clipMask;
+    const mapWidth = this.size.width;
+    const mapHeight = this.size.height;
+
+    for (let row = 0; row < tile.height; row++) {
+      const centerY = (tile.y + row + 0.5 - projection.top) * inverse;
+      const firstY = centerY + firstOffset;
+      const sampleRows: number[] = [];
+      for (let sample = 0; sample < samples; sample++) {
+        sampleRows.push(Math.floor(firstY + sample * step));
+      }
+      let offset = row * tile.width * 4;
+      for (let column = 0; column < tile.width; column++, offset += 4) {
+        const centerX = (tile.x + column + 0.5 - projection.left) * inverse;
+        const firstX = centerX + firstOffset;
+        let sum = 0;
+        let count = 0;
+        for (let sampleY = 0; sampleY < samples; sampleY++) {
+          const cellY = sampleRows[sampleY];
+          if (cellY < 0 || cellY >= mapHeight) {
+            continue;
+          }
+          const rowIndex = cellY * mapWidth;
+          for (let sampleX = 0; sampleX < samples; sampleX++) {
+            const cellX = Math.floor(firstX + sampleX * step);
+            if (cellX < 0 || cellX >= mapWidth) {
+              continue;
+            }
+            if (clipMask && !clipMask.contains(cellX, cellY)) {
+              continue;
+            }
+            sum += this.data[rowIndex + cellX];
+            count++;
+          }
+        }
+        if (count > 0) {
+          this.writePixel(pixels, offset, sum / count);
+        }
+      }
+    }
+  }
+}
+
+/** Samples per axis for minified float layers; capped to keep repaints responsive. */
+const MAX_FILTER_SAMPLES = 3;
+
+function filterSamplesPerAxis(cellSize: number): number {
+  if (cellSize >= 1) {
+    return 1;
+  }
+  return Math.min(MAX_FILTER_SAMPLES, Math.max(2, Math.ceil(1 / cellSize)));
 }
 
 function validateRasterData(

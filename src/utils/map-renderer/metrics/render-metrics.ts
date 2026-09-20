@@ -67,19 +67,25 @@ export class RenderMetrics {
     if (!this.onReport || this.startedAt === undefined) {
       return;
     }
+    const rendered = [...layers];
     this.onReport({
       elapsedDurationMs: performance.now() - this.startedAt,
       firstTileDurationMs: this.firstTileDurationMs,
       viewport,
       overlayDurationMs,
       presentationDurationMs: this.presentationDurationMs,
-      layers: [...layers].map(layer => ({
+      bufferBytes: rendered.reduce((total, layer) => total + layer.bufferBytes, 0),
+      layers: rendered.map(layer => ({
         id: layer.id,
         name: this.registry.get(layer.id).label,
         durationMs: this.layers.get(layer.id)?.durationMs ?? 0,
         tiles: this.layers.get(layer.id)?.tiles ?? 0,
         pixels: this.layers.get(layer.id)?.pixels ?? 0,
-        bytes: layer.canvas.width * layer.canvas.height * 4,
+        sourceWidth: layer.size.width,
+        sourceHeight: layer.size.height,
+        outputWidth: layer.canvas.width,
+        outputHeight: layer.canvas.height,
+        bytes: layer.bufferBytes,
       })),
     });
   }

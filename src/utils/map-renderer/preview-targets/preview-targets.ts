@@ -6,6 +6,9 @@ import { effectivePixelRatio, type ViewportSize } from '../viewport';
 /** Layer buffers extend this far beyond the viewport per axis, so gestures have spare map. */
 const RENDER_OVERSCAN = 1.5;
 
+/** Fraction of the visible cell span kept as spare map on each side of a magnified buffer. */
+const GESTURE_MARGIN = 0.25;
+
 /** Presentation canvas size in device pixels, or the raster size before the first measurement. */
 export function presentationSize(
   measured: ViewportSize | undefined,
@@ -49,7 +52,12 @@ export function viewTarget(
   return { ...canvas, projection: project(view, canvas, size) };
 }
 
-/** Layer output buffer: the viewport projection at the same scale, with a margin around it. */
+/**
+ * Layer output buffer. At magnification one pixel per source cell is enough
+ * (the display scales it up), so small maps and zoomed views keep small
+ * buffers; when minifying, the buffer stays at the display scale with a
+ * gesture margin and the paint path filters the samples.
+ */
 export function renderTarget(
   view: ViewTransform,
   size: MapSize | undefined,
@@ -61,6 +69,25 @@ export function renderTarget(
   const viewport = presentationSize(measured, size);
   const projection = project(view, viewport, size);
   const canvas = renderSize(measured, size);
+
+  if (projection.cellSize >= 1) {
+    const width = cellBuffer(size.width, viewport.width / projection.cellSize);
+    const height = cellBuffer(size.height, viewport.height / projection.cellSize);
+    if (width <= canvas.width && height <= canvas.height) {
+      return {
+        width,
+        height,
+        projection: {
+          cellSize: 1,
+          left: view.centerX * size.width - width / 2,
+          top: view.centerY * size.height - height / 2,
+          width: size.width,
+          height: size.height,
+        },
+      };
+    }
+  }
+
   return {
     ...canvas,
     projection: {
@@ -69,4 +96,9 @@ export function renderTarget(
       top: projection.top + (canvas.height - viewport.height) / 2,
     },
   };
+}
+
+/** Cells needed to cover the visible span plus the gesture margin, capped to the raster. */
+function cellBuffer(raster: number, visibleCells: number): number {
+  return Math.max(1, Math.min(raster, Math.ceil(visibleCells * (1 + 2 * GESTURE_MARGIN))));
 }

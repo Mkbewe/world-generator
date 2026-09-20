@@ -48,11 +48,12 @@ Detal liczony jest na obu osiach, więc podwojenie rozdzielczości to 4× pamię
   a sam zachowuje bufory dla kolejnych etapów → dane istnieją dwa razy.
 - Canvasy: od #285 warstwy i prezentacja są rasteryzowane w rozmiarze
   viewportu × DPR, a nie rastra — warstwa trzyma stabilną klatkę, bufor renderu
-  w toku (`stage`) i mały `overview` całej mapy. Bufory nie rosną więc z mapą,
-  ale mają stały koszt viewportu: przy 600 × 600 CSS px i DPR 2 to ~27 MB na
-  warstwę (margines 1,5× na oś i double buffer), więc małe mapy wypadają drożej
-  niż przy pełnym rastrze, a duże ~13× taniej. 4 B/piksel bez kompresji, plus
-  kopia po stronie GPU.
+  w toku (`stage`) i mały `overview` całej mapy. Od #315 bufor jest ograniczony
+  liczbą widocznych komórek: przy powiększeniu 1 px na komórkę, przy
+  pomniejszeniu trzyma skalę ekranu i filtruje próbkowanie. Przy 600 × 600 CSS px
+  i DPR 2 mapa 1 km to ~9 MB canvasów na warstwę, a 10 000 × 10 000 ~27 MB
+  (dawniej odpowiednio 4 MB i 400 MB). 4 B/piksel bez kompresji, plus kopia po
+  stronie GPU.
 - Cache warstw trzyma viewportowe powierzchnie nieaktywnych warstw;
   `mapRepository` trzyma ostatni przebieg do końca sesji.
 - Efekt: przy dużych mapach szczyt ograniczają dane i ich kopie, nie canvasy.
@@ -153,15 +154,16 @@ z Noise. Zachowuje pełną kontrolę nad charakterem granic.
 
 ### II.6. Rasteryzacja do viewportu i budżet cache
 
-- Rdzeń zrobiony (#285): warstwy renderują się bezpośrednio w buforze
-  viewportu × DPR, bez pośrednich obrazów w pełnej rozdzielczości.
-- Zostało (#315): ograniczyć bufor do liczby widocznych komórek źródła
-  (data-limited), dobrać filtrowanie maski i szumu oraz rozszerzyć statystyki
-  o rozdzielczości i rozmiary buforów.
-- Budżet pamięci cache, zwalnianie `stage` po commicie i przygotowywanie
-  nieaktywnych warstw tylko w budżecie (#158).
+- Zrobione (#285, #315): warstwy renderują się w buforze viewportu × DPR
+  ograniczonym liczbą widocznych komórek (przy powiększeniu 1 px na komórkę),
+  bez pośrednich obrazów w pełnej rozdzielczości; próbkowanie szumu jest
+  filtrowane przy pomniejszeniu, a statystyki pokazują rozdzielczości i rozmiary
+  buforów.
+- Zostało (#158): budżet pamięci cache, zwalnianie `stage` po commicie i
+  przygotowywanie nieaktywnych warstw tylko w budżecie.
 - Koszt: każde odświeżenie widoku maluje widoczny obszar od nowa
-  (przy ~1200×1200 to 1,44M komórek zamiast 16M całej siatki).
+  (przy ~1200×1200 to 1,44M komórek zamiast 16M całej siatki); przy
+  pomniejszeniu dochodzi filtr kilku próbek na piksel.
 
 ### II.7. Rastry pochodne liczone na żądanie
 
@@ -190,6 +192,5 @@ i próbkowaniu. Wracamy do tematu tylko, jeśli pomiary pokażą, że to koniecz
 - Otwarte: format szumu (`Uint8` vs `Uint16`, II.4), czy wchodzimy w
   `SharedArrayBuffer` (II.5), czy `macroRegionIdMap` ma być liczony na żądanie
   (II.7).
-- Powiązane zadania: #315 (filtrowanie, data-limited buffer i statystyki
-  buforów — reszta zakresu #285), #158 (budżet cache), #286 (tło dekoracyjne —
-  niezależne).
+- Powiązane zadania: #158 (budżet cache i zwalnianie `stage`), #286 (tło
+  dekoracyjne — niezależne). #285 i #315 są wdrożone.

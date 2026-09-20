@@ -49,12 +49,12 @@ describe('view transform', () => {
     expect(zoomAt(fitView(), SQUARE, SIZE, 200, 200, 100).scale).toBe(MAX_VIEW_SCALE);
   });
 
-  it('locks the fitted map in place and clamps panning when zoomed', () => {
+  it('locks the fitted map in place and clamps panning with an overscroll allowance', () => {
     expect(panBy(fitView(), SQUARE, SIZE, 50, 50)).toEqual(fitView());
 
     const zoomed = withScale(fitView(), SQUARE, SIZE, 2);
-    expect(panBy(zoomed, SQUARE, SIZE, 10_000, 10_000).centerX).toBe(0.25);
-    expect(panBy(zoomed, SQUARE, SIZE, -10_000, -10_000).centerX).toBe(0.75);
+    expect(panBy(zoomed, SQUARE, SIZE, 10_000, 10_000).centerX).toBe(0.125);
+    expect(panBy(zoomed, SQUARE, SIZE, -10_000, -10_000).centerX).toBe(0.875);
   });
 
   it('steps through the discrete zoom levels', () => {

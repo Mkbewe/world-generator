@@ -334,14 +334,31 @@ describe('MapRenderer', () => {
     await preview.ready;
 
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 1129,
+      elapsedDurationMs: 169,
       firstTileDurationMs: 108,
       presentationDurationMs: 12,
       overlayDurationMs: 7,
+      bufferBytes: 2_097_216,
       viewport: { devicePixelRatio: 2 },
       layers: [
-        { durationMs: 502, tiles: 100, pixels: 900 },
-        { durationMs: 502, tiles: 100, pixels: 900 },
+        {
+          durationMs: 22,
+          tiles: 4,
+          pixels: 4,
+          sourceWidth: 2,
+          sourceHeight: 2,
+          outputWidth: 2,
+          outputHeight: 2,
+        },
+        {
+          durationMs: 22,
+          tiles: 4,
+          pixels: 4,
+          sourceWidth: 2,
+          sourceHeight: 2,
+          outputWidth: 2,
+          outputHeight: 2,
+        },
       ],
     });
 
