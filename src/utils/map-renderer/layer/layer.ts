@@ -79,6 +79,15 @@ export abstract class MapLayer {
     return this.overviewSurfaceTarget;
   }
 
+  /** Estimated RGBA bytes of all surfaces held for this layer. */
+  get bufferBytes(): number {
+    const pixels =
+      this.canvas.width * this.canvas.height +
+      this.stage.width * this.stage.height +
+      this.overview.width * this.overview.height;
+    return pixels * 4;
+  }
+
   prepare(signal: AbortSignal, target: RenderTarget, onTile?: TileReporter): Promise<void> {
     const key = targetKey(target);
     if (this.preparation && this.preparationKey === key) {

@@ -32,6 +32,9 @@ export interface MapProjection {
 export const MIN_VIEW_SCALE = 1;
 export const MAX_VIEW_SCALE = 4;
 
+/** Extra pan beyond the map edge when zoomed, as a fraction of the viewport per side. */
+const PAN_OVERSCROLL = 0.25;
+
 /** Discrete zoom levels used by the view buttons. */
 export const ZOOM_SCALE_STEPS = [1, 2, 4] as const;
 
@@ -163,13 +166,26 @@ function mapSpan(
 /** Centres the map on the axis where it is smaller than the canvas. */
 function clampView(view: ViewTransform, canvas: CanvasSize, size: MapSize): ViewTransform {
   const span = mapSpan(view.scale, canvas, size);
-  const halfX = span.width > canvas.width ? canvas.width / 2 / span.width : 0.5;
-  const halfY = span.height > canvas.height ? canvas.height / 2 / span.height : 0.5;
+  const halfX = clampHalf(canvas.width, span.width);
+  const halfY = clampHalf(canvas.height, span.height);
   return {
     scale: view.scale,
     centerX: clamp(view.centerX, halfX, 1 - halfX),
     centerY: clamp(view.centerY, halfY, 1 - halfY),
   };
+}
+
+/**
+ * Smallest normalized centre that keeps the axis covered, minus the pan
+ * overscroll. The allowance fades in as the axis grows past the fitted size,
+ * so panning stays locked at fit and the range is continuous while zooming
+ * out (no centring jump).
+ */
+function clampHalf(canvasSize: number, spanSize: number): number {
+  const covered = spanSize <= canvasSize ? 0.5 : canvasSize / 2 / spanSize;
+  const excess = Math.max(0, spanSize / canvasSize - 1);
+  const allowance = (canvasSize * PAN_OVERSCROLL * Math.min(1, excess)) / spanSize;
+  return Math.max(0, covered - allowance);
 }
 
 function clamp(value: number, min: number, max: number): number {

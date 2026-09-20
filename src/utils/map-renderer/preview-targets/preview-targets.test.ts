@@ -24,6 +24,22 @@ describe('preview targets', () => {
     expect(render?.projection.top).toBe((display?.projection.top ?? 0) + 2);
   });
 
+  it('caps magnified buffers to one pixel per source cell', () => {
+    const measured = { width: 8, height: 8, devicePixelRatio: 1 };
+    const magnified = renderTarget(fitView(), { width: 4, height: 4 }, measured);
+
+    expect(magnified).toMatchObject({ width: 4, height: 4 });
+    expect(magnified?.projection).toMatchObject({ cellSize: 1, left: 0, top: 0 });
+
+    const zoomed = renderTarget(
+      { scale: 4, centerX: 0.5, centerY: 0.5 },
+      { width: 4, height: 4 },
+      measured
+    );
+    expect(zoomed).toMatchObject({ width: 2, height: 2 });
+    expect(zoomed?.projection).toMatchObject({ cellSize: 1, left: 1, top: 1 });
+  });
+
   it('does not overscan before the first measurement', () => {
     expect(renderSize(undefined, SIZE)).toEqual({ width: 100, height: 100 });
   });

@@ -10,6 +10,7 @@ const statistics: RenderStatistics = {
   viewport: { width: 640, height: 480, devicePixelRatio: 2 },
   overlayDurationMs: 12.5,
   presentationDurationMs: 7.5,
+  bufferBytes: 12_000_000,
   layers: [
     {
       id: 'world-shape',
@@ -17,9 +18,24 @@ const statistics: RenderStatistics = {
       durationMs: 30,
       tiles: 16,
       pixels: 1_000_000,
+      sourceWidth: 2048,
+      sourceHeight: 1024,
+      outputWidth: 320,
+      outputHeight: 240,
       bytes: 4_000_000,
     },
-    { id: 'noise', name: 'Noise', durationMs: 20, tiles: 16, pixels: 2_000_000, bytes: 8_000_000 },
+    {
+      id: 'noise',
+      name: 'Noise',
+      durationMs: 20,
+      tiles: 16,
+      pixels: 2_000_000,
+      sourceWidth: 4096,
+      sourceHeight: 4096,
+      outputWidth: 640,
+      outputHeight: 640,
+      bytes: 8_000_000,
+    },
   ],
 };
 
@@ -36,6 +52,9 @@ describe('RenderStatisticsPanel', () => {
     expect(screen.queryByText('Elapsed time')).not.toBeInTheDocument();
     expect(screen.queryByText('1.20 s')).not.toBeInTheDocument();
     expect(screen.getByText('250.0 ms')).toBeInTheDocument();
+    expect(screen.getByText('12 MB')).toBeInTheDocument();
+    expect(screen.getByText('2048 × 1024')).toBeInTheDocument();
+    expect(screen.getByText('320 × 240')).toBeInTheDocument();
     expect(screen.getByText('30.00 ms/MPix')).toBeInTheDocument();
     expect(screen.getByText('10.00 ms/MPix')).toBeInTheDocument();
     expect(screen.getByText('World shape')).toBeInTheDocument();

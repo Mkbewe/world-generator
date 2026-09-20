@@ -35,6 +35,11 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
       value: formatDuration(statistics.firstTileDurationMs),
       description: 'Time from starting generation to drawing the first tile on the preview canvas.',
     },
+    {
+      label: 'Buffers',
+      value: formatBytes(statistics.bufferBytes),
+      description: 'Estimated RGBA buffers held for the rendered layers.',
+    },
   ];
 
   const timing: TimingSegment[] = [
@@ -69,9 +74,19 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
         description: 'Number of tiles drawn while rendering this layer.',
       },
       {
+        label: 'Source',
+        value: `${layer.sourceWidth} × ${layer.sourceHeight}`,
+        description: 'Resolution of the generator raster this layer samples.',
+      },
+      {
+        label: 'Buffer',
+        value: `${layer.outputWidth} × ${layer.outputHeight}`,
+        description: 'Resolution of the viewport buffer drawn for this layer.',
+      },
+      {
         label: 'Data',
         value: formatBytes(layer.bytes),
-        description: 'Size of the rendered canvas buffer.',
+        description: 'Estimated size of all surfaces held for this layer.',
       },
     ],
   }));

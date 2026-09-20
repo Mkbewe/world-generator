@@ -46,7 +46,7 @@ describe('MapView', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders the displayed layer at the viewport resolution', async () => {
+  it('renders a magnified layer at one pixel per cell and scales it up', async () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 4,
       height: 4,
@@ -62,9 +62,9 @@ describe('MapView', () => {
 
     expect(elements.canvas.width).toBe(8);
     expect(elements.canvas.height).toBe(8);
-    expect(layer.canvas.width).toBe(12);
-    expect(layer.canvas.height).toBe(12);
-    expect(context.drawImage).toHaveBeenLastCalledWith(layer.canvas, 0, 0, 12, 12, -2, -2, 12, 12);
+    expect(layer.canvas.width).toBe(2);
+    expect(layer.canvas.height).toBe(2);
+    expect(context.drawImage).toHaveBeenLastCalledWith(layer.canvas, 0, 0, 2, 2, 0, 0, 8, 8);
     view.dispose();
     layer.dispose();
   });
