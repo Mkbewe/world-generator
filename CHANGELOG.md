@@ -1,5 +1,58 @@
 # Changelog
 
+## [0.8.0](https://github.com/Mkbewe/world-generator/compare/v0.7.0...v0.8.0) (2026-09-20)
+
+### Features
+
+* **[319](https://github.com/Mkbewe/world-generator/issues/319):** render boundaries from shared geometry ([#320](https://github.com/Mkbewe/world-generator/issues/320)) ([4eeb7ad](https://github.com/Mkbewe/world-generator/commit/4eeb7ad20e411776a7a18ff0a4ef41e1db85e8f3))
+
+  - share the macro-region classifier between generation and painting
+  - sample region, world and clipped edges with coverage at screen
+  resolution
+  - draw the world outline and fill from one path
+  - store the region geometry in the snapshot for identical restored maps
+  - composite progressive stage tiles and finish frames before catching up
+  - paint every layer at display resolution and drop the 1 px per cell
+  path
+  - precompute boundary cells in one pass and count them in layer buffers
+
+### Performance Improvements
+
+* **[158](https://github.com/Mkbewe/world-generator/issues/158):** release the layer stage buffer after commit ([#318](https://github.com/Mkbewe/world-generator/issues/318)) ([c19181a](https://github.com/Mkbewe/world-generator/commit/c19181aec8f17cd3a506e80f993bd1a0affa44d5))
+
+  - free the in-flight stage buffer once a frame is committed, or when the
+  render is aborted, so a layer at rest keeps only its frame and overview
+  - document the smaller at-rest buffers in the roadmap and performance
+  notes
+  - align the statistics page copy with the viewport buffers: pixel ratio,
+  first tile, buffer resolution and at-rest sizes
+* **[285](https://github.com/Mkbewe/world-generator/issues/285):** render layers at the viewport resolution ([#316](https://github.com/Mkbewe/world-generator/issues/316)) ([5cb3b87](https://github.com/Mkbewe/world-generator/commit/5cb3b87972ad72de69a68e978078595d06ec0544))
+
+  - draw layers and the presentation into a viewport-sized buffer with a
+  1.5x margin instead of full-resolution canvases
+  - keep a stable frame and an in-flight stage buffer per layer, so a
+  render never wipes the displayed image
+  - paint a small whole-map overview under the sharp frame while the view
+  outruns the buffer
+  - repaint on pan, zoom and resize, aborting outdated renders and
+  coalescing rapid changes, and release the render state after aborts
+  - split the view math into preview-targets, layer-presenter and
+  pointer-sampling modules
+  - document the new renderer memory model in the roadmap and the
+  performance notes
+* **[315](https://github.com/Mkbewe/world-generator/issues/315):** filter viewport sampling and cap layer buffers ([#317](https://github.com/Mkbewe/world-generator/issues/317)) ([765fc74](https://github.com/Mkbewe/world-generator/commit/765fc74f9a26f1885da15873cc1e474088f9f15c))
+
+  - render magnified layers at one pixel per cell and let the display
+  scale them up, so small maps and zoomed views keep small buffers
+  - average a sample grid for float layers when minifying, skipping cells
+  outside the clip mask; keep masks and discrete palettes nearest
+  - report source and output resolutions and estimated buffer bytes per
+  layer in the render statistics
+  - allow panning a quarter of the viewport past the map edge when zoomed,
+  fading in so zooming out never snaps the centre
+  - document the sampling and buffer model in the roadmap and performance
+  notes
+
 ## [0.7.0](https://github.com/Mkbewe/world-generator/compare/v0.6.0...v0.7.0) (2026-09-17)
 
 ### Features
