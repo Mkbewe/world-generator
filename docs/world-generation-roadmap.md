@@ -258,11 +258,12 @@ rasteryzowane w rozmiarze viewportu × DPR (z limitem DPR 2), a nie w rozmiarze
 rastra. Od #315 bufor warstwy jest dodatkowo ograniczony liczbą widocznych
 komórek: przy powiększeniu to 1 piksel na komórkę z marginesem na gesty, przy
 pomniejszeniu bufor trzyma skalę ekranu i filtruje próbkowanie, żeby ograniczyć
-aliasing. Każda warstwa trzyma stabilną klatkę, bufor renderu w toku (`stage`)
-i mały `overview` całej mapy (~512 px), a canvas prezentacji pozostaje
+aliasing. Każda warstwa trzyma stabilną klatkę (`canvas`) i mały `overview`
+całej mapy (~512 px); bufor renderu w toku (`stage`) istnieje tylko na czas
+malowania i jest zwalniany po commicie. Canvas prezentacji pozostaje
 viewportowy. Dane generatora nadal mają pełną rozdzielczość. Efekt: mapa 1 km to
-~9 MB canvasów na warstwę (canvas 4 MB + `stage` 4 MB + `overview` 1 MB, dawniej
-4 MB), a 10 000 × 10 000 to ~27 MB na warstwę (dawniej 400 MB). Szczyt całej
+~5 MB canvasów na warstwę (canvas 4 MB + `overview` 1 MB, dawniej 4 MB), a
+10 000 × 10 000 to ~14 MB na warstwę (dawniej 400 MB). Szczyt całej
 aplikacji jest wyższy od budżetu generatora i widać go w statystykach
 renderowania, razem z rozdzielczością źródłową i wynikową każdej warstwy.
 Świadomie nie uwalniamy canvasów nieaktywnych warstw — przełączanie warstw ma
@@ -723,6 +724,8 @@ małym `overview` całej mapy, a render w tle nie wyciera wyświetlanej klatki
 ograniczony liczbą widocznych komórek (przy powiększeniu 1 px na komórkę),
 próbkowanie szumu jest filtrowane przy pomniejszeniu, a statystyki renderowania
 pokazują rozdzielczość źródłową i wynikową oraz rozmiar buforów każdej warstwy.
+Bufor renderu w toku jest zwalniany po commicie, więc w spoczynku warstwa trzyma
+tylko klatkę i `overview`.
 
 Pozostałe zadania:
 
@@ -732,8 +735,9 @@ Pozostałe zadania:
   etap nie wchodzi w grę, bo worker potrzebuje ich w kolejnych etapach.
 - Automatyczne odświeżanie po zmianie kontrolek może startować — rasteryzacja do
   viewportu jest gotowa (sekcja 2.7).
-- Wprowadzić budżet pamięci cache, zwalnianie `stage` po commicie i uzależnić
-  przygotowanie nieaktywnych warstw od dostępnego budżetu (#158).
+- Wprowadzić budżet pamięci cache i uzależnić przygotowanie nieaktywnych warstw
+  od dostępnego budżetu (#158) — odłożone do czasu, gdy warstw będzie więcej
+  (kolejne etapy pipeline'u) albo przy pracy w pełnoekranowej rozdzielczości 4K.
 - Selektywnie przeliczać etapy: deklaracje zależności na stage'ach, diff konfiguracji
   i ponowne użycie wyników, z pominiętymi etapami oznaczonymi w progressie (#257, #258).
 - Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary

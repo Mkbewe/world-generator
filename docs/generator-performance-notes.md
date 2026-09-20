@@ -47,13 +47,13 @@ Detal liczony jest na obu osiach, więc podwojenie rozdzielczości to 4× pamię
 - Worker wysyła dane przez `postMessage`, które **kopiuje** (`generation-worker.ts:34`),
   a sam zachowuje bufory dla kolejnych etapów → dane istnieją dwa razy.
 - Canvasy: od #285 warstwy i prezentacja są rasteryzowane w rozmiarze
-  viewportu × DPR, a nie rastra — warstwa trzyma stabilną klatkę, bufor renderu
-  w toku (`stage`) i mały `overview` całej mapy. Od #315 bufor jest ograniczony
-  liczbą widocznych komórek: przy powiększeniu 1 px na komórkę, przy
-  pomniejszeniu trzyma skalę ekranu i filtruje próbkowanie. Przy 600 × 600 CSS px
-  i DPR 2 mapa 1 km to ~9 MB canvasów na warstwę, a 10 000 × 10 000 ~27 MB
-  (dawniej odpowiednio 4 MB i 400 MB). 4 B/piksel bez kompresji, plus kopia po
-  stronie GPU.
+  viewportu × DPR, a nie rastra — warstwa trzyma stabilną klatkę i mały
+  `overview` całej mapy, a bufor renderu w toku (`stage`) jest zwalniany po
+  commicie. Od #315 bufor jest ograniczony liczbą widocznych komórek: przy
+  powiększeniu 1 px na komórkę, przy pomniejszeniu trzyma skalę ekranu i filtruje
+  próbkowanie. Przy 600 × 600 CSS px i DPR 2 mapa 1 km to ~5 MB canvasów na
+  warstwę, a 10 000 × 10 000 ~14 MB (dawniej odpowiednio 4 MB i 400 MB).
+  4 B/piksel bez kompresji, plus kopia po stronie GPU.
 - Cache warstw trzyma viewportowe powierzchnie nieaktywnych warstw;
   `mapRepository` trzyma ostatni przebieg do końca sesji.
 - Efekt: przy dużych mapach szczyt ograniczają dane i ich kopie, nie canvasy.
@@ -159,8 +159,8 @@ z Noise. Zachowuje pełną kontrolę nad charakterem granic.
   bez pośrednich obrazów w pełnej rozdzielczości; próbkowanie szumu jest
   filtrowane przy pomniejszeniu, a statystyki pokazują rozdzielczości i rozmiary
   buforów.
-- Zostało (#158): budżet pamięci cache, zwalnianie `stage` po commicie i
-  przygotowywanie nieaktywnych warstw tylko w budżecie.
+- Zostało (#158, odłożone do większej liczby warstw): budżet pamięci cache
+  i przygotowywanie nieaktywnych warstw tylko w budżecie.
 - Koszt: każde odświeżenie widoku maluje widoczny obszar od nowa
   (przy ~1200×1200 to 1,44M komórek zamiast 16M całej siatki); przy
   pomniejszeniu dochodzi filtr kilku próbek na piksel.

@@ -101,10 +101,10 @@ Leave it unset, or set it to `0`, for normal generation speed.
 
 The progress indicator below the map shows the current stage and percentage
 during generation. Finished runs keep their map configuration, per-stage
-generation statistics and render statistics (layer timings, tiles, first-tile
-time and presentation/overlay time); the `/statistics` page presents them
-together. All of it lives in memory for the session, so a full page refresh
-clears it.
+generation statistics and render statistics (layer timings, tiles, source and
+buffer resolutions, buffer sizes, first-tile time and presentation/overlay
+time); the `/statistics` page presents them together. All of it lives in memory
+for the session, so a full page refresh clears it.
 
 ## Project structure
 

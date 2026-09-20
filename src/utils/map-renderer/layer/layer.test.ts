@@ -119,6 +119,7 @@ describe('MapLayer rendering lifecycle', () => {
     try {
       await layer.prepare(new AbortController().signal, targetFor({ width: 2, height: 1 }));
       expect(layer.canvas.width).toBe(2);
+      expect(layer.stage.width).toBe(0);
 
       const pending = layer.prepare(
         new AbortController().signal,
@@ -126,12 +127,14 @@ describe('MapLayer rendering lifecycle', () => {
       );
       expect(layer.busy).toBe(true);
       expect(layer.renderingTarget?.width).toBe(4);
+      expect(layer.stage.width).toBe(4);
       expect(layer.canvas.width).toBe(2);
 
       await pending;
       expect(layer.canvas.width).toBe(4);
       await vi.waitFor(() => expect(layer.busy).toBe(false));
       expect(layer.renderingTarget).toBeUndefined();
+      expect(layer.stage.width).toBe(0);
     } finally {
       layer.dispose();
       getContext.mockRestore();

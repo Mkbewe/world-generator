@@ -23,7 +23,7 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
     {
       label: 'Pixel ratio',
       value: viewport ? String(viewport.devicePixelRatio) : '—',
-      description: 'Device pixel ratio used for the overlay resolution.',
+      description: 'Device pixel ratio used for the preview buffers, capped at 2.',
     },
     {
       label: 'Overlay',
@@ -33,12 +33,13 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
     {
       label: 'First tile',
       value: formatDuration(statistics.firstTileDurationMs),
-      description: 'Time from starting generation to drawing the first tile on the preview canvas.',
+      description: 'Time from starting generation to drawing the first buffer tile on the preview.',
     },
     {
       label: 'Buffers',
       value: formatBytes(statistics.bufferBytes),
-      description: 'Estimated RGBA buffers held for the rendered layers.',
+      description:
+        'Estimated RGBA buffers held at report time: layer frames and their whole-map overviews. Render stages are temporary and released after each frame.',
     },
   ];
 
@@ -81,12 +82,13 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
       {
         label: 'Buffer',
         value: `${layer.outputWidth} × ${layer.outputHeight}`,
-        description: 'Resolution of the viewport buffer drawn for this layer.',
+        description:
+          'Resolution of the buffer drawn for this layer: viewport scale when minifying, one pixel per cell when magnified.',
       },
       {
         label: 'Data',
         value: formatBytes(layer.bytes),
-        description: 'Estimated size of all surfaces held for this layer.',
+        description: 'Estimated size of the surfaces held for this layer at rest.',
       },
     ],
   }));

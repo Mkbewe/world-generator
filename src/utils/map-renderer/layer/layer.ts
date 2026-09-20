@@ -120,6 +120,8 @@ export abstract class MapLayer {
     if (this.preparation !== preparation && this.preparation !== undefined) {
       return;
     }
+    // The stage buffer is only needed while a frame is being painted.
+    this.stage.width = this.stage.height = 0;
     this.preparing = false;
     this.activeTarget = undefined;
   }

@@ -338,7 +338,7 @@ describe('MapRenderer', () => {
       firstTileDurationMs: 108,
       presentationDurationMs: 12,
       overlayDurationMs: 7,
-      bufferBytes: 2_097_216,
+      bufferBytes: 2_097_184,
       viewport: { devicePixelRatio: 2 },
       layers: [
         {
