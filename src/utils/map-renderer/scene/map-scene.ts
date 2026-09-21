@@ -41,40 +41,62 @@ export class MapScene {
     }));
   }
 
+  /**
+   * Begins a map. Layers from a previous run survive while the sample grid
+   * keeps its size, so a selective run replaces only its dirty layers.
+   */
   start(size: MapSize, metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry'>): void {
-    this.reset();
-    this.currentSize = size;
-    if (metadata) {
-      const region = metadata.regionGeometry;
-      this.regionConfig = region;
-      this.geometry = {
-        shape: metadata.shape,
-        regionAt: region
-          ? createMacroRegionSampler(
-              region.regions,
-              region.deformation,
-              createRegionDisplacement({
-                source: region.deformation.source ?? DEFAULT_REGION_NOISE_SOURCE,
-                seed: region.seed,
-                width: size.width,
-                height: size.height,
-                noiseAt:
-                  region.deformation.source === 'noise-map'
-                    ? (cellX, cellY) => this.layers.get('noise')?.sample(cellX, cellY)
-                    : undefined,
-              })
-            )
-          : undefined,
-      };
+    if (!this.matchesSize(size)) {
+      this.reset();
     }
+    this.currentSize = size;
+    this.setMetadata(metadata);
   }
 
+  private matchesSize(size: MapSize): boolean {
+    return this.currentSize?.width === size.width && this.currentSize.height === size.height;
+  }
+
+  /** Updates the shape and region geometry without touching received layers. */
+  private setMetadata(metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry'>): void {
+    if (!metadata) {
+      this.regionConfig = undefined;
+      this.geometry = undefined;
+      return;
+    }
+
+    const region = metadata.regionGeometry;
+    this.regionConfig = region;
+    this.geometry = { shape: metadata.shape, regionAt: this.createRegionAt(region) };
+  }
+
+  private createRegionAt(
+    region: MapMetadata['regionGeometry']
+  ): ((x: number, y: number) => number) | undefined {
+    if (!region) {
+      return undefined;
+    }
+    const size = this.size;
+    return createMacroRegionSampler(
+      region.regions,
+      region.deformation,
+      createRegionDisplacement({
+        source: region.deformation.source ?? DEFAULT_REGION_NOISE_SOURCE,
+        seed: region.seed,
+        width: size.width,
+        height: size.height,
+        noiseAt:
+          region.deformation.source === 'noise-map'
+            ? (cellX, cellY) => this.layers.get('noise')?.sample(cellX, cellY)
+            : undefined,
+      })
+    );
+  }
+
+  /** Adds or refreshes a layer; repeated data replaces the previous layer. */
   add(id: MapBaseLayerId, value: unknown): MapLayer {
     const size = this.size;
     const spec = this.registry.get(id);
-    if (this.layers.has(id)) {
-      throw new Error(`Layer "${id}" already received.`);
-    }
     const clipMask = spec.clipTo ? this.layers.get(spec.clipTo) : undefined;
     if (spec.clipTo && !clipMask) {
       throw new Error(`Layer "${id}" requires "${spec.clipTo}".`);
@@ -103,6 +125,8 @@ export class MapScene {
       () => new CatalogLayer(spec, size, value, clipMask, this.geometry)
     );
     this.layers.set(id, layer);
+    // A refreshed layer becomes ready again once it is presented.
+    this.available.delete(id);
     return layer;
   }
 

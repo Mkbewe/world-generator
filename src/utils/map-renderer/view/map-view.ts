@@ -99,14 +99,26 @@ export class MapView {
     }));
   }
 
+  /**
+   * Begins a map. The view transform and the displayed layer survive while the
+   * sample grid keeps its size, so a selective run never blanks the preview.
+   */
   start(size: MapSize, shape: WorldShape): void {
+    if (!this.matchesSize(size)) {
+      this.view = fitView();
+      this.presented = undefined;
+      this.presenter.reset();
+    }
     this.progressive = true;
     this.shape = shape;
     this.presenter.setShape(shape);
     this.size = size;
-    this.view = fitView();
     this.viewport.start();
     this.applyTargetSize();
+  }
+
+  private matchesSize(size: MapSize): boolean {
+    return this.size?.width === size.width && this.size.height === size.height;
   }
 
   restoreSelection(fallback?: MapBaseLayerId): void {

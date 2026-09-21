@@ -100,7 +100,6 @@ export class WorldGenerationSession {
       const renderer = this.renderer;
       if (renderer) {
         this.startRenderer(renderer, run);
-        this.replayReused(renderer);
       }
       signal.throwIfAborted();
       const result = await this.runGeneration(config, {
@@ -159,21 +158,6 @@ export class WorldGenerationSession {
   private startRenderer(renderer: MapRenderer, run: RunSnapshot): void {
     renderer.start({ width: run.width, height: run.height }, run.shape, run.regionGeometry);
     renderer.setInfo(run.info ?? {});
-  }
-
-  /**
-   * Sends the layers this run reuses; they are silent, so the preview keeps its
-   * selection, and the dirty layers arrive as they complete. Stage ids and
-   * layer ids coincide for every stage that produces a raster.
-   */
-  private replayReused(renderer: MapRenderer): void {
-    const dirty = new Set(this.dirtyStages);
-    const values: LayerDataRecord = this.layers;
-    for (const id of layerRegistry.presentIn(values)) {
-      if (!dirty.has(id)) {
-        renderer.add(id, values[layerRegistry.get(id).source], true);
-      }
-    }
   }
 
   /** Replays collected layers without walking the preview through each of them. */

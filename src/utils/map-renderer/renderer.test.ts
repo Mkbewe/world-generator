@@ -393,7 +393,7 @@ describe('MapRenderer', () => {
     await vi.runAllTimersAsync();
     await preview.ready;
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 15,
+      elapsedDurationMs: 8,
       firstTileDurationMs: undefined,
       presentationDurationMs: 8,
       overlayDurationMs: 7,
@@ -402,6 +402,30 @@ describe('MapRenderer', () => {
         { durationMs: 0, tiles: 0, pixels: 0 },
       ],
     });
+    preview.dispose();
+  });
+
+  it('keeps the displayed layer and view when a run keeps the map size', async () => {
+    const { preview } = setup();
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    preview.add('noise', new Float32Array(4));
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    preview.zoomIn();
+    const zoom = preview.viewTransform.scale;
+    expect(zoom).toBeGreaterThan(1);
+
+    preview.start({ width: 2, height: 2 }, 'disc');
+
+    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.viewTransform.scale).toBe(zoom);
+    expect(preview.state.layers.find(layer => layer.id === 'noise')?.available).toBe(true);
+
+    preview.start({ width: 3, height: 3 }, 'disc');
+
+    expect(preview.state.displayedLayer).toBeUndefined();
+    expect(preview.state.fitted).toBe(true);
     preview.dispose();
   });
 
