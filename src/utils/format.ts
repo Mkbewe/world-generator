@@ -24,6 +24,19 @@ export function formatBytes(bytes: number): string {
   return `${Math.round(bytes / 1_000_000)} MB`;
 }
 
+/** Number with at most `digits` decimals and no trailing zeros, e.g. "1,000.5". */
+export function formatMeasure(value: number, digits = 2): string {
+  return value.toLocaleString('en-US', { maximumFractionDigits: digits });
+}
+
+export function formatMeters(meters: number): string {
+  return `${formatMeasure(meters)} m`;
+}
+
+export function formatAreaKm2(squareMeters: number): string {
+  return `${formatMeasure(squareMeters / 1_000_000, 3)} km²`;
+}
+
 export function formatDuration(ms: number | undefined): string {
   if (ms === undefined) {
     return '—';
