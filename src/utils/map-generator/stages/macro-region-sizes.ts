@@ -60,7 +60,7 @@ export function applyRegionBoundaries(
     return { regions };
   }
 
-  const normalized = normalizeBoundaries(boundaries, base.length);
+  const normalized = clampBoundaries(boundaries, base.length);
   const shares = boundariesToShares(normalized);
   return { regions: combine(rebuild(layout, base, shares), regions) };
 }
@@ -186,7 +186,8 @@ function geometryShare(layout: MacroRegionLayout, region: MacroRegionConfig): nu
   return 1;
 }
 
-function normalizeBoundaries(boundaries: readonly number[], regionCount: number): number[] {
+/** Clamps N - 1 movable boundaries so every region keeps at least the shared minimum share. */
+export function clampBoundaries(boundaries: readonly number[], regionCount: number): number[] {
   let previous = 0;
   return boundaries.map((boundary, index) => {
     const remaining = regionCount - index - 1;
@@ -200,7 +201,8 @@ function normalizeBoundaries(boundaries: readonly number[], regionCount: number)
   });
 }
 
-function boundariesToShares(boundaries: readonly number[]): number[] {
+/** Spatial shares of the regions between the given cumulative boundaries. */
+export function boundariesToShares(boundaries: readonly number[]): number[] {
   const points = [0, ...boundaries, 100];
   return points.slice(1).map((point, index) => point - points[index]);
 }

@@ -1,8 +1,8 @@
 import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
-import { useMacroRegionFormStore } from '../../../../stores';
-import type { MacroRegionLayout } from '../../../../utils/map-generator/stages/macro-region-presets';
-import { SegmentedControlScroll } from '../../../segmented-control-scroll';
+import { useMacroRegionFormStore } from '../../../../../stores';
+import type { MacroRegionLayout } from '../../../../../utils/map-generator/stages/macro-region-presets';
+import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
 
 export function BaseLayoutField() {
   const layout = useMacroRegionFormStore(state => state.layout);

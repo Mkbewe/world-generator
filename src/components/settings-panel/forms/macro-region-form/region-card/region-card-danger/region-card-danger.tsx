@@ -1,9 +1,9 @@
-import { useMacroRegionFormStore } from '../../../../../stores';
-import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
-import { SliderField } from '../../../../slider-field';
-import { colorString, dangerColor } from '../color';
+import { useMacroRegionFormStore } from '../../../../../../stores';
+import type { MacroRegionConfig } from '../../../../../../utils/map-generator/types';
+import { SliderField } from '../../../../../slider-field';
+import { colorString, dangerColor } from '../../lib/color';
 
-export function DangerField({ region }: { region: MacroRegionConfig }) {
+export function RegionCardDanger({ region }: { region: MacroRegionConfig }) {
   const updateRegion = useMacroRegionFormStore(state => state.updateRegion);
 
   return (

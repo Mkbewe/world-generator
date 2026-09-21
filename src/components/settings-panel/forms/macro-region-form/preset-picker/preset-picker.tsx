@@ -1,16 +1,17 @@
+import { useMemo } from 'react';
 import { Button, Flex, Grid, Text } from '@radix-ui/themes';
 
-import { useMacroRegionFormStore } from '../../../../stores';
+import { useMacroRegionFormStore } from '../../../../../stores';
 import {
   activePresetId,
   MACRO_REGION_PRESETS,
-} from '../../../../utils/map-generator/stages/macro-region-presets';
+} from '../../../../../utils/map-generator/stages/macro-region-presets';
 
 export function PresetPicker() {
   const applyPreset = useMacroRegionFormStore(state => state.applyPreset);
   const layout = useMacroRegionFormStore(state => state.layout);
   const regions = useMacroRegionFormStore(state => state.regions);
-  const activeId = activePresetId(regions, layout);
+  const activeId = useMemo(() => activePresetId(regions, layout), [regions, layout]);
 
   return (
     <Flex direction='column' gap='2'>
