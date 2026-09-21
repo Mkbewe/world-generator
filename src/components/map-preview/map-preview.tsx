@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { useMapReadout } from './hooks/use-map-readout';
 import { useMapRenderer } from './hooks/use-map-renderer';
 import { usePreviewFullscreen } from './hooks/use-preview-fullscreen';
+import { useTabSync } from './hooks/use-tab-sync';
 import { LayerNavigation } from './lib/layer-navigation';
-import { usePreviewStore } from '../../stores';
+import { tabForLayer, usePreviewStore, useViewSyncStore } from '../../stores';
 import { readoutItems } from '../../utils/map-readout';
 import {
   layerRegistry,
@@ -46,18 +47,30 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     rendererRef.current?.resetView();
   }, [isFullscreen, rendererRef]);
 
-  const handleBaseLayerChange = (layer: MapBaseLayerId): void => {
-    const renderer = rendererRef.current;
-    if (!renderer) {
-      return;
-    }
-    renderer.select(layer);
-    if (renderer.state.displayedLayer === layer) {
-      const { layers } = renderer.state;
-      const { layerTree: saved, setBaseLayer } = usePreviewStore.getState();
-      setBaseLayer(layer, navigation.toViewState(layers, layer, saved).tabs);
-    }
-  };
+  const handleBaseLayerChange = useCallback(
+    (layer: MapBaseLayerId): void => {
+      const { linked, setSettingsTab } = useViewSyncStore.getState();
+      if (linked) {
+        const tab = tabForLayer(layer);
+        if (tab) {
+          setSettingsTab(tab);
+        }
+      }
+      const renderer = rendererRef.current;
+      if (!renderer) {
+        return;
+      }
+      renderer.select(layer);
+      if (renderer.state.displayedLayer === layer) {
+        const { layers } = renderer.state;
+        const { layerTree: saved, setBaseLayer } = usePreviewStore.getState();
+        setBaseLayer(layer, navigation.toViewState(layers, layer, saved).tabs);
+      }
+    },
+    [navigation, rendererRef]
+  );
+
+  useTabSync({ rendererRef, onLayerChange: handleBaseLayerChange });
 
   const handleOverlayChange = (id: MapOverlayId, visible: boolean): void => {
     usePreviewStore.getState().setOverlay(id, visible);

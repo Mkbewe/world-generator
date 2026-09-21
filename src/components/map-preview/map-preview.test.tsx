@@ -3,6 +3,12 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { MapPreview } from './map-preview';
+import {
+  PREVIEW_DEFAULTS,
+  usePreviewStore,
+  useViewSyncStore,
+  VIEW_SYNC_DEFAULTS,
+} from '../../stores';
 import type { MapRenderer } from '../../utils/map-renderer';
 import { Viewport } from '../../utils/map-renderer/viewport';
 import { HeaderActionsProvider, useHeaderActions } from '../header';
@@ -329,5 +335,91 @@ describe('MapPreview readout', () => {
     const centerAfterRelease = renderer.current?.viewTransform.centerX;
     fireEvent.pointerMove(canvas, { pointerId: 7, buttons: 0, clientX: 240, clientY: 200 });
     expect(renderer.current?.viewTransform.centerX).toBe(centerAfterRelease);
+  });
+});
+
+describe('MapPreview tab sync', () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: vi.fn(),
+      clearRect: vi.fn(),
+      drawImage: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
+    useViewSyncStore.setState({ ...VIEW_SYNC_DEFAULTS });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  async function renderWithLayers(): Promise<MapRenderer> {
+    const { renderer } = renderPreview();
+    const instance = renderer.current;
+    if (!instance) {
+      throw new Error('Expected a renderer.');
+    }
+    instance.add('noise', new Float32Array(16));
+    await act(async () => {});
+    await instance.ready;
+    return instance;
+  }
+
+  it('selects the linked layer when the settings tab changes', async () => {
+    const renderer = await renderWithLayers();
+    expect(renderer.state.displayedLayer).toBe('noise');
+
+    act(() => useViewSyncStore.setState({ linked: true }));
+    act(() => useViewSyncStore.getState().setSettingsTab('world-shape'));
+
+    expect(renderer.state.displayedLayer).toBe('world-shape');
+    expect(usePreviewStore.getState().baseLayer).toBe('world-shape');
+  });
+
+  it('aligns the preview with the settings tab when linking is enabled', async () => {
+    const renderer = await renderWithLayers();
+
+    act(() => useViewSyncStore.getState().setSettingsTab('world-shape'));
+    expect(renderer.state.displayedLayer).toBe('noise');
+
+    act(() => useViewSyncStore.getState().setLinked(true));
+
+    expect(renderer.state.displayedLayer).toBe('world-shape');
+  });
+
+  it('leaves the preview unchanged when the linked tab has no data', async () => {
+    const renderer = await renderWithLayers();
+
+    act(() => useViewSyncStore.setState({ linked: true, settingsTab: 'macro-region' }));
+
+    expect(renderer.state.displayedLayer).toBe('noise');
+  });
+
+  it('follows a preview layer click with the settings tab when linked', async () => {
+    const user = userEvent.setup();
+    await renderWithLayers();
+    act(() => useViewSyncStore.getState().setLinked(true));
+
+    await user.click(screen.getByRole('tab', { name: 'World shape' }));
+
+    expect(useViewSyncStore.getState().settingsTab).toBe('world-shape');
+  });
+
+  it('keeps the settings tab when the panels are not linked', async () => {
+    const user = userEvent.setup();
+    await renderWithLayers();
+
+    await user.click(screen.getByRole('tab', { name: 'World shape' }));
+
+    expect(useViewSyncStore.getState().settingsTab).toBe('general');
   });
 });

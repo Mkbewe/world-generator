@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { GearIcon, GlobeIcon, LayersIcon, MixerHorizontalIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
@@ -10,12 +9,10 @@ import {
   WorldShapeForm,
   type WorldSize,
 } from './forms';
+import { TabLinkToggle } from './tab-link-toggle';
+import { type SettingsTab, useViewSyncStore } from '../../stores';
 import { type NoiseConfig, PIPELINE_STAGES, type PipelineStageId } from '../../utils/map-generator';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
-
-type SettingsTab = 'general' | PipelineStageId;
-
-let activeSettingsTab: SettingsTab = 'general';
 
 interface SettingsPanelProps {
   seed: string;
@@ -46,7 +43,8 @@ export function SettingsPanel({
   noise,
   onNoiseChange,
 }: SettingsPanelProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>(activeSettingsTab);
+  const activeTab = useViewSyncStore(state => state.settingsTab);
+  const setSettingsTab = useViewSyncStore(state => state.setSettingsTab);
   const stageTabs: Readonly<Record<PipelineStageId, Omit<VerticalTabItem, 'value'>>> = {
     'world-shape': {
       label: 'World shape',
@@ -84,17 +82,18 @@ export function SettingsPanel({
   ];
 
   const handleTabChange = (value: string): void => {
-    const nextTab = value as SettingsTab;
-    activeSettingsTab = nextTab;
-    setActiveTab(nextTab);
+    setSettingsTab(value as SettingsTab);
   };
 
   return (
     <Card size={{ initial: '2', sm: '3' }}>
       <Flex direction='column' gap='4' height='100%'>
-        <Heading size='5' color='violet'>
-          Map Settings
-        </Heading>
+        <Flex justify='between' align='center'>
+          <Heading size='5' color='violet'>
+            Map Settings
+          </Heading>
+          <TabLinkToggle />
+        </Flex>
         <Separator size='4' />
         <Flex direction='column' flexGrow='1'>
           <VerticalTabs
