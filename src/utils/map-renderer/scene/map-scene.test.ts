@@ -136,14 +136,34 @@ describe('MapScene', () => {
     expect(scene.options.map(option => option.available)).toEqual([true, false]);
   });
 
-  it('rejects missing dependencies and duplicate layers without replacing existing data', () => {
+  it('rejects missing dependencies and refreshes a layer added twice', () => {
     const scene = setup();
     expect(() => scene.add('noise', new Float32Array(4))).toThrow('requires "world-shape"');
     expect([...scene.values()]).toEqual([]);
 
     const world = scene.add('world-shape', new Uint8Array(4));
-    expect(() => scene.add('world-shape', new Uint8Array(4))).toThrow('already received');
+    const dispose = vi.spyOn(world, 'dispose');
+    scene.markReady(world);
+    expect(scene.readyLayer('world-shape')).toBe(world);
+
+    const refreshed = scene.add('world-shape', new Uint8Array(4));
+
+    expect(refreshed).not.toBe(world);
+    expect(scene.get('world-shape')).toBe(refreshed);
+    expect(scene.readyLayer('world-shape')).toBeUndefined();
+    expect(scene.isComplete()).toBe(false);
+    expect(dispose).toHaveBeenCalledOnce();
+  });
+
+  it('keeps received layers when a run starts with the same map size', () => {
+    const scene = setup();
+    const world = scene.add('world-shape', new Uint8Array(4));
+    scene.markReady(world);
+
+    scene.start({ width: 2, height: 2 });
+
     expect(scene.get('world-shape')).toBe(world);
+    expect(scene.readyLayer('world-shape')).toBe(world);
     expect(scene.isComplete()).toBe(false);
   });
 

@@ -128,11 +128,16 @@ export class MapRenderer {
     };
   }
 
+  /**
+   * Begins a run. A scene that already holds the same map size keeps its layers,
+   * view transform and selection; only the new layers are prepared.
+   */
   start(size: MapSize, shape: WorldShape, regionGeometry?: MapMetadata['regionGeometry']): void {
-    this.reset();
+    this.cancel();
     this.lifetime = new AbortController();
     this.scene.start(size, { shape, regionGeometry });
     this.mapSize = size;
+    this.error = undefined;
     this.metrics.start();
     this.view.start(size, shape);
   }

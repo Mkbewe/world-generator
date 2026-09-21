@@ -198,6 +198,47 @@ describe('WorldGenerationSession', () => {
     expect(renderer.state.displayedLayer).toBe('macro-region');
   });
 
+  it('keeps the previous map visible and prepares only the new layers', async () => {
+    const mask = new Uint8Array(4).fill(1);
+    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: mask }));
+      options?.onEvent?.(completed('noise', { noiseMap: noise }));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
+    session.attach(renderer);
+    await session.generate(config, vi.fn());
+    await renderer.ready;
+    expect(renderer.state.displayedLayer).toBe('macro-region');
+
+    const prepare = vi.mocked(MapLayer.prototype.prepare);
+    prepare.mockClear();
+    let finish!: (result: PipelineWorkerGenerationResult) => void;
+    runner.mockImplementation((_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(skipped('world-shape'));
+      options?.onEvent?.(skipped('noise'));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
+      return new Promise(resolve => {
+        finish = resolve;
+      });
+    });
+    const run = session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
+
+    expect(renderer.state.displayedLayer).toBe('macro-region');
+    expect(renderer.state.fitted).toBe(true);
+
+    finish({ statistics: [], totalDurationMs: 1 });
+    await run;
+    await renderer.ready;
+
+    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(renderer.state.displayedLayer).toBe('macro-region');
+  });
+
   it('drops the baseline when a failed run left no saved map to reuse', async () => {
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(config, vi.fn());
