@@ -24,3 +24,11 @@ export {
   usePreviewStore,
   useRenderStatisticsStore,
 } from './preview';
+export {
+  layerForTab,
+  type SettingsTab,
+  tabForLayer,
+  useViewSyncStore,
+  VIEW_SYNC_DEFAULTS,
+  type ViewSyncValues,
+} from './ui';

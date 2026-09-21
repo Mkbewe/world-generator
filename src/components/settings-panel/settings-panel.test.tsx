@@ -1,7 +1,9 @@
 import { Theme } from '@radix-ui/themes';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { SettingsPanel } from './settings-panel';
+import { useViewSyncStore, VIEW_SYNC_DEFAULTS } from '../../stores';
 
 interface RenderPanelOptions {
   isGenerating?: boolean;
@@ -29,6 +31,19 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
 }
 
 describe('SettingsPanel', () => {
+  beforeEach(() => {
+    useViewSyncStore.setState({ ...VIEW_SYNC_DEFAULTS });
+  });
+
+  it('remembers the active tab in the shared sync store', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole('tab', { name: 'Noise' }));
+
+    expect(useViewSyncStore.getState().settingsTab).toBe('noise');
+  });
+
   it('renders the general tab with the seed field and the shared generate action', () => {
     renderPanel();
 
