@@ -2,7 +2,7 @@ import { GenerationCancelledError, GenerationStageError } from './errors';
 import { MapGenerator } from './pipeline';
 import { createMapGenerator } from './pipeline-factory';
 import { MAP_CONFIG_KEYS, type MapStage } from './stage';
-import type { MapConfig, StageData } from './types';
+import type { GenerationEvent, MapConfig, StageData } from './types';
 
 interface TestConfig {
   world: { seed: number };
@@ -70,6 +70,24 @@ describe('MapGenerator', () => {
     expect(() => new MapGenerator([stage])).toThrow(
       'Duplicate configuration key in stage "noise": "world.seed".'
     );
+  });
+
+  it('skips the requested stages and reports them without running them', async () => {
+    const execute = vi.fn<TestStage['execute']>(async () => ({}));
+    const events: GenerationEvent[] = [];
+    const pipeline = new MapGenerator([createStage('noise', execute)]);
+
+    const result = await pipeline.generate(
+      { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
+      { values: [] },
+      { skipStageIds: ['noise'], onEvent: event => events.push(event) }
+    );
+
+    expect(execute).not.toHaveBeenCalled();
+    expect(events).toEqual([expect.objectContaining({ type: 'stage-skipped', stageId: 'noise' })]);
+    expect(result.statistics).toEqual([
+      expect.objectContaining({ stageId: 'noise', status: 'skipped', durationMs: 0 }),
+    ]);
   });
 
   it('reports stage lifecycle events', async () => {

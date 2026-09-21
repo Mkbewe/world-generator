@@ -43,6 +43,11 @@
   transition: none;
 }
 
+.bar[data-status='skipped'] .barFill {
+  background: var(--gray-a8);
+  transition: none;
+}
+
 .bars[data-complete='true'] .barFill {
   background: linear-gradient(90deg, var(--green-9), var(--green-10));
   box-shadow: 0 0 10px var(--green-a5);

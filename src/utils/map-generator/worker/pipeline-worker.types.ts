@@ -1,9 +1,18 @@
+import type { MapRasters } from '../../map-layers';
 import type { StageInfo } from '../stage-definitions';
 import type { GenerationEvent, MapConfig, StageStatistics } from '../types';
+
+/** Stage outputs reused from the saved map instead of being generated again. */
+export interface PipelineWorkerReuse {
+  /** Stage ids that must run; every other stage is skipped. */
+  dirtyStageIds: readonly string[];
+  cachedRasters: MapRasters;
+}
 
 export interface PipelineWorkerGenerateRequest {
   type: 'generate';
   config: MapConfig;
+  reuse: PipelineWorkerReuse;
 }
 
 export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;

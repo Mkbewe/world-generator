@@ -2,6 +2,7 @@ import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerGenerationResult,
   PipelineWorkerResponse,
+  PipelineWorkerReuse,
 } from './pipeline-worker.types';
 import { GenerationCancelledError } from '../errors';
 import type { StageInfo } from '../stage-definitions';
@@ -11,17 +12,19 @@ export interface GenerationWorkerOptions {
   signal?: AbortSignal;
   onStages?: (stages: readonly StageInfo[]) => void;
   onEvent?: (event: GenerationEvent) => void;
+  /** Dirty stage ids plus the cached outputs that let the worker skip the rest. */
+  reuse: PipelineWorkerReuse;
 }
 
 export type RunGeneration = (
   config: MapConfig,
-  options?: GenerationWorkerOptions
+  options: GenerationWorkerOptions
 ) => Promise<PipelineWorkerGenerationResult>;
 
 /** Runs one generation in a fresh worker; aborting terminates it. */
-export const runGeneration: RunGeneration = (config, options = {}) =>
+export const runGeneration: RunGeneration = (config, options) =>
   new Promise((resolve, reject) => {
-    const { signal, onStages, onEvent } = options;
+    const { signal, onStages, onEvent, reuse } = options;
     const worker = new Worker(new URL('./pipeline.worker.ts', import.meta.url), {
       type: 'module',
     });
@@ -75,5 +78,9 @@ export const runGeneration: RunGeneration = (config, options = {}) =>
     worker.addEventListener('error', event => {
       settle(() => reject(new Error(event.message || 'Pipeline worker failed.')));
     });
-    worker.postMessage({ type: 'generate', config } satisfies PipelineWorkerGenerateRequest);
+    worker.postMessage({
+      type: 'generate',
+      config,
+      reuse,
+    } satisfies PipelineWorkerGenerateRequest);
   });

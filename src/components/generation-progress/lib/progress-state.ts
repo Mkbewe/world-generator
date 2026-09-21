@@ -93,5 +93,13 @@ function applyStageEvent(
       durationMs: event.statistics.durationMs,
     };
   }
+  if (event.type === 'stage-skipped') {
+    return {
+      ...stage,
+      name: event.stageName,
+      status: 'skipped',
+      durationMs: event.statistics.durationMs,
+    };
+  }
   return stage;
 }

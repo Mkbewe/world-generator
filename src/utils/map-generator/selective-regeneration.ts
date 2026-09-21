@@ -15,11 +15,15 @@ export function selectDirtyStageIds(
     return stages.map(stage => stage.id);
   }
 
-  const firstDirty = stages.findIndex(stage =>
-    stage.configKeys.some(key => !isEqual(configSlice(previous, key), configSlice(next, key)))
-  );
-
-  return firstDirty < 0 ? [] : stages.slice(firstDirty).map(stage => stage.id);
+  for (const [index, stage] of stages.entries()) {
+    const changed = stage.configKeys.some(
+      key => !isEqual(configSlice(previous, key), configSlice(next, key))
+    );
+    if (changed) {
+      return stages.slice(index).map(stage => stage.id);
+    }
+  }
+  return [];
 }
 
 /** Reads a dotted configuration path such as `world.dimensions`. */
