@@ -134,6 +134,33 @@ describe('WorldGenerationSession', () => {
     expect(onProgress.mock.lastCall?.[0].status).toBe('completed');
   });
 
+  it('recomputes only the stages affected by the configuration change', async () => {
+    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
+    const withRegions = { ...config, macroRegions: DEFAULT_MACRO_REGIONS };
+
+    await session.generate(config, vi.fn());
+    expect(session.dirtyStageIds).toEqual(['world-shape', 'noise', 'macro-region']);
+
+    await session.generate(withRegions, vi.fn());
+    expect(session.dirtyStageIds).toEqual(['macro-region']);
+
+    await session.generate(withRegions, vi.fn());
+    expect(session.dirtyStageIds).toEqual([]);
+  });
+
+  it('keeps the last successful configuration as the regeneration baseline', async () => {
+    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
+    await session.generate(config, vi.fn());
+
+    const changed = { ...config, noise: { ...config.noise, frequency: 5 } };
+    runner.mockRejectedValue(new Error('generation failed'));
+    await expect(session.generate(changed, vi.fn())).rejects.toThrow('generation failed');
+
+    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
+    await session.generate(changed, vi.fn());
+    expect(session.dirtyStageIds).toEqual(['noise', 'macro-region']);
+  });
+
   it('rejects missing stage data without saving an incomplete map', async () => {
     session.attach(renderer);
     runner.mockImplementation(async (_, options) => {
