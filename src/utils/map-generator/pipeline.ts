@@ -18,11 +18,26 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
     private readonly options: MapGeneratorOptions<TConfig> = {}
   ) {
     const ids = new Set<string>();
+    const knownConfigKeys = this.options.knownConfigKeys
+      ? new Set(this.options.knownConfigKeys)
+      : undefined;
+
     for (const stage of stages) {
       if (ids.has(stage.id)) {
         throw new Error(`Duplicate stage id: "${stage.id}".`);
       }
       ids.add(stage.id);
+
+      const seen = new Set<string>();
+      for (const key of stage.configKeys) {
+        if (seen.has(key)) {
+          throw new Error(`Duplicate configuration key in stage "${stage.id}": "${key}".`);
+        }
+        if (knownConfigKeys && !knownConfigKeys.has(key)) {
+          throw new Error(`Unknown configuration key in stage "${stage.id}": "${key}".`);
+        }
+        seen.add(key);
+      }
     }
   }
 

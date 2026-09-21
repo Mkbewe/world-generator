@@ -11,7 +11,7 @@ import {
 } from './macro-region-displacement';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import { assertStageOutput, type MapStage } from '../stage';
+import { assertStageOutput, type MapConfigKey, type MapStage } from '../stage';
 import { MACRO_REGION_STAGE } from '../stage-definitions';
 import type {
   MacroRegionConfig,
@@ -23,10 +23,16 @@ import type {
   StageProgressReporter,
 } from '../types';
 
-export class MacroRegionStage implements MapStage<MapConfig, MapState> {
+export class MacroRegionStage implements MapStage<MapConfig, MapState, MapConfigKey> {
   readonly id = MACRO_REGION_STAGE.id;
   readonly name = MACRO_REGION_STAGE.name;
-  readonly progressStep = 0.25;
+  readonly progressStep = 0.2;
+  readonly configKeys = [
+    'world.seed',
+    'world.dimensions',
+    'macroRegions',
+    'macroRegionDeformation',
+  ] as const;
 
   async execute(
     context: MapContext<MapConfig, MapState>,
