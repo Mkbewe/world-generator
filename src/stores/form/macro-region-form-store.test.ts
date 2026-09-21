@@ -194,11 +194,10 @@ describe('useMacroRegionFormStore', () => {
     const store = useMacroRegionFormStore.getState();
     store.applyPreset('horizontal');
 
-    store.setDeformation({ amplitude: 0.2, frequency: 5 });
+    store.setDeformation({ amplitude: 0.2 });
 
     expect(useMacroRegionFormStore.getState().deformation).toMatchObject({
       amplitude: 0.2,
-      frequency: 5,
     });
     expect(useMacroRegionFormStore.getState().activePreset).toBe('horizontal');
   });

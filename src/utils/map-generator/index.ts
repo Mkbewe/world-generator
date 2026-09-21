@@ -16,6 +16,7 @@ export type {
   MacroRegionConfig,
   MacroRegionDeformation,
   MacroRegionGeometry,
+  MacroRegionNoiseSource,
   MacroRegionPoint,
   MapGeneratorOptions,
   MapConfig,

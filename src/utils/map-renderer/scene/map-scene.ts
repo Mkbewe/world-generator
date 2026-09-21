@@ -1,4 +1,5 @@
-import { RandomFactory } from '../../map-generator/random/random-factory';
+import { DEFAULT_REGION_NOISE_SOURCE } from '../../map-generator/stages/macro-region-defaults';
+import { createRegionDisplacement } from '../../map-generator/stages/macro-region-displacement';
 import { createMacroRegionSampler } from '../../map-generator/stages/macro-region-stage';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../map-layers';
 import {
@@ -50,9 +51,18 @@ export class MapScene {
         shape: metadata.shape,
         regionAt: region
           ? createMacroRegionSampler(
-              new RandomFactory(region.seed),
               region.regions,
-              region.deformation
+              region.deformation,
+              createRegionDisplacement({
+                source: region.deformation.source ?? DEFAULT_REGION_NOISE_SOURCE,
+                seed: region.seed,
+                width: size.width,
+                height: size.height,
+                noiseAt:
+                  region.deformation.source === 'noise-map'
+                    ? (cellX, cellY) => this.layers.get('noise')?.sample(cellX, cellY)
+                    : undefined,
+              })
             )
           : undefined,
       };
@@ -69,9 +79,27 @@ export class MapScene {
     if (spec.clipTo && !clipMask) {
       throw new Error(`Layer "${id}" requires "${spec.clipTo}".`);
     }
+    if (
+      id === 'macro-region' &&
+      this.regionConfig?.deformation.source === 'noise-map' &&
+      !this.layers.has('noise')
+    ) {
+      throw new Error('A noise layer is required for noise-map region borders.');
+    }
     const layer = this.cache.getOrCreate(
       id,
-      [spec, value, size.width, size.height, clipMask, this.geometry?.shape, this.regionConfig],
+      [
+        spec,
+        value,
+        size.width,
+        size.height,
+        clipMask,
+        this.geometry?.shape,
+        this.regionConfig,
+        id === 'macro-region' && this.regionConfig?.deformation.source === 'noise-map'
+          ? this.layers.get('noise')?.data
+          : undefined,
+      ],
       () => new CatalogLayer(spec, size, value, clipMask, this.geometry)
     );
     this.layers.set(id, layer);

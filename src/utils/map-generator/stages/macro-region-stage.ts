@@ -1,13 +1,16 @@
-import { createNoise2D } from 'simplex-noise';
-
 import {
   DEFAULT_MACRO_DEFORMATION,
   DEFAULT_MACRO_REGIONS,
+  DEFAULT_REGION_NOISE_SOURCE,
   MAX_MACRO_REGIONS,
 } from './macro-region-defaults';
+import {
+  createRegionDisplacement,
+  type RegionDisplacement,
+  type RegionOffset,
+} from './macro-region-displacement';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import type { RandomFactory } from '../random/random-factory';
 import { assertStageOutput, type MapStage } from '../stage';
 import { MACRO_REGION_STAGE } from '../stage-definitions';
 import type {
@@ -19,9 +22,6 @@ import type {
   StageMetrics,
   StageProgressReporter,
 } from '../types';
-
-const DEFAULT_DEFORMATION_FREQUENCY = 3;
-const DEFAULT_DEFORMATION_OCTAVES = 2;
 
 export class MacroRegionStage implements MapStage<MapConfig, MapState> {
   readonly id = MACRO_REGION_STAGE.id;
@@ -36,17 +36,39 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const regions = context.config.macroRegions ?? DEFAULT_MACRO_REGIONS;
     const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
+    const source = deformation.source ?? DEFAULT_REGION_NOISE_SOURCE;
     this.validateConfig(regions);
     this.validateDeformation(deformation);
-    const regionAt = createMacroRegionSampler(context.random, regions, deformation);
 
-    const macroRegionIdMap = new Uint8Array(sampleWidth * sampleHeight);
-    const xDivisor = Math.max(1, sampleWidth - 1);
-    const yDivisor = Math.max(1, sampleHeight - 1);
     const worldMask = context.state.worldMask;
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
       throw new Error('A valid world mask must be generated before macro regions.');
     }
+    const noiseMap = context.state.noiseMap;
+    if (source === 'noise-map' && (!noiseMap || noiseMap.length !== sampleWidth * sampleHeight)) {
+      throw new Error('A valid noise map must be generated before macro regions.');
+    }
+
+    const regionAt = createMacroRegionSampler(
+      regions,
+      deformation,
+      createRegionDisplacement({
+        source,
+        seed: context.config.world.seed,
+        width: sampleWidth,
+        height: sampleHeight,
+        noiseAt: noiseMap
+          ? (cellX, cellY) => {
+              const index = cellY * sampleWidth + cellX;
+              return worldMask[index] === 1 ? noiseMap[index] : undefined;
+            }
+          : undefined,
+      })
+    );
+
+    const macroRegionIdMap = new Uint8Array(sampleWidth * sampleHeight);
+    const xDivisor = Math.max(1, sampleWidth - 1);
+    const yDivisor = Math.max(1, sampleHeight - 1);
 
     for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
@@ -89,8 +111,7 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
       regions: regions.length,
       overlays,
       deformationAmplitude: deformation.amplitude,
-      deformationFrequency: deformation.frequency ?? DEFAULT_DEFORMATION_FREQUENCY,
-      deformationOctaves: deformation.octaves ?? DEFAULT_DEFORMATION_OCTAVES,
+      deformationSource: deformation.source ?? DEFAULT_REGION_NOISE_SOURCE,
       bytes: regionIdMap.byteLength,
     } satisfies StageMetrics;
   }
@@ -99,14 +120,12 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     if (!Number.isFinite(deformation.amplitude) || deformation.amplitude < 0) {
       throw new RangeError('Macro region deformation amplitude must be zero or greater.');
     }
-    if (deformation.frequency !== undefined && !(deformation.frequency > 0)) {
-      throw new RangeError('Macro region deformation frequency must be greater than zero.');
-    }
     if (
-      deformation.octaves !== undefined &&
-      (!Number.isInteger(deformation.octaves) || deformation.octaves < 1)
+      deformation.source !== undefined &&
+      deformation.source !== 'dedicated' &&
+      deformation.source !== 'noise-map'
     ) {
-      throw new RangeError('Macro region deformation octaves must be a positive integer.');
+      throw new RangeError('Macro region noise source must be dedicated or noise-map.');
     }
   }
 
@@ -149,14 +168,18 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
 
 /** Shared continuous classification for generation and screen-space painting. */
 export function createMacroRegionSampler(
-  random: RandomFactory,
   regions: readonly MacroRegionConfig[],
-  deformation: MacroRegionDeformation
+  deformation: MacroRegionDeformation,
+  displacement?: RegionDisplacement
 ): (x: number, y: number) => number {
-  const displacement = createDisplacement(random, regions, deformation);
+  const needsDisplacement =
+    displacement !== undefined &&
+    regions.some(region => (region.irregularity ?? deformation.amplitude) > 0);
+  const offset = needsDisplacement ? displacement : undefined;
+
   return (x, y) => {
-    const offset = displacement ? displacement(x, y) : { x: 0, y: 0 };
-    return ownerIndex(regions, x, y, offset, deformation.amplitude);
+    const shift: RegionOffset = offset ? offset(x, y) : 0;
+    return ownerIndex(regions, x, y, shift, deformation.amplitude);
   };
 }
 
@@ -164,7 +187,7 @@ function ownerIndex(
   regions: readonly MacroRegionConfig[],
   x: number,
   y: number,
-  displacement: { readonly x: number; readonly y: number },
+  displacement: RegionOffset,
   fallbackAmplitude: number
 ): number {
   // Overlays are painter-ordered: the last matching overlay is on top.
@@ -174,23 +197,23 @@ function ownerIndex(
       continue;
     }
     const amplitude = region.irregularity ?? fallbackAmplitude;
-    if (contains(region.geometry, x + displacement.x * amplitude, y + displacement.y * amplitude)) {
+    const coordinate = geometryCoordinate(region.geometry, x, y, displacement, amplitude);
+    if (containsCoordinate(region.geometry, coordinate)) {
       return index;
     }
   }
 
-  const baseX = x + displacement.x * fallbackAmplitude;
-  const baseY = y + displacement.y * fallbackAmplitude;
   let nearest = 0;
   let nearestDistance = Infinity;
   for (const [index, region] of regions.entries()) {
     if (region.role !== 'base') {
       continue;
     }
-    if (contains(region.geometry, baseX, baseY)) {
+    const coordinate = geometryCoordinate(region.geometry, x, y, displacement, fallbackAmplitude);
+    if (containsCoordinate(region.geometry, coordinate)) {
       return index;
     }
-    const distance = distanceTo(region.geometry, baseX, baseY);
+    const distance = distanceToCoordinate(region.geometry, coordinate);
     if (distance < nearestDistance) {
       nearest = index;
       nearestDistance = distance;
@@ -199,21 +222,39 @@ function ownerIndex(
   return nearest;
 }
 
-function contains(geometry: MacroRegionGeometry, x: number, y: number): boolean {
-  if (geometry.kind === 'ring') {
-    const distance = Math.hypot(x - geometry.center.x, y - geometry.center.y);
-    return distance >= geometry.innerRadius && distance <= geometry.outerRadius;
+function geometryCoordinate(
+  geometry: MacroRegionGeometry,
+  x: number,
+  y: number,
+  displacement: RegionOffset,
+  amplitude: number
+): number {
+  if (typeof displacement === 'number') {
+    const shift = displacement * amplitude;
+    return geometry.kind === 'ring'
+      ? Math.hypot(x - geometry.center.x, y - geometry.center.y) + shift
+      : (geometry.axis === 'x' ? x : y) + shift;
   }
-  const coordinate = geometry.axis === 'x' ? x : y;
+  if (geometry.kind === 'ring') {
+    return Math.hypot(
+      x + displacement.x * amplitude - geometry.center.x,
+      y + displacement.y * amplitude - geometry.center.y
+    );
+  }
+  return geometry.axis === 'x' ? x + displacement.x * amplitude : y + displacement.y * amplitude;
+}
+
+function containsCoordinate(geometry: MacroRegionGeometry, coordinate: number): boolean {
+  if (geometry.kind === 'ring') {
+    return coordinate >= geometry.innerRadius && coordinate <= geometry.outerRadius;
+  }
   return Math.abs(coordinate - geometry.center) <= geometry.width / 2;
 }
 
-function distanceTo(geometry: MacroRegionGeometry, x: number, y: number): number {
+function distanceToCoordinate(geometry: MacroRegionGeometry, coordinate: number): number {
   if (geometry.kind === 'ring') {
-    const distance = Math.hypot(x - geometry.center.x, y - geometry.center.y);
-    return Math.max(distance - geometry.outerRadius, geometry.innerRadius - distance, 0);
+    return Math.max(coordinate - geometry.outerRadius, geometry.innerRadius - coordinate, 0);
   }
-  const coordinate = geometry.axis === 'x' ? x : y;
   return Math.max(Math.abs(coordinate - geometry.center) - geometry.width / 2, 0);
 }
 
@@ -237,51 +278,6 @@ function validateGeometry(id: string, geometry: MacroRegionGeometry): void {
   if (!(geometry.width > 0 && geometry.width <= 1)) {
     throw new RangeError(`Macro region "${id}" width must be within 0..1.`);
   }
-}
-
-function createDisplacement(
-  factory: RandomFactory,
-  regions: readonly MacroRegionConfig[],
-  deformation: MacroRegionDeformation
-): ((x: number, y: number) => { x: number; y: number }) | undefined {
-  const needsDisplacement = regions.some(
-    region => (region.irregularity ?? deformation.amplitude) > 0
-  );
-  if (!needsDisplacement) {
-    return undefined;
-  }
-
-  const frequency = deformation.frequency ?? DEFAULT_DEFORMATION_FREQUENCY;
-  const octaves = deformation.octaves ?? DEFAULT_DEFORMATION_OCTAVES;
-  const random = factory.create(deformation.seed || 'macro-region');
-  const displacementX = createNoise2D(() => random.next());
-  const displacementY = createNoise2D(() => random.next());
-
-  return (x, y) => ({
-    x: fbm(displacementX, x * frequency, y * frequency, octaves),
-    y: fbm(displacementY, x * frequency, y * frequency, octaves),
-  });
-}
-
-function fbm(
-  noise: (x: number, y: number) => number,
-  x: number,
-  y: number,
-  octaves: number
-): number {
-  let value = 0;
-  let amplitude = 1;
-  let frequency = 1;
-  let amplitudeSum = 0;
-
-  for (let octave = 0; octave < octaves; octave++) {
-    value += noise(x * frequency, y * frequency) * amplitude;
-    amplitudeSum += amplitude;
-    amplitude *= 0.5;
-    frequency *= 2;
-  }
-
-  return value / amplitudeSum;
 }
 
 function isNormalized(value: number): boolean {

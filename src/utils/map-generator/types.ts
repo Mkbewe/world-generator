@@ -62,16 +62,14 @@ export interface MacroRegionConfig {
   readonly irregularity?: number;
 }
 
-/** Domain warping applied to macro region borders; individual regions may override the amplitude. */
+export type MacroRegionNoiseSource = 'dedicated' | 'noise-map';
+
+/** Border displacement; individual overlays may override the amplitude. */
 export interface MacroRegionDeformation {
   /** How far the borders may shift in normalized units; 0 disables deformation. */
   readonly amplitude: number;
-  /** Noise scale: smaller makes large lobes, larger makes fine wobble. Defaults to 3. */
-  readonly frequency?: number;
-  /** Number of fBm octaves; defaults to 2. */
-  readonly octaves?: number;
-  /** Random stream namespace; defaults to "macro-region". */
-  readonly seed?: string;
+  /** Defaults to the dedicated region noise when omitted. */
+  readonly source?: MacroRegionNoiseSource;
 }
 
 export interface MapConfig extends SeededWorldConfig {

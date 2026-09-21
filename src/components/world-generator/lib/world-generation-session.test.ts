@@ -126,6 +126,7 @@ describe('WorldGenerationSession', () => {
       height: 2,
       seed: '17',
       shape: 'disc',
+      regionGeometry: { seed: 17, deformation: { source: 'dedicated' } },
     });
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
     expect(mapRepository.get()?.layers.noiseMap).toBe(noise);

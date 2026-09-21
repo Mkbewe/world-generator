@@ -1,4 +1,4 @@
-export const MAX_IRREGULARITY = 0.3;
+export const MAX_IRREGULARITY = 0.2;
 
 export function irregularityLabel(value: number): string {
   if (value === 0) {
@@ -7,7 +7,7 @@ export function irregularityLabel(value: number): string {
   if (value <= 0.1) {
     return 'Small';
   }
-  if (value <= 0.2) {
+  if (value <= 0.15) {
     return 'Medium';
   }
   return 'Large';
