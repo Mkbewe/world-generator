@@ -1,4 +1,10 @@
-import { formatDuration, formatNumber } from '../../utils/format';
+import {
+  formatAreaKm2,
+  formatDuration,
+  formatMeasure,
+  formatMeters,
+  formatNumber,
+} from '../../utils/format';
 import type { WorldConfig } from '../../utils/map-generator';
 import { type StatisticsMetric, StatisticsPanel } from '../statistics-panel';
 
@@ -8,7 +14,7 @@ interface MapStatisticsPanelProps {
 }
 
 export function MapStatisticsPanel({ world, totalDurationMs }: MapStatisticsPanelProps) {
-  const { sampleWidth, sampleHeight } = world.dimensions;
+  const { widthMeters, heightMeters, sampleWidth, sampleHeight } = world.dimensions;
   const items: StatisticsMetric[] = [
     {
       label: 'Seed',
@@ -17,8 +23,18 @@ export function MapStatisticsPanel({ world, totalDurationMs }: MapStatisticsPane
     },
     {
       label: 'Size',
-      value: `${sampleWidth} × ${sampleHeight}`,
-      description: 'World grid size in cells.',
+      value: `${formatMeasure(widthMeters)} × ${formatMeasure(heightMeters)} m`,
+      description: 'Physical world size.',
+    },
+    {
+      label: 'Terrain detail',
+      value: formatMeters(widthMeters / sampleWidth),
+      description: 'Metres covered by one sample cell.',
+    },
+    {
+      label: 'Area',
+      value: formatAreaKm2(widthMeters * heightMeters),
+      description: 'World surface area.',
     },
     { label: 'Shape', value: world.shape, description: 'World shape preset.' },
     {

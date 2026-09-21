@@ -80,7 +80,7 @@ describe('StatisticsPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Map' })).toBeInTheDocument();
     expect(screen.getByText('123456')).toBeInTheDocument();
-    expect(screen.getByText('10 × 10')).toBeInTheDocument();
+    expect(screen.getByText('10 × 10 m')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Generation' })).toBeInTheDocument();
     expect(screen.getByText('World shape generation')).toBeInTheDocument();
     expect(screen.getByText('Noise generation')).toBeInTheDocument();
