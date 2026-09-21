@@ -1,4 +1,4 @@
-import type { MacroRegionConfig, MacroRegionGeometry } from '../types';
+import type { MacroRegionConfig } from '../types';
 
 export type MacroRegionLayout = 'radial' | 'horizontal' | 'vertical';
 export type MacroRegionPresetId = 'rings' | 'horizontal' | 'vertical' | 'rings-with-poles';
@@ -126,46 +126,6 @@ export function macroRegionPreset(id: MacroRegionPresetId): MacroRegionPresetDef
     throw new RangeError(`Unknown macro region preset: "${id}".`);
   }
   return preset;
-}
-
-/** Returns the preset matching the current regions and layout exactly, if any. */
-export function activePresetId(
-  regions: readonly MacroRegionConfig[],
-  layout: MacroRegionLayout
-): MacroRegionPresetId | undefined {
-  return MACRO_REGION_PRESETS.find(
-    preset => preset.layout === layout && regionsMatch(regions, preset.createRegions())
-  )?.id;
-}
-
-function regionsMatch(a: readonly MacroRegionConfig[], b: readonly MacroRegionConfig[]): boolean {
-  return a.length === b.length && a.every((region, index) => regionMatches(region, b[index]));
-}
-
-function regionMatches(a: MacroRegionConfig, b: MacroRegionConfig): boolean {
-  return (
-    a.id === b.id &&
-    a.label === b.label &&
-    a.role === b.role &&
-    a.danger === b.danger &&
-    a.irregularity === b.irregularity &&
-    geometryMatches(a.geometry, b.geometry)
-  );
-}
-
-function geometryMatches(a: MacroRegionGeometry, b: MacroRegionGeometry): boolean {
-  if (a.kind === 'ring' && b.kind === 'ring') {
-    return (
-      a.center.x === b.center.x &&
-      a.center.y === b.center.y &&
-      a.innerRadius === b.innerRadius &&
-      a.outerRadius === b.outerRadius
-    );
-  }
-  if (a.kind === 'band' && b.kind === 'band') {
-    return a.axis === b.axis && a.center === b.center && a.width === b.width;
-  }
-  return false;
 }
 
 function createBands(axis: 'x' | 'y', count: number): MacroRegionConfig[] {
