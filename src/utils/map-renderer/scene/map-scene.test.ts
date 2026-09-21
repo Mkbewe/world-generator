@@ -1,4 +1,5 @@
 import { MapScene } from './map-scene';
+import { createRadialLayout } from '../../map-generator/stages/macro-region-presets';
 import { LayerCache, LayerRegistry, layerRegistry, MapLayer } from '../layer';
 
 const BASE_CATALOG = [layerRegistry.get('world-shape'), layerRegistry.get('noise')];
@@ -10,6 +11,67 @@ function setup() {
 }
 
 describe('MapScene', () => {
+  it('invalidates a smoothed region layer when its noise field changes', () => {
+    const scene = new MapScene(new LayerCache());
+    const size = { width: 3, height: 3 };
+    const regionGeometry = {
+      seed: 123,
+      regions: createRadialLayout(2),
+      deformation: { amplitude: 0.1, source: 'noise-map' as const },
+    };
+    const metadata = { shape: 'disc' as const, regionGeometry };
+    const mask = new Uint8Array(9).fill(1);
+    const regions = new Uint8Array(9);
+
+    scene.start(size, metadata);
+    scene.add('world-shape', mask);
+    scene.add('noise', new Float32Array(9).fill(0.25));
+    const first = scene.add('macro-region', regions);
+
+    scene.start(size, metadata);
+    scene.add('world-shape', mask);
+    scene.add('noise', new Float32Array(9).fill(0.75));
+    const second = scene.add('macro-region', regions);
+
+    expect(second).not.toBe(first);
+  });
+
+  it('renders dedicated region geometry without a noise layer', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start(
+      { width: 3, height: 3 },
+      {
+        shape: 'disc',
+        regionGeometry: {
+          seed: 123,
+          regions: createRadialLayout(2),
+          deformation: { amplitude: 0.1, source: 'dedicated' },
+        },
+      }
+    );
+    scene.add('world-shape', new Uint8Array(9).fill(1));
+
+    expect(() => scene.add('macro-region', new Uint8Array(9))).not.toThrow();
+  });
+
+  it('requires a noise layer for noise-map region geometry', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start(
+      { width: 3, height: 3 },
+      {
+        shape: 'disc',
+        regionGeometry: {
+          seed: 123,
+          regions: createRadialLayout(2),
+          deformation: { amplitude: 0.1, source: 'noise-map' },
+        },
+      }
+    );
+    scene.add('world-shape', new Uint8Array(9).fill(1));
+
+    expect(() => scene.add('macro-region', new Uint8Array(9))).toThrow('noise layer');
+  });
+
   it('invalidates cached layers when dimensions, dependencies or definitions change', () => {
     const cache = new LayerCache();
     const scene = new MapScene(cache);

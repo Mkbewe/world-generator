@@ -40,12 +40,16 @@ warstw, renderer z inspekcją oraz formularze ustawień.
 
 - `WorldShapeStage` — maska świata w `worldMask`: dysk (`disc`) albo prostokąt
   (`rectangle`). Nie implementuje jeszcze zawijania krawędzi.
-- `NoiseStage` — deterministyczna mapa szumu w `noiseMap`.
+- `NoiseStage` — deterministyczna mapa szumu w `noiseMap`, liczona wewnątrz
+  maski świata.
 - `MacroRegionStage` — każda komórka wewnątrz maski trafia do dokładnie jednego
   regionu w `macroRegionIdMap`; poza maską wartości pozostają zerowe (#256).
   Docelowe zagrożenie (`danger`) jest właściwością definicji regionu, a nie
   osobnym rastrem. Łączny limit 10 regionów bazowych i nakładanych obowiązuje
-  w formularzu oraz generatorze.
+  w formularzu oraz generatorze. Domyślnie granice korzystają z własnego,
+  deterministycznego szumu; przełącznik „Border noise" w formularzu (pole
+  `macroRegionDeformation.source`) wybiera interpolowane `noiseMap` (#313).
+  `irregularity` regionów nakładanych może nadpisać wspólną amplitudę.
 - Kolejność etapów jest zdefiniowana raz w `PIPELINE_STAGES`
   (`stage-definitions.ts`) i steruje generatorem, zakładkami formularza oraz
   kolejnością warstw w podglądzie.
@@ -63,6 +67,9 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
 
 - Formularze: general (seed), world shape (kształt, rozmiar i detal), noise
   oraz macro regions; kolejność zakładek wynika z `PIPELINE_STAGES`.
+- Formularz makroregionów ma na górze przełącznik „Border noise" (własny szum
+  albo `noiseMap`), a pod nim presety, układ bazowy, ustawienia granic i sekcje
+  regionów.
 - Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
   widoku.
 - Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.
@@ -201,7 +208,7 @@ tylko etapy, których ta zmiana dotyczy. Fundament jest rozbity na osobne zadani
 
 - ograniczenie `MacroRegionStage` do obszaru kształtu świata (#256) — zrobione,
 - kolejność etapów `world-shape → noise → macro-region` (#312) — zrobione,
-- noise jako źródło deformacji regionów (#313) — planowane,
+- noise jako źródło deformacji regionów (#313) — zrobione,
 - deklaracje zależności etapów i ponowne użycie wyników (#257) — planowane,
 - prezentacja pominiętych etapów w progressie i statystykach (#258) — planowane.
 

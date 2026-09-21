@@ -88,8 +88,10 @@ Per komórka wewnątrz maski:
 
 - `NoiseStage`: 3 wywołania simplex (octaves 3) w ciasnej pętli na liczbach.
 - `MacroRegionStage`: 4 wywołania simplex (dwa strumienie deformacji × octaves 2)
-  plus `ownerIndex` → `contains`/`distanceTo` z `Math.hypot` liczonym nawet
-  2× na region, iteracja po tablicy obiektów i sprawdzanie `role` (string).
+  przy domyślnym źródle `dedicated`; źródło `noise-map` zamienia je na do 4
+  odczytów z interpolacją. Do tego `ownerIndex` → `contains`/`distanceTo`
+  z `Math.hypot` liczonym nawet 2× na region, iteracja po tablicy obiektów
+  i sprawdzanie `role` (string).
 - `Math.hypot` jest w V8 wolniejsze od `Math.sqrt(dx*dx + dy*dy)` i nie jest
   inline'owane; obiekty i branch po `geometry.kind` psują monomorficzność pętli.
 
@@ -97,30 +99,36 @@ Per komórka wewnątrz maski:
 
 ## II. Pomysły
 
-### II.1. Noise jako źródło deformacji regionów — kierunek wybrany
+### II.1. Noise jako źródło deformacji regionów — wdrożone (#313)
 
-Deformacja granic bierze przesunięcie z gotowego `noiseMap` zamiast liczyć
-własny szum. Konsekwencje:
+Domyślnie deformacja korzysta z własnego, deterministycznego szumu (dwa kanały,
+częstotliwość 3, dwie oktawy). Pole `macroRegionDeformation.source` pozwala
+wybrać `noise-map` bez zmian w klasyfikacji regionów lub rendererze. Wariant
+`noise-map` ma następujące właściwości:
 
-- zysk: 4 simplex/komórkę → 2 odczyty z tablicy,
-- etapy działają już w kolejności `world-shape → noise → macro-region` (#312),
-  a zmiana Noise unieważnia regiony — czyli dokładnie to, czego chcemy,
-- `Irregularity` per region **nadal działa**: to mnożnik amplitudy
-  (`irregularity ?? globalnaAmplituda`), zmienia się tylko źródło przesunięcia,
-- `macroRegionDeformation.frequency/octaves/seed` tracą sens (charakter pochodzi
-  z Noise) — do usunięcia z typu, store'a i opisu UI,
-- `noiseMap` jest 0..1 → trzeba przemapować na −1..1,
-- potrzebne dwie składowe (dx, dy): to samo pole w dwóch punktach (komórka
-  i komórka przesunięta o stały wektor, z zawijaniem na brzegach); bez
-  interpolacji, bo granica i tak ma rozdzielczość komórki,
-- domyślna amplituda do przestrojenia wizualnie (Noise ma freq 4, deformacja
-  miała 3).
+- deformacja korzysta z gotowego pola szumu zamiast liczyć osobny szum w etapie
+  makroregionów; interpolacja wymaga do czterech odczytów na próbkę,
+- etapy działają w kolejności `world-shape → noise → macro-region` (#312),
+  a zmiana Noise zmienia regiony tylko przy źródle `noise-map`,
+- `Irregularity` regionu nakładanego nadpisuje wspólną amplitudę
+  (`irregularity ?? globalnaAmplituda`),
+- `macroRegionDeformation.frequency/octaves/seed` pozostają poza konfiguracją;
+  własny szum ma stałe parametry i korzysta z seedu świata,
+- `noiseMap` pozostaje liczone tylko wewnątrz maski świata; interpolacja pomija
+  komórki poza maską, zamiast odczytywać ich zera jako szum,
+- jedna wartość `noiseMap` z zakresu 0..1 jest mapowana na −1..1 i przesuwa
+  promień pierścieni lub współrzędną pasa; nie ma przesuniętej drugiej próbki,
+- próbki między komórkami są interpolowane dwuliniowo, ponieważ podgląd rysuje
+  granice w rozdzielczości ekranu,
+- domyślna amplituda 0.08 zostaje; wybór źródła zapisuje się z geometrią mapy,
+  więc podgląd odtwarza te same granice.
 
-### II.2. Rzadsza krata deformacji + interpolacja (alternatywa do II.1)
+### II.2. Rzadsza krata deformacji + interpolacja (alternatywa dla `dedicated`)
 
-Zostawić niezależny szum deformacji, ale liczyć go co N komórek (np. 8)
-i interpolować bilinearne. Koszt spada 4 simplex → ~0,06/komórkę, bez sprzężenia
-z Noise. Zachowuje pełną kontrolę nad charakterem granic.
+Nadal aktualne dla domyślnego źródła `dedicated`: zostawić niezależny szum
+deformacji, ale liczyć go co N komórek (np. 8) i interpolować bilinearne. Koszt
+spada 4 simplex → ~0,06/komórkę, bez sprzężenia z Noise. Zachowuje pełną
+kontrolę nad charakterem granic.
 
 ### II.3. Mikro-optymalizacje geometrii
 
@@ -188,11 +196,15 @@ i próbkowaniu. Wracamy do tematu tylko, jeśli pomiary pokażą, że to koniecz
 
 - Kolejność etapów ustawiona na `world-shape → noise → macro-region` (#312)
   i zdefiniowana raz w `PIPELINE_STAGES` (`stage-definitions.ts`); formularz
-  i warstwy podglądu korzystają z tej samej listy. Deformacja regionów ma
-  korzystać z `noiseMap` (#313, II.1).
-- `Irregularity` per region zostaje; znika `frequency/octaves/seed` deformacji.
-- Najpierw pomiar: ile czasu etapu to simplex, a ile geometria — dopiero potem
-  wybór między II.1/II.2/II.3.
+  i warstwy podglądu korzystają z tej samej listy.
+- `macroRegionDeformation.source` (#313, II.1) wybiera źródło deformacji granic:
+  domyślnie `dedicated` (własny szum, mapy bez zmian), opcjonalnie `noise-map`
+  (sprzężenie z Noise). W formularzu makroregionów służy do tego przełącznik
+  „Border noise", a wybór jedzie z geometrią mapy do podglądu i widać go
+  w statystykach. `frequency/octaves/seed` zniknęły z konfiguracji i UI.
+- `Irregularity` per region nadpisuje wspólną amplitudę.
+- Otwarte: czy `noise-map` ma stać się domyślnym źródłem — wymaga wizualnego
+  retuningu i pomiaru czasu etapu.
 - Otwarte: format szumu (`Uint8` vs `Uint16`, II.4), czy wchodzimy w
   `SharedArrayBuffer` (II.5), czy `macroRegionIdMap` ma być liczony na żądanie
   (II.7).

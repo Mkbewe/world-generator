@@ -29,7 +29,7 @@ describe('OverlayRegionCard', () => {
     expect(within(screen.getByLabelText('Width')).getByRole('slider')).toBeInTheDocument();
     expect(
       within(screen.getByLabelText('Overlay irregularity')).getByRole('slider')
-    ).toBeInTheDocument();
+    ).toHaveAttribute('aria-valuemax', '0.2');
     expect(within(screen.getByLabelText('Danger')).getByRole('slider')).toBeInTheDocument();
 
     await user.click(screen.getByRole('radio', { name: 'Vertical' }));

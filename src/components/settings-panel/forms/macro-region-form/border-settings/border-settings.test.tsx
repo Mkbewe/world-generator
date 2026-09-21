@@ -23,9 +23,14 @@ describe('BorderSettings', () => {
     expect(screen.getByText('Large')).toBeInTheDocument();
 
     const slider = within(screen.getByLabelText('Irregularity')).getByRole('slider');
+    expect(slider).toHaveAttribute('aria-valuemax', '0.2');
     slider.focus();
     await user.keyboard('{ArrowRight}');
 
     expect(useMacroRegionFormStore.getState().deformation.amplitude).toBeCloseTo(0.09);
+
+    await user.keyboard('{End}');
+    expect(useMacroRegionFormStore.getState().deformation.amplitude).toBe(0.2);
+    expect(screen.getAllByText('Large')).toHaveLength(2);
   });
 });

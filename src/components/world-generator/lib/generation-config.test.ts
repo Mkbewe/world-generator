@@ -37,4 +37,14 @@ describe('buildGenerationConfig', () => {
       },
     });
   });
+
+  it('passes a selected region noise source into the worker config', () => {
+    const result = buildGenerationConfig(
+      input({ macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } })
+    );
+
+    expect(result).toMatchObject({
+      config: { macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } },
+    });
+  });
 });
