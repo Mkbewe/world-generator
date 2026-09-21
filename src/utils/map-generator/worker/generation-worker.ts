@@ -27,11 +27,17 @@ async function generate(
     stages: generator.stages.map(({ id, name }) => ({ id, name })),
   });
 
+  const dirty = new Set(request.reuse.dirtyStageIds);
+  const skipStageIds = generator.stages
+    .filter(stage => !dirty.has(stage.id))
+    .map(stage => stage.id);
+
   try {
     const generation = await generator.generate(
       request.config,
-      {},
+      { ...request.reuse.cachedRasters },
       {
+        skipStageIds,
         onEvent: event => {
           // postMessage copies stage data; the generator keeps its working buffers.
           scope.postMessage(event);

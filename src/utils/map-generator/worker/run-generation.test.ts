@@ -41,6 +41,11 @@ const config: MapConfig = {
   noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
 };
 
+const reuse = {
+  dirtyStageIds: ['world-shape', 'noise', 'macro-region'],
+  cachedRasters: {},
+};
+
 describe('runGeneration', () => {
   beforeEach(() => {
     vi.stubGlobal('Worker', FakeWorker);
@@ -53,8 +58,13 @@ describe('runGeneration', () => {
   it('forwards stages and events, then resolves with the result', async () => {
     const onStages = vi.fn();
     const onEvent = vi.fn();
-    const promise = runGeneration(config, { onStages, onEvent });
+    const promise = runGeneration(config, { onStages, onEvent, reuse });
 
+    expect(FakeWorker.latest.postMessage).toHaveBeenCalledWith({
+      type: 'generate',
+      config,
+      reuse,
+    });
     FakeWorker.latest.emitMessage({ type: 'stages', stages: [{ id: 'noise', name: 'Noise' }] });
     FakeWorker.latest.emitMessage({
       type: 'stage-started',
@@ -77,7 +87,7 @@ describe('runGeneration', () => {
   it('terminates and rejects when aborted, ignoring late messages', async () => {
     const onEvent = vi.fn();
     const controller = new AbortController();
-    const promise = runGeneration(config, { signal: controller.signal, onEvent });
+    const promise = runGeneration(config, { signal: controller.signal, onEvent, reuse });
 
     controller.abort();
     await expect(promise).rejects.toBeInstanceOf(GenerationCancelledError);
@@ -94,7 +104,7 @@ describe('runGeneration', () => {
   });
 
   it('reports the worker error message', async () => {
-    const promise = runGeneration(config);
+    const promise = runGeneration(config, { reuse });
 
     FakeWorker.latest.emitError('Worker failed to load.');
 

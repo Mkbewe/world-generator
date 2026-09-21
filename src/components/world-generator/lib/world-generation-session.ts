@@ -31,7 +31,8 @@ export class WorldGenerationSession {
   private renderer?: MapRenderer;
   private layers: MapRasters = {};
   private run?: RunSnapshot;
-  private previousConfig?: MapConfig;
+  /** Configuration of the saved map; cleared together with the repository. */
+  private savedConfig?: MapConfig;
   private dirtyStages: readonly string[] = [];
 
   constructor(private readonly runGeneration: RunGeneration = runGenerationInWorker) {}
@@ -72,8 +73,12 @@ export class WorldGenerationSession {
     const generation = new AbortController();
     this.generation = generation;
     const signal = generation.signal;
-    this.layers = {};
-    this.dirtyStages = selectDirtyStageIds(this.previousConfig, config);
+    const cachedRasters = mapRepository.get()?.layers ?? {};
+    this.dirtyStages = selectDirtyStageIds(this.savedConfig, config);
+    this.layers = { ...cachedRasters };
+    // The saved map is consumed by this run, so its baseline goes away with it.
+    mapRepository.clear();
+    this.savedConfig = undefined;
     let progress: ProgressTracker | undefined;
 
     try {
@@ -95,11 +100,12 @@ export class WorldGenerationSession {
       const renderer = this.renderer;
       if (renderer) {
         this.startRenderer(renderer, run);
+        this.replayReused(renderer);
       }
-      mapRepository.clear();
       signal.throwIfAborted();
       const result = await this.runGeneration(config, {
         signal,
+        reuse: { dirtyStageIds: this.dirtyStages, cachedRasters },
         onStages: stages => {
           progress = new ProgressTracker(stages, onProgress);
           progress.start();
@@ -115,7 +121,7 @@ export class WorldGenerationSession {
 
       signal.throwIfAborted();
       mapPersistence.save({ ...run, layers: this.layers });
-      this.previousConfig = config;
+      this.savedConfig = config;
       progress?.complete(result.totalDurationMs);
       return {
         statistics: result.statistics,
@@ -153,6 +159,21 @@ export class WorldGenerationSession {
   private startRenderer(renderer: MapRenderer, run: RunSnapshot): void {
     renderer.start({ width: run.width, height: run.height }, run.shape, run.regionGeometry);
     renderer.setInfo(run.info ?? {});
+  }
+
+  /**
+   * Sends the layers this run reuses; they are silent, so the preview keeps its
+   * selection, and the dirty layers arrive as they complete. Stage ids and
+   * layer ids coincide for every stage that produces a raster.
+   */
+  private replayReused(renderer: MapRenderer): void {
+    const dirty = new Set(this.dirtyStages);
+    const values: LayerDataRecord = this.layers;
+    for (const id of layerRegistry.presentIn(values)) {
+      if (!dirty.has(id)) {
+        renderer.add(id, values[layerRegistry.get(id).source], true);
+      }
+    }
   }
 
   /** Replays collected layers without walking the preview through each of them. */

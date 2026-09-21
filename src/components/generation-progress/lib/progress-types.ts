@@ -1,4 +1,4 @@
-export type GenerationStageStatus = 'pending' | 'running' | 'completed' | 'failed';
+export type GenerationStageStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export interface GenerationStageProgress {
   id: string;

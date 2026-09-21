@@ -49,10 +49,25 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
     this.options.validateConfig?.(config);
     const context = new MapContext(config, initialState);
     const signal = options.signal ?? new AbortController().signal;
+    const skipStageIds = new Set(options.skipStageIds ?? []);
     const generationStartedAt = performance.now();
 
     for (const [stageIndex, stage] of this.stages.entries()) {
       this.throwIfCancelled(signal);
+
+      if (skipStageIds.has(stage.id)) {
+        const statistics = createSkippedStatistics(stage);
+        context.statistics.push(statistics);
+        options.onEvent?.({
+          type: 'stage-skipped',
+          stageId: stage.id,
+          stageName: stage.name,
+          stageIndex,
+          stageCount: this.stages.length,
+          statistics,
+        });
+        continue;
+      }
 
       options.onEvent?.({
         type: 'stage-started',
@@ -162,6 +177,19 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
       ...(details ? { details } : {}),
     };
   }
+}
+
+function createSkippedStatistics<TConfig extends SeededWorldConfig, TState extends object>(
+  stage: MapStage<TConfig, TState>
+): StageStatistics {
+  return {
+    stageId: stage.id,
+    stageName: stage.name,
+    status: 'skipped',
+    startedAt: 0,
+    finishedAt: 0,
+    durationMs: 0,
+  };
 }
 
 function createProgressReporter(

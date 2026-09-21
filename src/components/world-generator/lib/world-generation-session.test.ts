@@ -45,6 +45,24 @@ function completed(stageId: string, data: Record<string, unknown>): GenerationEv
   };
 }
 
+function skipped(stageId: string): GenerationEvent {
+  return {
+    type: 'stage-skipped',
+    stageId,
+    stageName: stageId,
+    stageIndex: stageId === 'world-shape' ? 0 : 1,
+    stageCount: 3,
+    statistics: {
+      stageId,
+      stageName: stageId,
+      status: 'skipped',
+      startedAt: 0,
+      finishedAt: 0,
+      durationMs: 0,
+    },
+  };
+}
+
 describe('WorldGenerationSession', () => {
   let renderer: MapRenderer;
   let runner: ReturnType<typeof vi.fn<RunGeneration>>;
@@ -148,7 +166,39 @@ describe('WorldGenerationSession', () => {
     expect(session.dirtyStageIds).toEqual([]);
   });
 
-  it('keeps the last successful configuration as the regeneration baseline', async () => {
+  it('reuses the saved rasters for the clean stages', async () => {
+    const mask = new Uint8Array(4).fill(1);
+    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
+    let run = 0;
+    runner.mockImplementation(async (_, options) => {
+      run += 1;
+      options?.onStages?.(stages);
+      if (run === 1) {
+        options?.onEvent?.(completed('world-shape', { worldMask: mask }));
+        options?.onEvent?.(completed('noise', { noiseMap: noise }));
+      } else {
+        options?.onEvent?.(skipped('world-shape'));
+        options?.onEvent?.(skipped('noise'));
+      }
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
+    session.attach(renderer);
+
+    await session.generate(config, vi.fn());
+    await session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
+    await renderer.ready;
+
+    expect(runner.mock.lastCall?.[1]?.reuse).toEqual({
+      dirtyStageIds: ['macro-region'],
+      cachedRasters: { worldMask: mask, noiseMap: noise, macroRegionIdMap: regions },
+    });
+    expect(mapRepository.get()?.layers).toMatchObject({ worldMask: mask, noiseMap: noise });
+    expect(renderer.state.displayedLayer).toBe('macro-region');
+  });
+
+  it('drops the baseline when a failed run left no saved map to reuse', async () => {
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(config, vi.fn());
 
@@ -158,7 +208,7 @@ describe('WorldGenerationSession', () => {
 
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(changed, vi.fn());
-    expect(session.dirtyStageIds).toEqual(['noise', 'macro-region']);
+    expect(session.dirtyStageIds).toEqual(['world-shape', 'noise', 'macro-region']);
   });
 
   it('rejects missing stage data without saving an incomplete map', async () => {

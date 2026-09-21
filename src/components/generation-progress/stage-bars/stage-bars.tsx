@@ -10,6 +10,7 @@ const STATUS_WIDTH: Record<GenerationStageStatus, (stage: GenerationStageProgres
   running: stage => `${stage.percentage}%`,
   completed: () => '100%',
   failed: () => '100%',
+  skipped: () => '100%',
 };
 
 interface StageBarsProps {

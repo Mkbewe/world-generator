@@ -91,7 +91,7 @@ export type StageMetrics = Record<string, StageMetric> & {
 export interface StageStatistics {
   stageId: string;
   stageName: string;
-  status: 'completed' | 'failed';
+  status: 'completed' | 'failed' | 'skipped';
   startedAt: number;
   finishedAt: number;
   durationMs: number;
@@ -129,14 +129,25 @@ type StageFailedEvent = StageEventBase & {
   statistics: StageStatistics;
 };
 
+type StageSkippedEvent = StageEventBase & {
+  type: 'stage-skipped';
+  statistics: StageStatistics;
+};
+
 export type GenerationEvent =
-  StageStartedEvent | StageProgressEvent | StageCompletedEvent | StageFailedEvent;
+  | StageStartedEvent
+  | StageProgressEvent
+  | StageCompletedEvent
+  | StageFailedEvent
+  | StageSkippedEvent;
 
 export type StageProgressReporter = (progress: number) => void;
 
 export interface GenerationOptions {
   signal?: AbortSignal;
   onEvent?: (event: GenerationEvent) => void;
+  /** Stages reused from cached outputs; their data must already be in the state. */
+  skipStageIds?: readonly string[];
 }
 
 export interface MapGeneratorOptions<TConfig = unknown> {

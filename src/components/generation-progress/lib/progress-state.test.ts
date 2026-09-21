@@ -9,7 +9,7 @@ const stageInfos = [
 
 function statistics(
   stageId: string,
-  status: 'completed' | 'failed',
+  status: 'completed' | 'failed' | 'skipped',
   durationMs: number
 ): StageStatistics {
   return {
@@ -122,6 +122,24 @@ describe('ProgressTracker', () => {
 
     expect(latest().status).toBe('failed');
     expect(latest().stages[1]).toMatchObject({ status: 'failed', durationMs: 30 });
+  });
+
+  it('marks reused stages as skipped without touching the run status', () => {
+    const { tracker, latest } = createTracker();
+    tracker.start();
+
+    tracker.handle({
+      type: 'stage-skipped',
+      stageId: 'world-shape',
+      stageName: 'World shape generation',
+      stageIndex: 0,
+      stageCount: 2,
+      statistics: statistics('world-shape', 'skipped', 0),
+    });
+
+    expect(latest().status).toBe('running');
+    expect(latest().stages[0]).toMatchObject({ status: 'skipped', durationMs: 0 });
+    expect(latest().stages[1]).toMatchObject({ status: 'pending' });
   });
 
   it('completes the run with the total duration', () => {

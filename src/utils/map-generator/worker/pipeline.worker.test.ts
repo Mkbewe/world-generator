@@ -14,6 +14,10 @@ const request: PipelineWorkerGenerateRequest = {
     },
     noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   },
+  reuse: {
+    dirtyStageIds: ['world-shape', 'noise', 'macro-region'],
+    cachedRasters: {},
+  },
 };
 
 describe('generation worker', () => {
@@ -38,8 +42,8 @@ describe('generation worker', () => {
     vi.unstubAllEnvs();
   });
 
-  async function generate() {
-    scope.onmessage?.(new MessageEvent('message', { data: request }));
+  async function generate(data: PipelineWorkerGenerateRequest = request) {
+    scope.onmessage?.(new MessageEvent('message', { data }));
     await vi.waitFor(() => {
       expect(messages.some(message => message.type === 'result' || message.type === 'error')).toBe(
         true
@@ -69,6 +73,33 @@ describe('generation worker', () => {
       'completed',
       'completed',
     ]);
+  });
+
+  it('reuses cached rasters and reports the clean stages as skipped', async () => {
+    const { createMapGenerator } = await import('../pipeline-factory');
+    const full = await createMapGenerator().generate(request.config, {});
+    const cachedRasters = {
+      worldMask: full.context.state.worldMask,
+      noiseMap: full.context.state.noiseMap,
+    };
+
+    const message = await generate({
+      ...request,
+      reuse: { dirtyStageIds: ['macro-region'], cachedRasters },
+    });
+
+    expect(message?.type).toBe('result');
+    if (message?.type !== 'result') {
+      throw new Error('Expected a generation result.');
+    }
+    expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
+      'skipped',
+      'skipped',
+      'completed',
+    ]);
+    expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
+      ['world-shape', 'noise']
+    );
   });
 
   it.each(['missing', 'wrong size'] as const)('rejects %s final map data', async kind => {
