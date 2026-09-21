@@ -203,6 +203,7 @@ describe('WorldGenerationSession', () => {
     session.attach(renderer);
 
     await session.generate(config, vi.fn());
+    await renderer.ready;
     await session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
     await renderer.ready;
 
@@ -280,6 +281,31 @@ describe('WorldGenerationSession', () => {
 
     finish({ statistics: [], totalDurationMs: 1 });
     await run;
+  });
+
+  it('keeps the preview selection while regenerating an existing map', async () => {
+    const mask = new Uint8Array(4).fill(1);
+    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: mask }));
+      options?.onEvent?.(completed('noise', { noiseMap: noise }));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
+    session.attach(renderer);
+    await session.generate(config, vi.fn());
+    await renderer.ready;
+    expect(usePreviewStore.getState().baseLayer).toBe('macro-region');
+
+    renderer.select('noise');
+    usePreviewStore.getState().setBaseLayer('noise');
+    await session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
+    await renderer.ready;
+
+    expect(usePreviewStore.getState().baseLayer).toBe('noise');
+    expect(renderer.state.displayedLayer).toBe('noise');
   });
 
   it('keeps the real statistics of stages reused by the next run', async () => {

@@ -40,6 +40,8 @@ export class WorldGenerationSession {
   /** Configuration of the saved map; cleared together with the repository. */
   private savedConfig?: MapConfig;
   private dirtyStages: readonly string[] = [];
+  /** Whether the preview follows the stages of the current run. */
+  private followRun = false;
   /** Stages announced by the last worker, used to plan the next run early. */
   private stageInfos: readonly StageInfo[] = [];
   /** Real statistics of the runs that produced the displayed map, per stage. */
@@ -83,6 +85,7 @@ export class WorldGenerationSession {
     this.stageInfos = [];
     this.realStatistics.clear();
     this.dirtyStages = [];
+    this.followRun = false;
   }
 
   /** Returns no result when generation is cancelled or replaced by another run. */
@@ -126,6 +129,8 @@ export class WorldGenerationSession {
       if (renderer) {
         this.startRenderer(renderer, run);
       }
+      // A fresh preview follows the stages; an existing one keeps its selection.
+      this.followRun = !renderer?.state.displayedLayer;
       signal.throwIfAborted();
       const result = await this.runGeneration(config, {
         signal,
@@ -190,10 +195,12 @@ export class WorldGenerationSession {
   private receiveStage(data: LayerDataRecord): void {
     const rasters = selectRasters(data);
     Object.assign(this.layers, rasters);
-    const displayed = layerRegistry.presentIn(rasters).at(-1);
-    if (displayed) {
-      // The preview tab follows the generated layers, also while the page is unmounted.
-      usePreviewStore.getState().setBaseLayer(displayed);
+    if (this.followRun) {
+      const displayed = layerRegistry.presentIn(rasters).at(-1);
+      if (displayed) {
+        // The preview tab follows the first map while it is being built.
+        usePreviewStore.getState().setBaseLayer(displayed);
+      }
     }
     const renderer = this.renderer;
     if (!renderer || renderer.signal.aborted) {

@@ -102,14 +102,19 @@ export class MapView {
   /**
    * Begins a map. The view transform and the displayed layer survive while the
    * sample grid keeps its size, so a selective run never blanks the preview.
+   * A continuing map keeps its layer; a fresh one follows the drawn stages.
    */
   start(size: MapSize, shape: WorldShape): void {
-    if (!this.matchesSize(size)) {
+    const continuing = this.matchesSize(size) && this.presented !== undefined;
+    if (!continuing) {
       this.view = fitView();
       this.presented = undefined;
       this.presenter.reset();
     }
-    this.progressive = true;
+    this.progressive = !continuing;
+    if (this.presented) {
+      this.selectedLayer = this.presented.id;
+    }
     this.shape = shape;
     this.presenter.setShape(shape);
     this.size = size;
@@ -140,7 +145,7 @@ export class MapView {
   }
 
   present(layer: MapLayer): void {
-    if (this.progressive ? this.shouldDisplay(layer.id) : layer.id === this.selectedLayer) {
+    if (this.displays(layer)) {
       this.show(layer);
     }
   }
@@ -220,11 +225,11 @@ export class MapView {
   }
 
   tilePainter(layer: MapLayer): TileReporter | undefined {
-    if (!this.progressive || !this.shouldDisplay(layer.id)) {
+    if (!this.displays(layer)) {
       return undefined;
     }
     return (x, y, width, height) => {
-      if (this.shouldDisplay(layer.id)) {
+      if (this.displays(layer)) {
         this.presenter.tileReady(layer, x, y, width, height);
       }
     };
@@ -253,6 +258,11 @@ export class MapView {
       this.presenter.ensure(this.presented);
     }
     this.overlays.render(this.mask, this.shape, this.view);
+  }
+
+  /** Whether a layer may be drawn now: every stage while walking, one when continuing. */
+  private displays(layer: MapLayer): boolean {
+    return this.progressive ? this.shouldDisplay(layer.id) : layer.id === this.selectedLayer;
   }
 
   private setScale(scale: number): boolean {

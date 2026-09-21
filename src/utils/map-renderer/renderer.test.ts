@@ -261,7 +261,7 @@ describe('MapRenderer', () => {
     expect(preview.state.displayedLayer).toBe('world-shape');
   });
 
-  it('resumes progressive drawing and statistics when generation follows a loaded map', async () => {
+  it('keeps the loaded selection and reports its layers when generation follows', async () => {
     const onRenderStatistics = vi.fn();
     const { preview } = setupWithSnapshot(
       { worldMask: new Uint8Array(4).fill(1) },
@@ -277,9 +277,9 @@ describe('MapRenderer', () => {
     await vi.runAllTimersAsync();
     await preview.ready;
 
-    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.state.displayedLayer).toBe('world-shape');
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      firstTileDurationMs: expect.any(Number),
+      firstTileDurationMs: undefined,
       layers: [{ tiles: 4 }, { tiles: 4 }],
     });
     preview.dispose();
@@ -393,9 +393,9 @@ describe('MapRenderer', () => {
     await vi.runAllTimersAsync();
     await preview.ready;
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 8,
+      elapsedDurationMs: 2,
       firstTileDurationMs: undefined,
-      presentationDurationMs: 8,
+      presentationDurationMs: 2,
       overlayDurationMs: 7,
       layers: [
         { durationMs: 0, tiles: 0, pixels: 0 },
@@ -426,6 +426,26 @@ describe('MapRenderer', () => {
 
     expect(preview.state.displayedLayer).toBeUndefined();
     expect(preview.state.fitted).toBe(true);
+    preview.dispose();
+  });
+
+  it('does not walk the preview when a run continues an existing map', async () => {
+    const { preview } = setup();
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    preview.add('noise', new Float32Array(4));
+    await vi.runAllTimersAsync();
+    await preview.ready;
+    expect(preview.state.displayedLayer).toBe('noise');
+
+    preview.start({ width: 2, height: 2 }, 'disc');
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    preview.add('noise', new Float32Array(4));
+    preview.add('macro-region', new Uint8Array(4));
+    await vi.runAllTimersAsync();
+    await preview.ready;
+
+    expect(preview.state.displayedLayer).toBe('noise');
     preview.dispose();
   });
 
