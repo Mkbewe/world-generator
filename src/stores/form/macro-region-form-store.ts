@@ -5,7 +5,6 @@ import {
 } from '../../utils/map-generator/stages/macro-region-defaults';
 import {
   createBandOverlay,
-  createMacroRegionLayout,
   type MacroRegionLayout,
   macroRegionPreset,
   type MacroRegionPresetId,
@@ -13,7 +12,7 @@ import {
 import {
   applyRegionBoundaries,
   baseRegions,
-  overlayRegions,
+  regionBoundaries,
   regionSegments,
   removeBaseRegion,
   splitLargestRegion,
@@ -25,12 +24,15 @@ export const MACRO_REGION_FORM_DEFAULTS = {
   regions: DEFAULT_MACRO_REGIONS,
   layout: 'radial' as const,
   deformation: DEFAULT_MACRO_DEFORMATION,
+  activePreset: 'rings' as MacroRegionPresetId,
 };
 
 interface MacroRegionFormState {
   regions: readonly MacroRegionConfig[];
   layout: MacroRegionLayout;
   deformation: MacroRegionDeformation;
+  /** Preset chosen by the user; any manual edit clears it for good. */
+  activePreset?: MacroRegionPresetId;
   setDeformation: (deformation: MacroRegionDeformation) => void;
   applyPreset: (preset: MacroRegionPresetId) => void;
   applyLayout: (layout: MacroRegionLayout) => void;
@@ -70,20 +72,24 @@ export const useMacroRegionFormStore = createStore<MacroRegionFormState>(set => 
   setDeformation: deformation => set({ deformation }),
   applyPreset: id => {
     const preset = macroRegionPreset(id);
-    set({ layout: preset.layout, regions: preset.createRegions() });
+    set({ layout: preset.layout, regions: preset.createRegions(), activePreset: id });
   },
   applyLayout: layout =>
     set(state => {
-      const currentBase = baseRegions(state.regions);
-      const geometry = createMacroRegionLayout(layout, currentBase.length);
-      const converted = currentBase.map((region, index) => ({
-        ...region,
-        geometry: geometry[index].geometry,
-      }));
-      return { layout, regions: [...converted, ...overlayRegions(state.regions)] };
+      if (layout === state.layout) {
+        return state;
+      }
+      const boundaries = regionBoundaries(state.layout, state.regions);
+      const converted = applyRegionBoundaries(layout, state.regions, boundaries);
+      return { layout, regions: converted.regions, activePreset: undefined };
     }),
   setRegionBoundaries: boundaries =>
-    set(state => applyRegionBoundaries(state.layout, state.regions, boundaries)),
+    set(state => {
+      const change = applyRegionBoundaries(state.layout, state.regions, boundaries);
+      return change.regions === state.regions
+        ? state
+        : { regions: change.regions, activePreset: undefined };
+    }),
   addBaseRegion: () =>
     set(state => {
       if (state.regions.length >= MAX_MACRO_REGIONS) {
@@ -106,7 +112,10 @@ export const useMacroRegionFormStore = createStore<MacroRegionFormState>(set => 
         danger: neighbour ? (source.danger + neighbour.danger) / 2 : source.danger,
       };
 
-      return splitLargestRegion(state.layout, state.regions, region);
+      const change = splitLargestRegion(state.layout, state.regions, region);
+      return change.regions === state.regions
+        ? state
+        : { regions: change.regions, activePreset: undefined };
     }),
   addOverlay: axis =>
     set(state => {
@@ -121,7 +130,7 @@ export const useMacroRegionFormStore = createStore<MacroRegionFormState>(set => 
         0.16,
         1
       );
-      return { regions: [...state.regions, region] };
+      return { regions: [...state.regions, region], activePreset: undefined };
     }),
   removeRegion: id =>
     set(state => {
@@ -130,13 +139,20 @@ export const useMacroRegionFormStore = createStore<MacroRegionFormState>(set => 
         return state;
       }
       if (region.role === 'overlay') {
-        return { regions: state.regions.filter(item => item.id !== id) };
+        return {
+          regions: state.regions.filter(item => item.id !== id),
+          activePreset: undefined,
+        };
       }
-      return removeBaseRegion(state.layout, state.regions, id);
+      const change = removeBaseRegion(state.layout, state.regions, id);
+      return change.regions === state.regions
+        ? state
+        : { regions: change.regions, activePreset: undefined };
     }),
   updateRegion: (id, patch) =>
     set(state => ({
       regions: state.regions.map(region => (region.id === id ? { ...region, ...patch } : region)),
+      activePreset: undefined,
     })),
   updateOverlay: (id, patch) =>
     set(state => ({
@@ -154,5 +170,6 @@ export const useMacroRegionFormStore = createStore<MacroRegionFormState>(set => 
           },
         };
       }),
+      activePreset: undefined,
     })),
 }));

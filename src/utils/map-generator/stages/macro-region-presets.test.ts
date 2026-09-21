@@ -1,6 +1,5 @@
 import { DEFAULT_MACRO_DEFORMATION } from './macro-region-defaults';
 import {
-  activePresetId,
   createBandOverlay,
   createHorizontalLayout,
   createMacroRegionLayout,
@@ -82,26 +81,6 @@ describe('macro region presets', () => {
     expect(createMacroRegionLayout('horizontal', 7)).toHaveLength(7);
     expect(createMacroRegionLayout('vertical', 7)).toHaveLength(7);
     expect(createMacroRegionLayout('radial', 7)).toHaveLength(7);
-  });
-
-  it('recognizes every preset from its own regions and layout', () => {
-    for (const preset of MACRO_REGION_PRESETS) {
-      expect(activePresetId(preset.createRegions(), preset.layout)).toBe(preset.id);
-    }
-  });
-
-  it('distinguishes presets that share the same layout', () => {
-    expect(activePresetId(createRadialLayout(4), 'radial')).toBe('rings');
-    expect(activePresetId(createRadialPolesLayout(6), 'radial')).toBe('rings-with-poles');
-  });
-
-  it('returns nothing after manual edits or a layout-only change', () => {
-    const [first, ...rest] = createRadialLayout(4);
-
-    expect(activePresetId([{ ...first, danger: 0.5 }, ...rest], 'radial')).toBeUndefined();
-    expect(activePresetId([{ ...first, label: 'Safe haven' }, ...rest], 'radial')).toBeUndefined();
-    expect(activePresetId(createHorizontalLayout(5), 'vertical')).toBeUndefined();
-    expect(activePresetId(createRadialLayout(5), 'radial')).toBeUndefined();
   });
 
   it('exposes reusable starting presets built from the same region model', () => {

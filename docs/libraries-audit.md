@@ -33,11 +33,11 @@ w npm.
 | Obszar | Pliki | Paczka | Zysk LOC | Kiedy |
 | --- | --- | --- | --- | --- |
 | Gesty pan/zoom/tap | `use-map-readout.ts` | `@use-gesture/react` | −40…−60, dochodzi pinch | przy pracach nad dotykiem |
-| Obrysy z rastra | `world-boundary-renderer.ts`, `smooth-layer-painter.ts` | `d3-contour` | ~0 netto teraz, więcej przy wektorach | po #319 |
+| Obrysy z rastra | `world-boundary-renderer.ts`, `smooth-layer-painter.ts` | `d3-contour` | ~0 netto teraz, więcej przy wektorach | gdy potrzebne wektory (eksport, linia brzegowa) |
 | Ramki palet | `palettes.ts` | `chroma-js` | −40…−50 | opcjonalnie, niski priorytet |
-| Szum: oktawy, warp, okresowość | `noise-stage.ts`, `macro-region-stage.ts` | `fastnoise-lite` | −30 teraz, wartość przyszła | przed sekcją 7 roadmapy |
+| Szum: oktawy, warp | `noise-stage.ts`, `macro-region-stage.ts` | `fastnoise-lite` | −30 teraz, wartość przyszła | gdy potrzebny domain warp |
 | Worker RPC | `worker/*`, `run-generation.ts` | `comlink` | −40…−60 | opcjonalnie |
-| Testy gładkości #319 | testy renderera | `pixelmatch` (dev) | 0 (testy) | teraz, jeśli potrzeba |
+| Testy obrazu | testy renderera | `pixelmatch` (dev) | 0 (testy) | przy przyszłych testach obrazu |
 
 ### Gesty — `@use-gesture/react`
 
@@ -61,9 +61,9 @@ Reacta. Dodatkowo daje pinch-to-zoom na dotyku, którego dziś nie ma.
 
 Cena: kontur liczony z rastra jest tak dokładny jak raster, a dzisiejszy
 `SmoothLayerPainter` próbkuje ciągły klasyfikator w rozdzielczości ekranu.
-Dlatego to kandydat po #319 i przy okazji wektoryzacji, nie zamiennik 1:1.
-Zysk LOC netto teraz byłby bliski zeru (~110 linii paintera znika, dochodzi
-obsługa geometrii).
+#319 jest już wydane (0.8.0), więc to kandydat przy okazji wektoryzacji, nie
+zamiennik 1:1. Zysk LOC netto teraz byłby bliski zeru (~110 linii paintera
+znika, dochodzi obsługa geometrii).
 
 ### Palety — `chroma-js`
 
@@ -76,11 +76,13 @@ Niski priorytet — obecny kod jest prosty i przetestowany.
 
 `simplex-noise` już jest paczką; ręcznie zostają pętle oktaw
 (`noise-stage.ts:55-63`, `macro-region-stage.ts:259-284`, ~35 linii) i brakuje
-domain warp oraz szumu okresowego. `fastnoise-lite` (MIT, 1.1.1, TS natywnie)
-daje FBm z persistence/lacunarity, warping i warianty okresowe — to wprost
-potrzeby sekcji 7 roadmapy (cylinder, zawijanie). Uwaga: zmiana silnika zmienia
-wyniki generacji dla danego seeda; snapshoty żyją w pamięci, więc dotknie to
-głównie testów etapów.
+domain warp oraz szumu okresowego. `fastnoise-lite` (MIT, 1.1.1) daje FBm z
+persistence/lacunarity i domain warp, ale nie potwierdza API szumu okresowego —
+nie jest więc gotowym rozwiązaniem zawijania świata (sekcja 7 roadmapy), to
+wymaga osobnego prototypu szwu. Paczka nie dowozi też typów (`@types` nie
+istnieje), trzeba by dodać lokalny plik deklaracji. Uwaga: zmiana silnika
+zmienia wyniki generacji dla danego seeda; snapshoty żyją w pamięci, więc
+dotknie to głównie testów etapów.
 
 ### Worker — `comlink`
 
@@ -152,10 +154,11 @@ z możliwych zmian, nie oszczędność linii.
 
 ## Kolejność rekomendowana
 
-1. Dokończyć #319; ewentualnie `pixelmatch` do testów akceptacyjnych.
+1. #319 jest wydane (0.8.0); `pixelmatch` pozostaje opcją dla przyszłych
+   testów obrazu.
 2. `@use-gesture/react` przy okazji pracy nad gestami i dotykiem.
-3. `fastnoise-lite` przed implementacją zawijania świata i domain warping
-   (sekcja 7 roadmapy).
+3. `fastnoise-lite` tylko dla domain warp; zawijanie świata (sekcja 7 roadmapy)
+   wymaga osobnego prototypu szwu, bo paczka nie potwierdza szumu okresowego.
 4. `d3-contour` dopiero, gdy pojawi się potrzeba wektorów (eksport, linia
    brzegowa, hit-testing), i wtedy razem z decyzją o zamianie malowania.
 5. `comlink`, `chroma-js` — opcjonalnie, bez presji.
@@ -184,17 +187,18 @@ Stan npm na 20.09.2026:
 | d3-delaunay | 6.0.4 | ISC | 04.2023 |
 | honeycomb-grid | 4.1.5 | MIT | 11.2023 |
 
-Wszystkie paczki są permissive i mają typy TypeScript (własne albo
-z DefinitelyTyped). Najstarsze wydania (`simplex-noise` już w projekcie,
-`simplify-js`, `d3-delaunay`, `d3-contour`) dotyczą bibliotek stabilnych,
-których API się nie zmienia — nie są porzucone.
+Wszystkie paczki są permissive. Typy TypeScript mają własne albo
+z DefinitelyTyped — wyjątkiem jest `fastnoise-lite`, które wymaga lokalnego
+pliku deklaracji. Najstarsze wydania (`simplify-js`, `d3-delaunay`,
+`d3-contour`) dotyczą bibliotek stabilnych, których API się nie zmienia — nie
+są porzucone; `simplex-noise` już jest w projekcie.
 
 ## Uzupełnienie: formularze i priorytety (21.09.2026)
 
 Powyższy audyt obejmuje głównie generator i renderer. W całym `src` jest około
-10 tys. linii TS/TSX bez testów, z czego formularze ustawień zajmują około
+11 tys. linii TS/TSX bez testów, z czego formularze ustawień zajmują około
 1,2 tys. linii. Liczba linii nie mówi jednak, ile waży kod produkcyjny ani co
-spowalnia aplikację; te trzy rzeczy trzeba mierzyć osobno. Około 700 linii
+spowalnia aplikację; te trzy rzeczy trzeba mierzyć osobno. Około 800 linii
 pozostaje też w nadal dostępnej trasie `legacy-generator`.
 
 ### Interakcje w formularzu makroregionów
@@ -244,7 +248,7 @@ nie ma podstaw do migracji prostych formularzy `General`, `Noise` i
   przesyłane dane; samo wdrożenie nie usunie kopii dużych rastrów między
   workerem a głównym wątkiem. Wymagałoby osobnej decyzji o transferze buforów
   i ich dalszym użyciu w pipeline.
-- Stan #319 wymaga aktualizacji w kolejności powyżej: obecny renderer ma
+- Stan #319 zaktualizowany w tekście powyżej: obecny renderer ma
   `SmoothLayerPainter`, a `generator-performance-notes.md` opisuje #319 jako
   wykonane. `pixelmatch` pozostaje opcją dla przyszłych testów obrazu.
 

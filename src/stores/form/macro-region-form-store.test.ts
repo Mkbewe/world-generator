@@ -1,4 +1,5 @@
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from './macro-region-form-store';
+import { macroRegionPreset } from '../../utils/map-generator/stages/macro-region-presets';
 import {
   baseRegions,
   overlayRegions,
@@ -14,6 +15,7 @@ describe('useMacroRegionFormStore', () => {
     const state = useMacroRegionFormStore.getState();
 
     expect(state.layout).toBe('radial');
+    expect(state.activePreset).toBe('rings');
     expect(baseRegions(state.regions)).toHaveLength(4);
     expect(regionSegments('radial', state.regions).map(segment => segment.percent)).toEqual([
       25, 25, 25, 25,
@@ -36,6 +38,7 @@ describe('useMacroRegionFormStore', () => {
     store.applyPreset('rings-with-poles');
 
     let state = useMacroRegionFormStore.getState();
+    expect(state.activePreset).toBe('rings-with-poles');
     expect(state.layout).toBe('radial');
     expect(baseRegions(state.regions)).toHaveLength(4);
     expect(overlayRegions(state.regions)).toHaveLength(2);
@@ -48,10 +51,11 @@ describe('useMacroRegionFormStore', () => {
     expect(overlayRegions(state.regions)).toHaveLength(0);
   });
 
-  it('changes layout while preserving region metadata and overlays', () => {
+  it('changes layout while preserving metadata, overlays and shares', () => {
     const store = useMacroRegionFormStore.getState();
     const firstRegionId = store.regions[0].id;
     store.updateRegion(firstRegionId, { label: 'Home' });
+    store.setRegionBoundaries([20, 50, 80]);
     store.addOverlay('y');
     const overlayBefore = overlayRegions(useMacroRegionFormStore.getState().regions)[0];
 
@@ -66,6 +70,9 @@ describe('useMacroRegionFormStore', () => {
     ).toBe(true);
     expect(baseRegions(state.regions)[0]).toMatchObject({ id: firstRegionId, label: 'Home' });
     expect(overlayRegions(state.regions)[0]).toEqual(overlayBefore);
+    expect(regionSegments('vertical', state.regions).map(segment => segment.percent)).toEqual([
+      20, 30, 30, 20,
+    ]);
   });
 
   it('adds and removes base regions while preserving full coverage', () => {
@@ -133,12 +140,66 @@ describe('useMacroRegionFormStore', () => {
     expect(useMacroRegionFormStore.getState().regions).toBe(regions);
   });
 
-  it('updates border deformation', () => {
-    useMacroRegionFormStore.getState().setDeformation({ amplitude: 0.2, frequency: 5 });
+  it('tracks the chosen preset explicitly', () => {
+    const store = useMacroRegionFormStore.getState();
+    expect(store.activePreset).toBe('rings');
+
+    store.applyPreset('horizontal');
+
+    expect(useMacroRegionFormStore.getState().activePreset).toBe('horizontal');
+  });
+
+  it('clears the preset on manual boundaries, layout, region and overlay edits', () => {
+    const store = useMacroRegionFormStore.getState();
+
+    store.setRegionBoundaries([20, 50, 80]);
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+
+    store.applyPreset('rings');
+    store.applyLayout('vertical');
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+
+    store.applyPreset('rings');
+    store.addBaseRegion();
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+
+    store.applyPreset('rings');
+    const base = baseRegions(useMacroRegionFormStore.getState().regions)[1];
+    store.removeRegion(base.id);
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+
+    store.applyPreset('rings');
+    store.addOverlay('y');
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+
+    store.applyPreset('rings-with-poles');
+    const overlay = overlayRegions(useMacroRegionFormStore.getState().regions)[0];
+    store.updateOverlay(overlay.id, { width: 0.3 });
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+  });
+
+  it('does not restore the preset when edited values match it again', () => {
+    const store = useMacroRegionFormStore.getState();
+    store.applyPreset('rings');
+    const region = useMacroRegionFormStore.getState().regions[0];
+    store.updateRegion(region.id, { label: 'Edited' });
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+
+    useMacroRegionFormStore.setState({ regions: macroRegionPreset('rings').createRegions() });
+
+    expect(useMacroRegionFormStore.getState().activePreset).toBeUndefined();
+  });
+
+  it('updates border deformation without clearing the preset', () => {
+    const store = useMacroRegionFormStore.getState();
+    store.applyPreset('horizontal');
+
+    store.setDeformation({ amplitude: 0.2, frequency: 5 });
 
     expect(useMacroRegionFormStore.getState().deformation).toMatchObject({
       amplitude: 0.2,
       frequency: 5,
     });
+    expect(useMacroRegionFormStore.getState().activePreset).toBe('horizontal');
   });
 });
