@@ -78,7 +78,10 @@ export class MapRenderer {
     this.view = new MapView(elements, this.metrics, options.selectedLayer, options.shouldDisplay);
     this.queue = new LayerQueue({
       signal: () => this.lifetime.signal,
-      begin: layer => {
+      begin: (layer, silent) => {
+        if (silent) {
+          return;
+        }
         this.view.begin(layer);
         this.emitState();
       },
@@ -95,7 +98,7 @@ export class MapRenderer {
           throw error;
         }
       },
-      present: layer => this.present(layer),
+      present: (layer, silent) => this.present(layer, silent),
       fail: (layer, error) => {
         this.scene.discard(layer);
         this.reportError(error);
@@ -173,9 +176,10 @@ export class MapRenderer {
     return { id, label: this.registry.get(id).label, value: layer.sample(x, y) };
   }
 
-  add(id: MapBaseLayerId, value: unknown): void {
+  /** Silent layers are prepared without becoming the displayed one; used for replays. */
+  add(id: MapBaseLayerId, value: unknown, silent = false): void {
     this.signal.throwIfAborted();
-    this.queue.enqueue(this.scene.add(id, value));
+    this.queue.enqueue(this.scene.add(id, value), silent);
   }
 
   select(id: MapBaseLayerId): void {
@@ -266,10 +270,12 @@ export class MapRenderer {
     this.view.dispose();
   }
 
-  private present(layer: MapLayer): void {
+  private present(layer: MapLayer, silent = false): void {
     this.scene.markReady(layer);
     this.view.setMasks(this.scene.masks);
-    this.view.present(layer);
+    if (!silent) {
+      this.view.present(layer);
+    }
     this.emitState();
     this.emitRenderStatistics();
   }

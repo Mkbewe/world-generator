@@ -1,22 +1,21 @@
-import { type RefObject, useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 
 import type { MapRenderer } from '../../../utils/map-renderer';
-import { WorldGenerationSession } from '../lib/world-generation-session';
+import { worldGenerationSession } from '../lib/world-generation-session';
 
 export interface GenerationSession {
-  sessionRef: RefObject<WorldGenerationSession | null>;
   onRendererReady: (renderer: MapRenderer | undefined) => void;
 }
 
-/** Owns the generation session attached to the preview renderer. */
+/** Attaches the preview renderer to the shared generation session. */
 export function useGenerationSession(): GenerationSession {
-  const sessionRef = useRef<WorldGenerationSession | null>(null);
-
   const onRendererReady = useCallback((renderer: MapRenderer | undefined) => {
-    sessionRef.current?.cancel();
-    sessionRef.current = renderer ? new WorldGenerationSession(renderer) : null;
-    sessionRef.current?.restore();
+    if (renderer) {
+      worldGenerationSession.attach(renderer);
+    } else {
+      worldGenerationSession.detach();
+    }
   }, []);
 
-  return { sessionRef, onRendererReady };
+  return { onRendererReady };
 }

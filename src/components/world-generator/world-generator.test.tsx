@@ -2,6 +2,7 @@ import { Theme } from '@radix-ui/themes';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { worldGenerationSession } from './lib/world-generation-session';
 import {
   GENERAL_FORM_DEFAULTS,
   MACRO_REGION_FORM_DEFAULTS,
@@ -17,6 +18,7 @@ import {
   WORLD_SHAPE_FORM_DEFAULTS,
 } from '../../stores';
 import type * as WorldGenerationPipeline from '../../utils/map-generator';
+import type { GenerationEvent, MapConfig, StageInfo } from '../../utils/map-generator';
 import { MapRenderer, mapRepository } from '../../utils/map-renderer';
 import { HeaderActionsProvider, useHeaderActions } from '../header';
 
@@ -36,6 +38,32 @@ vi.mock('../../utils/map-generator', async importOriginal => {
 import { WorldGenerator } from './world-generator';
 
 const previewSize = 300;
+
+function completed(stageId: string, data: Record<string, unknown>): GenerationEvent {
+  return {
+    type: 'stage-completed',
+    stageId,
+    stageName: stageId,
+    stageIndex: 0,
+    stageCount: 1,
+    statistics: {
+      stageId,
+      stageName: stageId,
+      status: 'completed',
+      startedAt: 0,
+      finishedAt: 1,
+      durationMs: 1,
+    },
+    data,
+  };
+}
+
+/** A run that stays pending until its signal aborts, like the real worker. */
+function pendingRun(options?: { signal?: AbortSignal }): Promise<never> {
+  return new Promise((_, reject) => {
+    options?.signal?.addEventListener('abort', () => reject(new Error('Generation cancelled.')));
+  });
+}
 
 function FullscreenBridge() {
   const { setIsFullscreen } = useHeaderActions();
@@ -67,6 +95,8 @@ describe('WorldGenerator', () => {
   });
 
   afterEach(async () => {
+    worldGenerationSession.cancel();
+    worldGenerationSession.detach();
     await act(async () => {
       mapRepository.clear();
       useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
@@ -80,11 +110,17 @@ describe('WorldGenerator', () => {
     vi.restoreAllMocks();
   });
 
-  it('stops both generation and rendering when the application closes the preview', async () => {
+  it('keeps generation running when the preview unmounts and replays it on return', async () => {
     let runSignal: AbortSignal | undefined;
-    runGenerationMock.mockImplementation((_config, options) => {
+    let runConfig: MapConfig | undefined;
+    let onStages: ((stages: readonly StageInfo[]) => void) | undefined;
+    let onEvent: ((event: GenerationEvent) => void) | undefined;
+    runGenerationMock.mockImplementation((config, options) => {
+      runConfig = config;
       runSignal = options?.signal;
-      return new Promise(() => {});
+      onStages = options?.onStages;
+      onEvent = options?.onEvent;
+      return pendingRun(options);
     });
     const disposeRenderer = vi.spyOn(MapRenderer.prototype, 'dispose');
     const { unmount } = render(
@@ -99,8 +135,23 @@ describe('WorldGenerator', () => {
       unmount();
     });
 
-    expect(runSignal?.aborted).toBe(true);
+    expect(runSignal?.aborted).toBe(false);
     expect(disposeRenderer).toHaveBeenCalledOnce();
+
+    const add = vi.spyOn(MapRenderer.prototype, 'add');
+    render(
+      <Theme>
+        <WorldGenerator />
+      </Theme>
+    );
+    const cells =
+      runConfig!.world.dimensions.sampleWidth * runConfig!.world.dimensions.sampleHeight;
+    await act(async () => {
+      onStages?.([{ id: 'world-shape', name: 'World shape' }]);
+      onEvent?.(completed('world-shape', { worldMask: new Uint8Array(cells).fill(1) }));
+    });
+
+    expect(add).toHaveBeenCalledWith('world-shape', expect.any(Uint8Array));
     expect(mapRepository.get()).toBeUndefined();
   });
 
@@ -185,7 +236,7 @@ describe('WorldGenerator', () => {
         { id: 'noise', name: 'Noise generation', status: 'completed', percentage: 100 },
       ],
     });
-    runGenerationMock.mockImplementation(() => new Promise(() => {}));
+    runGenerationMock.mockImplementation((_config, options) => pendingRun(options));
 
     render(
       <Theme>

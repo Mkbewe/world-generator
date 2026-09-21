@@ -117,6 +117,19 @@ describe('MapRenderer', () => {
     preview.dispose();
   });
 
+  it('prepares a silent layer without displaying it', async () => {
+    const { preview } = setup();
+    vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    preview.add('noise', new Float32Array(4), true);
+    await vi.runAllTimersAsync();
+    await preview.ready;
+
+    expect(preview.state.displayedLayer).toBe('world-shape');
+    expect(preview.state.layers.find(layer => layer.id === 'noise')?.available).toBe(true);
+    preview.dispose();
+  });
+
   it('prepares a filtered layer without displaying it automatically', async () => {
     const { preview, onChange } = setup({ shouldDisplay: id => id !== 'macro-region' });
     const prepare = vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();

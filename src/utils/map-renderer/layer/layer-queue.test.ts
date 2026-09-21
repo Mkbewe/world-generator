@@ -88,7 +88,25 @@ describe('LayerQueue', () => {
       expect.any(Error)
     );
     expect(present).toHaveBeenCalledTimes(1);
-    expect(present).toHaveBeenCalledWith(expect.objectContaining({ id: 'noise' }));
+    expect(present).toHaveBeenCalledWith(expect.objectContaining({ id: 'noise' }), false);
+  });
+
+  it('passes the silent flag to the handlers', async () => {
+    const begin = vi.fn();
+    const present = vi.fn();
+    const queue = new LayerQueue({
+      signal: () => new AbortController().signal,
+      begin,
+      load: async () => {},
+      present,
+      fail: vi.fn(),
+    });
+
+    queue.enqueue(token('world-shape'), true);
+    await queue.ready;
+
+    expect(begin).toHaveBeenCalledWith(expect.objectContaining({ id: 'world-shape' }), true);
+    expect(present).toHaveBeenCalledWith(expect.objectContaining({ id: 'world-shape' }), true);
   });
 
   it('ignores stale work after reset', async () => {
