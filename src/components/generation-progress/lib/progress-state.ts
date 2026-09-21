@@ -6,10 +6,12 @@ export class ProgressTracker {
 
   constructor(
     stages: readonly StageInfo[],
-    private readonly emit: (state: GenerationProgressState) => void
+    private readonly emit: (state: GenerationProgressState) => void,
+    skippedStageIds: readonly string[]
   ) {
+    const skipped = new Set(skippedStageIds);
     this.state = {
-      stages: stages.map(({ id, name }) => ({ id, name, status: 'pending', percentage: 0 })),
+      stages: stages.map(stage => initialStage(stage, skipped)),
       status: 'running',
       startedAt: performance.now(),
     };
@@ -40,6 +42,34 @@ function applyEvent(
     stages: current.stages.map(stage =>
       stage.id === event.stageId ? applyStageEvent(stage, event) : stage
     ),
+  };
+}
+
+/**
+ * Initial state of a new run for the known stage list: reused stages are marked
+ * as skipped right away, before the worker reports anything.
+ */
+export function planProgress(
+  stages: readonly { id: string; name: string }[],
+  skippedStageIds: readonly string[]
+): GenerationProgressState {
+  const skipped = new Set(skippedStageIds);
+  return {
+    status: 'running',
+    startedAt: performance.now(),
+    stages: stages.map(stage => initialStage(stage, skipped)),
+  };
+}
+
+function initialStage(
+  stage: { id: string; name: string },
+  skipped: ReadonlySet<string>
+): GenerationStageProgress {
+  return {
+    id: stage.id,
+    name: stage.name,
+    status: skipped.has(stage.id) ? 'skipped' : 'pending',
+    percentage: 0,
   };
 }
 

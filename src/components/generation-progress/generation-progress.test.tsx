@@ -56,6 +56,28 @@ describe('GenerationProgress', () => {
     expect(screen.getByText('1.5 s')).toBeInTheDocument();
   });
 
+  it('marks reused stages and mentions them in the counter', () => {
+    renderProgress({
+      status: 'completed',
+      totalDurationMs: 460,
+      stages: [
+        { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0, durationMs: 0 },
+        { id: 'noise', name: 'Noise', status: 'skipped', percentage: 0, durationMs: 0 },
+        {
+          id: 'macro-region',
+          name: 'Macro regions',
+          status: 'completed',
+          percentage: 100,
+          durationMs: 300,
+        },
+      ],
+    });
+
+    expect(screen.getByText('1 / 3, 2 skipped')).toBeInTheDocument();
+    expect(screen.getAllByText('Skipped')).toHaveLength(2);
+    expect(screen.getByText('300 ms')).toBeInTheDocument();
+  });
+
   it('shows the failure state', () => {
     renderProgress({
       status: 'failed',

@@ -29,6 +29,19 @@
   transition: width 0.1s linear;
 }
 
+.barLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--gray-12);
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .bar[data-status='running'] .barFill {
   background: linear-gradient(90deg, var(--violet-9), var(--violet-10));
 }
@@ -43,8 +56,10 @@
   transition: none;
 }
 
-.bar[data-status='skipped'] .barFill {
-  background: var(--gray-a8);
+.bar[data-status='skipped'] .barFill,
+.bars[data-complete='true'] .bar[data-status='skipped'] .barFill {
+  background: var(--gray-7);
+  box-shadow: none;
   transition: none;
 }
 

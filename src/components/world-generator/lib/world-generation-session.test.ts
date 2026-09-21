@@ -6,6 +6,7 @@ import {
   type PipelineWorkerGenerationResult,
   type RunGeneration,
   type StageInfo,
+  type StageStatistics,
 } from '../../../utils/map-generator';
 import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region-defaults';
 import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
@@ -42,6 +43,21 @@ function completed(stageId: string, data: Record<string, unknown>): GenerationEv
       durationMs: 1,
     },
     data,
+  };
+}
+
+function stageStatistics(
+  stageId: string,
+  status: StageStatistics['status'],
+  durationMs: number
+): StageStatistics {
+  return {
+    stageId,
+    stageName: stageId,
+    status,
+    startedAt: 0,
+    finishedAt: durationMs,
+    durationMs,
   };
 }
 
@@ -237,6 +253,83 @@ describe('WorldGenerationSession', () => {
 
     expect(prepare).toHaveBeenCalledTimes(1);
     expect(renderer.state.displayedLayer).toBe('macro-region');
+  });
+
+  it('plans reused stages as skipped before the worker reports', async () => {
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      return { statistics: [], totalDurationMs: 1 };
+    });
+    await session.generate(config, vi.fn());
+
+    const onProgress = vi.fn();
+    let finish!: (result: PipelineWorkerGenerationResult) => void;
+    runner.mockImplementation(
+      (_, options) =>
+        new Promise(resolve => {
+          options?.onStages?.(stages);
+          finish = resolve;
+        })
+    );
+    const run = session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, onProgress);
+
+    expect(onProgress.mock.calls[0][0].stages).toEqual([
+      { id: 'world-shape', name: 'World shape generation', status: 'skipped', percentage: 0 },
+      { id: 'noise', name: 'Noise generation', status: 'skipped', percentage: 0 },
+    ]);
+
+    finish({ statistics: [], totalDurationMs: 1 });
+    await run;
+  });
+
+  it('keeps the real statistics of stages reused by the next run', async () => {
+    const mask = new Uint8Array(4).fill(1);
+    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
+    let run = 0;
+    runner.mockImplementation(async (_, options) => {
+      run += 1;
+      options?.onStages?.(stages);
+      if (run === 1) {
+        options?.onEvent?.(completed('world-shape', { worldMask: mask }));
+        options?.onEvent?.(completed('noise', { noiseMap: noise }));
+        options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
+        return {
+          statistics: [
+            stageStatistics('world-shape', 'completed', 120),
+            stageStatistics('noise', 'completed', 80),
+            stageStatistics('macro-region', 'completed', 40),
+          ],
+          totalDurationMs: 240,
+        };
+      }
+      options?.onEvent?.(skipped('world-shape'));
+      options?.onEvent?.(skipped('noise'));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
+      return {
+        statistics: [
+          stageStatistics('world-shape', 'skipped', 0),
+          stageStatistics('noise', 'skipped', 0),
+          stageStatistics('macro-region', 'completed', 40),
+        ],
+        totalDurationMs: 40,
+      };
+    });
+
+    await session.generate(config, vi.fn());
+    const second = await session.generate(
+      { ...config, macroRegions: DEFAULT_MACRO_REGIONS },
+      vi.fn()
+    );
+
+    expect(
+      second?.statistics.map(stage => [stage.stageId, stage.status, stage.durationMs])
+    ).toEqual([
+      ['world-shape', 'skipped', 120],
+      ['noise', 'skipped', 80],
+      ['macro-region', 'completed', 40],
+    ]);
+    expect(second?.totalDurationMs).toBe(40);
   });
 
   it('drops the baseline when a failed run left no saved map to reuse', async () => {

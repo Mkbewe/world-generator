@@ -78,6 +78,7 @@ function FullscreenBridge() {
 describe('WorldGenerator', () => {
   beforeEach(() => {
     runGenerationMock.mockReset();
+    worldGenerationSession.reset();
     mapRepository.clear();
     useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });

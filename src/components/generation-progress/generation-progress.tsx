@@ -14,6 +14,7 @@ interface GenerationProgressProps {
 export function GenerationProgress({ progress }: GenerationProgressProps) {
   const total = progress.stages.length;
   const completed = progress.stages.filter(stage => stage.status === 'completed').length;
+  const skipped = progress.stages.filter(stage => stage.status === 'skipped').length;
   const elapsed = useElapsed(progress.status, progress.startedAt);
   const time = progress.totalDurationMs ?? elapsed;
 
@@ -25,7 +26,13 @@ export function GenerationProgress({ progress }: GenerationProgressProps) {
       data-status={progress.status}
       aria-live='polite'
     >
-      <ProgressHeader status={progress.status} completed={completed} total={total} time={time} />
+      <ProgressHeader
+        status={progress.status}
+        completed={completed}
+        total={total}
+        skipped={skipped}
+        time={time}
+      />
       <StageBars stages={progress.stages} status={progress.status} />
       <StageList stages={progress.stages} />
     </Flex>

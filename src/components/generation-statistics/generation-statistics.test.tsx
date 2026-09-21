@@ -47,6 +47,40 @@ describe('GenerationStatisticsPanel', () => {
     expect(screen.getByText('5.1 KB')).toBeInTheDocument();
   });
 
+  it('keeps the real duration of reused stages and marks them', () => {
+    renderPanel({
+      statistics: [
+        createStage({
+          stageId: 'world-shape',
+          stageName: 'World shape generation',
+          status: 'skipped',
+          durationMs: 1200,
+          details: { bytes: 1024 },
+        }),
+        createStage({ stageId: 'macro-region', stageName: 'Macro region generation' }),
+      ],
+      totalDurationMs: 12.5,
+    });
+
+    expect(screen.getByText('1.20 s · reused')).toBeInTheDocument();
+    expect(screen.getByText('Data')).toBeInTheDocument();
+    expect(screen.getAllByText('1.0 KB')).toHaveLength(2);
+    expect(screen.getByText('1.21 s')).toBeInTheDocument();
+    expect(screen.getByTitle('World shape generation: 1.20 s')).not.toHaveAttribute(
+      'data-muted',
+      'true'
+    );
+  });
+
+  it('marks a reused stage without any recorded duration', () => {
+    renderPanel({
+      statistics: [createStage({ status: 'skipped', durationMs: 0 })],
+      totalDurationMs: 12.5,
+    });
+
+    expect(screen.getByText('reused')).toBeInTheDocument();
+  });
+
   it('renders stage names and durations', () => {
     renderPanel({
       statistics: [
