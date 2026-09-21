@@ -1,9 +1,11 @@
 import {
   canvasToCell,
   cellToCanvas,
+  FIT_VIEW_SCALE,
   fitView,
   isFitted,
   MAX_VIEW_SCALE,
+  MIN_VIEW_SCALE,
   nextZoomScale,
   panBy,
   previousZoomScale,
@@ -21,6 +23,7 @@ describe('view transform', () => {
     const view = fitView();
     const projection = project(view, SQUARE, SIZE);
 
+    expect(view.scale).toBe(FIT_VIEW_SCALE);
     expect(isFitted(view)).toBe(true);
     expect(projection).toEqual({ cellSize: 4, left: 0, top: 0, width: 400, height: 400 });
     expect(canvasToCell(projection, 200, 200)).toEqual({ x: 50, y: 50 });
@@ -45,12 +48,21 @@ describe('view transform', () => {
   });
 
   it('clamps the zoom to the configured range', () => {
-    expect(zoomAt(fitView(), SQUARE, SIZE, 200, 200, 0.5).scale).toBe(1);
+    expect(zoomAt(fitView(), SQUARE, SIZE, 200, 200, 0.5).scale).toBe(MIN_VIEW_SCALE);
     expect(zoomAt(fitView(), SQUARE, SIZE, 200, 200, 100).scale).toBe(MAX_VIEW_SCALE);
   });
 
-  it('locks the fitted map in place and clamps panning with an overscroll allowance', () => {
-    expect(panBy(fitView(), SQUARE, SIZE, 50, 50)).toEqual(fitView());
+  it('pans the map by a fixed viewport fraction at any zoom', () => {
+    expect(panBy(fitView(), SQUARE, SIZE, 50, 50)).toEqual({
+      scale: FIT_VIEW_SCALE,
+      centerX: 0.375,
+      centerY: 0.375,
+    });
+    expect(isFitted(panBy(fitView(), SQUARE, SIZE, 50, 50))).toBe(false);
+
+    const sideways = panBy(fitView(), WIDE, SIZE, 50, 0);
+    expect(sideways.centerX).toBe(0.375);
+    expect(sideways.centerY).toBe(0.5);
 
     const zoomed = withScale(fitView(), SQUARE, SIZE, 2);
     expect(panBy(zoomed, SQUARE, SIZE, 10_000, 10_000).centerX).toBe(0.125);
@@ -58,12 +70,14 @@ describe('view transform', () => {
   });
 
   it('steps through the discrete zoom levels', () => {
+    expect(nextZoomScale(MIN_VIEW_SCALE)).toBe(FIT_VIEW_SCALE);
     expect(nextZoomScale(1)).toBe(2);
     expect(nextZoomScale(2)).toBe(4);
     expect(nextZoomScale(4)).toBe(MAX_VIEW_SCALE);
     expect(previousZoomScale(4)).toBe(2);
     expect(previousZoomScale(2)).toBe(1);
-    expect(previousZoomScale(1)).toBe(1);
+    expect(previousZoomScale(1)).toBe(MIN_VIEW_SCALE);
+    expect(previousZoomScale(MIN_VIEW_SCALE)).toBe(MIN_VIEW_SCALE);
   });
 
   it('sets an exact scale keeping the map centre', () => {

@@ -1,4 +1,4 @@
-import type { ViewTransform } from './view/view-transform';
+import { isFitted, type ViewTransform } from './view/view-transform';
 import { layerCache, LayerQueue, layerRegistry, type MapLayer, type MapSize } from './layer';
 import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
@@ -24,8 +24,10 @@ export interface MapRendererState {
   displayedLayer?: MapBaseLayerId;
   /** Non-raster information captured with the map, e.g. macro region labels. */
   info: MapInfo;
-  /** Current zoom relative to the fitted view; 1 shows the whole map. */
+  /** Current zoom relative to the fitted view; the default zoom shows the whole map. */
   zoom: number;
+  /** Whether the view is the default fitted placement. */
+  fitted: boolean;
   error?: string;
 }
 
@@ -51,6 +53,7 @@ export function emptyRenderState(): MapRendererState {
     })),
     info: {},
     zoom: 1,
+    fitted: true,
   };
 }
 
@@ -117,6 +120,7 @@ export class MapRenderer {
       displayedLayer: this.view.displayedLayer,
       info: this.info,
       zoom: this.view.viewTransform.scale,
+      fitted: isFitted(this.view.viewTransform),
       error: this.error,
     };
   }

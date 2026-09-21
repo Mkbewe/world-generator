@@ -29,21 +29,29 @@ export interface MapProjection {
   readonly height: number;
 }
 
-export const MIN_VIEW_SCALE = 1;
+export const MIN_VIEW_SCALE = 0.5;
+/** Default zoom of the fitted view; zooming out below it reveals the whole map. */
+export const FIT_VIEW_SCALE = 1;
 export const MAX_VIEW_SCALE = 4;
 
-/** Extra pan beyond the map edge when zoomed, as a fraction of the viewport per side. */
+/** Extra pan beyond the map edge, as a fraction of the viewport per side. */
 const PAN_OVERSCROLL = 0.25;
 
 /** Discrete zoom levels used by the view buttons. */
-export const ZOOM_SCALE_STEPS = [1, 2, 4] as const;
+export const ZOOM_SCALE_STEPS = [MIN_VIEW_SCALE, FIT_VIEW_SCALE, 2, MAX_VIEW_SCALE] as const;
 
 export function fitView(): ViewTransform {
-  return { scale: MIN_VIEW_SCALE, centerX: 0.5, centerY: 0.5 };
+  return { scale: FIT_VIEW_SCALE, centerX: 0.5, centerY: 0.5 };
 }
 
+/** Whether the view is exactly the default fitted placement (zoom and centre). */
 export function isFitted(view: ViewTransform): boolean {
-  return view.scale === MIN_VIEW_SCALE;
+  const fitted = fitView();
+  return (
+    view.scale === fitted.scale &&
+    view.centerX === fitted.centerX &&
+    view.centerY === fitted.centerY
+  );
 }
 
 export function nextZoomScale(scale: number): number {
@@ -176,15 +184,13 @@ function clampView(view: ViewTransform, canvas: CanvasSize, size: MapSize): View
 }
 
 /**
- * Smallest normalized centre that keeps the axis covered, minus the pan
- * overscroll. The allowance fades in as the axis grows past the fitted size,
- * so panning stays locked at fit and the range is continuous while zooming
- * out (no centring jump).
+ * Smallest normalized centre that keeps the axis covered, minus a fixed pan
+ * overscroll. The allowance does not depend on the zoom, so the map can be
+ * nudged by the same viewport fraction also when it fits entirely.
  */
 function clampHalf(canvasSize: number, spanSize: number): number {
   const covered = spanSize <= canvasSize ? 0.5 : canvasSize / 2 / spanSize;
-  const excess = Math.max(0, spanSize / canvasSize - 1);
-  const allowance = (canvasSize * PAN_OVERSCROLL * Math.min(1, excess)) / spanSize;
+  const allowance = (canvasSize * PAN_OVERSCROLL) / spanSize;
   return Math.max(0, covered - allowance);
 }
 
