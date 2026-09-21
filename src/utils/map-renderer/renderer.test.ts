@@ -97,8 +97,8 @@ describe('MapRenderer', () => {
     expect(displayed).toEqual(['world-shape', 'noise']);
     expect(preview.state.layers.map(layer => layer.id)).toEqual([
       'world-shape',
-      'macro-region',
       'noise',
+      'macro-region',
     ]);
   });
 

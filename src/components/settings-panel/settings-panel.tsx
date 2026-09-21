@@ -10,10 +10,10 @@ import {
   WorldShapeForm,
   type WorldSize,
 } from './forms';
-import type { NoiseConfig } from '../../utils/map-generator';
+import { type NoiseConfig, PIPELINE_STAGES, type PipelineStageId } from '../../utils/map-generator';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
 
-type SettingsTab = 'general' | 'world-shape' | 'noise' | 'macro-region';
+type SettingsTab = 'general' | PipelineStageId;
 
 let activeSettingsTab: SettingsTab = 'general';
 
@@ -47,15 +47,8 @@ export function SettingsPanel({
   onNoiseChange,
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(activeSettingsTab);
-  const tabs: readonly VerticalTabItem[] = [
-    {
-      value: 'general',
-      label: 'General',
-      icon: <GearIcon />,
-      content: <GeneralForm seed={seed} onSeedChange={onSeedChange} />,
-    },
-    {
-      value: 'world-shape',
+  const stageTabs: Readonly<Record<PipelineStageId, Omit<VerticalTabItem, 'value'>>> = {
+    'world-shape': {
       label: 'World shape',
       icon: <GlobeIcon />,
       content: (
@@ -69,18 +62,25 @@ export function SettingsPanel({
         />
       ),
     },
-    {
-      value: 'macro-region',
-      label: 'Macro regions',
-      icon: <LayersIcon />,
-      content: <MacroRegionForm />,
-    },
-    {
-      value: 'noise',
+    noise: {
       label: 'Noise',
       icon: <MixerHorizontalIcon />,
       content: <NoiseForm noise={noise} onNoiseChange={onNoiseChange} />,
     },
+    'macro-region': {
+      label: 'Macro regions',
+      icon: <LayersIcon />,
+      content: <MacroRegionForm />,
+    },
+  };
+  const tabs: readonly VerticalTabItem[] = [
+    {
+      value: 'general',
+      label: 'General',
+      icon: <GearIcon />,
+      content: <GeneralForm seed={seed} onSeedChange={onSeedChange} />,
+    },
+    ...PIPELINE_STAGES.map(stage => ({ value: stage.id, ...stageTabs[stage.id] })),
   ];
 
   const handleTabChange = (value: string): void => {

@@ -55,8 +55,8 @@ describe('generation worker', () => {
       type: 'stages',
       stages: [
         { id: 'world-shape', name: 'World shape generation' },
-        { id: 'macro-region', name: 'Macro region generation' },
         { id: 'noise', name: 'Noise generation' },
+        { id: 'macro-region', name: 'Macro region generation' },
       ],
     });
     expect(message?.type).toBe('result');

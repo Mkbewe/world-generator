@@ -1,9 +1,9 @@
 import { CatalogLayer } from './catalog-layer';
 import { LayerCache } from './layer-cache';
-import { LAYER_CATALOG } from '../../map-layers';
+import { layerRegistry } from './layer-registry';
 
 function world(data: Uint8Array, width = 2, height = 2): CatalogLayer {
-  return new CatalogLayer(LAYER_CATALOG[0], { width, height }, data);
+  return new CatalogLayer(layerRegistry.get('world-shape'), { width, height }, data);
 }
 
 describe('LayerCache', () => {

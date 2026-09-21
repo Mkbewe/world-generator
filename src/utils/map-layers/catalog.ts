@@ -1,9 +1,13 @@
 import type { LayerSpec } from './layer-spec';
 import { REGION_COLORS } from './palettes';
 import type { LayerDataRecord, MapRasters } from './types';
+import { PIPELINE_STAGES } from '../map-generator/stage-definitions';
 
-/** Ordered catalog of raster layers currently available in the product. */
-export const LAYER_CATALOG = [
+const STAGE_ORDER = new Map<string, number>(
+  PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)
+);
+
+const CATALOG_ENTRIES = [
   {
     id: 'world-shape',
     label: 'World shape',
@@ -35,6 +39,23 @@ export const LAYER_CATALOG = [
     },
   },
 ] as const satisfies readonly LayerSpec[];
+
+/**
+ * Raster layers currently available in the product. The order follows the
+ * pipeline order (`PIPELINE_STAGES`); layers without a stage keep their
+ * relative order after the stage layers.
+ */
+export const LAYER_CATALOG = sortByPipelineOrder(CATALOG_ENTRIES);
+
+function sortByPipelineOrder<T extends readonly LayerSpec[]>(entries: T): T {
+  return [...entries].sort(
+    (left, right) => stageIndex(left.id) - stageIndex(right.id)
+  ) as unknown as T;
+}
+
+function stageIndex(id: string): number {
+  return STAGE_ORDER.get(id) ?? PIPELINE_STAGES.length;
+}
 
 /** Selects only catalog-owned raster sources at the dynamic data boundary. */
 export function selectRasters(data: LayerDataRecord): MapRasters {

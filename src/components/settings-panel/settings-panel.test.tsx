@@ -1,5 +1,5 @@
 import { Theme } from '@radix-ui/themes';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 import { SettingsPanel } from './settings-panel';
 
@@ -38,6 +38,16 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('tab', { name: 'Noise' })).toBeInTheDocument();
     expect(screen.getByLabelText('Seed:')).toHaveValue('123456');
     expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generate Map');
+  });
+
+  it('orders the stage tabs by the pipeline order', () => {
+    renderPanel();
+
+    const tabs = within(screen.getByRole('tablist', { name: 'Generation settings' }))
+      .getAllByRole('tab')
+      .map(tab => tab.getAttribute('aria-label'));
+
+    expect(tabs).toEqual(['General', 'World shape', 'Noise', 'Macro regions']);
   });
 
   it('shows the normal label with a loader and disables the action while generating', () => {

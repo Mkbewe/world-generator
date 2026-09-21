@@ -1,6 +1,5 @@
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
-import { LAYER_CATALOG } from '../../map-layers';
-import { CatalogLayer } from '../layer';
+import { CatalogLayer, layerRegistry } from '../layer';
 import { fitView } from '../view/view-transform';
 
 function createContext(): CanvasRenderingContext2D {
@@ -21,7 +20,11 @@ function createCanvas(context: CanvasRenderingContext2D): HTMLCanvasElement {
 }
 
 function createWorld(): CatalogLayer {
-  return new CatalogLayer(LAYER_CATALOG[0], { width: 4, height: 4 }, new Uint8Array(16).fill(1));
+  return new CatalogLayer(
+    layerRegistry.get('world-shape'),
+    { width: 4, height: 4 },
+    new Uint8Array(16).fill(1)
+  );
 }
 
 const VIEWPORT = { width: 40, height: 40, devicePixelRatio: 3 };

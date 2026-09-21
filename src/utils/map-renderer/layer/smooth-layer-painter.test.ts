@@ -1,5 +1,6 @@
+import { layerRegistry } from './layer-registry';
 import { SmoothLayerPainter } from './smooth-layer-painter';
-import { compilePalette, LAYER_CATALOG } from '../../map-layers';
+import { compilePalette } from '../../map-layers';
 import type { RenderTarget } from '../preview-targets';
 
 const size = { width: 4, height: 4 };
@@ -24,7 +25,7 @@ describe('SmoothLayerPainter', () => {
       labels,
       { size, contains: () => true },
       undefined,
-      compilePalette(LAYER_CATALOG[1].palette),
+      compilePalette(layerRegistry.get('macro-region').palette),
       { shape: 'rectangle', regionAt: x => (x < 0.45 ? 0 : 1) },
       'region'
     );
@@ -46,7 +47,7 @@ describe('SmoothLayerPainter', () => {
       mask,
       undefined,
       1,
-      compilePalette(LAYER_CATALOG[0].palette),
+      compilePalette(layerRegistry.get('world-shape').palette),
       { shape: 'disc' },
       'world'
     );
@@ -73,7 +74,7 @@ describe('SmoothLayerPainter', () => {
       noise,
       { size, contains: (x, y) => mask[y * size.width + x] === 1 },
       undefined,
-      compilePalette(LAYER_CATALOG[2].palette),
+      compilePalette(layerRegistry.get('noise').palette),
       { shape: 'disc' },
       'clipped'
     );

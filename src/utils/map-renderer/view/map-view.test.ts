@@ -1,5 +1,4 @@
 import { MapView } from './map-view';
-import { LAYER_CATALOG } from '../../map-layers';
 import { CatalogLayer, layerRegistry } from '../layer';
 import { RenderMetrics } from '../metrics';
 import { Viewport } from '../viewport';
@@ -34,7 +33,11 @@ function createContext(): CanvasRenderingContext2D {
 }
 
 function createLayer(): CatalogLayer {
-  return new CatalogLayer(LAYER_CATALOG[0], { width: 2, height: 2 }, new Uint8Array(4).fill(1));
+  return new CatalogLayer(
+    layerRegistry.get('world-shape'),
+    { width: 2, height: 2 },
+    new Uint8Array(4).fill(1)
+  );
 }
 
 describe('MapView', () => {

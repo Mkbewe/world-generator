@@ -1,14 +1,14 @@
 import { CatalogLayer } from './catalog-layer';
 import type { MapSize } from './layer';
-import { LAYER_CATALOG } from '../../map-layers';
+import { layerRegistry } from './layer-registry';
 import type { RenderTarget } from '../preview-targets';
 
 function worldLayer(size: MapSize, data: Uint8Array): CatalogLayer {
-  return new CatalogLayer(LAYER_CATALOG[0], size, data);
+  return new CatalogLayer(layerRegistry.get('world-shape'), size, data);
 }
 
 function noiseLayer(world: CatalogLayer, data: Float32Array): CatalogLayer {
-  return new CatalogLayer(LAYER_CATALOG[2], world.size, data, world);
+  return new CatalogLayer(layerRegistry.get('noise'), world.size, data, world);
 }
 
 /** Output buffer mapped one pixel per source cell. */

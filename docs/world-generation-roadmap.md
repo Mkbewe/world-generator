@@ -40,12 +40,15 @@ warstw, renderer z inspekcją oraz formularze ustawień.
 
 - `WorldShapeStage` — maska świata w `worldMask`: dysk (`disc`) albo prostokąt
   (`rectangle`). Nie implementuje jeszcze zawijania krawędzi.
+- `NoiseStage` — deterministyczna mapa szumu w `noiseMap`.
 - `MacroRegionStage` — każda komórka wewnątrz maski trafia do dokładnie jednego
   regionu w `macroRegionIdMap`; poza maską wartości pozostają zerowe (#256).
   Docelowe zagrożenie (`danger`) jest właściwością definicji regionu, a nie
   osobnym rastrem. Łączny limit 10 regionów bazowych i nakładanych obowiązuje
   w formularzu oraz generatorze.
-- `NoiseStage` — deterministyczna mapa szumu w `noiseMap`.
+- Kolejność etapów jest zdefiniowana raz w `PIPELINE_STAGES`
+  (`stage-definitions.ts`) i steruje generatorem, zakładkami formularza oraz
+  kolejnością warstw w podglądzie.
 - `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia etapów wraz
   z danymi i postępem; wynik zawiera statystyki i łączny czas. Budżet wymiarów
   jest sprawdzany na wejściu generatora, zanim etapy cokolwiek zaalokują.
@@ -53,13 +56,13 @@ warstw, renderer z inspekcją oraz formularze ustawień.
   Worker ogłasza swoją listę etapów, a potem strumieniuje zdarzenia etapów.
   Anulowanie kończy worker.
 
-Znany brak: przejście na inną stronę odmontowuje podgląd i anuluje trwające
-generowanie; przeniesienie sesji do usługi w tle jest zaplanowane (#279).
+Sesja generowania żyje poza widokiem: przejście na inną stronę nie przerywa
+runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
 
 ### 2.2. Ustawienia — [działa]
 
-- Formularze: general (seed), world shape (kształt, rozmiar i detal), macro
-  regions oraz noise.
+- Formularze: general (seed), world shape (kształt, rozmiar i detal), noise
+  oraz macro regions; kolejność zakładek wynika z `PIPELINE_STAGES`.
 - Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
   widoku.
 - Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.
@@ -87,8 +90,9 @@ Rastry renderowalne są wyprowadzane z deklaratywnego katalogu
 - `CatalogLayer` waliduje typed array i maluje piksele skompilowaną paletą.
 - `MapState` generatora rozszerza `MapRasters` o dane nierastrowe, np. definicje
   lądów, szkielety i profile terenu, więc etapy nie muszą znać renderera.
-- Nowa warstwa rastrowa to wpis w katalogu, plik stage'a i dopisanie stage'a
-  do `pipeline-factory.ts`.
+- Nowa warstwa rastrowa to wpis w katalogu, plik stage'a, fabryka w
+  `pipeline-factory.ts` i pozycja w `PIPELINE_STAGES`; kolejność katalogu
+  wynika z kolejności etapów, więc wpisu nie trzeba przestawiać ręcznie.
 
 `utils/map-renderer` odpowiada za scenę, widok, cache warstw, statystyki oraz
 zapis i odtworzenie ostatniej mapy. Katalog opisuje wyłącznie warstwy możliwe do
@@ -101,8 +105,9 @@ canvas, natomiast granica świata jest rysowana na drugim canvasie nad nią. UI
 utrzymuje jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
 traktować każdą kombinację jako osobny typ mapy.
 
-- Główne zakładki to `World shape`, `Macro regions` i `Noise`, a nakładka
-  `World boundary` jest rysowana nad warstwą bazową.
+- Główne zakładki to `World shape`, `Noise` i `Macro regions` (kolejność z
+  `PIPELINE_STAGES`), a nakładka `World boundary` jest rysowana nad warstwą
+  bazową.
 - Definicje warstw mogą grupować kilka podwidoków pod jedną zakładką; przełącznik
   pokazuje się dopiero dla grupy z co najmniej dwoma podwidokami. `Macro regions`
   jest obecnie pojedynczą warstwą bez podwidoków.
@@ -127,8 +132,9 @@ Obecnie nakładki bazują na przełącznikach (`Switch`) w `OverlayControls`, wy
 warstw na pionowym pasku `LayerTabs`, a sekcje i odczyt trzyma `MapSidebar`.
 W przyszłości nakładki numeryczne, takie jak temperatura i wilgotność, powinny
 otrzymać także kontrolę przezroczystości oraz ustaloną paletę kolorów.
-Filtrowanie próbkowania i statystyki buforów są już wdrożone (#315);
-wygładzanie krawędzi regionów czeka na #306.
+Filtrowanie próbkowania i statystyki buforów są już wdrożone (#315); krawędzie
+świata i regionów są wygładzane w rozdzielczości ekranu (#319), a obwódka
+świata jest rysowana na zewnątrz mapy (#306).
 
 ### 2.5. Statystyki i progres — [działa]
 
@@ -194,6 +200,8 @@ Automatyczne odświeżanie wymaga, aby przy zmianie konfiguracji uruchamiały si
 tylko etapy, których ta zmiana dotyczy. Fundament jest rozbity na osobne zadania:
 
 - ograniczenie `MacroRegionStage` do obszaru kształtu świata (#256) — zrobione,
+- kolejność etapów `world-shape → noise → macro-region` (#312) — zrobione,
+- noise jako źródło deformacji regionów (#313) — planowane,
 - deklaracje zależności etapów i ponowne użycie wyników (#257) — planowane,
 - prezentacja pominiętych etapów w progressie i statystykach (#258) — planowane.
 
@@ -275,11 +283,13 @@ oraz kopie `postMessage` opisuje sekcja 9.
 
 Docelowy pipeline rozszerza obecne trzy etapy. Kolejność może być później
 doprecyzowana, szczególnie w przypadku wzajemnego wpływu hydrologii, erozji
-i formacji terenu.
+i formacji terenu. Kanoniczna kolejność jest zdefiniowana w jednym miejscu —
+`PIPELINE_STAGES` w `src/utils/map-generator/stage-definitions.ts` — i steruje
+generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu. **[działa]**
-2. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
-3. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
+2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
+3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
 4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi. **[planowane]**
 5. `IslandCharacterStage` — profile terenu struktur lądowych i ich regionów. **[planowane]**
 6. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna. **[planowane]**

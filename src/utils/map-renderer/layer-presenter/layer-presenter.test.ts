@@ -1,5 +1,4 @@
 import { LayerPresenter } from './index';
-import { LAYER_CATALOG } from '../../map-layers';
 import { CatalogLayer, layerRegistry, MapLayer, type TileReporter } from '../layer';
 import { RenderMetrics } from '../metrics';
 import type { RenderTarget } from '../preview-targets';
@@ -24,7 +23,11 @@ function createContext(): CanvasRenderingContext2D {
 }
 
 function createLayer(): CatalogLayer {
-  return new CatalogLayer(LAYER_CATALOG[0], { width: 2, height: 2 }, new Uint8Array(4).fill(1));
+  return new CatalogLayer(
+    layerRegistry.get('world-shape'),
+    { width: 2, height: 2 },
+    new Uint8Array(4).fill(1)
+  );
 }
 
 function target(
