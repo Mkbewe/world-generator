@@ -190,10 +190,11 @@ export class MapView {
   /** Cell and map coordinates of a client point, or undefined outside the map. */
   samplePointer(clientX: number, clientY: number): MapPointerSample | undefined {
     const size = this.size;
-    if (!size) {
+    const target = this.viewTarget();
+    if (!size || !target) {
       return undefined;
     }
-    return samplePointer(this.elements.canvas, size, this.view, clientX, clientY);
+    return samplePointer(this.elements.canvas, size, target.projection, clientX, clientY);
   }
 
   /** Layer output buffer: the viewport projection at the same scale, with a margin. */

@@ -30,11 +30,10 @@ describe('preview targets', () => {
     const display = viewTarget(view, size, MEASURED);
     const render = renderTarget(view, size, MEASURED);
 
-    expect(render).toMatchObject({
-      width: 12,
-      height: 12,
-      projection: { cellSize: 4, left: -18, top: -2 },
-    });
+    expect(render).toMatchObject({ width: 12, height: 12 });
+    expect(render?.projection.cellSize).toBeCloseTo(3.2);
+    expect(render?.projection.left).toBeCloseTo(-13.2);
+    expect(render?.projection.top).toBeCloseTo(-0.4);
     if (!display || !render) {
       throw new Error('Expected measured render targets.');
     }
@@ -42,17 +41,10 @@ describe('preview targets', () => {
     const left = display.projection.left - render.projection.left * scale;
     const top = display.projection.top - render.projection.top * scale;
 
-    expect({
-      left,
-      top,
-      right: left + render.width * scale,
-      bottom: top + render.height * scale,
-    }).toEqual({
-      left: -2,
-      top: -2,
-      right: 10,
-      bottom: 10,
-    });
+    expect(left).toBeCloseTo(-2);
+    expect(top).toBeCloseTo(-2);
+    expect(left + render.width * scale).toBeCloseTo(10);
+    expect(top + render.height * scale).toBeCloseTo(10);
   });
 
   it('renders magnified views at display resolution', () => {
@@ -63,7 +55,7 @@ describe('preview targets', () => {
     );
 
     expect(target).toMatchObject({ width: 12, height: 12 });
-    expect(target?.projection.cellSize).toBe(8);
+    expect(target?.projection.cellSize).toBe(6.4);
   });
 
   it('does not overscan before the first measurement', () => {

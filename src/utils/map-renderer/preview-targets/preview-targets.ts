@@ -6,6 +6,14 @@ import { effectivePixelRatio, type ViewportSize } from '../viewport';
 /** Layer buffers extend this far beyond the viewport per axis, so gestures have spare map. */
 const RENDER_OVERSCAN = 1.5;
 
+/** Room around the presentation so the world boundary stroke stays visible, in CSS px. */
+export const PRESENTATION_MARGIN = 4;
+
+/** Margin in device pixels for a canvas at the given scale, capped for tiny canvases. */
+export function presentationPadding(canvas: CanvasSize, scale: number): number {
+  return Math.min(PRESENTATION_MARGIN * scale, canvas.width * 0.1, canvas.height * 0.1);
+}
+
 /** Presentation canvas size in device pixels, or the raster size before the first measurement. */
 export function presentationSize(
   measured: ViewportSize | undefined,
@@ -46,7 +54,10 @@ export function viewTarget(
     return undefined;
   }
   const canvas = presentationSize(measured, size);
-  return { ...canvas, projection: project(view, canvas, size) };
+  const padding = measured
+    ? presentationPadding(canvas, effectivePixelRatio(measured.devicePixelRatio))
+    : 0;
+  return { ...canvas, projection: project(view, canvas, size, padding) };
 }
 
 /**
@@ -62,7 +73,10 @@ export function renderTarget(
     return undefined;
   }
   const viewport = presentationSize(measured, size);
-  const projection = project(view, viewport, size);
+  const padding = measured
+    ? presentationPadding(viewport, effectivePixelRatio(measured.devicePixelRatio))
+    : 0;
+  const projection = project(view, viewport, size, padding);
   const canvas = renderSize(measured, size);
 
   return {

@@ -24,10 +24,10 @@ function createWorld(): CatalogLayer {
   return new CatalogLayer(LAYER_CATALOG[0], { width: 4, height: 4 }, new Uint8Array(16).fill(1));
 }
 
-const VIEWPORT = { width: 4, height: 4, devicePixelRatio: 3 };
+const VIEWPORT = { width: 40, height: 40, devicePixelRatio: 3 };
 
 describe('WorldBoundaryRenderer', () => {
-  it('strokes a disc at display resolution with capped pixel ratio', () => {
+  it('strokes a disc inside the edge at display resolution with capped pixel ratio', () => {
     const context = createContext();
     const canvas = createCanvas(context);
     const world = createWorld();
@@ -35,9 +35,9 @@ describe('WorldBoundaryRenderer', () => {
     new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, 'disc', fitView());
     world.dispose();
 
-    expect(canvas.width).toBe(8);
-    expect(canvas.height).toBe(8);
-    expect(context.ellipse).toHaveBeenCalledWith(4, 4, 3, 3, 0, 0, Math.PI * 2);
+    expect(canvas.width).toBe(80);
+    expect(canvas.height).toBe(80);
+    expect(context.ellipse).toHaveBeenCalledWith(40, 40, 27, 27, 0, 0, Math.PI * 2);
     expect(context.stroke).toHaveBeenCalledOnce();
     expect(context.lineWidth).toBe(6);
     expect(context.strokeStyle).toBe('rgba(49, 155, 0, 0.9)');
@@ -51,7 +51,21 @@ describe('WorldBoundaryRenderer', () => {
     new WorldBoundaryRenderer(canvas).render(world, VIEWPORT, 'rectangle', fitView());
     world.dispose();
 
-    expect(context.rect).toHaveBeenCalledWith(1, 1, 6, 6);
+    expect(context.rect).toHaveBeenCalledWith(13, 13, 54, 54);
     expect(context.stroke).toHaveBeenCalledOnce();
+  });
+
+  it('clears the canvas', () => {
+    const context = createContext();
+    const canvas = createCanvas(context);
+    const renderer = new WorldBoundaryRenderer(canvas);
+    const world = createWorld();
+    renderer.render(world, VIEWPORT, 'disc', fitView());
+
+    renderer.clear();
+    world.dispose();
+
+    expect(canvas.width).toBe(0);
+    expect(canvas.height).toBe(0);
   });
 });

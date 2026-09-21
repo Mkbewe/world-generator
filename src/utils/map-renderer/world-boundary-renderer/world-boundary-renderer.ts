@@ -1,5 +1,6 @@
 import type { WorldShape } from '../../world-shape';
 import type { MapSize } from '../layer';
+import { presentationPadding } from '../preview-targets';
 import type { SpatialMask } from '../types';
 import { type MapProjection, project, type ViewTransform } from '../view/view-transform';
 import { effectivePixelRatio, type ViewportSize } from '../viewport';
@@ -7,29 +8,34 @@ import { effectivePixelRatio, type ViewportSize } from '../viewport';
 const BOUNDARY_COLOR = 'rgba(49, 155, 0, 0.9)';
 const BOUNDARY_LINE_WIDTH = 3;
 
-/** Shared outline for the visible stroke and the presentation clip. */
+/**
+ * Shared outline for the visible stroke and the presentation clip. `offset`
+ * moves the path outward from the world, so a stroke drawn on it stays outside
+ * the coloured fill while its inner side still follows the coloured edge.
+ */
 export function traceWorldBoundary(
   context: CanvasRenderingContext2D,
   projection: MapProjection,
   size: MapSize,
-  shape: WorldShape
+  shape: WorldShape,
+  offset = 0
 ): void {
   if (shape === 'disc') {
     context.ellipse(
       projection.left + projection.width / 2,
       projection.top + projection.height / 2,
-      ((size.width - 1) * projection.cellSize) / 2,
-      ((size.height - 1) * projection.cellSize) / 2,
+      Math.max(0, ((size.width - 1) * projection.cellSize) / 2 + offset),
+      Math.max(0, ((size.height - 1) * projection.cellSize) / 2 + offset),
       0,
       0,
       Math.PI * 2
     );
   } else {
     context.rect(
-      projection.left + projection.cellSize / 2,
-      projection.top + projection.cellSize / 2,
-      projection.width - projection.cellSize,
-      projection.height - projection.cellSize
+      projection.left + projection.cellSize / 2 - offset,
+      projection.top + projection.cellSize / 2 - offset,
+      Math.max(0, projection.width - projection.cellSize + offset * 2),
+      Math.max(0, projection.height - projection.cellSize + offset * 2)
     );
   }
 }
@@ -64,12 +70,13 @@ export class WorldBoundaryRenderer {
     world: SpatialMask
   ): void {
     const lineWidth = BOUNDARY_LINE_WIDTH * ratio;
-    const projection = project(view, { width, height }, world.size);
+    const padding = presentationPadding({ width, height }, ratio);
+    const projection = project(view, { width, height }, world.size, padding);
 
     context.strokeStyle = BOUNDARY_COLOR;
     context.lineWidth = lineWidth;
     context.beginPath();
-    traceWorldBoundary(context, projection, world.size, shape);
+    traceWorldBoundary(context, projection, world.size, shape, lineWidth / 2);
     context.stroke();
   }
 }

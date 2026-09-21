@@ -1,5 +1,5 @@
 import type { MapSize } from '../layer';
-import { canvasToCell, project, type ViewTransform } from '../view/view-transform';
+import { canvasToCell, type MapProjection } from '../view/view-transform';
 
 /** Cell and map coordinates of a pointer position. */
 export interface MapPointerSample {
@@ -29,7 +29,7 @@ export function pointerAnchor(
 export function samplePointer(
   canvas: HTMLCanvasElement,
   size: MapSize,
-  view: ViewTransform,
+  projection: MapProjection,
   clientX: number,
   clientY: number
 ): MapPointerSample | undefined {
@@ -37,7 +37,6 @@ export function samplePointer(
   if (!anchor) {
     return undefined;
   }
-  const projection = project(view, { width: canvas.width, height: canvas.height }, size);
   const cell = canvasToCell(projection, anchor.x, anchor.y);
   if (cell.x < 0 || cell.x >= size.width || cell.y < 0 || cell.y >= size.height) {
     return undefined;
