@@ -9,6 +9,7 @@ import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
 import type { RandomFactory } from '../random/random-factory';
 import { assertStageOutput, type MapStage } from '../stage';
+import { MACRO_REGION_STAGE } from '../stage-definitions';
 import type {
   MacroRegionConfig,
   MacroRegionDeformation,
@@ -23,8 +24,8 @@ const DEFAULT_DEFORMATION_FREQUENCY = 3;
 const DEFAULT_DEFORMATION_OCTAVES = 2;
 
 export class MacroRegionStage implements MapStage<MapConfig, MapState> {
-  readonly id = 'macro-region';
-  readonly name = 'Macro region generation';
+  readonly id = MACRO_REGION_STAGE.id;
+  readonly name = MACRO_REGION_STAGE.name;
   readonly progressStep = 0.25;
 
   async execute(

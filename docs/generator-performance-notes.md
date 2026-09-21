@@ -103,9 +103,8 @@ Deformacja granic bierze przesunięcie z gotowego `noiseMap` zamiast liczyć
 własny szum. Konsekwencje:
 
 - zysk: 4 simplex/komórkę → 2 odczyty z tablicy,
-- etapy muszą działać w kolejności `world-shape → noise → macro-region`
-  (zmiana kolejności i tak planowana), a zmiana Noise unieważnia regiony — czyli
-  dokładnie to, czego chcemy,
+- etapy działają już w kolejności `world-shape → noise → macro-region` (#312),
+  a zmiana Noise unieważnia regiony — czyli dokładnie to, czego chcemy,
 - `Irregularity` per region **nadal działa**: to mnożnik amplitudy
   (`irregularity ?? globalnaAmplituda`), zmienia się tylko źródło przesunięcia,
 - `macroRegionDeformation.frequency/octaves/seed` tracą sens (charakter pochodzi
@@ -187,8 +186,10 @@ i próbkowaniu. Wracamy do tematu tylko, jeśli pomiary pokażą, że to koniecz
 
 ## III. Decyzje i otwarte kwestie
 
-- Kolejność etapów zmieniamy na `world-shape → noise → macro-region`
-  i deformacja regionów korzysta z `noiseMap` (II.1).
+- Kolejność etapów ustawiona na `world-shape → noise → macro-region` (#312)
+  i zdefiniowana raz w `PIPELINE_STAGES` (`stage-definitions.ts`); formularz
+  i warstwy podglądu korzystają z tej samej listy. Deformacja regionów ma
+  korzystać z `noiseMap` (#313, II.1).
 - `Irregularity` per region zostaje; znika `frequency/octaves/seed` deformacji.
 - Najpierw pomiar: ile czasu etapu to simplex, a ile geometria — dopiero potem
   wybór między II.1/II.2/II.3.

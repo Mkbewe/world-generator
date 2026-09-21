@@ -1,8 +1,7 @@
 import { MapScene } from './map-scene';
-import { LAYER_CATALOG } from '../../map-layers';
-import { LayerCache, LayerRegistry, MapLayer } from '../layer';
+import { LayerCache, LayerRegistry, layerRegistry, MapLayer } from '../layer';
 
-const BASE_CATALOG = [LAYER_CATALOG[0], LAYER_CATALOG[2]];
+const BASE_CATALOG = [layerRegistry.get('world-shape'), layerRegistry.get('noise')];
 
 function setup() {
   const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_CATALOG));
@@ -33,10 +32,14 @@ describe('MapScene', () => {
     expect(otherNoise).not.toBe(resizedNoise);
     expect(otherNoise.sample(0, 0)).toBeUndefined();
 
-    const newSpec = { ...LAYER_CATALOG[2] };
+    const newSpec = { ...layerRegistry.get('noise') };
     const otherScene = new MapScene(
       cache,
-      new LayerRegistry([LAYER_CATALOG[0], LAYER_CATALOG[1], newSpec])
+      new LayerRegistry([
+        layerRegistry.get('world-shape'),
+        layerRegistry.get('macro-region'),
+        newSpec,
+      ])
     );
     otherScene.start({ width: 1, height: 4 });
     otherScene.add('world-shape', scene.getLayers().worldMask);

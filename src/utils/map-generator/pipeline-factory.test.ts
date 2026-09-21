@@ -7,8 +7,8 @@ describe('createMapGenerator', () => {
 
     expect(pipeline.stages.map(stage => stage.id)).toEqual([
       'world-shape',
-      'macro-region',
       'noise',
+      'macro-region',
     ]);
 
     const config: MapConfig = {
@@ -24,8 +24,8 @@ describe('createMapGenerator', () => {
 
     expect(result.statistics.map(statistic => statistic.stageId)).toEqual([
       'world-shape',
-      'macro-region',
       'noise',
+      'macro-region',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);

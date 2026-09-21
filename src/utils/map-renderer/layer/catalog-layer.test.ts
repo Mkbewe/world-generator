@@ -1,5 +1,6 @@
 import { CatalogLayer } from './catalog-layer';
-import { LAYER_CATALOG, type LayerSpec } from '../../map-layers';
+import { layerRegistry } from './layer-registry';
+import type { LayerSpec } from '../../map-layers';
 import type { RenderTarget } from '../preview-targets';
 
 /** Output buffer mapped one pixel per source cell. */
@@ -41,8 +42,8 @@ function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
 
 describe('CatalogLayer', () => {
   it('validates the typed array constructor and cell count from the spec', () => {
-    const world = LAYER_CATALOG[0];
-    const noise = LAYER_CATALOG[2];
+    const world = layerRegistry.get('world-shape');
+    const noise = layerRegistry.get('noise');
 
     expect(() => new CatalogLayer(world, { width: 2, height: 2 }, new Float32Array(4))).toThrow(
       'Invalid world mask.'
@@ -54,10 +55,16 @@ describe('CatalogLayer', () => {
 
   it('counts the precomputed boundary in the layer buffers', () => {
     const size = { width: 4, height: 4 };
-    const plain = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array(16));
-    const smooth = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array(16), undefined, {
-      shape: 'disc',
-    });
+    const plain = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array(16));
+    const smooth = new CatalogLayer(
+      layerRegistry.get('world-shape'),
+      size,
+      new Uint8Array(16),
+      undefined,
+      {
+        shape: 'disc',
+      }
+    );
 
     try {
       expect(smooth.bufferBytes - plain.bufferBytes).toBe(16);
@@ -70,7 +77,7 @@ describe('CatalogLayer', () => {
   it('samples raw mask values but paints only the exact inside value', async () => {
     const { images, restore } = mockCanvasContext();
     const layer = new CatalogLayer(
-      LAYER_CATALOG[0],
+      layerRegistry.get('world-shape'),
       { width: 3, height: 1 },
       new Uint8Array([0, 1, 2])
     );
@@ -95,8 +102,13 @@ describe('CatalogLayer', () => {
   it('clips painting and sampling to another catalog layer', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 0]));
-    const noise = new CatalogLayer(LAYER_CATALOG[2], size, new Float32Array([0.5, 1]), world);
+    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 0]));
+    const noise = new CatalogLayer(
+      layerRegistry.get('noise'),
+      size,
+      new Float32Array([0.5, 1]),
+      world
+    );
 
     try {
       expect(noise.sample(0, 0)).toBe(0.5);
@@ -119,8 +131,14 @@ describe('CatalogLayer', () => {
     const values = new Float32Array(16);
     values.fill(0.5);
     const geometry = { shape: 'disc' as const };
-    const world = new CatalogLayer(LAYER_CATALOG[0], size, mask, undefined, geometry);
-    const noise = new CatalogLayer(LAYER_CATALOG[2], size, values, world, geometry);
+    const world = new CatalogLayer(
+      layerRegistry.get('world-shape'),
+      size,
+      mask,
+      undefined,
+      geometry
+    );
+    const noise = new CatalogLayer(layerRegistry.get('noise'), size, values, world, geometry);
     const screen: RenderTarget = {
       width: 16,
       height: 16,
@@ -149,8 +167,17 @@ describe('CatalogLayer', () => {
   it('renders discrete catalog colors with cycling overflow', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 3, height: 1 };
-    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 1, 1]));
-    const regions = new CatalogLayer(LAYER_CATALOG[1], size, new Uint8Array([0, 1, 8]), world);
+    const world = new CatalogLayer(
+      layerRegistry.get('world-shape'),
+      size,
+      new Uint8Array([1, 1, 1])
+    );
+    const regions = new CatalogLayer(
+      layerRegistry.get('macro-region'),
+      size,
+      new Uint8Array([0, 1, 8]),
+      world
+    );
 
     try {
       expect(regions.sample(1, 0)).toBe(1);
@@ -167,8 +194,13 @@ describe('CatalogLayer', () => {
   it('averages float noise when minifying', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 1]));
-    const noise = new CatalogLayer(LAYER_CATALOG[2], size, new Float32Array([0, 1]), world);
+    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 1]));
+    const noise = new CatalogLayer(
+      layerRegistry.get('noise'),
+      size,
+      new Float32Array([0, 1]),
+      world
+    );
 
     try {
       await noise.prepare(new AbortController().signal, targetForHalf());
@@ -183,8 +215,13 @@ describe('CatalogLayer', () => {
   it('skips cells outside the clip mask when averaging', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 0]));
-    const noise = new CatalogLayer(LAYER_CATALOG[2], size, new Float32Array([1, 1]), world);
+    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 0]));
+    const noise = new CatalogLayer(
+      layerRegistry.get('noise'),
+      size,
+      new Float32Array([1, 1]),
+      world
+    );
 
     try {
       await noise.prepare(new AbortController().signal, targetForHalf());
@@ -199,8 +236,13 @@ describe('CatalogLayer', () => {
   it('keeps discrete palettes nearest-neighbour when minifying', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(LAYER_CATALOG[0], size, new Uint8Array([1, 1]));
-    const regions = new CatalogLayer(LAYER_CATALOG[1], size, new Uint8Array([0, 1]), world);
+    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 1]));
+    const regions = new CatalogLayer(
+      layerRegistry.get('macro-region'),
+      size,
+      new Uint8Array([0, 1]),
+      world
+    );
 
     try {
       await regions.prepare(new AbortController().signal, targetForHalf(0.25, 0.25));

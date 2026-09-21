@@ -1,8 +1,8 @@
-import { LayerRegistry } from './layer-registry';
-import { LAYER_CATALOG, type LayerSpec } from '../../map-layers';
+import { LayerRegistry, layerRegistry } from './layer-registry';
+import type { LayerSpec } from '../../map-layers';
 
-const world = LAYER_CATALOG[0];
-const noise = LAYER_CATALOG[2];
+const world = layerRegistry.get('world-shape');
+const noise = layerRegistry.get('noise');
 
 function solid(id: string, overrides: Partial<LayerSpec> = {}): LayerSpec {
   return {

@@ -309,17 +309,17 @@ describe('WorldGenerationSession', () => {
 
     onStages?.(stages);
     onEvent?.(completed('world-shape', { worldMask: mask }));
-    onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
-    expect(usePreviewStore.getState().baseLayer).toBe('macro-region');
+    onEvent?.(completed('noise', { noiseMap: noise }));
+    expect(usePreviewStore.getState().baseLayer).toBe('noise');
 
     session.attach(renderer);
     await renderer.ready;
-    expect(renderer.state.displayedLayer).toBe('macro-region');
+    expect(renderer.state.displayedLayer).toBe('noise');
     expect(renderer.state.layers.find(layer => layer.id === 'world-shape')?.available).toBe(true);
 
-    onEvent?.(completed('noise', { noiseMap: noise }));
+    onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
     await renderer.ready;
-    expect(renderer.state.displayedLayer).toBe('noise');
+    expect(renderer.state.displayedLayer).toBe('macro-region');
 
     finish({ statistics: [], totalDurationMs: 1 });
     await expect(generation).resolves.toMatchObject({ totalDurationMs: 1 });
