@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.8.1](https://github.com/Mkbewe/world-generator/compare/v0.8.0...v0.8.1) (2026-09-21)
+
+### Features
+
+* **[324](https://github.com/Mkbewe/world-generator/issues/324):** allow zooming out and free panning in the preview ([#326](https://github.com/Mkbewe/world-generator/issues/326)) ([f5e9165](https://github.com/Mkbewe/world-generator/commit/f5e916560cd56b053b57bfa07c1a92e79ae0086e))
+
+  - keep the default zoom at 1 and allow zooming out to the 0.5 minimum
+  - derive the zoom steps and control limits from the scale constants
+  - pan the map by a fixed viewport fraction at any zoom, including fit
+  - track the fitted placement in the renderer state so Reset unlocks on
+  pan
+
+### Bug Fixes
+
+* **[279](https://github.com/Mkbewe/world-generator/issues/279):** keep generation running across page navigation ([#328](https://github.com/Mkbewe/world-generator/issues/328)) ([3b06d33](https://github.com/Mkbewe/world-generator/commit/3b06d33184c3353911303606284c3197ec263af5))
+
+  - own the run in a shared session that outlives the preview
+  - attach/detach the renderer instead of cancelling the run on unmount
+  - replay collected layers to a renderer attached mid-run and restore the
+  snapshot after
+  - keep progress and the preview selection in their stores so the UI
+  resumes on return
+  - prepare replayed layers silently so they do not walk the preview tabs
+* **[306](https://github.com/Mkbewe/world-generator/issues/306):** keep the world boundary stroke outside the map ([#329](https://github.com/Mkbewe/world-generator/issues/329)) ([b926893](https://github.com/Mkbewe/world-generator/commit/b926893513818ce513f04ca612b54cfb90e772da))
+
+  - reserve a presentation padding so the stroke fits at the canvas edge
+  - offset the boundary path outward so the line hugs the coloured edge
+  from outside
+  - share the padding between the view target, layer buffers and the
+  overlay
+  - take the pointer projection from the view target instead of the canvas
+  - drop the canvas overscan and inline placement
+* **[322](https://github.com/Mkbewe/world-generator/issues/322):** rework the macro region preset picker and layout state ([#325](https://github.com/Mkbewe/world-generator/issues/325)) ([4a05698](https://github.com/Mkbewe/world-generator/commit/4a05698bf9afd4624b7ba0d0401072fb431cb33f))
+
+  - replace the preset toggle buttons with radio cards
+  - track the chosen preset in the store and clear it on every manual edit
+  - do not re-select a preset when edited values match it again
+  - keep the distribution shares when switching the base layout
+  - remove the value-based active preset matching
+
+### Performance Improvements
+
+* **[287](https://github.com/Mkbewe/world-generator/issues/287):** fix the laggy boundary drag in the macro region form ([#323](https://github.com/Mkbewe/world-generator/issues/323)) ([6fa2b69](https://github.com/Mkbewe/world-generator/commit/6fa2b696159bd50d2942bb6d474df36120d33d5d))
+
+  - preview boundaries in a local draft and commit once on pointer up
+  - cache the distribution track rect on pointer down
+  - memoize the active preset derivation
+  - keep the region card percentages live during a drag
+  - split the form into one component per folder with colocated tests
+  - move the irregularity helpers into lib/
+
 ## [0.8.0](https://github.com/Mkbewe/world-generator/compare/v0.7.0...v0.8.0) (2026-09-20)
 
 ### Features
