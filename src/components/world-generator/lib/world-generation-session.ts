@@ -7,6 +7,8 @@ import {
   runGeneration as runGenerationInWorker,
   selectDirtyStageIds,
   selectMapInfo,
+  type StageInfo,
+  type StageStatistics,
 } from '../../../utils/map-generator';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../../utils/map-layers';
 import {
@@ -16,7 +18,11 @@ import {
   type MapRenderer,
   mapRepository,
 } from '../../../utils/map-renderer';
-import { type GenerationProgressState, ProgressTracker } from '../../generation-progress';
+import {
+  type GenerationProgressState,
+  planProgress,
+  ProgressTracker,
+} from '../../generation-progress';
 
 /** Run metadata kept while the run is active, so a late renderer can catch up. */
 type RunSnapshot = Omit<GeneratedMapSnapshot, 'layers'>;
@@ -34,6 +40,10 @@ export class WorldGenerationSession {
   /** Configuration of the saved map; cleared together with the repository. */
   private savedConfig?: MapConfig;
   private dirtyStages: readonly string[] = [];
+  /** Stages announced by the last worker, used to plan the next run early. */
+  private stageInfos: readonly StageInfo[] = [];
+  /** Real statistics of the runs that produced the displayed map, per stage. */
+  private readonly realStatistics = new Map<string, StageStatistics>();
 
   constructor(private readonly runGeneration: RunGeneration = runGenerationInWorker) {}
 
@@ -64,6 +74,17 @@ export class WorldGenerationSession {
     this.generation?.abort();
   }
 
+  /** Forgets the saved map and its baseline; the repository owns the layer data. */
+  reset(): void {
+    this.cancel();
+    this.layers = {};
+    this.run = undefined;
+    this.savedConfig = undefined;
+    this.stageInfos = [];
+    this.realStatistics.clear();
+    this.dirtyStages = [];
+  }
+
   /** Returns no result when generation is cancelled or replaced by another run. */
   async generate(
     config: MapConfig,
@@ -79,6 +100,10 @@ export class WorldGenerationSession {
     // The saved map is consumed by this run, so its baseline goes away with it.
     mapRepository.clear();
     this.savedConfig = undefined;
+    // Reused stages are marked as skipped before the worker reports anything.
+    if (this.stageInfos.length > 0) {
+      onProgress(planProgress(this.stageInfos, this.reusedStages(this.stageInfos)));
+    }
     let progress: ProgressTracker | undefined;
 
     try {
@@ -106,7 +131,8 @@ export class WorldGenerationSession {
         signal,
         reuse: { dirtyStageIds: this.dirtyStages, cachedRasters },
         onStages: stages => {
-          progress = new ProgressTracker(stages, onProgress);
+          this.stageInfos = stages;
+          progress = new ProgressTracker(stages, onProgress, this.reusedStages(stages));
           progress.start();
         },
         onEvent: event => {
@@ -123,7 +149,7 @@ export class WorldGenerationSession {
       this.savedConfig = config;
       progress?.complete(result.totalDurationMs);
       return {
-        statistics: result.statistics,
+        statistics: this.mergeStatistics(result.statistics),
         totalDurationMs: result.totalDurationMs,
       };
     } catch (error) {
@@ -137,6 +163,27 @@ export class WorldGenerationSession {
         this.run = undefined;
       }
     }
+  }
+
+  /** Stages of the announced list that this run reuses instead of running. */
+  private reusedStages(stages: readonly StageInfo[]): readonly string[] {
+    const dirty = new Set(this.dirtyStages);
+    return stages.filter(stage => !dirty.has(stage.id)).map(stage => stage.id);
+  }
+
+  /**
+   * A reused stage keeps the cost and metrics of the run that actually produced
+   * its data; only the status marks that this run skipped it.
+   */
+  private mergeStatistics(statistics: readonly StageStatistics[]): readonly StageStatistics[] {
+    return statistics.map(stage => {
+      if (stage.status !== 'skipped') {
+        this.realStatistics.set(stage.stageId, stage);
+        return stage;
+      }
+      const real = this.realStatistics.get(stage.stageId);
+      return real ? { ...real, status: 'skipped' } : stage;
+    });
   }
 
   /** Collects catalog rasters and sends them to the attached preview when there is one. */

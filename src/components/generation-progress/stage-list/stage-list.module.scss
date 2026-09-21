@@ -24,6 +24,15 @@
   color: var(--red-11);
 }
 
+.label[data-status='skipped'] .labelName {
+  color: var(--gray-9);
+}
+
 .labelTime {
   color: var(--gray-9);
+}
+
+.label[data-status='skipped'] .labelTime {
+  color: var(--gray-8);
+  font-style: italic;
 }

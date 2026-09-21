@@ -8,6 +8,7 @@ const stages: readonly GenerationStageProgress[] = [
   { id: 'b', name: 'Running', status: 'running', percentage: 40 },
   { id: 'c', name: 'Completed', status: 'completed', percentage: 100 },
   { id: 'd', name: 'Failed', status: 'failed', percentage: 0 },
+  { id: 'e', name: 'Skipped', status: 'skipped', percentage: 0 },
 ];
 
 describe('StageBars', () => {
@@ -15,11 +16,21 @@ describe('StageBars', () => {
     const { container } = render(<StageBars stages={stages} status='running' />);
 
     const bars = container.querySelectorAll('[data-status]');
-    expect(bars).toHaveLength(4);
+    expect(bars).toHaveLength(5);
     const widths = [...container.querySelectorAll<HTMLElement>('[data-status] > div')].map(
       fill => fill.style.width
     );
-    expect(widths).toEqual(['0%', '40%', '100%', '100%']);
+    expect(widths).toEqual(['0%', '40%', '100%', '100%', '100%']);
+  });
+
+  it('labels completed and reused stages inside their bar', () => {
+    const { container } = render(<StageBars stages={stages} status='completed' />);
+
+    const completed = container.querySelector('[data-status="completed"]');
+    const skipped = container.querySelector('[data-status="skipped"]');
+    expect(completed?.textContent).toBe('completed');
+    expect(skipped?.textContent).toBe('skipped');
+    expect(container.querySelector('[data-status="running"]')?.textContent).toBe('');
   });
 
   it('marks the bar row as complete only for a completed run', () => {

@@ -12,13 +12,24 @@ export function StageList({ stages }: { stages: readonly GenerationStageProgress
           <Text size='1' className={styles.labelName} title={stage.name}>
             {stage.name}
           </Text>
-          {stage.durationMs !== undefined && (
+          {stageTrailing(stage) !== undefined && (
             <Text size='1' className={styles.labelTime}>
-              {formatDuration(stage.durationMs)}
+              {stageTrailing(stage)}
             </Text>
           )}
         </div>
       ))}
     </div>
   );
+}
+
+/** Duration of a stage, or the marker for one that was reused instead of run. */
+function stageTrailing(stage: GenerationStageProgress): string | undefined {
+  if (stage.status === 'skipped') {
+    return 'Skipped';
+  }
+  if (stage.durationMs === undefined) {
+    return undefined;
+  }
+  return formatDuration(stage.durationMs);
 }

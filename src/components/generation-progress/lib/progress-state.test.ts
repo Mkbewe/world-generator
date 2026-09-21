@@ -1,4 +1,4 @@
-import { ProgressTracker, restartProgress } from './progress-state';
+import { planProgress, ProgressTracker, restartProgress } from './progress-state';
 import type { GenerationProgressState } from './progress-types';
 import type { StageStatistics } from '../../../utils/map-generator';
 
@@ -22,9 +22,9 @@ function statistics(
   };
 }
 
-function createTracker() {
+function createTracker(skippedStageIds: readonly string[] = []) {
   const states: GenerationProgressState[] = [];
-  const tracker = new ProgressTracker(stageInfos, state => states.push(state));
+  const tracker = new ProgressTracker(stageInfos, state => states.push(state), skippedStageIds);
   return { tracker, latest: () => states.at(-1)! };
 }
 
@@ -42,6 +42,17 @@ describe('ProgressTracker', () => {
         { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },
       ],
     });
+  });
+
+  it('seeds reused stages as skipped before the run reports', () => {
+    const { tracker, latest } = createTracker(['world-shape']);
+
+    tracker.start();
+
+    expect(latest().stages).toEqual([
+      { id: 'world-shape', name: 'World shape generation', status: 'skipped', percentage: 0 },
+      { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },
+    ]);
   });
 
   it('marks a stage running, then completed with its duration', () => {
@@ -149,6 +160,29 @@ describe('ProgressTracker', () => {
     tracker.complete(460);
 
     expect(latest()).toMatchObject({ status: 'completed', totalDurationMs: 460 });
+  });
+});
+
+describe('planProgress', () => {
+  it('plans the known stages before a run with reused ones already skipped', () => {
+    const planned = planProgress(
+      [
+        { id: 'world-shape', name: 'World shape generation' },
+        { id: 'noise', name: 'Noise generation' },
+        { id: 'macro-region', name: 'Macro region generation' },
+      ],
+      ['world-shape', 'noise']
+    );
+
+    expect(planned).toEqual({
+      status: 'running',
+      startedAt: expect.any(Number),
+      stages: [
+        { id: 'world-shape', name: 'World shape generation', status: 'skipped', percentage: 0 },
+        { id: 'noise', name: 'Noise generation', status: 'skipped', percentage: 0 },
+        { id: 'macro-region', name: 'Macro region generation', status: 'pending', percentage: 0 },
+      ],
+    });
   });
 });
 
