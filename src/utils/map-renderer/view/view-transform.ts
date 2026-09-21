@@ -65,9 +65,17 @@ export function previousZoomScale(scale: number): number {
 /**
  * Fits the map into the canvas preserving its aspect ratio, so a wider canvas
  * shows empty space next to the map at 1x and more of the map once zoomed.
+ * `padding` keeps a margin inside the canvas, e.g. for the boundary stroke.
  */
-export function project(view: ViewTransform, canvas: CanvasSize, size: MapSize): MapProjection {
-  const base = Math.min(canvas.width / size.width, canvas.height / size.height);
+export function project(
+  view: ViewTransform,
+  canvas: CanvasSize,
+  size: MapSize,
+  padding = 0
+): MapProjection {
+  const usableWidth = Math.max(0, canvas.width - padding * 2);
+  const usableHeight = Math.max(0, canvas.height - padding * 2);
+  const base = Math.min(usableWidth / size.width, usableHeight / size.height);
   const cellSize = base * view.scale;
   const width = size.width * cellSize;
   const height = size.height * cellSize;

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { MapPreview } from './map-preview';
 import type { MapRenderer } from '../../utils/map-renderer';
+import { Viewport } from '../../utils/map-renderer/viewport';
 import { HeaderActionsProvider, useHeaderActions } from '../header';
 
 function createOnReady(): {
@@ -191,11 +192,14 @@ describe('MapPreview readout', () => {
   });
 
   it('clears the readout over empty map margins and ignores clicks there', async () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 400,
+      height: 200,
+      devicePixelRatio: 1,
+    });
     renderPreview();
     const canvas = screen.getByLabelText('Generated map preview') as HTMLCanvasElement;
     await act(async () => {});
-    canvas.width = 400;
-    canvas.height = 200;
     vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({
       left: 0,
       top: 0,

@@ -1,5 +1,5 @@
 import { pointerAnchor, samplePointer } from './index';
-import { fitView } from '../view/view-transform';
+import { fitView, project } from '../view/view-transform';
 
 function createCanvas(width: number, height: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
@@ -44,14 +44,15 @@ describe('pointer sampling', () => {
     mockRect(0, 0, 400, 200);
     const canvas = createCanvas(4, 2);
     const size = { width: 2, height: 2 };
+    const projection = project(fitView(), { width: canvas.width, height: canvas.height }, size);
 
-    expect(samplePointer(canvas, size, fitView(), 200, 100)).toEqual({
+    expect(samplePointer(canvas, size, projection, 200, 100)).toEqual({
       x: 1,
       y: 1,
       u: 0.5,
       v: 0.5,
     });
-    expect(samplePointer(canvas, size, fitView(), 50, 100)).toBeUndefined();
-    expect(samplePointer(canvas, size, fitView(), 350, 100)).toBeUndefined();
+    expect(samplePointer(canvas, size, projection, 50, 100)).toBeUndefined();
+    expect(samplePointer(canvas, size, projection, 350, 100)).toBeUndefined();
   });
 });
