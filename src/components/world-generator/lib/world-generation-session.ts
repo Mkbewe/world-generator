@@ -1,4 +1,4 @@
-import type { GenerationStatistics } from '../../../stores';
+import { type GenerationStatistics, usePreviewStore } from '../../../stores';
 import {
   DEFAULT_MACRO_DEFORMATION,
   DEFAULT_MACRO_REGIONS,
@@ -8,26 +8,51 @@ import {
   selectMapInfo,
 } from '../../../utils/map-generator';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../../utils/map-layers';
-import { mapPersistence, type MapRenderer, mapRepository } from '../../../utils/map-renderer';
-import { sampleSize } from '../../../utils/world-dimensions';
+import {
+  type GeneratedMapSnapshot,
+  layerRegistry,
+  mapPersistence,
+  type MapRenderer,
+  mapRepository,
+} from '../../../utils/map-renderer';
 import { type GenerationProgressState, ProgressTracker } from '../../generation-progress';
 
-/** Coordinates generation and preview, with independent cancellation for each. */
+/** Run metadata kept while the run is active, so a late renderer can catch up. */
+type RunSnapshot = Omit<GeneratedMapSnapshot, 'layers'>;
+
+/**
+ * Owns one generation run for the whole app. The preview only attaches its
+ * renderer, so leaving the generator page keeps the run alive and the data is
+ * replayed to the next renderer.
+ */
 export class WorldGenerationSession {
   private generation?: AbortController;
+  private renderer?: MapRenderer;
+  private layers: MapRasters = {};
+  private run?: RunSnapshot;
 
-  constructor(
-    private readonly renderer: MapRenderer,
-    private readonly runGeneration: RunGeneration = runGenerationInWorker
-  ) {}
+  constructor(private readonly runGeneration: RunGeneration = runGenerationInWorker) {}
+
+  /** Starts sending run data to a renderer, replaying what already arrived. */
+  attach(renderer: MapRenderer): void {
+    this.renderer = renderer;
+    const run = this.run;
+    if (!run) {
+      mapPersistence.restore(renderer);
+      return;
+    }
+    this.startRenderer(renderer, run);
+    this.replay(renderer);
+  }
+
+  /** Stops sending data to the preview; the run itself keeps going. */
+  detach(): void {
+    this.renderer = undefined;
+  }
 
   /** Stops generation; already queued rendering can finish. */
   cancel(): void {
     this.generation?.abort();
-  }
-
-  restore(): void {
-    mapPersistence.restore(this.renderer);
   }
 
   /** Returns no result when generation is cancelled or replaced by another run. */
@@ -39,7 +64,7 @@ export class WorldGenerationSession {
     const generation = new AbortController();
     this.generation = generation;
     const signal = generation.signal;
-    const layers: MapRasters = {};
+    this.layers = {};
     let progress: ProgressTracker | undefined;
 
     try {
@@ -49,9 +74,19 @@ export class WorldGenerationSession {
         regions: config.macroRegions ?? DEFAULT_MACRO_REGIONS,
         deformation: config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION,
       };
-      this.renderer.start(sampleSize(config.world.dimensions), config.world.shape, regionGeometry);
-      this.renderer.setInfo(info);
-      const renderSignal = this.renderer.signal;
+      const run: RunSnapshot = {
+        width: config.world.dimensions.sampleWidth,
+        height: config.world.dimensions.sampleHeight,
+        seed: String(config.world.seed),
+        shape: config.world.shape,
+        regionGeometry,
+        info,
+      };
+      this.run = run;
+      const renderer = this.renderer;
+      if (renderer) {
+        this.startRenderer(renderer, run);
+      }
       mapRepository.clear();
       signal.throwIfAborted();
       const result = await this.runGeneration(config, {
@@ -63,22 +98,14 @@ export class WorldGenerationSession {
         onEvent: event => {
           signal.throwIfAborted();
           if (event.type === 'stage-completed') {
-            this.receiveStage(event.data, layers, !renderSignal.aborted);
+            this.receiveStage(event.data);
           }
           progress?.handle(event);
         },
       });
 
       signal.throwIfAborted();
-      mapPersistence.save({
-        width: config.world.dimensions.sampleWidth,
-        height: config.world.dimensions.sampleHeight,
-        seed: String(config.world.seed),
-        shape: config.world.shape,
-        regionGeometry,
-        layers,
-        info,
-      });
+      mapPersistence.save({ ...run, layers: this.layers });
       progress?.complete(result.totalDurationMs);
       return {
         statistics: result.statistics,
@@ -92,22 +119,48 @@ export class WorldGenerationSession {
     } finally {
       if (this.generation === generation) {
         this.generation = undefined;
+        this.run = undefined;
       }
     }
   }
 
-  /** Collects catalog rasters and optionally sends them to the active preview. */
-  private receiveStage(data: LayerDataRecord, target: MapRasters, render: boolean): void {
-    const { registry } = this.renderer;
+  /** Collects catalog rasters and sends them to the attached preview when there is one. */
+  private receiveStage(data: LayerDataRecord): void {
     const rasters = selectRasters(data);
-    const values: LayerDataRecord = rasters;
-    Object.assign(target, rasters);
-    for (const id of registry.presentIn(values)) {
-      const source = registry.get(id).source;
-      const value = values[source];
-      if (render) {
-        this.renderer.add(id, value);
-      }
+    Object.assign(this.layers, rasters);
+    const displayed = layerRegistry.presentIn(rasters).at(-1);
+    if (displayed) {
+      // The preview tab follows the generated layers, also while the page is unmounted.
+      usePreviewStore.getState().setBaseLayer(displayed);
+    }
+    const renderer = this.renderer;
+    if (!renderer || renderer.signal.aborted) {
+      return;
+    }
+    this.send(renderer, rasters);
+  }
+
+  private startRenderer(renderer: MapRenderer, run: RunSnapshot): void {
+    renderer.start({ width: run.width, height: run.height }, run.shape, run.regionGeometry);
+    renderer.setInfo(run.info ?? {});
+  }
+
+  /** Replays collected layers without walking the preview through each of them. */
+  private replay(renderer: MapRenderer): void {
+    const values: LayerDataRecord = this.layers;
+    const ids = layerRegistry.presentIn(values);
+    for (const [index, id] of ids.entries()) {
+      const silent = index < ids.length - 1;
+      renderer.add(id, values[layerRegistry.get(id).source], silent);
+    }
+  }
+
+  private send(renderer: MapRenderer, values: LayerDataRecord): void {
+    for (const id of layerRegistry.presentIn(values)) {
+      renderer.add(id, values[layerRegistry.get(id).source]);
     }
   }
 }
+
+/** Shared run, so leaving the generator page does not cancel it. */
+export const worldGenerationSession = new WorldGenerationSession();

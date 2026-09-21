@@ -13,6 +13,7 @@ import {
 import type { MapRenderer } from '../../../utils/map-renderer';
 import { restartProgress } from '../../generation-progress';
 import { buildGenerationConfig } from '../lib/generation-config';
+import { worldGenerationSession } from '../lib/world-generation-session';
 
 export interface WorldGeneration {
   isGenerating: boolean;
@@ -22,10 +23,12 @@ export interface WorldGeneration {
   generate: () => Promise<void>;
 }
 
-/** Wires the generator form to the worker session and tracks the run state. */
+/** Wires the generator form to the shared generation session and tracks its run. */
 export function useWorldGeneration(): WorldGeneration {
-  const { sessionRef, onRendererReady } = useGenerationSession();
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { onRendererReady } = useGenerationSession();
+  const [isGenerating, setIsGenerating] = useState(
+    () => useGenerationProgressStore.getState().progress?.status === 'running'
+  );
   const [generationRun, setGenerationRun] = useState(0);
   const [error, setError] = useState<string>();
 
@@ -45,12 +48,6 @@ export function useWorldGeneration(): WorldGeneration {
       return;
     }
 
-    const session = sessionRef.current;
-    if (!session) {
-      setError('Preview is not available.');
-      return;
-    }
-
     const { setConfig } = useMapConfigStore.getState();
     const { setProgress } = useGenerationProgressStore.getState();
     const { setResult } = useGenerationStatisticsStore.getState();
@@ -63,7 +60,7 @@ export function useWorldGeneration(): WorldGeneration {
     setProgress(previousProgress ? restartProgress(previousProgress) : undefined);
 
     try {
-      const result = await session.generate(built.config, setProgress);
+      const result = await worldGenerationSession.generate(built.config, setProgress);
       if (!result) {
         setProgress(undefined);
         return;
@@ -79,7 +76,7 @@ export function useWorldGeneration(): WorldGeneration {
     } finally {
       setIsGenerating(false);
     }
-  }, [sessionRef]);
+  }, []);
 
   return { isGenerating, generationRun, error, onRendererReady, generate };
 }

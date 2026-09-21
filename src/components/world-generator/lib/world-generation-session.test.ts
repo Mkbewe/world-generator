@@ -1,4 +1,5 @@
 import { WorldGenerationSession } from './world-generation-session';
+import { PREVIEW_DEFAULTS, usePreviewStore } from '../../../stores';
 import {
   type GenerationEvent,
   type MapConfig,
@@ -10,7 +11,6 @@ import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro
 import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
 import { MapLayer } from '../../../utils/map-renderer/layer';
 import { Viewport } from '../../../utils/map-renderer/viewport';
-import { sampleSize } from '../../../utils/world-dimensions';
 
 const config: MapConfig = {
   world: {
@@ -52,6 +52,7 @@ describe('WorldGenerationSession', () => {
 
   beforeEach(() => {
     mapRepository.clear();
+    usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
     vi.spyOn(Viewport.prototype, 'start').mockImplementation(() => {});
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue(undefined);
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
@@ -78,17 +79,19 @@ describe('WorldGenerationSession', () => {
       vi.fn()
     );
     runner = vi.fn<RunGeneration>();
-    session = new WorldGenerationSession(renderer, runner);
+    session = new WorldGenerationSession(runner);
   });
 
   afterEach(() => {
     session.cancel();
+    session.detach();
     renderer.dispose();
     mapRepository.clear();
     vi.restoreAllMocks();
   });
 
   it('maps registered stage data and saves map metadata after generation', async () => {
+    session.attach(renderer);
     const mask = new Uint8Array(4).fill(1);
     const noise = new Float32Array(4);
     const result: PipelineWorkerGenerationResult = {
@@ -131,6 +134,7 @@ describe('WorldGenerationSession', () => {
   });
 
   it('rejects missing stage data without saving an incomplete map', async () => {
+    session.attach(renderer);
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages);
       options?.onEvent?.(completed('world-shape', { worldMask: 'nope' }));
@@ -145,6 +149,7 @@ describe('WorldGenerationSession', () => {
   });
 
   it('registers the region layer produced by the macro-region stage', async () => {
+    session.attach(renderer);
     const regionIds = new Uint8Array(4);
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages);
@@ -164,6 +169,7 @@ describe('WorldGenerationSession', () => {
   });
 
   it('captures macro region labels with the snapshot', async () => {
+    session.attach(renderer);
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages);
       options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
@@ -181,7 +187,8 @@ describe('WorldGenerationSession', () => {
     });
   });
 
-  it('saves generated stage data even when the preview is cancelled', async () => {
+  it('saves generated stage data even when the renderer stops', async () => {
+    session.attach(renderer);
     const mask = new Uint8Array(4).fill(1);
     const noise = new Float32Array(4);
     const add = vi.spyOn(renderer, 'add');
@@ -199,12 +206,12 @@ describe('WorldGenerationSession', () => {
     await expect(session.generate(config, vi.fn())).resolves.toMatchObject({ totalDurationMs: 1 });
 
     expect(add).not.toHaveBeenCalled();
-    expect(renderer.state.layers.every(layer => !layer.available)).toBe(true);
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
     expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
   });
 
   it('does not save when the generator rejects its incomplete result', async () => {
+    session.attach(renderer);
     runner.mockRejectedValue(new Error('Pipeline completed without all required map data.'));
 
     await expect(session.generate(config, vi.fn())).rejects.toThrow('required map data');
@@ -212,6 +219,7 @@ describe('WorldGenerationSession', () => {
   });
 
   it('cancels generation while allowing queued rendering to finish', async () => {
+    session.attach(renderer);
     let onStages: ((stages: readonly StageInfo[]) => void) | undefined;
     let onEvent: ((event: GenerationEvent) => void) | undefined;
     let signal: AbortSignal | undefined;
@@ -250,9 +258,10 @@ describe('WorldGenerationSession', () => {
     expect(renderer.state.displayedLayer).toBe('world-shape');
   });
 
-  it.each(['cancel', 'reset', 'dispose', 'restart'] as const)(
-    'keeps generating after renderer %s and stops sending data to the old render run',
+  it.each(['cancel', 'reset', 'dispose'] as const)(
+    'keeps generating after the renderer %s and stops sending data to it',
     async action => {
+      session.attach(renderer);
       let onStages: ((stages: readonly StageInfo[]) => void) | undefined;
       let onEvent: ((event: GenerationEvent) => void) | undefined;
       let finish!: (result: PipelineWorkerGenerationResult) => void;
@@ -267,11 +276,7 @@ describe('WorldGenerationSession', () => {
       const generation = session.generate(config, onProgress);
       const add = vi.spyOn(renderer, 'add');
 
-      if (action === 'restart') {
-        renderer.start(sampleSize(config.world.dimensions), config.world.shape);
-      } else {
-        renderer[action]();
-      }
+      renderer[action]();
 
       onStages?.(stages);
       const mask = new Uint8Array(4);
@@ -287,7 +292,59 @@ describe('WorldGenerationSession', () => {
     }
   );
 
-  it('restores saved layers when the preview remounts', async () => {
+  it('keeps generating while detached and replays collected layers on attach', async () => {
+    let onStages: ((stages: readonly StageInfo[]) => void) | undefined;
+    let onEvent: ((event: GenerationEvent) => void) | undefined;
+    let finish!: (result: PipelineWorkerGenerationResult) => void;
+    runner.mockImplementation((_, options) => {
+      onStages = options?.onStages;
+      onEvent = options?.onEvent;
+      return new Promise(resolve => {
+        finish = resolve;
+      });
+    });
+    const mask = new Uint8Array(4).fill(1);
+    const noise = new Float32Array(4);
+    const generation = session.generate(config, vi.fn());
+
+    onStages?.(stages);
+    onEvent?.(completed('world-shape', { worldMask: mask }));
+    onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
+    expect(usePreviewStore.getState().baseLayer).toBe('macro-region');
+
+    session.attach(renderer);
+    await renderer.ready;
+    expect(renderer.state.displayedLayer).toBe('macro-region');
+    expect(renderer.state.layers.find(layer => layer.id === 'world-shape')?.available).toBe(true);
+
+    onEvent?.(completed('noise', { noiseMap: noise }));
+    await renderer.ready;
+    expect(renderer.state.displayedLayer).toBe('noise');
+
+    finish({ statistics: [], totalDurationMs: 1 });
+    await expect(generation).resolves.toMatchObject({ totalDurationMs: 1 });
+    expect(mapRepository.get()?.layers.worldMask).toBe(mask);
+    expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
+  });
+
+  it('follows the last generated layer with the preview selection', async () => {
+    session.attach(renderer);
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      options?.onEvent?.(completed('noise', { noiseMap: new Float32Array(4) }));
+      return {
+        statistics: [],
+        totalDurationMs: 1,
+      };
+    });
+
+    await session.generate(config, vi.fn());
+
+    expect(usePreviewStore.getState().baseLayer).toBe('noise');
+  });
+
+  it('restores the saved snapshot when a renderer attaches after the run', async () => {
     const mask = new Uint8Array(4).fill(1);
     const noise = new Float32Array(4);
     const snapshot = {
@@ -299,7 +356,7 @@ describe('WorldGenerationSession', () => {
     };
     mapRepository.save(snapshot);
 
-    session.restore();
+    session.attach(renderer);
     await renderer.ready;
 
     expect(renderer.state.displayedLayer).toBe('noise');
@@ -308,6 +365,7 @@ describe('WorldGenerationSession', () => {
   });
 
   it('starts a new run itself and prevents the previous run from overwriting its result', async () => {
+    session.attach(renderer);
     let finishFirst!: (result: PipelineWorkerGenerationResult) => void;
     let firstEvent: ((event: GenerationEvent) => void) | undefined;
     let firstSignal: AbortSignal | undefined;
@@ -350,5 +408,23 @@ describe('WorldGenerationSession', () => {
     await expect(first).resolves.toBeUndefined();
     expect(mapRepository.get()).toBe(saved);
     expect(renderer.state.displayedLayer).toBe('noise');
+  });
+
+  it('does not touch a renderer that is not attached', async () => {
+    const mask = new Uint8Array(4).fill(1);
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: mask }));
+      return {
+        statistics: [],
+        totalDurationMs: 1,
+      };
+    });
+    const add = vi.spyOn(renderer, 'add');
+
+    await session.generate(config, vi.fn());
+
+    expect(add).not.toHaveBeenCalled();
+    expect(mapRepository.get()?.layers.worldMask).toBe(mask);
   });
 });
