@@ -1,13 +1,13 @@
 import { Card, Flex, SegmentedControl } from '@radix-ui/themes';
 
-import { DangerField } from './danger-field';
-import { RegionHeader } from './region-header';
-import { useMacroRegionFormStore } from '../../../../../stores';
-import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
-import { InfoLabel } from '../../../../info-label';
-import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
-import { SliderField } from '../../../../slider-field';
-import { irregularityLabel, MAX_IRREGULARITY } from '../border-settings';
+import { useMacroRegionFormStore } from '../../../../../../stores';
+import type { MacroRegionConfig } from '../../../../../../utils/map-generator/types';
+import { InfoLabel } from '../../../../../info-label';
+import { SegmentedControlScroll } from '../../../../../segmented-control-scroll';
+import { SliderField } from '../../../../../slider-field';
+import { irregularityLabel, MAX_IRREGULARITY } from '../../lib/irregularity';
+import { RegionCardDanger } from '../region-card-danger';
+import { RegionCardHeader } from '../region-card-header';
 
 export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig; index: number }) {
   const updateOverlay = useMacroRegionFormStore(state => state.updateOverlay);
@@ -24,7 +24,7 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
   return (
     <Card size='1' variant='surface'>
       <Flex direction='column' gap='2'>
-        <RegionHeader region={region} index={index} />
+        <RegionCardHeader region={region} index={index} />
         <Flex direction='column' gap='1'>
           <InfoLabel
             label='Direction'
@@ -77,7 +77,7 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
           rangeLabels={['None', 'Large']}
           onChange={value => updateOverlay(region.id, { irregularity: value })}
         />
-        <DangerField region={region} />
+        <RegionCardDanger region={region} />
       </Flex>
     </Card>
   );

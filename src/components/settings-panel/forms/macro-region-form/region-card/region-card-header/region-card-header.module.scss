@@ -1,0 +1,10 @@
+.regionSwatch {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-1);
+}
+
+.regionName {
+  flex-grow: 1;
+}

@@ -188,3 +188,67 @@ Wszystkie paczki są permissive i mają typy TypeScript (własne albo
 z DefinitelyTyped). Najstarsze wydania (`simplex-noise` już w projekcie,
 `simplify-js`, `d3-delaunay`, `d3-contour`) dotyczą bibliotek stabilnych,
 których API się nie zmienia — nie są porzucone.
+
+## Uzupełnienie: formularze i priorytety (21.09.2026)
+
+Powyższy audyt obejmuje głównie generator i renderer. W całym `src` jest około
+10 tys. linii TS/TSX bez testów, z czego formularze ustawień zajmują około
+1,2 tys. linii. Liczba linii nie mówi jednak, ile waży kod produkcyjny ani co
+spowalnia aplikację; te trzy rzeczy trzeba mierzyć osobno. Około 700 linii
+pozostaje też w nadal dostępnej trasie `legacy-generator`.
+
+### Interakcje w formularzu makroregionów
+
+Ręczny `BoundaryHandle` obsługuje wskaźnik, klawiaturę i dostępność, a
+`useBoundaryDraft` trzyma tymczasowe wartości podczas przeciągania. Warto
+sprawdzić [wielouchwytowy Slider z Radix](https://www.radix-ui.com/primitives/docs/components/slider):
+ma `onValueChange`, `onValueCommit` i `minStepsBetweenThumbs`. Projekt już używa
+`@radix-ui/themes` oraz jego Slidera dla pojedynczych wartości. Próba powinna
+porównać ilość usuniętego kodu, zachowanie kolorowych segmentów, limity udziałów
+także przy końcach paska oraz to, czy zmiana wartości nie odświeża całego
+formularza przy każdym ruchu. Przeliczanie udziałów na geometrię regionów
+pozostaje logiką produktu.
+
+### Biblioteka do zarządzania formularzem
+
+Obecnie wartości czterech zakładek żyją w store'ach Zustand i przetrwają
+odmontowanie panelu. Większość pól to kontrolowane suwaki oraz przyciski
+zmieniające konfigurację; walidacja przed generowaniem jest skromna. W tej
+sytuacji pełna migracja do biblioteki formularzy może dodać drugi stan i kod
+synchronizacji zamiast zmniejszyć projekt.
+
+| Kandydat | Co wnosi | Ocena tutaj |
+| --- | --- | --- |
+| [`@tanstack/react-form`](https://tanstack.com/form/latest/docs/framework/react/guides/basic-concepts) | Kontrolowane pola, stan błędów i zmian, walidacja, [operacje na tablicach](https://tanstack.com/form/latest/docs/framework/react/guides/arrays) | Najlepszy kandydat na pilotaż, gdy formularz regionów dostanie więcej reguł i błędów przy polach; wymaga decyzji, czy formularz, czy Zustand jest źródłem prawdy. |
+| [`react-hook-form`](https://github.com/react-hook-form/documentation/blob/master/src/content/docs/usecontroller/controller.mdx) | Dojrzała obsługa formularzy i tablic pól; `Controller` łączy kontrolowane komponenty UI | Dobry dla klasycznych pól HTML. Przy obecnych suwakach i store'ach adaptery oraz synchronizacja mogą pochłonąć zysk. |
+| [`valibot`](https://valibot.dev/guides/introduction/) lub [`zod`](https://zod.dev/packages/zod) | Schematy walidacji w czasie wykonania, błędy pól i typy TS | Rozważyć niezależnie od biblioteki formularzy, gdy wzrosną reguły konfiguracji; jeden schemat powinien służyć UI i granicy generatora. |
+
+Próba z `@tanstack/react-form` powinna objąć jedną zakładkę, najlepiej
+makroregiony: dodanie/usunięcie regionu, preset, błąd pola, przełączenie
+zakładki i ponowne wejście oraz wygenerowanie mapy. Wynik należy ocenić po
+ilości kodu integracyjnego i zachowaniu, nie po samym API biblioteki. Na dziś
+nie ma podstaw do migracji prostych formularzy `General`, `Noise` i
+`World shape` tylko dla zmniejszenia liczby linii.
+
+### Korekty wcześniejszych rekomendacji
+
+- [`fastnoise-lite`](https://github.com/Auburn/FastNoiseLite/wiki/Documentation)
+  dokumentuje fBm i domain warp, ale nie potwierdza API szumu okresowego.
+  Nie należy wybierać jej jako rozwiązania zawijania świata bez osobnego
+  prototypu szwu; zmiana silnika zmieni też mapy dla tych samych seedów.
+- [`d3-contour`](https://d3js.org/d3-contour/contour) buduje kontury z rastra
+  wartości. Dla maski świata może być użyteczny, ale jego dokładność zależy
+  od siatki, a mapa identyfikatorów regionów wymagałaby osobnych masek lub
+  dodatkowej obróbki. To nie jest zamiennik ciągłego klasyfikatora 1:1.
+- [`comlink`](https://github.com/GoogleChromeLabs/comlink) domyślnie kopiuje
+  przesyłane dane; samo wdrożenie nie usunie kopii dużych rastrów między
+  workerem a głównym wątkiem. Wymagałoby osobnej decyzji o transferze buforów
+  i ich dalszym użyciu w pipeline.
+- Stan #319 wymaga aktualizacji w kolejności powyżej: obecny renderer ma
+  `SmoothLayerPainter`, a `generator-performance-notes.md` opisuje #319 jako
+  wykonane. `pixelmatch` pozostaje opcją dla przyszłych testów obrazu.
+
+Praktyczna kolejność: najpierw mały prototyp Slidera dla granic regionów,
+potem `@use-gesture/react` przy dodawaniu pinch-to-zoom. Bibliotekę formularzy
+warto ocenić na jednej zakładce przed migracją pozostałych; biblioteki
+geometryczne i szumowe dobierać do konkretnego nowego etapu oraz pomiarów.

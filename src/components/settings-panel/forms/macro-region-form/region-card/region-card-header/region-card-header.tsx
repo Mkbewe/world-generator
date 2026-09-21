@@ -1,13 +1,13 @@
 import { TrashIcon } from '@radix-ui/react-icons';
 import { Box, Button, Flex, TextField } from '@radix-ui/themes';
 
-import { useMacroRegionFormStore } from '../../../../../stores';
-import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
-import { regionColor } from '../../../../../utils/map-layers';
-import { colorString } from '../color';
-import styles from '../macro-region-form.module.scss';
+import { useMacroRegionFormStore } from '../../../../../../stores';
+import type { MacroRegionConfig } from '../../../../../../utils/map-generator/types';
+import { regionColor } from '../../../../../../utils/map-layers';
+import { colorString } from '../../lib/color';
+import styles from './region-card-header.module.scss';
 
-export function RegionHeader({
+export function RegionCardHeader({
   region,
   index,
   canRemove = true,
