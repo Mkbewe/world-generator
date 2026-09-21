@@ -105,6 +105,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             }}
             view={{
               zoom: preview.zoom,
+              fitted: preview.fitted,
               onZoomIn: () => rendererRef.current?.zoomIn(),
               onZoomOut: () => rendererRef.current?.zoomOut(),
               onReset: () => rendererRef.current?.resetView(),

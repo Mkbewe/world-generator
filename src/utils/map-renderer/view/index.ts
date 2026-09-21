@@ -10,5 +10,13 @@ export {
   viewTarget,
 } from '../preview-targets';
 export type { RenderTarget } from '../preview-targets';
-export { MAX_VIEW_SCALE, MIN_VIEW_SCALE, fitView, isFitted, panBy, zoomAt } from './view-transform';
+export {
+  FIT_VIEW_SCALE,
+  MAX_VIEW_SCALE,
+  MIN_VIEW_SCALE,
+  fitView,
+  isFitted,
+  panBy,
+  zoomAt,
+} from './view-transform';
 export type { ViewTransform } from './view-transform';

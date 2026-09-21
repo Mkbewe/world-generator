@@ -1,11 +1,14 @@
 import { MagnifyingGlassIcon, MinusIcon, PlusIcon, ResetIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, IconButton, Text } from '@radix-ui/themes';
 
+import { MAX_VIEW_SCALE, MIN_VIEW_SCALE } from '../../../utils/map-renderer';
 import styles from './view-controls.module.scss';
 
 interface ViewControlsProps {
-  /** Current zoom relative to the fitted view; 1 shows the whole map. */
+  /** Current zoom relative to the fitted view; the default zoom shows the whole map. */
   zoom: number;
+  /** Whether the view is the default fitted placement. */
+  fitted: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
@@ -15,6 +18,7 @@ interface ViewControlsProps {
 
 export function ViewControls({
   zoom,
+  fitted,
   onZoomIn,
   onZoomOut,
   onReset,
@@ -33,7 +37,7 @@ export function ViewControls({
           size='1'
           variant='soft'
           color='gray'
-          disabled={zoom <= 1}
+          disabled={fitted}
           onClick={onReset}
           title='Show the whole map'
         >
@@ -48,7 +52,7 @@ export function ViewControls({
             variant='soft'
             color='gray'
             aria-label='Zoom out'
-            disabled={zoom <= 1}
+            disabled={zoom <= MIN_VIEW_SCALE}
             onClick={onZoomOut}
           >
             <MinusIcon />
@@ -56,7 +60,14 @@ export function ViewControls({
           <Text size='2' weight='medium' className={styles.zoom}>
             {zoom.toFixed(1)}x
           </Text>
-          <IconButton size='2' variant='soft' color='gray' aria-label='Zoom in' onClick={onZoomIn}>
+          <IconButton
+            size='2'
+            variant='soft'
+            color='gray'
+            aria-label='Zoom in'
+            disabled={zoom >= MAX_VIEW_SCALE}
+            onClick={onZoomIn}
+          >
             <PlusIcon />
           </IconButton>
         </Flex>

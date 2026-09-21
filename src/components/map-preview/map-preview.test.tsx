@@ -272,6 +272,30 @@ describe('MapPreview readout', () => {
     expect(renderer.current?.viewTransform).toEqual({ scale: 1, centerX: 0.5, centerY: 0.5 });
   });
 
+  it('unlocks the reset control when the fitted map is panned', async () => {
+    const user = userEvent.setup();
+    const { onReady } = createOnReady();
+    render(
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <MapPreview onReady={onReady} progressKey={0} />
+        </HeaderActionsProvider>
+      </Theme>
+    );
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    expect(screen.getByRole('button', { name: /reset/i })).toBeDisabled();
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerMove(canvas, { clientX: 260, clientY: 200 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 260, clientY: 200 });
+
+    expect(screen.getByRole('button', { name: /reset/i })).toBeEnabled();
+  });
+
   it('captures a drag so releasing outside the canvas stops panning', async () => {
     const user = userEvent.setup();
     const { onReady, renderer } = createOnReady();

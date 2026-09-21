@@ -24,6 +24,7 @@ interface MapSidebarProps {
   /** Zoom controls rendered above the overlays; only the fullscreen mode can zoom. */
   view?: {
     zoom: number;
+    fitted: boolean;
     onZoomIn: () => void;
     onZoomOut: () => void;
     onReset: () => void;
