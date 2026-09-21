@@ -5,6 +5,7 @@ import {
   type MapConfig,
   type RunGeneration,
   runGeneration as runGenerationInWorker,
+  selectDirtyStageIds,
   selectMapInfo,
 } from '../../../utils/map-generator';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../../utils/map-layers';
@@ -30,8 +31,15 @@ export class WorldGenerationSession {
   private renderer?: MapRenderer;
   private layers: MapRasters = {};
   private run?: RunSnapshot;
+  private previousConfig?: MapConfig;
+  private dirtyStages: readonly string[] = [];
 
   constructor(private readonly runGeneration: RunGeneration = runGenerationInWorker) {}
+
+  /** Stage ids the current run recomputes; the rest is reused from the saved map. */
+  get dirtyStageIds(): readonly string[] {
+    return this.dirtyStages;
+  }
 
   /** Starts sending run data to a renderer, replaying what already arrived. */
   attach(renderer: MapRenderer): void {
@@ -65,6 +73,7 @@ export class WorldGenerationSession {
     this.generation = generation;
     const signal = generation.signal;
     this.layers = {};
+    this.dirtyStages = selectDirtyStageIds(this.previousConfig, config);
     let progress: ProgressTracker | undefined;
 
     try {
@@ -106,6 +115,7 @@ export class WorldGenerationSession {
 
       signal.throwIfAborted();
       mapPersistence.save({ ...run, layers: this.layers });
+      this.previousConfig = config;
       progress?.complete(result.totalDurationMs);
       return {
         statistics: result.statistics,
