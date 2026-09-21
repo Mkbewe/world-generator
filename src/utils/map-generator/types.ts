@@ -143,6 +143,8 @@ export interface MapGeneratorOptions<TConfig = unknown> {
   stageDelayMs?: number;
   /** Runs before the first stage so an invalid config never allocates data. */
   validateConfig?: (config: Readonly<TConfig>) => void;
+  /** Configuration paths the stages may declare; unknown ones fail construction. */
+  knownConfigKeys?: readonly string[];
 }
 
 export interface GenerationResult<TContext> {

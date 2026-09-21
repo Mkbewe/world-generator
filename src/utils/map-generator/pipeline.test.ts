@@ -1,7 +1,7 @@
 import { GenerationCancelledError, GenerationStageError } from './errors';
 import { MapGenerator } from './pipeline';
 import { createMapGenerator } from './pipeline-factory';
-import type { MapStage } from './stage';
+import { MAP_CONFIG_KEYS, type MapStage } from './stage';
 import type { MapConfig, StageData } from './types';
 
 interface TestConfig {
@@ -17,7 +17,7 @@ interface TestState {
 type TestStage = MapStage<TestConfig, TestState>;
 
 function createStage(id: string, execute: TestStage['execute']): TestStage {
-  return { id, name: `${id} stage`, execute };
+  return { id, name: `${id} stage`, configKeys: [], execute };
 }
 
 describe('MapGenerator', () => {
@@ -48,6 +48,28 @@ describe('MapGenerator', () => {
     const create = (): TestStage => createStage('noise', async () => ({}));
 
     expect(() => new MapGenerator([create(), create()])).toThrow('Duplicate stage id: "noise".');
+  });
+
+  it('rejects unknown configuration keys when the allowed set is provided', () => {
+    const stage: TestStage = {
+      ...createStage('noise', async () => ({})),
+      configKeys: ['world.nope'],
+    };
+
+    expect(() => new MapGenerator([stage], { knownConfigKeys: MAP_CONFIG_KEYS })).toThrow(
+      'Unknown configuration key in stage "noise": "world.nope".'
+    );
+  });
+
+  it('rejects duplicate declarations inside a stage', () => {
+    const stage: TestStage = {
+      ...createStage('noise', async () => ({})),
+      configKeys: ['world.seed', 'world.seed'],
+    };
+
+    expect(() => new MapGenerator([stage])).toThrow(
+      'Duplicate configuration key in stage "noise": "world.seed".'
+    );
   });
 
   it('reports stage lifecycle events', async () => {

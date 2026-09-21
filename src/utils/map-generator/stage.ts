@@ -1,11 +1,32 @@
 import type { MapContext } from './context';
 import type { SeededWorldConfig, StageData, StageMetrics, StageProgressReporter } from './types';
 
-export interface MapStage<TConfig extends SeededWorldConfig, TState extends object> {
+/** Dotted `MapConfig` paths a stage may declare as its inputs. */
+export const MAP_CONFIG_KEYS = [
+  'world.seed',
+  'world.shape',
+  'world.dimensions',
+  'noise',
+  'macroRegions',
+  'macroRegionDeformation',
+] as const;
+
+export type MapConfigKey = (typeof MAP_CONFIG_KEYS)[number];
+
+export interface MapStage<
+  TConfig extends SeededWorldConfig,
+  TState extends object,
+  TConfigKey extends string = string,
+> {
   readonly id: string;
   readonly name: string;
   /** Progress granularity, e.g. 0.5 for half steps. Defaults to 0.01. */
   readonly progressStep?: number;
+  /**
+   * Configuration slices the stage reads. Selective regeneration recomputes
+   * this stage and every later one when any of them changes.
+   */
+  readonly configKeys: readonly TConfigKey[];
 
   execute(
     context: MapContext<TConfig, TState>,

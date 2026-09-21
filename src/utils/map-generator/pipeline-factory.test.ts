@@ -32,6 +32,21 @@ describe('createMapGenerator', () => {
     expect(result.context.state.noiseMap).toBeInstanceOf(Float32Array);
   });
 
+  it('declares the configuration inputs of every stage', () => {
+    const pipeline = createMapGenerator();
+
+    expect(
+      pipeline.stages.map(stage => ({ id: stage.id, configKeys: [...stage.configKeys] }))
+    ).toEqual([
+      { id: 'world-shape', configKeys: ['world.dimensions', 'world.shape'] },
+      { id: 'noise', configKeys: ['world.seed', 'world.dimensions', 'noise'] },
+      {
+        id: 'macro-region',
+        configKeys: ['world.seed', 'world.dimensions', 'macroRegions', 'macroRegionDeformation'],
+      },
+    ]);
+  });
+
   it('rejects configs above the sample budget before running any stage', async () => {
     const pipeline = createMapGenerator();
     const onEvent = vi.fn();

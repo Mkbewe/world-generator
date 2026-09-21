@@ -1,14 +1,15 @@
 import { containsWorld } from '../../world-shape';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import { assertStageOutput, type MapStage } from '../stage';
+import { assertStageOutput, type MapConfigKey, type MapStage } from '../stage';
 import { WORLD_SHAPE_STAGE } from '../stage-definitions';
 import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
 
-export class WorldShapeStage implements MapStage<MapConfig, MapState> {
+export class WorldShapeStage implements MapStage<MapConfig, MapState, MapConfigKey> {
   readonly id = WORLD_SHAPE_STAGE.id;
   readonly name = WORLD_SHAPE_STAGE.name;
   readonly progressStep = 0.5;
+  readonly configKeys = ['world.dimensions', 'world.shape'] as const;
 
   async execute(
     context: MapContext<MapConfig, MapState>,
