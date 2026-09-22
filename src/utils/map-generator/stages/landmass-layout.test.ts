@@ -1,8 +1,8 @@
 import { ARCHETYPE_RECIPES, type ArchetypeRange, LANDMASS_ARCHETYPES } from './landmass-archetypes';
-import { DEFAULT_LANDMASS_CONFIG, MAX_LANDMASSES } from './landmass-defaults';
+import { DEFAULT_LANDMASS_CONFIG, LANDMASS_MARGIN, MAX_LANDMASSES } from './landmass-defaults';
 import { createStructure, type StructureSeed } from './landmass-layout';
 import { createLandmassSampler } from './landmass-sampler';
-import { containsWorld } from '../../world-shape';
+import { containsWorld, type WorldShape } from '../../world-shape';
 import { SeededRandom } from '../random/seeded-random';
 import type { LandmassArchetype, LandmassConfig, LandShape, WorldPoint } from '../types';
 
@@ -41,6 +41,37 @@ function slenderness(seed: StructureSeed): number {
   const meanWidth =
     seed.widthProfile.reduce((sum, width) => sum + width, 0) / seed.widthProfile.length;
   return spineLength(seed.spine) / (2 * meanWidth);
+}
+
+/** Independent check: the full outline stays inside the world margin. */
+function outlineEscapesWorld(structure: StructureSeed, shape: WorldShape): boolean {
+  const insideBy = (point: WorldPoint, extra: number): boolean => {
+    const scale = 1 - 2 * (LANDMASS_MARGIN + extra);
+    return scale > 0 && containsWorld(shape, (2 * point.x - 1) / scale, (2 * point.y - 1) / scale);
+  };
+
+  for (const [index, point] of structure.spine.entries()) {
+    if (!insideBy(point, structure.widthProfile[index])) {
+      return true;
+    }
+  }
+  return structure.positiveShapes.some(land => {
+    const cos = Math.cos(land.orientation);
+    const sin = Math.sin(land.orientation);
+    for (let step = 0; step < 24; step++) {
+      const angle = (step / 24) * Math.PI * 2;
+      const along = Math.cos(angle) * land.halfLength;
+      const across = Math.sin(angle) * land.halfWidth;
+      const point = {
+        x: land.center.x + along * cos - across * sin,
+        y: land.center.y + along * sin + across * cos,
+      };
+      if (!insideBy(point, 0)) {
+        return true;
+      }
+    }
+    return false;
+  });
 }
 
 function barShape(seed: StructureSeed, id = 'landmass-1-bar-1'): LandShape {
@@ -134,6 +165,25 @@ describe('landmass archetypes', () => {
         expect(point.y).toBeGreaterThanOrEqual(0);
         expect(point.y).toBeLessThanOrEqual(1);
         expect(containsWorld('disc', 2 * point.x - 1, 2 * point.y - 1)).toBe(true);
+      }
+    }
+  });
+
+  it('keeps every archetype outline inside the world margin', () => {
+    for (const archetype of LANDMASS_ARCHETYPES) {
+      for (const worldShape of ['disc', 'rectangle'] as const) {
+        for (const size of [0.4, 1]) {
+          for (const seed of [5, 17, 99]) {
+            const structure = createStructure(
+              0,
+              { ...config([archetype]), size },
+              worldShape,
+              new SeededRandom(seed)
+            );
+
+            expect(outlineEscapesWorld(structure, worldShape)).toBe(false);
+          }
+        }
       }
     }
   });

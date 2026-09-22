@@ -1,4 +1,4 @@
-import { DEFAULT_LANDMASS_CONFIG, MAX_LANDMASSES } from './landmass-defaults';
+import { DEFAULT_LANDMASS_CONFIG, LANDMASS_MARGIN, MAX_LANDMASSES } from './landmass-defaults';
 import { LandmassLayoutStage } from './landmass-layout-stage';
 import { createLandmassSampler } from './landmass-sampler';
 import { containsWorld } from '../../world-shape';
@@ -131,6 +131,57 @@ describe('LandmassLayoutStage', () => {
     }
     expect(landCells).toBeGreaterThan(0);
     expect(Math.max(...idMap)).toBeLessThanOrEqual(DEFAULT_LANDMASS_CONFIG.count);
+  });
+
+  it('keeps the land inside the margin, without leaning on the world mask', async () => {
+    const size = 32;
+    const result = await generate(largeConfig(), size * size);
+    const idMap = landmassIdMap(result);
+    const margin = 1 - 2 * LANDMASS_MARGIN;
+    let landCells = 0;
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (idMap[y * size + x] === 0) {
+          continue;
+        }
+        landCells++;
+        expect(
+          containsWorld('disc', (2 * (x / 31) - 1) / margin, (2 * (y / 31) - 1) / margin)
+        ).toBe(true);
+      }
+    }
+    expect(landCells).toBeGreaterThan(0);
+  });
+
+  it('shrinks a crowded world instead of letting geometry escape', async () => {
+    const size = 16;
+    const source: MapConfig = {
+      ...base,
+      world: {
+        ...base.world,
+        dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: size, sampleHeight: size },
+      },
+      landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: MAX_LANDMASSES, size: 1 },
+    };
+    const result = await generate(source, size * size);
+    const idMap = landmassIdMap(result);
+    const margin = 1 - 2 * LANDMASS_MARGIN;
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (idMap[y * size + x] === 0) {
+          continue;
+        }
+        expect(
+          containsWorld(
+            'disc',
+            (2 * (x / (size - 1)) - 1) / margin,
+            (2 * (y / (size - 1)) - 1) / margin
+          )
+        ).toBe(true);
+      }
+    }
   });
 
   it('leaves cells outside the world mask empty', async () => {

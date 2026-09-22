@@ -29,6 +29,9 @@ const PLACEMENT_CANDIDATES = 8;
 /** Step of the sampled spine distance, fine enough for the required gap. */
 const SPINE_SAMPLE_STEP = 0.01;
 
+/** Samples around an attached shape, so its outline cannot escape the world. */
+const SHAPE_OUTLINE_SAMPLES = 12;
+
 /** Structure geometry before the shelf grouping. */
 export interface StructureSeed {
   readonly spine: readonly WorldPoint[];
@@ -40,10 +43,11 @@ export interface StructureSeed {
 }
 
 /**
- * Builds one structure from the configuration and the deterministic stream. The
- * structures placed so far keep it apart: of the sampled starts the roomiest
- * one wins, which also spreads the structures over the world instead of letting
- * them cluster.
+ * Builds one structure from the configuration and the deterministic stream. A
+ * candidate counts only when its complete outline stays inside the world margin
+ * and keeps clear of the structures placed so far; of the sampled starts the
+ * roomiest one wins, which also spreads the structures over the world instead
+ * of letting them cluster.
  */
 export function createStructure(
   index: number,
@@ -57,8 +61,7 @@ export function createStructure(
   const taper = sampleRange(recipe.taper, random);
   const { offsets, handedness } = createSpineOffsets(recipe, config.size, random);
   const prefix = `landmass-${index + 1}`;
-  const reach = recipeReach(recipe, config.size);
-  let roomiest: { spine: readonly WorldPoint[]; clearance: number } | undefined;
+  let roomiest: { structure: StructureSeed; clearance: number } | undefined;
 
   for (const shrink of SPINE_PLACEMENT_SHRINKS) {
     for (let candidate = 0; candidate < PLACEMENT_CANDIDATES; candidate++) {
@@ -67,66 +70,138 @@ export function createStructure(
         x: start.x + offset.x * shrink,
         y: start.y + offset.y * shrink,
       }));
-      if (!spine.every(point => insideWorld(shape, point))) {
+      const structure = buildStructure(
+        prefix,
+        recipe,
+        spine,
+        base,
+        taper,
+        handedness,
+        config,
+        shape,
+        random,
+        shrink
+      );
+      if (!outlineInsideWorld(structure, shape)) {
         continue;
       }
-      const clearance = clearanceFrom(spine, placed, reach);
+      const clearance = clearanceFrom(structure, placed);
       if (clearance >= STRUCTURE_GAP) {
-        return buildStructure(
-          prefix,
-          recipe,
-          spine,
-          base,
-          taper,
-          handedness,
-          config,
-          shape,
-          random
-        );
+        return structure;
       }
       if (!roomiest || clearance > roomiest.clearance) {
-        roomiest = { spine, clearance };
+        roomiest = { structure, clearance };
       }
     }
   }
 
   // A crowded world takes the roomiest candidate found, or the world centre.
-  const spine = roomiest?.spine ?? centredSpine(offsets);
-  return buildStructure(prefix, recipe, spine, base, taper, handedness, config, shape, random);
+  return (
+    roomiest?.structure ??
+    centredStructure(prefix, recipe, offsets, base, taper, handedness, config, shape, random)
+  );
 }
 
-/** Fully shrunken spine around the middle of the world, the last resort. */
-function centredSpine(offsets: readonly WorldPoint[]): readonly WorldPoint[] {
-  const shrink = SPINE_PLACEMENT_SHRINKS[SPINE_PLACEMENT_SHRINKS.length - 1];
-  return offsets.map(offset => ({ x: 0.5 + offset.x * shrink, y: 0.5 + offset.y * shrink }));
+/**
+ * Deterministic last resort for a crowded world: the world centre at the
+ * largest shrink whose outline still fits inside the margin.
+ */
+function centredStructure(
+  prefix: string,
+  recipe: ArchetypeRecipe,
+  offsets: readonly WorldPoint[],
+  base: number,
+  taper: number,
+  handedness: number,
+  config: LandmassConfig,
+  shape: WorldShape,
+  random: SeededRandom
+): StructureSeed {
+  const smallest = SPINE_PLACEMENT_SHRINKS[SPINE_PLACEMENT_SHRINKS.length - 1];
+
+  for (const shrink of SPINE_PLACEMENT_SHRINKS) {
+    const spine = offsets.map(offset => ({
+      x: 0.5 + offset.x * shrink,
+      y: 0.5 + offset.y * shrink,
+    }));
+    const structure = buildStructure(
+      prefix,
+      recipe,
+      spine,
+      base,
+      taper,
+      handedness,
+      config,
+      shape,
+      random,
+      shrink
+    );
+    if (outlineInsideWorld(structure, shape)) {
+      return structure;
+    }
+  }
+
+  const spine = offsets.map(offset => ({
+    x: 0.5 + offset.x * smallest,
+    y: 0.5 + offset.y * smallest,
+  }));
+  return buildStructure(
+    prefix,
+    recipe,
+    spine,
+    base,
+    taper,
+    handedness,
+    config,
+    shape,
+    random,
+    smallest
+  );
 }
 
-/** Smallest gap between a candidate spine and the placed structures; negative means overlap. */
-function clearanceFrom(
-  spine: readonly WorldPoint[],
-  placed: readonly StructureSeed[],
-  reach: number
-): number {
-  const bounds = spineBounds(spine);
+/** Whether the complete outline of a structure stays inside the world margin. */
+export function outlineInsideWorld(structure: StructureSeed, shape: WorldShape): boolean {
+  for (const [index, point] of structure.spine.entries()) {
+    if (!insideWorldBy(shape, point, structure.widthProfile[index])) {
+      return false;
+    }
+  }
+  return structure.positiveShapes.every(land => shapeInsideWorld(land, shape));
+}
+
+/** Samples the ellipse outline, so a peninsula or bar cannot poke out of the world. */
+function shapeInsideWorld(land: LandShape, shape: WorldShape): boolean {
+  const cos = Math.cos(land.orientation);
+  const sin = Math.sin(land.orientation);
+  for (let step = 0; step < SHAPE_OUTLINE_SAMPLES; step++) {
+    const angle = (step / SHAPE_OUTLINE_SAMPLES) * Math.PI * 2;
+    const along = Math.cos(angle) * land.halfLength;
+    const across = Math.sin(angle) * land.halfWidth;
+    const point = {
+      x: land.center.x + along * cos - across * sin,
+      y: land.center.y + along * sin + across * cos,
+    };
+    if (!insideWorld(shape, point)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Smallest gap between a candidate structure and the placed ones; negative means overlap. */
+function clearanceFrom(structure: StructureSeed, placed: readonly StructureSeed[]): number {
+  const bounds = spineBounds(structure.spine);
+  const reach = structureReach(structure);
   let clearance = Infinity;
   for (const other of placed) {
     const required = reach + structureReach(other);
     if (boundsGap(bounds, spineBounds(other.spine)) > required + STRUCTURE_GAP) {
       continue;
     }
-    const distance = sampledSpineDistance(spine, other.spine);
+    const distance = sampledSpineDistance(structure.spine, other.spine);
     clearance = Math.min(clearance, distance - required);
   }
   return clearance;
-}
-
-/** Conservative outline reach of a recipe, before its shapes are drawn. */
-function recipeReach(recipe: ArchetypeRecipe, size: number): number {
-  let reach = recipe.width[1] * 1.5;
-  for (const bar of recipe.bars ?? []) {
-    reach = Math.max(reach, bar.length[1] * 2 + bar.width[1]);
-  }
-  return reach * size;
 }
 
 /** Farthest outline point of a placed structure from its spine. */
@@ -214,7 +289,8 @@ function buildStructure(
   handedness: number,
   config: LandmassConfig,
   shape: WorldShape,
-  random: SeededRandom
+  random: SeededRandom,
+  scale: number
 ): StructureSeed {
   // A two-point recipe needs a midpoint so its profile can reach the sampled
   // base width instead of staying at the tapered end width everywhere.
@@ -232,7 +308,7 @@ function buildStructure(
       );
     }
     const position = spineLength > 0 ? traversed / spineLength : 0.5;
-    return base * (taper + (1 - taper) * Math.sin(Math.PI * position));
+    return base * scale * (taper + (1 - taper) * Math.sin(Math.PI * position));
   });
   const last = outlineSpine[outlineSpine.length - 1];
 
@@ -248,7 +324,7 @@ function buildStructure(
         length: [0.3, 0.55],
         width: [0.25, 0.4],
       }),
-      ...createBars(prefix, recipe.bars ?? [], spine, config.size, handedness, random),
+      ...createBars(prefix, recipe.bars ?? [], spine, config.size * scale, handedness, random),
     ],
     negativeShapes: createShapes(`${prefix}-bay`, shape, outlineSpine, widthProfile, random, 0, 2, {
       coast: 1.08,
@@ -561,8 +637,13 @@ function towardsCenter(point: WorldPoint, distance: number): WorldPoint {
 }
 
 function insideWorld(shape: WorldShape, point: WorldPoint): boolean {
-  const scale = 1 - 2 * LANDMASS_MARGIN;
-  return containsWorld(shape, (2 * point.x - 1) / scale, (2 * point.y - 1) / scale);
+  return insideWorldBy(shape, point, 0);
+}
+
+/** Whether a point lies inside the world shape, eroded by an extra margin. */
+function insideWorldBy(shape: WorldShape, point: WorldPoint, extra: number): boolean {
+  const scale = 1 - 2 * (LANDMASS_MARGIN + extra);
+  return scale > 0 && containsWorld(shape, (2 * point.x - 1) / scale, (2 * point.y - 1) / scale);
 }
 
 function spineDistance(left: readonly WorldPoint[], right: readonly WorldPoint[]): number {
