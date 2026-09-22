@@ -91,7 +91,7 @@ export interface LandShape {
   readonly halfWidth: number;
   /** Rotation of the shape's axis in radians. */
   readonly orientation: number;
-  /** How far the outline bends away from the ellipse; 0 keeps it smooth. */
+  /** How far the outline may bend away from the ellipse; applied by later stages. */
   readonly irregularity: number;
 }
 
@@ -116,6 +116,7 @@ export interface LandmassDefinition {
   readonly widthProfile: readonly number[];
   /** Direction of the structure in radians; kept for later stages and debugging. */
   readonly orientation: number;
+  /** Coastline roughness reserved for later stages. */
   readonly irregularity: number;
   readonly positiveShapes: readonly LandShape[];
   readonly negativeShapes: readonly LandShape[];
@@ -131,13 +132,19 @@ export interface LandmassLayout {
 /** Shelf template applied to every shelf group. */
 export type ShelfConfig = Omit<ShelfDefinition, 'id'>;
 
+/** Recognizable outlines the layout can give a structure. */
+export type LandmassArchetype =
+  'round' | 'oval' | 'elongated' | 'l' | 'u' | 's' | 'z' | 'y' | 'x' | 't';
+
 /** Controls the landmass layout stage. */
 export interface LandmassConfig {
   /** Number of independently generated structures. */
   readonly count: number;
   /** Relative size of a structure; 1 keeps the default scale. */
   readonly scale: number;
-  /** Border wobble of a structure; 0..1. */
+  /** Archetypes drawn for the structures; undefined keeps the whole pool. */
+  readonly archetypes?: readonly LandmassArchetype[];
+  /** Coastline roughness reserved for later stages; 0..1. */
   readonly irregularity: number;
   readonly shelf: ShelfConfig;
 }

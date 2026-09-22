@@ -81,21 +81,16 @@ describe('createLandmassSampler', () => {
     expect(landmassAt(0.52, 0.55)).toBe(2);
   });
 
-  it('bends the shape outline with its irregularity', () => {
-    const smooth = createLandmassSampler([landmass({ positiveShapes: [shape()] })]);
-    const irregular = createLandmassSampler([
+  it('treats shape outlines as exact ellipses, whatever their irregularity', () => {
+    const landmassAt = createLandmassSampler([
       landmass({ positiveShapes: [shape({ irregularity: 0.6 })] }),
     ]);
-    let differs = false;
-    for (let y = 52; y <= 64; y++) {
-      for (let x = 44; x <= 56; x++) {
-        if (smooth(x / 100, y / 100) !== irregular(x / 100, y / 100)) {
-          differs = true;
-        }
-      }
-    }
 
-    expect(differs).toBe(true);
+    // halfLength 0.05 and halfWidth 0.04 around the centre (0.5, 0.58).
+    expect(landmassAt(0.5, 0.58 + 0.039)).toBe(1);
+    expect(landmassAt(0.5, 0.58 + 0.041)).toBe(0);
+    expect(landmassAt(0.5 + 0.049, 0.58)).toBe(1);
+    expect(landmassAt(0.5 + 0.051, 0.58)).toBe(0);
   });
 
   it('returns zero without structures', () => {

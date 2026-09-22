@@ -3,7 +3,7 @@ import { LandmassLayoutStage } from './landmass-layout-stage';
 import { createLandmassSampler } from './landmass-sampler';
 import { containsWorld } from '../../world-shape';
 import { MapGenerator } from '../pipeline';
-import type { LandmassLayout, MapConfig, MapState } from '../types';
+import type { LandmassArchetype, LandmassLayout, MapConfig, MapState } from '../types';
 
 const base: MapConfig = {
   world: {
@@ -172,6 +172,8 @@ describe('LandmassLayoutStage', () => {
       { count: 0 },
       { count: MAX_LANDMASSES + 1 },
       { scale: 0.1 },
+      { archetypes: [] },
+      { archetypes: ['spiral' as LandmassArchetype] },
       { irregularity: 2 },
       { shelf: { ...DEFAULT_LANDMASS_CONFIG.shelf, falloff: 2 } },
       { shelf: { ...DEFAULT_LANDMASS_CONFIG.shelf, width: 0 } },
