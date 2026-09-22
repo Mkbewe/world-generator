@@ -134,7 +134,20 @@ export type ShelfConfig = Omit<ShelfDefinition, 'id'>;
 
 /** Recognizable outlines the layout can give a structure. */
 export type LandmassArchetype =
-  'round' | 'oval' | 'elongated' | 'l' | 'u' | 's' | 'z' | 'v' | 'y' | 'x' | 't' | 'irregular';
+  | 'round'
+  | 'oval'
+  | 'elongated'
+  | 'irregular'
+  | 'o'
+  | 'c'
+  | 'l'
+  | 'u'
+  | 's'
+  | 'z'
+  | 'v'
+  | 'y'
+  | 'x'
+  | 't';
 
 /** Controls the landmass layout stage. */
 export interface LandmassConfig {
