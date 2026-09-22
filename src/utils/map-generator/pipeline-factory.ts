@@ -1,4 +1,4 @@
-import { LandmassLayoutStage } from './stages/landmass-layout-stage';
+import { LandmassLayoutStage } from './stages/landmass-layout';
 import { MacroRegionStage } from './stages/macro-region-stage';
 import { NoiseStage } from './stages/noise-stage';
 import { WorldShapeStage } from './stages/world-shape-stage';

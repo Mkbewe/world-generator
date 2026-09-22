@@ -1,7 +1,7 @@
 import { bench, describe } from 'vitest';
 
 import { DEFAULT_LANDMASS_CONFIG } from './landmass-defaults';
-import { LandmassLayoutStage } from './landmass-layout-stage';
+import { LandmassLayoutStage } from './landmass-layout';
 import { containsWorld } from '../../world-shape';
 import { MapContext } from '../context';
 import type { MapConfig } from '../types';

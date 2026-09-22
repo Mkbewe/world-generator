@@ -79,20 +79,23 @@ export interface WorldPoint {
 }
 
 /**
- * Elongated blob that adds or cuts land around a structure's spine; all values
- * are in normalized world units.
+ * A control point of a geological structure: its influence reaches `radius`
+ * around `position`, and the influence interpolates smoothly along the edges.
  */
-export interface LandShape {
+export interface LandmassNode {
   readonly id: string;
-  readonly center: WorldPoint;
-  /** Half of the shape's length along its axis. */
-  readonly halfLength: number;
-  /** Half of the shape's width across its axis. */
-  readonly halfWidth: number;
-  /** Rotation of the shape's axis in radians. */
-  readonly orientation: number;
-  /** How far the outline may bend away from the ellipse; applied by later stages. */
-  readonly irregularity: number;
+  readonly position: WorldPoint;
+  /** Influence radius at this node, in normalized world units. */
+  readonly radius: number;
+}
+
+/** A connection between two nodes; control points bend it into a smooth curve. */
+export interface LandmassEdge {
+  readonly id: string;
+  readonly from: string;
+  readonly to: string;
+  /** Points between the ends, in travel order; absent for a straight edge. */
+  readonly controlPoints?: readonly WorldPoint[];
 }
 
 /** Shallow water apron around one or more structures; shared by archipelagos. */
@@ -107,54 +110,36 @@ export interface ShelfDefinition {
   readonly irregularity: number;
 }
 
-/** One geological structure: the spine, its width profile, shapes and shelf. */
-export interface LandmassDefinition {
+/** One geological structure: its intent, ridge graph and shelf. */
+export interface GeologicalStructure {
   readonly id: string;
-  /** Spine polyline in normalized coordinates; at least two points. */
-  readonly spine: readonly WorldPoint[];
-  /** Half-width at every spine point, in normalized units. */
-  readonly widthProfile: readonly number[];
-  /** Direction of the structure in radians; kept for later stages and debugging. */
-  readonly orientation: number;
-  /** Coastline roughness reserved for later stages. */
-  readonly irregularity: number;
-  readonly positiveShapes: readonly LandShape[];
-  readonly negativeShapes: readonly LandShape[];
+  readonly archetype: LandmassArchetype;
+  readonly nodes: readonly LandmassNode[];
+  readonly edges: readonly LandmassEdge[];
   readonly shelfId: string;
 }
 
-/** Every landmass definition plus the shared shelves they reference. */
+/** Every geological structure plus the shared shelves they reference. */
 export interface LandmassLayout {
-  readonly landmasses: readonly LandmassDefinition[];
+  readonly structures: readonly GeologicalStructure[];
   readonly shelves: readonly ShelfDefinition[];
 }
 
 /** Shelf template applied to every shelf group. */
 export type ShelfConfig = Omit<ShelfDefinition, 'id'>;
 
-/** Recognizable outlines the layout can give a structure. */
+/** Shape intents the layout can give a structure. */
 export type LandmassArchetype =
-  | 'round'
-  | 'oval'
-  | 'elongated'
-  | 'irregular'
-  | 'o'
-  | 'c'
-  | 'l'
-  | 'u'
-  | 's'
-  | 'z'
-  | 'v'
-  | 'y'
-  | 'x'
-  | 't';
+  'round' | 'irregular' | 'elongated' | 'winding' | 'branched' | 'lagoon' | 'atoll';
 
 /** Controls the landmass layout stage. */
 export interface LandmassConfig {
   /** Number of independently generated structures. */
   readonly count: number;
-  /** Relative size of a structure; 1 is the largest. */
+  /** Typical scale of the structures; 1 is the largest influence budget. */
   readonly size: number;
+  /** How strongly the structure sizes differ; 0 keeps them nearly equal. */
+  readonly diversity: number;
   /** Archetypes drawn for the structures; undefined keeps the whole pool. */
   readonly archetypes?: readonly LandmassArchetype[];
   /** Coastline roughness reserved for later stages; 0..1. */

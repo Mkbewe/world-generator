@@ -32,8 +32,7 @@ describe('createMapGenerator', () => {
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
     expect(result.context.state.noiseMap).toBeInstanceOf(Float32Array);
-    // The stage is a stub until the new graph model lands.
-    expect(result.context.state.landmassLayout).toEqual({ landmasses: [], shelves: [] });
+    expect(result.context.state.landmassLayout?.structures.length).toBeGreaterThan(0);
   });
 
   it('declares the configuration inputs of every stage', () => {

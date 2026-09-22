@@ -62,6 +62,24 @@ function stageStatistics(
   };
 }
 
+function landmassLayoutFixture() {
+  return {
+    structures: [
+      {
+        id: 'landmass-1',
+        archetype: 'elongated',
+        nodes: [
+          { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
+          { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.05 },
+        ],
+        edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
+        shelfId: 'shelf-1',
+      },
+    ],
+    shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 }],
+  };
+}
+
 function skipped(stageId: string): GenerationEvent {
   return {
     type: 'stage-skipped',
@@ -182,6 +200,47 @@ describe('WorldGenerationSession', () => {
 
     await session.generate(withRegions, vi.fn());
     expect(planned()).toEqual([]);
+  });
+
+  it('saves the generated landmass layout with the snapshot', async () => {
+    session.attach(renderer);
+    const layout = landmassLayoutFixture();
+    const setInfo = vi.spyOn(renderer, 'setInfo');
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      options?.onEvent?.(completed('landmass-layout', { landmassLayout: layout }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
+
+    await session.generate(config, vi.fn());
+
+    expect(setInfo).toHaveBeenCalledWith(expect.objectContaining({ landmassLayout: layout }));
+    expect(mapRepository.get()?.info?.landmassLayout).toEqual(layout);
+  });
+
+  it('restores the saved landmass layout while the stage is reused', async () => {
+    const layout = landmassLayoutFixture();
+    mapRepository.save({
+      width: 2,
+      height: 2,
+      seed: '17',
+      shape: 'disc',
+      layers: {},
+      info: { landmassLayout: layout },
+    });
+    const setInfo = vi.spyOn(renderer, 'setInfo');
+    session.attach(renderer);
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
+
+    await session.generate(config, vi.fn());
+
+    expect(setInfo).toHaveBeenCalledWith(expect.objectContaining({ landmassLayout: layout }));
+    expect(mapRepository.get()?.info?.landmassLayout).toEqual(layout);
   });
 
   it('drops a snapshot from an older format instead of reusing its rasters', async () => {
