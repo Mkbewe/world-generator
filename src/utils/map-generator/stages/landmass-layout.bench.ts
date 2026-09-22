@@ -1,11 +1,9 @@
 import { bench, describe } from 'vitest';
 
 import { DEFAULT_LANDMASS_CONFIG } from './landmass-defaults';
-import { createStructure, type StructureSeed } from './landmass-layout';
 import { LandmassLayoutStage } from './landmass-layout-stage';
 import { containsWorld } from '../../world-shape';
 import { MapContext } from '../context';
-import { RandomFactory } from '../random/random-factory';
 import type { MapConfig } from '../types';
 
 /** World resolutions the baseline compares, in sample cells per axis. */
@@ -47,16 +45,6 @@ function discMask(resolution: number): Uint8Array {
 }
 
 const masks = new Map(RESOLUTIONS.map(resolution => [resolution, discMask(resolution)]));
-
-describe('landmass layout build', () => {
-  bench('default structures', () => {
-    const random = new RandomFactory(SEED).create('landmass-layout');
-    const structures: StructureSeed[] = [];
-    for (let index = 0; index < DEFAULT_LANDMASS_CONFIG.count; index++) {
-      structures.push(createStructure(index, DEFAULT_LANDMASS_CONFIG, 'disc', random, structures));
-    }
-  });
-});
 
 for (const resolution of RESOLUTIONS) {
   describe(`landmass stage at ${resolution} x ${resolution}`, () => {

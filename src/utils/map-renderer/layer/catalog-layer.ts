@@ -190,9 +190,6 @@ function resolveBoundary(
   if (spec.boundarySource === 'region') {
     return geometry?.regionAt;
   }
-  if (spec.boundarySource === 'landmass') {
-    return geometry?.landmassAt;
-  }
   return undefined;
 }
 

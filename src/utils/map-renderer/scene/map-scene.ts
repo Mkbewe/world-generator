@@ -1,13 +1,9 @@
-import { isLandmassLayout } from '../../map-generator/stages/landmass-layout';
-import { createLandmassSampler } from '../../map-generator/stages/landmass-sampler';
 import { DEFAULT_REGION_NOISE_SOURCE } from '../../map-generator/stages/macro-region-defaults';
 import { createRegionDisplacement } from '../../map-generator/stages/macro-region-displacement';
 import { createMacroRegionSampler } from '../../map-generator/stages/macro-region-stage';
-import type { LandmassLayout } from '../../map-generator/types';
 import {
   type LayerDataRecord,
   type LayerSpec,
-  type MapInfo,
   type MapRasters,
   selectRasters,
 } from '../../map-layers';
@@ -29,7 +25,6 @@ export class MapScene {
   private geometry?: SmoothGeometry;
   private shape?: WorldShape;
   private regionConfig?: MapMetadata['regionGeometry'];
-  private landmassLayout?: LandmassLayout;
   private readonly layers = new Map<MapBaseLayerId, CatalogLayer>();
   private readonly available = new Set<MapBaseLayerId>();
 
@@ -76,19 +71,6 @@ export class MapScene {
     this.rebuildGeometry();
   }
 
-  /**
-   * Keeps non-raster map data that analytic borders need, e.g. the landmass
-   * layout, so layers declared with a `boundarySource` stay smooth.
-   */
-  setInfo(info: MapInfo): void {
-    const layout = isLandmassLayout(info.landmassLayout) ? info.landmassLayout : undefined;
-    if (layout === this.landmassLayout) {
-      return;
-    }
-    this.landmassLayout = layout;
-    this.rebuildGeometry();
-  }
-
   /** Rebuilds the continuous geometry shared by generation and screen-space painting. */
   private rebuildGeometry(): void {
     const size = this.currentSize;
@@ -99,9 +81,6 @@ export class MapScene {
     this.geometry = {
       shape: this.shape,
       regionAt: this.createRegionAt(this.regionConfig, size),
-      landmassAt: this.landmassLayout
-        ? createLandmassSampler(this.landmassLayout.landmasses)
-        : undefined,
     };
   }
 
@@ -155,7 +134,6 @@ export class MapScene {
         clipMask,
         this.geometry?.shape,
         spec.boundarySource === 'region' ? this.regionConfig : undefined,
-        spec.boundarySource === 'landmass' ? this.landmassLayout : undefined,
         ...this.sampledRasters(spec),
       ],
       () => new CatalogLayer(spec, size, value, clipMask, this.geometry)
@@ -252,7 +230,6 @@ export class MapScene {
     this.geometry = undefined;
     this.shape = undefined;
     this.regionConfig = undefined;
-    this.landmassLayout = undefined;
     this.layers.clear();
     this.available.clear();
   }

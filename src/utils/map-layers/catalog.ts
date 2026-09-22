@@ -1,5 +1,5 @@
 import type { LayerSpec } from './layer-spec';
-import { LANDMASS_COLORS, REGION_COLORS } from './palettes';
+import { REGION_COLORS } from './palettes';
 import type { LayerDataRecord, MapRasters } from './types';
 import { PIPELINE_STAGES } from '../map-generator/stage-definitions';
 
@@ -25,16 +25,6 @@ const CATALOG_ENTRIES = [
     boundarySource: 'region',
     samples: ['noise'],
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
-  },
-  {
-    id: 'landmass-layout',
-    label: 'Landmasses',
-    source: 'landmassIdMap',
-    dataType: 'uint8',
-    clipTo: 'world-shape',
-    boundarySource: 'landmass',
-    skipValue: 0,
-    palette: { kind: 'discrete', colors: LANDMASS_COLORS, overflow: 'cycle', offset: -1 },
   },
   {
     id: 'noise',
@@ -67,6 +57,15 @@ function sortByPipelineOrder<T extends readonly LayerSpec[]>(entries: T): T {
 
 function stageIndex(id: string): number {
   return STAGE_ORDER.get(id) ?? PIPELINE_STAGES.length;
+}
+
+/**
+ * Whether every raster key belongs to the current catalog. Snapshots saved in an
+ * older format fail this check, so callers can drop them instead of re-saving
+ * stale rasters.
+ */
+export function hasCurrentRasterSources(data: LayerDataRecord): boolean {
+  return Object.keys(data).every(key => LAYER_CATALOG.some(spec => spec.source === key));
 }
 
 /** Selects only catalog-owned raster sources at the dynamic data boundary. */

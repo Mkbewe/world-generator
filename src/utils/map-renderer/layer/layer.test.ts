@@ -84,21 +84,37 @@ describe('MapLayer rendering lifecycle', () => {
       drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     const world = worldLayer({ width: 2, height: 1 }, new Uint8Array([1, 1]));
-    const landmasses = new CatalogLayer(
-      layerRegistry.get('landmass-layout'),
+    const skipLayer = new CatalogLayer(
+      {
+        id: 'noise',
+        label: 'Skip',
+        source: 'skipMap',
+        dataType: 'uint8',
+        clipTo: 'world-shape',
+        skipValue: 0,
+        palette: {
+          kind: 'discrete',
+          colors: [
+            [120, 160, 90],
+            [196, 172, 118],
+          ],
+          overflow: 'cycle',
+          offset: -1,
+        },
+      },
       world.size,
       new Uint8Array([0, 1]),
       world
     );
     try {
-      await landmasses.prepare(new AbortController().signal, targetFor(world.size));
+      await skipLayer.prepare(new AbortController().signal, targetFor(world.size));
       const overview = images[0];
       const alphaAt = (x: number, y: number): number => overview[(y * 512 + x) * 4 + 3];
       expect(alphaAt(64, 128)).toBe(0);
       expect(alphaAt(448, 128)).toBe(255);
     } finally {
       world.dispose();
-      landmasses.dispose();
+      skipLayer.dispose();
       getContext.mockRestore();
     }
   });

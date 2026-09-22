@@ -1,4 +1,4 @@
-import { LAYER_CATALOG } from './catalog';
+import { hasCurrentRasterSources, LAYER_CATALOG } from './catalog';
 import { PIPELINE_STAGES } from '../map-generator/stage-definitions';
 
 describe('LAYER_CATALOG', () => {
@@ -11,14 +11,10 @@ describe('LAYER_CATALOG', () => {
     expect(ranks).toEqual([...ranks].sort((left, right) => left - right));
   });
 
-  it('declares the landmass layer, skipping the outside value', () => {
-    const entry = LAYER_CATALOG.find(layer => layer.id === 'landmass-layout');
-
-    expect(entry).toMatchObject({
-      source: 'landmassIdMap',
-      dataType: 'uint8',
-      clipTo: 'world-shape',
-      skipValue: 0,
-    });
+  it('accepts only raster keys of the current catalog', () => {
+    expect(hasCurrentRasterSources({})).toBe(true);
+    expect(hasCurrentRasterSources({ worldMask: new Uint8Array(1) })).toBe(true);
+    // A key from an older snapshot format makes the whole record stale.
+    expect(hasCurrentRasterSources({ landmassIdMap: new Uint8Array(1) })).toBe(false);
   });
 });

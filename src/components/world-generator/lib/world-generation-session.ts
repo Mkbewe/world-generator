@@ -3,14 +3,17 @@ import { type GenerationStatistics, usePreviewStore } from '../../../stores';
 import {
   DEFAULT_MACRO_DEFORMATION,
   DEFAULT_MACRO_REGIONS,
-  isLandmassLayout,
-  type LandmassLayout,
   type MapConfig,
   type RunGeneration,
   runGeneration as runGenerationInWorker,
   selectMapInfo,
 } from '../../../utils/map-generator';
-import { type LayerDataRecord, type MapRasters, selectRasters } from '../../../utils/map-layers';
+import {
+  hasCurrentRasterSources,
+  type LayerDataRecord,
+  type MapRasters,
+  selectRasters,
+} from '../../../utils/map-layers';
 import {
   type GeneratedMapSnapshot,
   layerRegistry,
@@ -82,11 +85,17 @@ export class WorldGenerationSession {
     onProgress: (progress: GenerationProgressState) => void
   ): Promise<GenerationStatistics | undefined> {
     this.cancel();
+    const cached = mapRepository.get();
+    if (cached && !hasCurrentRasterSources(cached.layers)) {
+      // A snapshot in a format this build no longer understands (e.g. the old
+      // landmass id map) is dropped with its regeneration baseline instead of
+      // being migrated or re-saved; the run starts from scratch.
+      this.reset();
+    }
     const generation = new AbortController();
     this.generation = generation;
     const signal = generation.signal;
-    const cached = mapRepository.get();
-    const cachedRasters = cached?.layers ?? {};
+    const cachedRasters = mapRepository.get()?.layers ?? {};
     const plan = this.regeneration.plan(config, cachedRasters);
     this.layers = { ...cachedRasters };
     // The saved map stays until this run succeeds, so a failure keeps it.
@@ -99,10 +108,6 @@ export class WorldGenerationSession {
 
     try {
       const info = { ...selectMapInfo(config) };
-      if (isLandmassLayout(cached?.info?.landmassLayout)) {
-        // Reused stages never report again, so the saved layout keeps borders smooth.
-        info.landmassLayout = cached.info.landmassLayout;
-      }
       const regionGeometry = {
         seed: config.world.seed,
         regions: config.macroRegions ?? DEFAULT_MACRO_REGIONS,
@@ -166,10 +171,6 @@ export class WorldGenerationSession {
 
   /** Collects catalog rasters and sends them to the attached preview when there is one. */
   private receiveStage(data: LayerDataRecord): void {
-    const layout = data.landmassLayout;
-    if (isLandmassLayout(layout)) {
-      this.updateLayoutInfo(layout);
-    }
     const rasters = selectRasters(data);
     Object.assign(this.layers, rasters);
     if (this.followRun) {
@@ -184,16 +185,6 @@ export class WorldGenerationSession {
       return;
     }
     this.send(renderer, rasters);
-  }
-
-  /** Keeps the generated layout with the run, before its raster reaches the preview. */
-  private updateLayoutInfo(layout: LandmassLayout): void {
-    const run = this.run;
-    if (!run) {
-      return;
-    }
-    run.info = { ...run.info, landmassLayout: layout };
-    this.renderer?.setInfo(run.info);
   }
 
   private startRenderer(renderer: MapRenderer, run: RunSnapshot): void {

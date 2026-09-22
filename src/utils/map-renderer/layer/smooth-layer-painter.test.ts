@@ -49,7 +49,15 @@ describe('SmoothLayerPainter', () => {
       labels,
       undefined,
       undefined,
-      compilePalette(layerRegistry.get('landmass-layout').palette),
+      compilePalette({
+        kind: 'discrete',
+        colors: [
+          [120, 160, 90],
+          [196, 172, 118],
+        ],
+        overflow: 'cycle',
+        offset: -1,
+      }),
       { shape: 'rectangle' },
       'clipped',
       0
