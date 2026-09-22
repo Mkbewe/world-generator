@@ -1,5 +1,5 @@
-import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass-archetypes';
 import { DEFAULT_LANDMASS_CONFIG } from '../../utils/map-generator/stages/landmass-defaults';
+import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass-layout/archetypes';
 import type { LandmassArchetype, LandmassConfig } from '../../utils/map-generator/types';
 import { createStore } from '../create-store';
 

@@ -16,10 +16,11 @@ export const LANDMASS_GROUP_DISTANCE = 0.2;
 /** Free space kept between two structure outlines, in normalized units. */
 export const STRUCTURE_GAP = 0.02;
 
-/** Visible layout: ten gentle structures sharing their shelves. */
+/** Visible layout: ten structures of clearly different sizes. */
 export const DEFAULT_LANDMASS_CONFIG: LandmassConfig = {
   count: 10,
   size: 0.6,
+  diversity: 0.5,
   irregularity: 0.45,
   shelf: { width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 },
 };

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { ArchetypePoolField } from './archetype-pool-field';
 import { LANDMASS_FORM_DEFAULTS, useLandmassFormStore } from '../../../../../stores';
-import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass-archetypes';
+import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass-layout/archetypes';
 
 function renderField() {
   render(
@@ -24,7 +24,7 @@ describe('ArchetypePoolField', () => {
 
     expect(screen.getAllByRole('checkbox')).toHaveLength(LANDMASS_ARCHETYPES.length);
     expect(screen.getByRole('checkbox', { name: 'Round' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'T' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Atoll' })).toBeChecked();
   });
 
   it('clears and restores the whole pool with one button', async () => {
@@ -46,9 +46,9 @@ describe('ArchetypePoolField', () => {
     const user = userEvent.setup();
     renderField();
 
-    await user.click(screen.getByRole('checkbox', { name: 'U' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Winding' }));
 
-    expect(screen.getByRole('checkbox', { name: 'U' })).not.toBeChecked();
-    expect(useLandmassFormStore.getState().landmasses.archetypes).not.toContain('u');
+    expect(screen.getByRole('checkbox', { name: 'Winding' })).not.toBeChecked();
+    expect(useLandmassFormStore.getState().landmasses.archetypes).not.toContain('winding');
   });
 });

@@ -1,25 +1,18 @@
 import { Button, CheckboxCards, Flex } from '@radix-ui/themes';
 
 import { selectedArchetypes, useLandmassFormStore } from '../../../../../stores';
-import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass-archetypes';
+import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass-layout/archetypes';
 import type { LandmassArchetype } from '../../../../../utils/map-generator/types';
 import { InfoLabel } from '../../../../info-label';
 
 const ARCHETYPE_LABELS: Record<LandmassArchetype, string> = {
   round: 'Round',
-  oval: 'Oval',
-  elongated: 'Elongated',
   irregular: 'Irregular',
-  o: 'O',
-  c: 'C',
-  l: 'L',
-  u: 'U',
-  s: 'S',
-  z: 'Z',
-  v: 'V',
-  y: 'Y',
-  x: 'X',
-  t: 'T',
+  elongated: 'Elongated',
+  winding: 'Winding',
+  branched: 'Branched',
+  lagoon: 'Lagoon',
+  atoll: 'Atoll',
 };
 
 /** Enables the archetypes the layout may draw a structure from. */

@@ -3,8 +3,8 @@ import {
   selectedArchetypes,
   useLandmassFormStore,
 } from './landmass-form-store';
-import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass-archetypes';
 import { DEFAULT_LANDMASS_CONFIG } from '../../utils/map-generator/stages/landmass-defaults';
+import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass-layout/archetypes';
 
 describe('useLandmassFormStore', () => {
   beforeEach(() => {
@@ -41,9 +41,9 @@ describe('useLandmassFormStore', () => {
 
   it('keeps the pool in the archetype order and allows clearing it', () => {
     const { setArchetypes } = useLandmassFormStore.getState();
-    setArchetypes(['u', 'round']);
+    setArchetypes(['atoll', 'round']);
 
-    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(['round', 'u']);
+    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(['round', 'atoll']);
 
     setArchetypes([]);
 
