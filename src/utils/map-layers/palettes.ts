@@ -13,18 +13,6 @@ export const REGION_COLORS = [
   [0, 137, 123],
 ] as const satisfies readonly Color[];
 
-/** Earthy palette of the landmass id map; the first color belongs to structure one. */
-export const LANDMASS_COLORS = [
-  [120, 160, 90],
-  [196, 172, 118],
-  [96, 136, 84],
-  [168, 140, 100],
-  [140, 176, 116],
-  [178, 156, 104],
-  [110, 150, 130],
-  [156, 128, 88],
-] as const satisfies readonly Color[];
-
 const UNKNOWN_COLOR = [120, 120, 120] as const satisfies Color;
 
 export function regionColor(index: number): Color {

@@ -5,20 +5,12 @@ import {
   MAX_LANDMASSES,
   MIN_LANDMASS_SIZE,
 } from './landmass-defaults';
-import {
-  createShelfTemplates,
-  createStructure,
-  groupStructures,
-  type StructureSeed,
-} from './landmass-layout';
-import { createLandmassSampler } from './landmass-sampler';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import { assertStageOutput, type MapStage } from '../stage';
+import { type MapStage } from '../stage';
 import { LANDMASS_LAYOUT_STAGE } from '../stage-definitions';
 import type {
   LandmassConfig,
-  LandmassDefinition,
   MapConfig,
   MapState,
   StageMetrics,
@@ -27,7 +19,12 @@ import type {
 
 type LandmassLayout = NonNullable<MapState['landmassLayout']>;
 
-/** Builds the global layout of geological structures; heights belong to later stages. */
+/**
+ * Stub of the landmass layout stage. The old spine-and-raster implementation is
+ * gone; the graph model, its archetypes and the vector layer arrive in the next
+ * stages of the refactor. Until then the stage only validates its configuration
+ * and produces an empty layout.
+ */
 export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
   readonly id = LANDMASS_LAYOUT_STAGE.id;
   readonly name = LANDMASS_LAYOUT_STAGE.name;
@@ -38,7 +35,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     context: MapContext<MapConfig, MapState>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ landmassLayout: LandmassLayout; landmassIdMap: Uint8Array }> {
+  ): Promise<{ landmassLayout: LandmassLayout }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const worldMask = context.state.worldMask;
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
@@ -47,110 +44,34 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
 
     const config = context.config.landmasses ?? DEFAULT_LANDMASS_CONFIG;
     this.validateConfig(config);
-    const random = context.random.create(this.id);
-    const shape = context.config.world.shape;
-    const structures: StructureSeed[] = [];
-    // An explicitly empty pool means the layout draws no structures at all.
-    const planned = config.archetypes?.length === 0 ? 0 : config.count;
-
-    for (let index = 0; index < planned; index++) {
-      if (signal.aborted) {
-        throw new GenerationCancelledError();
-      }
-      structures.push(
-        createStructure(index, config, shape, random, structures, progress =>
-          report(((index + progress) / planned) * 0.5)
-        )
-      );
-      report(((index + 1) / planned) * 0.5);
+    if (signal.aborted) {
+      throw new GenerationCancelledError();
     }
 
-    const { groups, count } = groupStructures(structures);
-    const shelves = createShelfTemplates(config, count);
-    const landmasses: LandmassDefinition[] = structures.map((structure, index) => ({
-      id: `landmass-${index + 1}`,
-      ...structure,
-      shelfId: shelves[groups[index]].id,
-    }));
-    const layout = { landmasses, shelves };
-
-    const landmassAt = createLandmassSampler(landmasses);
-    const landmassIdMap = new Uint8Array(sampleWidth * sampleHeight);
-    const xDivisor = Math.max(1, sampleWidth - 1);
-    const yDivisor = Math.max(1, sampleHeight - 1);
-    for (let y = 0; y < sampleHeight; y++) {
-      if (signal.aborted) {
-        throw new GenerationCancelledError();
-      }
-
-      const normalizedY = y / yDivisor;
-      for (let x = 0; x < sampleWidth; x++) {
-        const cell = y * sampleWidth + x;
-        if (worldMask[cell] === 0) {
-          continue;
-        }
-        landmassIdMap[cell] = landmassAt(x / xDivisor, normalizedY);
-      }
-
-      report(0.5 + ((y + 1) / sampleHeight) * 0.5);
-    }
-
+    const layout: LandmassLayout = { landmasses: [], shelves: [] };
     context.state.landmassLayout = layout;
-    context.state.landmassIdMap = landmassIdMap;
-    return { landmassLayout: layout, landmassIdMap };
+    report(1);
+    return { landmassLayout: layout };
   }
 
-  validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
-    const { sampleWidth, sampleHeight } = config.world.dimensions;
-    assertStageOutput(state.landmassIdMap, 'uint8', sampleWidth * sampleHeight);
-
-    const layout = state.landmassLayout;
-    if (!layout) {
+  validate(state: Readonly<MapState>): void {
+    if (!state.landmassLayout) {
       throw new Error('Pipeline completed without all required map data.');
-    }
-
-    const ids = new Set<string>();
-    for (const landmass of layout.landmasses) {
-      if (ids.has(landmass.id)) {
-        throw new Error(`Pipeline produced a duplicate landmass id: "${landmass.id}".`);
-      }
-      ids.add(landmass.id);
-      if (landmass.spine.length < 2 || landmass.widthProfile.length !== landmass.spine.length) {
-        throw new Error(`Pipeline produced an invalid spine for "${landmass.id}".`);
-      }
-      if (
-        !landmass.spine.every(isFinitePoint) ||
-        !landmass.widthProfile.every(width => width > 0)
-      ) {
-        throw new Error(`Pipeline produced invalid geometry for "${landmass.id}".`);
-      }
-      if (!layout.shelves.some(shelf => shelf.id === landmass.shelfId)) {
-        throw new Error(`Pipeline produced an unknown shelf for "${landmass.id}".`);
-      }
     }
   }
 
   summarize(
-    context: MapContext<MapConfig, MapState>,
+    _context: MapContext<MapConfig, MapState>,
     data: Record<string, unknown>
   ): StageMetrics | undefined {
     const layout = data.landmassLayout as LandmassLayout | undefined;
-    const idMap = data.landmassIdMap;
-    const worldMask = context.state.worldMask;
-    if (
-      !layout ||
-      !(idMap instanceof Uint8Array) ||
-      !worldMask ||
-      worldMask.length !== idMap.length
-    ) {
+    if (!layout) {
       return undefined;
     }
 
     return {
       structures: layout.landmasses.length,
       shelves: layout.shelves.length,
-      landCoverage: measureCoverage(idMap, worldMask),
-      bytes: idMap.byteLength,
     };
   }
 
@@ -188,27 +109,6 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       throw new RangeError('Landmass shelf width must be within 0..0.5.');
     }
   }
-}
-
-/** Share of the world mask covered by land, measured from the generated id map. */
-export function measureCoverage(idMap: Uint8Array, worldMask: Uint8Array): number {
-  let worldCells = 0;
-  let landCells = 0;
-  for (let index = 0; index < idMap.length; index++) {
-    if (worldMask[index] === 0) {
-      continue;
-    }
-    worldCells++;
-    if (idMap[index] > 0) {
-      landCells++;
-    }
-  }
-  return worldCells === 0 ? 0 : landCells / worldCells;
-}
-
-/** A spine may spill over the coast, so only finiteness is required here. */
-function isFinitePoint(point: { readonly x: number; readonly y: number }): boolean {
-  return Number.isFinite(point.x) && Number.isFinite(point.y);
 }
 
 function isNormalized(value: number): boolean {

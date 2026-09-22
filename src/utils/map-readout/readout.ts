@@ -79,13 +79,6 @@ function describeValue(inspection: MapInspection | undefined, info: MapInfo): st
       const label = labelAt(info, 'macroRegionLabels', inspection.value);
       return label ?? `Region ${inspection.value}`;
     }
-    case 'landmass-layout': {
-      if (inspection.value === 0) {
-        return 'Open sea';
-      }
-      const label = labelAt(info, 'landmassLabels', inspection.value - 1);
-      return label ?? `Landmass ${inspection.value}`;
-    }
     default:
       return inspection.value.toFixed(3);
   }

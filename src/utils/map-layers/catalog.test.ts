@@ -10,15 +10,4 @@ describe('LAYER_CATALOG', () => {
 
     expect(ranks).toEqual([...ranks].sort((left, right) => left - right));
   });
-
-  it('declares the landmass layer, skipping the outside value', () => {
-    const entry = LAYER_CATALOG.find(layer => layer.id === 'landmass-layout');
-
-    expect(entry).toMatchObject({
-      source: 'landmassIdMap',
-      dataType: 'uint8',
-      clipTo: 'world-shape',
-      skipValue: 0,
-    });
-  });
 });

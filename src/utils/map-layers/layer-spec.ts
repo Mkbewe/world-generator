@@ -37,7 +37,7 @@ export interface LayerSpec<TId extends string = string> {
    * edges, so borders stay smooth at any zoom. The renderer resolves the
    * matching sampler from the map geometry.
    */
-  readonly boundarySource?: 'region' | 'landmass';
+  readonly boundarySource?: 'region';
   /** Catalog layers whose rasters are sampled while painting this layer. */
   readonly samples?: readonly TId[];
   readonly providesMask?: { readonly insideValue: number };
