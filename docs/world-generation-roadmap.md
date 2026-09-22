@@ -248,6 +248,32 @@ pas `gray-1`/`gray-2` z 1px liniami, dużo pustego miejsca). Kierunek zmian
 Poza zakresem: dekoracyjne tło (#286). Placeholder pustego podglądu został już
 wdrożony osobno (#289/#290).
 
+### 2.10. Spostrzeżenia z testów — [propozycje]
+
+Uwagi z sesji testowej z generatorem. Na razie bez zadań — zapisujemy kierunek,
+do którego wrócimy przy kolejnych iteracjach formularzy i podglądu.
+
+- **Udziały regionów bazowych** — w układzie radialnym procent to grubość
+  pierścienia, nie pole, więc `20%` na zewnętrznym regionie zajmuje widocznie
+  więcej (równe 25% daje pola 6,25/18,75/31,25/43,75%), a poza pierścieniami
+  (np. rogi kwadratu) komórki trafiają do najbliższego regionu — stąd wrażenie
+  zmiany proporcji przy zmianie kształtu świata. Rozstrzygnięcie i wdrożenie:
+  #327 (wariant A/B/C). Do tego kopia w formularzu: `Width` vs „grubość
+  pierścienia" i ewentualne pokazanie efektywnego udziału pola obok procentu.
+- **Reset ustawień** — przycisk „wróć do domyślnych" dla całego formularza lub
+  pojedynczej zakładki, z potwierdzeniem; dziś makroregiony mają tylko stan
+  „edited manually" z podpowiedzią, żeby wybrać preset od nowa.
+- **Kolejność regionów** — dla regionów bazowych kolejność jest kosmetyczna,
+  dla nakładek oznacza priorytet malowania („ostatnia pasująca wygrywa"), więc
+  zamiana miejscami to decyzja o semantyce, a nie tylko UI. Osobno: paleta
+  mogłaby iść za `danger` (gradient bezpieczny → groźny) zamiast za indeks
+  regionu, co częściowo realizuje intencję „zamiany miejscami".
+- **Spięcie zakładek a przelot podglądu** — przy włączonym spięciu zmiana
+  rozmiaru lub kształtu nadal uruchamia przelot przez etapy (#342), bo reset
+  sceny włącza podążanie. Proponowana reguła: spięcie wyłącza przelot —
+  renderer prezentuje wyłącznie wskazaną warstwę, a podążanie działa tylko bez
+  spięcia.
+
 ## 3. Fizyczna skala świata — [działa]
 
 Kanonicznym elementem `WorldConfig` jest `dimensions`, a etapy korzystają
