@@ -1,6 +1,7 @@
 export { createMapGenerator } from './pipeline-factory';
 export { selectMapInfo } from './info-definitions';
 export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region-defaults';
+export { isLandmassLayout } from './stages/landmass-layout';
 export { selectDirtyStageIds } from './selective-regeneration';
 export { MAP_CONFIG_KEYS, PIPELINE_STAGES } from './stage-definitions';
 export type { MapConfigKey, PipelineStageId, StageInfo } from './stage-definitions';
@@ -15,6 +16,9 @@ export type {
   GenerationEvent,
   GenerationOptions,
   GenerationResult,
+  LandmassConfig,
+  LandmassDefinition,
+  LandmassLayout,
   MacroRegionConfig,
   MacroRegionDeformation,
   MacroRegionGeometry,

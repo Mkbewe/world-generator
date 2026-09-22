@@ -14,6 +14,8 @@ export type PaletteSpec =
       readonly kind: 'discrete';
       readonly colors: readonly Color[];
       readonly overflow: DiscreteOverflow;
+      /** Added to the raster value before indexing; -1 maps 1-based rasters to the first color. */
+      readonly offset?: number;
     };
 
 export type RasterDataType = 'uint8' | 'float32';
@@ -30,11 +32,17 @@ export interface LayerSpec<TId extends string = string> {
   readonly source: string;
   readonly dataType: RasterDataType;
   readonly clipTo?: TId;
-  /** Paints analytic region borders instead of cell edges. */
-  readonly regionBoundaries?: boolean;
+  /**
+   * Analytic boundary classifier painted at screen resolution instead of cell
+   * edges, so borders stay smooth at any zoom. The renderer resolves the
+   * matching sampler from the map geometry.
+   */
+  readonly boundarySource?: 'region' | 'landmass';
   /** Catalog layers whose rasters are sampled while painting this layer. */
   readonly samples?: readonly TId[];
   readonly providesMask?: { readonly insideValue: number };
+  /** Cells holding this value stay transparent, e.g. "no structure" in an id map. */
+  readonly skipValue?: number;
   readonly group?: LayerGroupSpec;
   readonly palette: PaletteSpec;
 }

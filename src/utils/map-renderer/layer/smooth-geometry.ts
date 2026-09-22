@@ -4,4 +4,5 @@ import type { WorldShape } from '../../world-shape';
 export interface SmoothGeometry {
   readonly shape: WorldShape;
   readonly regionAt?: (x: number, y: number) => number;
+  readonly landmassAt?: (x: number, y: number) => number;
 }

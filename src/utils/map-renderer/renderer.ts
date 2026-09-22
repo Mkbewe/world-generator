@@ -248,6 +248,7 @@ export class MapRenderer {
   /** Keeps non-raster information captured with the current map. */
   setInfo(info: MapInfo): void {
     this.info = info;
+    this.scene.setInfo(info);
     this.emitState();
   }
 

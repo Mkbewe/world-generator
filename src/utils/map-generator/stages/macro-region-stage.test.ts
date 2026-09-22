@@ -39,6 +39,14 @@ async function generate(source: MapConfig, mask?: Uint8Array) {
   return pipeline.generate(source, { worldMask });
 }
 
+function regionMap(result: Awaited<ReturnType<typeof generate>>): Uint8Array {
+  const map = result.context.state.macroRegionIdMap;
+  if (!map) {
+    throw new Error('Expected a generated region map.');
+  }
+  return map;
+}
+
 describe('MacroRegionStage', () => {
   it('uses one radial displacement without favoring a diagonal direction', () => {
     const regionAt = createMacroRegionSampler(createRadialLayout(2), { amplitude: 0.1 }, () => 1);
@@ -52,7 +60,7 @@ describe('MacroRegionStage', () => {
   it('assigns one valid region index to every cell', async () => {
     const regions = createRadialLayout(4);
     const result = await generate(config(regions));
-    const map = result.context.state.macroRegionIdMap!;
+    const map = regionMap(result);
 
     expect(map).toHaveLength(25);
     expect([...map].every(index => index >= 0 && index < regions.length)).toBe(true);
@@ -61,7 +69,7 @@ describe('MacroRegionStage', () => {
   it('uses horizontal base regions in north-to-south order', async () => {
     const result = await generate(config(createHorizontalLayout(3), 3, 3));
 
-    expect([...result.context.state.macroRegionIdMap!]).toEqual([0, 0, 0, 1, 1, 1, 2, 2, 2]);
+    expect([...regionMap(result)]).toEqual([0, 0, 0, 1, 1, 1, 2, 2, 2]);
   });
 
   it('lets a horizontal overlay cut through a radial layout', async () => {
@@ -70,7 +78,7 @@ describe('MacroRegionStage', () => {
       createBandOverlay('crossing', 'Crossing', 'y', 0.5, 0.2),
     ];
     const result = await generate(config(regions, 5, 5));
-    const map = result.context.state.macroRegionIdMap!;
+    const map = regionMap(result);
 
     expect([...map.slice(10, 15)]).toEqual([2, 2, 2, 2, 2]);
     expect([...map.slice(0, 5)]).not.toContain(2);
@@ -84,13 +92,13 @@ describe('MacroRegionStage', () => {
     ];
     const result = await generate(config(regions, 3, 3));
 
-    expect(result.context.state.macroRegionIdMap![4]).toBe(2);
+    expect(regionMap(result)[4]).toBe(2);
   });
 
   it('expresses radial poles as ordinary overlays', async () => {
     const regions = createRadialPolesLayout(6);
     const result = await generate(config(regions, 3, 5));
-    const map = result.context.state.macroRegionIdMap!;
+    const map = regionMap(result);
 
     expect([...map.slice(0, 3)]).toEqual([4, 4, 4]);
     expect([...map.slice(12, 15)]).toEqual([5, 5, 5]);
@@ -105,12 +113,12 @@ describe('MacroRegionStage', () => {
     const warped = [...base, createBandOverlay('middle', 'Middle', 'y', 0.5, 0.2)];
     const deformation = { amplitude: 0.6 };
 
-    const crispMap = (
+    const crispMap = regionMap(
       await generate({ ...config(crisp, 5, 5), macroRegionDeformation: deformation })
-    ).context.state.macroRegionIdMap!;
-    const warpedMap = (
+    );
+    const warpedMap = regionMap(
       await generate({ ...config(warped, 5, 5), macroRegionDeformation: deformation })
-    ).context.state.macroRegionIdMap!;
+    );
 
     expect([...crispMap.slice(10, 15)]).toEqual([3, 3, 3, 3, 3]);
     expect(warpedMap).not.toEqual(crispMap);
@@ -207,7 +215,7 @@ describe('MacroRegionStage', () => {
       { ...config(regions, 5, 5), macroRegionDeformation: { amplitude: 0.4 } },
       mask
     );
-    const map = result.context.state.macroRegionIdMap!;
+    const map = regionMap(result);
 
     for (let index = 0; index < map.length; index++) {
       if (mask[index] === 0) {
@@ -221,7 +229,7 @@ describe('MacroRegionStage', () => {
     const outsideMiddleRow = new Uint8Array([1, 1, 1, 0, 0, 0, 1, 1, 1]);
     const result = await generate(config(regions, 3, 3), outsideMiddleRow);
 
-    expect([...result.context.state.macroRegionIdMap!]).toEqual([0, 0, 0, 0, 0, 0, 2, 2, 2]);
+    expect([...regionMap(result)]).toEqual([0, 0, 0, 0, 0, 0, 2, 2, 2]);
   });
 
   it('requires a valid world mask', async () => {

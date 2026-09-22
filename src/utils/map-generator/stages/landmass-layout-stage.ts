@@ -11,9 +11,10 @@ import {
   groupStructures,
   type StructureSeed,
 } from './landmass-layout';
+import { createLandmassSampler } from './landmass-sampler';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import type { MapStage } from '../stage';
+import { assertStageOutput, type MapStage } from '../stage';
 import { LANDMASS_LAYOUT_STAGE } from '../stage-definitions';
 import type {
   LandmassConfig,
@@ -37,7 +38,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     context: MapContext<MapConfig, MapState>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ landmassLayout: LandmassLayout }> {
+  ): Promise<{ landmassLayout: LandmassLayout; landmassIdMap: Uint8Array }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const worldMask = context.state.worldMask;
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
@@ -55,7 +56,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
         throw new GenerationCancelledError();
       }
       structures.push(createStructure(index, config, shape, random));
-      report((index + 1) / config.count);
+      report(((index + 1) / config.count) * 0.5);
     }
 
     const { groups, count } = groupStructures(structures);
@@ -67,11 +68,36 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     }));
     const layout = { landmasses, shelves };
 
+    const landmassAt = createLandmassSampler(landmasses);
+    const landmassIdMap = new Uint8Array(sampleWidth * sampleHeight);
+    const xDivisor = Math.max(1, sampleWidth - 1);
+    const yDivisor = Math.max(1, sampleHeight - 1);
+    for (let y = 0; y < sampleHeight; y++) {
+      if (signal.aborted) {
+        throw new GenerationCancelledError();
+      }
+
+      const normalizedY = y / yDivisor;
+      for (let x = 0; x < sampleWidth; x++) {
+        const cell = y * sampleWidth + x;
+        if (worldMask[cell] === 0) {
+          continue;
+        }
+        landmassIdMap[cell] = landmassAt(x / xDivisor, normalizedY);
+      }
+
+      report(0.5 + ((y + 1) / sampleHeight) * 0.5);
+    }
+
     context.state.landmassLayout = layout;
-    return { landmassLayout: layout };
+    context.state.landmassIdMap = landmassIdMap;
+    return { landmassLayout: layout, landmassIdMap };
   }
 
-  validate(state: Readonly<MapState>): void {
+  validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
+    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    assertStageOutput(state.landmassIdMap, 'uint8', sampleWidth * sampleHeight);
+
     const layout = state.landmassLayout;
     if (!layout || layout.landmasses.length === 0 || layout.shelves.length === 0) {
       throw new Error('Pipeline completed without all required map data.');
@@ -100,6 +126,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     data: Record<string, unknown>
   ): StageMetrics | undefined {
     const layout = data.landmassLayout as LandmassLayout | undefined;
+    const idMap = data.landmassIdMap;
     if (!layout) {
       return undefined;
     }
@@ -111,6 +138,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       structures: layout.landmasses.length,
       shelves: layout.shelves.length,
       coverage: estimateCoverage(layout.landmasses, cells === 0 ? 0 : landCells / cells),
+      ...(idMap instanceof Uint8Array ? { bytes: idMap.byteLength } : {}),
     };
   }
 

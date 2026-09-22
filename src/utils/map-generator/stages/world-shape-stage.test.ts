@@ -24,7 +24,10 @@ describe('WorldShapeStage', () => {
     const pipeline = new MapGenerator<MapConfig, MapState>([new WorldShapeStage()]);
 
     const result = await pipeline.generate(config, {});
-    const mask = result.context.state.worldMask!;
+    const mask = result.context.state.worldMask;
+    if (!mask) {
+      throw new Error('Expected a generated world mask.');
+    }
 
     expect(mask).toHaveLength(25);
     expect([mask[0], mask[4], mask[20], mask[24]]).toEqual([0, 0, 0, 0]);

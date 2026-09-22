@@ -145,8 +145,11 @@ describe('WorldGenerator', () => {
         <WorldGenerator />
       </Theme>
     );
-    const cells =
-      runConfig!.world.dimensions.sampleWidth * runConfig!.world.dimensions.sampleHeight;
+    const config = runConfig;
+    if (!config) {
+      throw new Error('Expected the run configuration.');
+    }
+    const cells = config.world.dimensions.sampleWidth * config.world.dimensions.sampleHeight;
     await act(async () => {
       onStages?.([{ id: 'world-shape', name: 'World shape' }]);
       onEvent?.(completed('world-shape', { worldMask: new Uint8Array(cells).fill(1) }));

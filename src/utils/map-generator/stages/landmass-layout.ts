@@ -8,7 +8,13 @@ import {
 } from './landmass-defaults';
 import { containsWorld, type WorldShape } from '../../world-shape';
 import type { SeededRandom } from '../random/seeded-random';
-import type { LandmassConfig, LandShape, ShelfDefinition, WorldPoint } from '../types';
+import type {
+  LandmassConfig,
+  LandmassLayout,
+  LandShape,
+  ShelfDefinition,
+  WorldPoint,
+} from '../types';
 
 /** Structure geometry before the shelf grouping. */
 export interface StructureSeed {
@@ -77,6 +83,20 @@ export function groupStructures(structures: readonly StructureSeed[]): {
     groups: structures.map((_, index) => roots.indexOf(find(index))),
     count: roots.length,
   };
+}
+
+/** Narrows unknown map info back to a landmass layout, e.g. after restoring a saved map. */
+export function isLandmassLayout(value: unknown): value is LandmassLayout {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const { landmasses, shelves } = value as { landmasses?: unknown; shelves?: unknown };
+  return (
+    Array.isArray(landmasses) &&
+    landmasses.length > 0 &&
+    Array.isArray(shelves) &&
+    shelves.length > 0
+  );
 }
 
 /** Shelf template per group, with stable ids. */

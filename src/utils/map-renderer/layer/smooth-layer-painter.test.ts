@@ -20,14 +20,17 @@ describe('SmoothLayerPainter', () => {
     for (let y = 0; y < 4; y++) {
       labels.set([0, 0, 1, 1], y * 4);
     }
+    const boundaryAt = (x: number): number => (x < 0.45 ? 0 : 1);
     const painter = new SmoothLayerPainter(
       size,
       labels,
       { size, contains: () => true },
       undefined,
       compilePalette(layerRegistry.get('macro-region').palette),
-      { shape: 'rectangle', regionAt: x => (x < 0.45 ? 0 : 1) },
-      'region'
+      { shape: 'rectangle' },
+      'analytic',
+      undefined,
+      boundaryAt
     );
     const pixels = new Uint8ClampedArray(target.width * target.height * 4);
 
@@ -37,6 +40,34 @@ describe('SmoothLayerPainter', () => {
     expect(pixel(pixels, 6, 8)).toEqual([46, 125, 50, 255]);
     expect(pixel(pixels, 7, 8)).toEqual([85, 152, 58, 255]);
     expect(pixel(pixels, 8, 8)).toEqual([124, 179, 66, 255]);
+  });
+
+  it('treats the skip value as empty area while antialiasing', () => {
+    const labels = new Uint8Array([0, 1]);
+    const painter = new SmoothLayerPainter(
+      { width: 2, height: 1 },
+      labels,
+      undefined,
+      undefined,
+      compilePalette(layerRegistry.get('landmass-layout').palette),
+      { shape: 'rectangle' },
+      'clipped',
+      0
+    );
+    const target: RenderTarget = {
+      width: 2,
+      height: 1,
+      projection: { cellSize: 1, left: 0, top: 0, width: 2, height: 1 },
+    };
+    const pixels = new Uint8ClampedArray(8);
+
+    painter.paint(pixels, target, { x: 0, y: 0, width: 2, height: 1 });
+
+    // Both boundary pixels blend the nearest structure color; the skipped cell
+    // contributes no color of its own. The partial alpha comes from the pixel
+    // sampling past the world edge of this degenerate one-row grid.
+    expect([...pixels.slice(0, 4)]).toEqual([120, 160, 90, 64]);
+    expect([...pixels.slice(4)]).toEqual([120, 160, 90, 64]);
   });
 
   it('antialiases the world fill at the same ellipse used by the outline', () => {

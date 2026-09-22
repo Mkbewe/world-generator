@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import { Box, Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import type { Params } from '../types';
+import type { LegacyWorldGenerationWorkerResult } from '../utils/legacy-world-generation-worker.types';
 import { LegacyWorldGenerationWorkerClient } from '../utils/legacy-world-generation-worker-client';
 import { drawWorldPixels, generateWorldPixels, type IslandCounts } from '../utils/world-generation';
 import styles from './world-canvas.module.scss';
@@ -68,17 +69,22 @@ export const WorldCanvas = forwardRef<WorldCanvasRef, WorldCanvasProps>(
         throw new Error('Canvas is not available.');
       }
 
-      const result = useWorker
-        ? await workerClientRef.current!.generate(canvas.width, canvas.height, params)
-        : (() => {
-            const startedAt = performance.now();
-            return {
-              type: 'result' as const,
-              requestId: 0,
-              ...generateWorldPixels(canvas.width, canvas.height, params),
-              computeDurationMs: performance.now() - startedAt,
-            };
-          })();
+      let result: LegacyWorldGenerationWorkerResult;
+      if (useWorker) {
+        const client = workerClientRef.current;
+        if (!client) {
+          throw new Error('The generation worker is not available.');
+        }
+        result = await client.generate(canvas.width, canvas.height, params);
+      } else {
+        const startedAt = performance.now();
+        result = {
+          type: 'result',
+          requestId: 0,
+          ...generateWorldPixels(canvas.width, canvas.height, params),
+          computeDurationMs: performance.now() - startedAt,
+        };
+      }
 
       drawWorldPixels(canvas, result.pixels);
 

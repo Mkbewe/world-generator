@@ -99,6 +99,7 @@ describe('MapRenderer', () => {
       'world-shape',
       'noise',
       'macro-region',
+      'landmass-layout',
     ]);
   });
 
@@ -207,7 +208,7 @@ describe('MapRenderer', () => {
 
     expect(preview.signal.aborted).toBe(true);
     expect(preview.state.displayedLayer).toBe('noise');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false]);
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
     expect(() => preview.add('noise', new Float32Array(4))).toThrow();
     preview.dispose();
   });

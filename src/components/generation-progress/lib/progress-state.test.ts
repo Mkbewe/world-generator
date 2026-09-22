@@ -25,7 +25,16 @@ function statistics(
 function createTracker(skippedStageIds: readonly string[] = []) {
   const states: GenerationProgressState[] = [];
   const tracker = new ProgressTracker(stageInfos, state => states.push(state), skippedStageIds);
-  return { tracker, latest: () => states.at(-1)! };
+  return {
+    tracker,
+    latest: () => {
+      const state = states.at(-1);
+      if (!state) {
+        throw new Error('Expected a progress state.');
+      }
+      return state;
+    },
+  };
 }
 
 describe('ProgressTracker', () => {

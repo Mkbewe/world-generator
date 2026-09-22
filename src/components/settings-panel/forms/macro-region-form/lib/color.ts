@@ -20,7 +20,7 @@ export function dangerColor(value: number): Color {
       return interpolate(DANGER_RAMP[index - 1], to, clamped);
     }
   }
-  return DANGER_RAMP.at(-1)!.color;
+  return DANGER_RAMP[DANGER_RAMP.length - 1].color;
 }
 
 function interpolate(

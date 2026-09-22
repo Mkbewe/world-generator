@@ -6,7 +6,7 @@ import type { RenderTarget } from '../preview-targets';
 import type { SpatialMask } from '../types';
 
 const SAMPLES_PER_AXIS = 4;
-export type SmoothLayerMode = 'world' | 'region' | 'clipped';
+export type SmoothLayerMode = 'analytic' | 'world' | 'clipped';
 
 /** Paints continuous boundaries; clipped rasters retain their usual interior sampling. */
 export class SmoothLayerPainter {
@@ -23,7 +23,9 @@ export class SmoothLayerPainter {
     private readonly insideValue: number | undefined,
     private readonly writePixel: PixelWriter,
     private readonly geometry: SmoothGeometry,
-    private readonly mode: SmoothLayerMode
+    private readonly mode: SmoothLayerMode,
+    private readonly skipValue?: number,
+    private readonly boundaryAt?: (x: number, y: number) => number
   ) {
     this.divisorX = Math.max(1, size.width - 1);
     this.divisorY = Math.max(1, size.height - 1);
@@ -116,13 +118,8 @@ export class SmoothLayerPainter {
             if (!containsWorld(this.geometry.shape, 2 * normalizedX - 1, 2 * normalizedY - 1)) {
               continue;
             }
-            const value =
-              this.mode === 'region'
-                ? this.geometry.regionAt!(normalizedX, normalizedY)
-                : this.mode === 'world'
-                  ? this.insideValue!
-                  : this.nearestInsideValue(mapX, mapY);
-            if (value < 0) {
+            const value = this.sampledValue(normalizedX, normalizedY, mapX, mapY);
+            if (value < 0 || value === this.skipValue) {
               continue;
             }
             this.writePixel(color, 0, value);
@@ -178,7 +175,23 @@ export class SmoothLayerPainter {
 
   private boundaryValueAt(x: number, y: number): number {
     const value = this.valueAt(x, y);
-    return value < 0 || this.mode === 'region' ? value : 1;
+    return value < 0 || this.boundaryAt ? value : 1;
+  }
+
+  /** Value blended at a boundary sample: analytic borders, the world fill or the nearest cell. */
+  private sampledValue(
+    normalizedX: number,
+    normalizedY: number,
+    mapX: number,
+    mapY: number
+  ): number {
+    if (this.boundaryAt) {
+      return this.boundaryAt(normalizedX, normalizedY);
+    }
+    if (this.mode === 'world') {
+      return this.insideValue ?? -1;
+    }
+    return this.nearestInsideValue(mapX, mapY);
   }
 
   private nearestInsideValue(mapX: number, mapY: number): number {
@@ -214,6 +227,9 @@ export class SmoothLayerPainter {
       return -1;
     }
     const value = this.data[y * this.size.width + x];
-    return this.insideValue !== undefined && value !== this.insideValue ? -1 : value;
+    if (this.insideValue !== undefined && value !== this.insideValue) {
+      return -1;
+    }
+    return value === this.skipValue ? -1 : value;
   }
 }

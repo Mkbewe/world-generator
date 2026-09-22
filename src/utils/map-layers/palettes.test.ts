@@ -67,6 +67,23 @@ describe('palette compiler', () => {
     expect(regionColor(Number.NaN)).toEqual([120, 120, 120]);
   });
 
+  it('maps 1-based rasters to the first color with a negative offset', () => {
+    const colors = [
+      [10, 20, 30],
+      [40, 50, 60],
+    ] as const;
+
+    expect(color({ kind: 'discrete', colors, overflow: 'cycle', offset: -1 }, 1)).toEqual([
+      10, 20, 30, 255,
+    ]);
+    expect(color({ kind: 'discrete', colors, overflow: 'cycle', offset: -1 }, 2)).toEqual([
+      40, 50, 60, 255,
+    ]);
+    expect(color({ kind: 'discrete', colors, overflow: 'cycle', offset: -1 }, 0)).toEqual([
+      120, 120, 120, 255,
+    ]);
+  });
+
   it('rejects invalid colors, stops and empty discrete palettes', () => {
     expect(() => validatePalette({ kind: 'solid', color: [0, -1, 0] })).toThrow('0..255 range');
     expect(() => validatePalette({ kind: 'ramp', stops: [] })).toThrow('at least two stops');
@@ -82,5 +99,8 @@ describe('palette compiler', () => {
     expect(() => validatePalette({ kind: 'discrete', colors: [], overflow: 'cycle' })).toThrow(
       'at least one color'
     );
+    expect(() =>
+      validatePalette({ kind: 'discrete', colors: [[0, 0, 0]], overflow: 'cycle', offset: 0.5 })
+    ).toThrow('integer');
   });
 });

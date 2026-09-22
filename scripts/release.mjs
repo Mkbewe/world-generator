@@ -17,12 +17,14 @@ const { version } = JSON.parse(readFileSync('./package.json', 'utf8'));
 const releaseType = requestedType ?? detectReleaseType(version);
 const [major, minor, patch] = version.split('.').map(Number);
 
-const nextVersion =
-  releaseType === 'major'
-    ? `${major + 1}.0.0`
-    : releaseType === 'minor'
-      ? `${major}.${minor + 1}.0`
-      : `${major}.${minor}.${patch + 1}`;
+let nextVersion;
+if (releaseType === 'major') {
+  nextVersion = `${major + 1}.0.0`;
+} else if (releaseType === 'minor') {
+  nextVersion = `${major}.${minor + 1}.0`;
+} else {
+  nextVersion = `${major}.${minor}.${patch + 1}`;
+}
 
 const branchName = `release/v${nextVersion}`;
 

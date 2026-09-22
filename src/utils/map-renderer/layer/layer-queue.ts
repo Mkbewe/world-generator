@@ -62,7 +62,11 @@ export class LayerQueue {
   private async drain(run: number): Promise<void> {
     const signal = this.handlers.signal();
     while (this.pending.length > 0 && this.run === run && !signal.aborted) {
-      const { layer, silent } = this.pending.shift()!;
+      const entry = this.pending.shift();
+      if (!entry) {
+        continue;
+      }
+      const { layer, silent } = entry;
       this.handlers.begin?.(layer, silent);
       try {
         await this.handlers.load(layer, signal);
