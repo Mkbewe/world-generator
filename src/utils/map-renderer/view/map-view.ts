@@ -102,7 +102,9 @@ export class MapView {
   /**
    * Begins a map. The view transform and the displayed layer survive while the
    * sample grid keeps its size, so a selective run never blanks the preview.
-   * A continuing map keeps its layer; a fresh one follows the drawn stages.
+   * A continuing map keeps its layer; a fresh one follows the drawn stages —
+   * `WorldGenerationSession` reads `displayedLayer` right after this to decide
+   * whether the preview should follow the run, so both rules must stay equal.
    */
   start(size: MapSize, shape: WorldShape): void {
     const continuing = this.matchesSize(size) && this.presented !== undefined;

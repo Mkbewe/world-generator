@@ -1,7 +1,8 @@
 import { GenerationCancelledError, GenerationStageError } from './errors';
 import { MapGenerator } from './pipeline';
 import { createMapGenerator } from './pipeline-factory';
-import { MAP_CONFIG_KEYS, type MapStage } from './stage';
+import type { MapStage } from './stage';
+import { MAP_CONFIG_KEYS } from './stage-definitions';
 import type { GenerationEvent, MapConfig, StageData } from './types';
 
 interface TestConfig {

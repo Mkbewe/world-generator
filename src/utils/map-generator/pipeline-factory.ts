@@ -2,8 +2,8 @@ import { MacroRegionStage } from './stages/macro-region-stage';
 import { NoiseStage } from './stages/noise-stage';
 import { WorldShapeStage } from './stages/world-shape-stage';
 import { MapGenerator } from './pipeline';
-import { MAP_CONFIG_KEYS, type MapStage } from './stage';
-import { PIPELINE_STAGES, type PipelineStageId } from './stage-definitions';
+import type { MapStage } from './stage';
+import { MAP_CONFIG_KEYS, PIPELINE_STAGES, type PipelineStageId } from './stage-definitions';
 import type { MapConfig, MapState } from './types';
 import { validateDimensions } from '../world-dimensions';
 

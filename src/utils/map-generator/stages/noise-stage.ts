@@ -2,15 +2,15 @@ import { createNoise2D } from 'simplex-noise';
 
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import { assertStageOutput, type MapConfigKey, type MapStage } from '../stage';
+import { assertStageOutput, type MapStage } from '../stage';
 import { NOISE_STAGE } from '../stage-definitions';
 import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
 
-export class NoiseStage implements MapStage<MapConfig, MapState, MapConfigKey> {
+export class NoiseStage implements MapStage<MapConfig, MapState> {
   readonly id = NOISE_STAGE.id;
   readonly name = NOISE_STAGE.name;
+  readonly configKeys = NOISE_STAGE.configKeys;
   readonly progressStep = 0.1;
-  readonly configKeys = ['world.seed', 'world.dimensions', 'noise'] as const;
 
   async execute(
     context: MapContext<MapConfig, MapState>,

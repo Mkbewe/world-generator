@@ -237,7 +237,13 @@ describe('WorldGenerator', () => {
         { id: 'noise', name: 'Noise generation', status: 'completed', percentage: 100 },
       ],
     });
-    runGenerationMock.mockImplementation((_config, options) => pendingRun(options));
+    runGenerationMock.mockImplementation((_config, options) => {
+      options?.onStages?.([
+        { id: 'world-shape', name: 'World shape generation' },
+        { id: 'noise', name: 'Noise generation' },
+      ]);
+      return pendingRun(options);
+    });
 
     render(
       <Theme>

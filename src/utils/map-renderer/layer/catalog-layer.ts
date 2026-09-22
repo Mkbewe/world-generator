@@ -1,6 +1,6 @@
 import { type LayerTile, MapLayer, type MapSize } from './layer';
 import type { SmoothGeometry } from './smooth-geometry';
-import { SmoothLayerPainter } from './smooth-layer-painter';
+import { type SmoothLayerMode, SmoothLayerPainter } from './smooth-layer-painter';
 import {
   compilePalette,
   type LayerSpec,
@@ -33,12 +33,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
       throw new Error(`Layer "${spec.id}" received an invalid clip mask size.`);
     }
     this.writePixel = compilePalette(spec.palette);
-    const mode =
-      spec.id === 'macro-region' && geometry?.regionAt
-        ? 'region'
-        : spec.providesMask
-          ? 'world'
-          : 'clipped';
+    const mode = smoothMode(spec, geometry);
     this.smoothInterior = mode !== 'clipped';
     if (geometry && (spec.providesMask || clipMask)) {
       this.smoothPainter = new SmoothLayerPainter(
@@ -173,6 +168,17 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
       }
     }
   }
+}
+
+/** How a layer smooths its edges: analytic region borders, the world edge or none. */
+function smoothMode(spec: LayerSpec<MapBaseLayerId>, geometry?: SmoothGeometry): SmoothLayerMode {
+  if (spec.regionBoundaries && geometry?.regionAt) {
+    return 'region';
+  }
+  if (spec.providesMask) {
+    return 'world';
+  }
+  return 'clipped';
 }
 
 /** Samples per axis for minified float layers; capped to keep repaints responsive. */

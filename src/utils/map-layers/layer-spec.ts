@@ -30,6 +30,10 @@ export interface LayerSpec<TId extends string = string> {
   readonly source: string;
   readonly dataType: RasterDataType;
   readonly clipTo?: TId;
+  /** Paints analytic region borders instead of cell edges. */
+  readonly regionBoundaries?: boolean;
+  /** Catalog layers whose rasters are sampled while painting this layer. */
+  readonly samples?: readonly TId[];
   readonly providesMask?: { readonly insideValue: number };
   readonly group?: LayerGroupSpec;
   readonly palette: PaletteSpec;

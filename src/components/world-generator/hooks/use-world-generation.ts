@@ -11,7 +11,6 @@ import {
   useWorldShapeFormStore,
 } from '../../../stores';
 import type { MapRenderer } from '../../../utils/map-renderer';
-import { restartProgress } from '../../generation-progress';
 import { buildGenerationConfig } from '../lib/generation-config';
 import { worldGenerationSession } from '../lib/world-generation-session';
 
@@ -56,8 +55,6 @@ export function useWorldGeneration(): WorldGeneration {
     setGenerationRun(current => current + 1);
     setError(undefined);
     setIsGenerating(true);
-    const previousProgress = useGenerationProgressStore.getState().progress;
-    setProgress(previousProgress ? restartProgress(previousProgress) : undefined);
 
     try {
       const result = await worldGenerationSession.generate(built.config, setProgress);

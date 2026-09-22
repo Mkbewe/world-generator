@@ -171,15 +171,16 @@ describe('WorldGenerationSession', () => {
   it('recomputes only the stages affected by the configuration change', async () => {
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     const withRegions = { ...config, macroRegions: DEFAULT_MACRO_REGIONS };
+    const planned = () => runner.mock.lastCall?.[1]?.reuse.dirtyStageIds;
 
     await session.generate(config, vi.fn());
-    expect(session.dirtyStageIds).toEqual(['world-shape', 'noise', 'macro-region']);
+    expect(planned()).toEqual(['world-shape', 'noise', 'macro-region']);
 
     await session.generate(withRegions, vi.fn());
-    expect(session.dirtyStageIds).toEqual(['macro-region']);
+    expect(planned()).toEqual(['macro-region']);
 
     await session.generate(withRegions, vi.fn());
-    expect(session.dirtyStageIds).toEqual([]);
+    expect(planned()).toEqual([]);
   });
 
   it('reuses the saved rasters for the clean stages', async () => {
@@ -358,17 +359,25 @@ describe('WorldGenerationSession', () => {
     expect(second?.totalDurationMs).toBe(40);
   });
 
-  it('drops the baseline when a failed run left no saved map to reuse', async () => {
-    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
+  it('keeps the saved map and the baseline when a run fails', async () => {
+    const mask = new Uint8Array(4).fill(1);
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: mask }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
     await session.generate(config, vi.fn());
+    const saved = mapRepository.get();
 
     const changed = { ...config, noise: { ...config.noise, frequency: 5 } };
     runner.mockRejectedValue(new Error('generation failed'));
     await expect(session.generate(changed, vi.fn())).rejects.toThrow('generation failed');
 
+    expect(mapRepository.get()).toBe(saved);
+
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(changed, vi.fn());
-    expect(session.dirtyStageIds).toEqual(['world-shape', 'noise', 'macro-region']);
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['noise', 'macro-region']);
   });
 
   it('rejects missing stage data without saving an incomplete map', async () => {

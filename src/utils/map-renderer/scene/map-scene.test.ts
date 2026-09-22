@@ -69,7 +69,7 @@ describe('MapScene', () => {
     );
     scene.add('world-shape', new Uint8Array(9).fill(1));
 
-    expect(() => scene.add('macro-region', new Uint8Array(9))).toThrow('noise layer');
+    expect(() => scene.add('macro-region', new Uint8Array(9))).toThrow('requires "noise"');
   });
 
   it('invalidates cached layers when dimensions, dependencies or definitions change', () => {

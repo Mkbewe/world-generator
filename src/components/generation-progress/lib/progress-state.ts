@@ -73,63 +73,29 @@ function initialStage(
   };
 }
 
-/**
- * Keeps the known stage list visible but resets it to the initial pending state.
- * Stage names are authoritative only after the worker announces them, so the
- * previous list is reused until the new run starts reporting.
- */
-export function restartProgress(progress: GenerationProgressState): GenerationProgressState {
-  return {
-    status: 'running',
-    startedAt: performance.now(),
-    stages: progress.stages.map(stage => ({
-      id: stage.id,
-      name: stage.name,
-      status: 'pending',
-      percentage: 0,
-    })),
-  };
-}
-
 function applyStageEvent(
   stage: GenerationStageProgress,
   event: GenerationEvent
 ): GenerationStageProgress {
-  if (event.type === 'stage-started') {
-    return { ...stage, name: event.stageName, status: 'running' };
+  const current = { ...stage, name: event.stageName };
+
+  switch (event.type) {
+    case 'stage-started':
+      return { ...current, status: 'running' };
+    case 'stage-progress':
+      return { ...current, status: 'running', percentage: Math.round(event.progress * 100) };
+    case 'stage-completed':
+      return {
+        ...current,
+        status: 'completed',
+        percentage: 100,
+        durationMs: event.statistics.durationMs,
+      };
+    case 'stage-failed':
+      return { ...current, status: 'failed', durationMs: event.statistics.durationMs };
+    case 'stage-skipped':
+      return { ...current, status: 'skipped', durationMs: event.statistics.durationMs };
+    default:
+      return stage;
   }
-  if (event.type === 'stage-progress') {
-    return {
-      ...stage,
-      name: event.stageName,
-      status: 'running',
-      percentage: Math.round(event.progress * 100),
-    };
-  }
-  if (event.type === 'stage-completed') {
-    return {
-      ...stage,
-      name: event.stageName,
-      status: 'completed',
-      percentage: 100,
-      durationMs: event.statistics.durationMs,
-    };
-  }
-  if (event.type === 'stage-failed') {
-    return {
-      ...stage,
-      name: event.stageName,
-      status: 'failed',
-      durationMs: event.statistics.durationMs,
-    };
-  }
-  if (event.type === 'stage-skipped') {
-    return {
-      ...stage,
-      name: event.stageName,
-      status: 'skipped',
-      durationMs: event.statistics.durationMs,
-    };
-  }
-  return stage;
 }

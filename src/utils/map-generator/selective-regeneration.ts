@@ -1,4 +1,4 @@
-import { createMapGenerator } from './pipeline-factory';
+import { PIPELINE_STAGES } from './stage-definitions';
 import type { MapConfig } from './types';
 
 /**
@@ -10,17 +10,16 @@ export function selectDirtyStageIds(
   previous: Readonly<MapConfig> | undefined,
   next: Readonly<MapConfig>
 ): readonly string[] {
-  const stages = createMapGenerator().stages;
   if (!previous) {
-    return stages.map(stage => stage.id);
+    return PIPELINE_STAGES.map(stage => stage.id);
   }
 
-  for (const [index, stage] of stages.entries()) {
+  for (const [index, stage] of PIPELINE_STAGES.entries()) {
     const changed = stage.configKeys.some(
       key => !isEqual(configSlice(previous, key), configSlice(next, key))
     );
     if (changed) {
-      return stages.slice(index).map(stage => stage.id);
+      return PIPELINE_STAGES.slice(index).map(stage => stage.id);
     }
   }
   return [];

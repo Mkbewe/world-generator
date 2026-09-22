@@ -6,6 +6,10 @@ import type { MacroRegionNoiseSource } from '../types';
 /** Reads a noise value in the 0..1 range inside the world mask. */
 export type NoiseSampler = (cellX: number, cellY: number) => number | undefined;
 
+/**
+ * Border offset: a scalar shifts the ring radius or the band axis (the
+ * noise-map source), a vector moves the sampled point (the dedicated source).
+ */
 export type RegionOffset = number | { readonly x: number; readonly y: number };
 /** Signed border displacement sampled at normalized map coordinates. */
 export type RegionDisplacement = (x: number, y: number) => RegionOffset;
@@ -65,37 +69,25 @@ export function createNoiseDisplacement(
     const bottom = Math.min(top + 1, height - 1);
     const horizontal = gridX - left;
     const vertical = gridY - top;
+    const corners: ReadonlyArray<readonly [number, number, number]> = [
+      [left, top, (1 - horizontal) * (1 - vertical)],
+      [right, top, horizontal * (1 - vertical)],
+      [left, bottom, (1 - horizontal) * vertical],
+      [right, bottom, horizontal * vertical],
+    ];
     let weightedValue = 0;
     let weightSum = 0;
-    const topLeft = noiseAt(left, top);
-    if (topLeft !== undefined) {
-      const weight = (1 - horizontal) * (1 - vertical);
-      weightedValue += topLeft * weight;
+
+    for (const [cellX, cellY, weight] of corners) {
+      if (weight <= 0) {
+        continue;
+      }
+      const value = noiseAt(cellX, cellY);
+      if (value === undefined) {
+        continue;
+      }
+      weightedValue += value * weight;
       weightSum += weight;
-    }
-    if (horizontal > 0) {
-      const topRight = noiseAt(right, top);
-      if (topRight !== undefined) {
-        const weight = horizontal * (1 - vertical);
-        weightedValue += topRight * weight;
-        weightSum += weight;
-      }
-    }
-    if (vertical > 0) {
-      const bottomLeft = noiseAt(left, bottom);
-      if (bottomLeft !== undefined) {
-        const weight = (1 - horizontal) * vertical;
-        weightedValue += bottomLeft * weight;
-        weightSum += weight;
-      }
-      if (horizontal > 0) {
-        const bottomRight = noiseAt(right, bottom);
-        if (bottomRight !== undefined) {
-          const weight = horizontal * vertical;
-          weightedValue += bottomRight * weight;
-          weightSum += weight;
-        }
-      }
     }
 
     if (weightSum > 0) {

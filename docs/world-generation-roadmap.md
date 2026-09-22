@@ -119,6 +119,10 @@ traktować każdą kombinację jako osobny typ mapy.
   pokazuje się dopiero dla grupy z co najmniej dwoma podwidokami. `Macro regions`
   jest obecnie pojedynczą warstwą bez podwidoków.
 - Rysowanie jest progresywne, a wybór pamiętany między widokami.
+- Przelot przez etapy pokazuje się tylko przy pierwszej mapie (albo po zmianie
+  rozmiaru lub kształtu, która resetuje scenę). Gdy podgląd ma już wyświetloną
+  warstwę, regeneracja zachowuje wybór użytkownika, a nowe dane podmieniają się
+  w miejscu — bez migotania i bez przeskakiwania zakładek.
 - Granica świata jest rysowana analitycznie (`arc`/`rect`) w rozdzielczości
   ekranu, niezależnie od siatki próbek.
 - Podgląd otwiera się w trybie pełnoekranowym (przełącznik w nagłówku), a zamyka
@@ -148,38 +152,43 @@ Filtrowanie próbkowania i statystyki buforów są już wdrożone (#315); krawę
 - Progres pokazuje aktualny etap, numer etapu i procent raportowany z wnętrza
   etapów; postęp przeżywa zmianę widoku.
 - Segmentowany wskaźnik pokazuje stan każdego etapu (oczekuje, trwa, ukończony,
-  błąd) i odróżnia generowanie danych od renderowania podglądu.
+  pominięty, błąd) i odróżnia generowanie danych od renderowania podglądu.
+- Etapy pominięte przy selektywnym przeliczaniu mają szary segment z podpisem
+  `skipped`, a licznik je wymienia (np. `2 / 3, 1 skipped`).
 - Statystyki generowania i renderowania zbierane są w globalnych store'ach
-  i pokazywane na stronie `/statistics`.
+  i pokazywane na stronie `/statistics`. Reużyte etapy zachowują tam realny czas
+  i metryki z runu, który je wyliczył, z oznaczeniem `reused`.
+- Sekcja `Map` na `/statistics` pokazuje wymiary fizyczne (`1,000 × 1,000 m`),
+  detal terenu (metry na komórkę) i pole powierzchni w km²; `Seed`, `Shape`,
+  `Cells` i `Total time` zostają bez zmian.
 
-### 2.6. Opcjonalne spięcie zakładek ustawień i podglądu — [planowane]
+### 2.6. Opcjonalne spięcie zakładek ustawień i podglądu — [działa]
 
-Użytkownik powinien móc włączyć i wyłączyć synchronizację zakładek w obu
-kierunkach. Przełącznik w nagłówku ustawień lub podglądu może korzystać z ikony
-połączonego/rozłączonego łańcucha albo zamkniętej/otwartej kłódki. Musi mieć
-czytelny stan, tooltip, nazwę dostępną dla czytników ekranu i obsługę klawiatury.
+Użytkownik może włączyć i wyłączyć synchronizację zakładek w obu kierunkach.
+Przełącznik z ikoną łańcucha (`TabLinkToggle`) siedzi w nagłówku formularza
+ustawień i ma czytelny stan (`aria-pressed`), tooltip oraz nazwę dostępną dla
+czytników ekranu.
 
-- Domyślnie spięcie jest wyłączone. Stan jest pamiętany przy zmianie widoku
-  aplikacji, tak jak pozostałe preferencje podglądu.
-- Po włączeniu kliknięcie zakładki formularza wybiera odpowiadającą główną
-  zakładkę podglądu, a kliknięcie głównej zakładki podglądu wybiera formularz.
-  Samo włączenie wyrównuje podgląd do aktywnej zakładki ustawień, jeśli jej
-  warstwa jest dostępna. Wyłączenie pozostawia oba bieżące wybory bez zmian.
-- Powiązanie opiera się na identyfikatorach etapów, nie indeksach ani etykietach.
-  Jeżeli etap udostępnia kilka podwidoków, spięcie dotyczy jego głównej zakładki
-  i zachowuje ostatni podwidok wybrany przez użytkownika.
-- `Basic` nie ma odpowiednika w podglądzie. Wybór formularza bez dostępnych
-  danych nie czyści bieżącego obrazu i nie uruchamia generatora.
+- Domyślnie spięcie jest wyłączone. Stan żyje w `useViewSyncStore` i przeżywa
+  zmianę widoku aplikacji, tak jak pozostałe preferencje podglądu.
+- Po włączeniu kliknięcie zakładki formularza wybiera odpowiadającą warstwę
+  podglądu, a kliknięcie warstwy w podglądzie wybiera zakładkę formularza. Samo
+  włączenie wyrównuje podgląd do aktywnej zakładki, jeśli jej dane są dostępne;
+  wyłączenie pozostawia oba bieżące wybory bez zmian.
+- Powiązanie opiera się na identyfikatorach etapów (`layerForTab`/`tabForLayer`),
+  nie indeksach ani etykietach. `General` nie ma odpowiednika w podglądzie,
+  a wybór formularza bez dostępnych danych nie czyści obrazu i nie generuje.
 - Synchronizację wywołują działania użytkownika. Automatyczne przechodzenie
   podglądu przez etapy podczas generowania nie przełącza formularzy i nie
   powoduje pętli wzajemnych aktualizacji.
 
-### 2.7. Automatyczne odświeżanie podglądu po zmianie kontrolek — [planowane]
+### 2.7. Automatyczne odświeżanie podglądu po zmianie kontrolek — [odłożone]
 
-Kolejność realizacji: rasteryzacja warstw do rozdzielczości viewportu × DPR
-(sekcja 9, „Wydajność i pamięć”) jest już gotowa, więc nic nie blokuje
-automatycznego odświeżania po stronie renderowania. Pozostaje warstwa
-generowania: potrzebne są selektywne przeliczanie etapów i osobna rozdzielczość
+Zależności są gotowe: rasteryzacja warstw do rozdzielczości viewportu × DPR
+(sekcja 9, „Wydajność i pamięć") oraz selektywne przeliczanie etapów z
+prezentacją pominiętych etapów (§2.8). Samo odświeżanie po zmianie kontrolek
+jest decyzją produktową i zostało odłożone do Backlogu — wróci, jeśli okaże się
+potrzebne w codziennej pracy z generatorem, razem z osobą rozdzielczością
 danych roboczego podglądu.
 
 - Zmiana poprawnej wartości w formularzu automatycznie odświeża powiązany
@@ -201,18 +210,26 @@ danych roboczego podglądu.
 - Weryfikacja obejmuje serię szybkich zmian kontrolek, anulowanie, zgodność
   seedu i układu przy różnych rozdzielczościach oraz pomiary czasu i pamięci.
 
-### 2.8. Selektywne przeliczanie etapów — [częściowo]
+### 2.8. Selektywne przeliczanie etapów — [działa]
 
-Automatyczne odświeżanie wymaga, aby przy zmianie konfiguracji uruchamiały się
-tylko etapy, których ta zmiana dotyczy. Fundament jest rozbity na osobne zadania:
+Przy ponownym generowaniu uruchamiają się tylko etapy, których dotyczy zmiana
+konfiguracji, a reszta jest reużyta:
 
-- ograniczenie `MacroRegionStage` do obszaru kształtu świata (#256) — zrobione,
-- kolejność etapów `world-shape → noise → macro-region` (#312) — zrobione,
-- noise jako źródło deformacji regionów (#313) — zrobione,
-- deklaracje zależności etapów i ponowne użycie wyników (#257) — planowane,
-- prezentacja pominiętych etapów w progressie i statystykach (#258) — planowane.
+- każdy etap deklaruje w `stage-definitions.ts` czytane ścieżki konfiguracji
+  (`configKeys`); pipeline jest liniowy, więc zmiana unieważnia etap i wszystko
+  za nim (`selectDirtyStageIds`),
+- pierwszy run, zmiana seedu, rozmiaru lub kształtu unieważniają wszystko;
+  zmiana noise lub regionów liczy się od pierwszego dotkniętego etapu,
+- worker dostaje brudny zbiór i rastrowe dane zapisanej mapy, seeduje nimi stan
+  i pomija czyste etapy, emitując dla nich `stage-skipped` (bez odsyłania
+  rastrów z powrotem),
+- sesja scala reużyte rastry do snapshotu i wysyła do podglądu tylko nowe
+  warstwy; pominięte etapy nie ruszają wyboru w podglądzie, a w statystykach
+  zachowują realny czas i metryki z runu, który je wyliczył.
 
-Zadanie automatycznego odświeżania pozostaje zablokowane do czasu ich ukończenia.
+Zapisana mapa i jej baseline żyją do momentu, gdy nowy run się powiedzie —
+anulowanie albo błąd nie kasuje ostatniej mapy. Automatyczne odświeżanie
+kontrolek (§2.7) pozostaje odłożone.
 
 ### 2.9. Odświeżenie wyglądu shella — [planowane]
 
@@ -744,7 +761,9 @@ warstwa maluje w rozdzielczości ekranu z marginesem, także przy powiększeniu
 a statystyki renderowania pokazują rozdzielczość źródłową i wynikową oraz
 rozmiar buforów każdej warstwy.
 Bufor renderu w toku jest zwalniany po commicie, więc w spoczynku warstwa trzyma
-tylko klatkę i `overview`.
+tylko klatkę i `overview`. Selektywne przeliczanie etapów (§2.8) pomija czyste
+etapy i nie odsyła ich rastrów z workera, a podgląd nie przygotowuje ich
+ponownie.
 
 Pozostałe zadania:
 
@@ -752,13 +771,14 @@ Pozostałe zadania:
   zniknęły (#285); zostały kopie `postMessage` — usuwa je jednorazowa wysyłka
   wyników albo `SharedArrayBuffer` (nagłówki COOP/COEP). Transfer buforów per
   etap nie wchodzi w grę, bo worker potrzebuje ich w kolejnych etapach.
-- Automatyczne odświeżanie po zmianie kontrolek może startować — rasteryzacja do
-  viewportu jest gotowa (sekcja 2.7).
+- Automatyczne odświeżanie po zmianie kontrolek jest odłożone (§2.7); zależności
+  — rasteryzacja do viewportu i selektywne przeliczanie — są gotowe.
 - Wprowadzić budżet pamięci cache i uzależnić przygotowanie nieaktywnych warstw
   od dostępnego budżetu (#158) — odłożone do czasu, gdy warstw będzie więcej
   (kolejne etapy pipeline'u) albo przy pracy w pełnoekranowej rozdzielczości 4K.
-- Selektywnie przeliczać etapy: deklaracje zależności na stage'ach, diff konfiguracji
-  i ponowne użycie wyników, z pominiętymi etapami oznaczonymi w progressie (#257, #258).
+- Selektywne przeliczanie etapów jest wdrożone (§2.8): deklaracje `configKeys`,
+  diff konfiguracji i ponowne użycie wyników z `stage-skipped` w progressie
+  (#257, #258).
 - Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary
   wykażą, że koszt startu jest istotny.
 - Po pomiarach rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami

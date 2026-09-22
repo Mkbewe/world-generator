@@ -47,15 +47,9 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     rendererRef.current?.resetView();
   }, [isFullscreen, rendererRef]);
 
-  const handleBaseLayerChange = useCallback(
+  /** Applies a selection: the renderer switches and the preview store remembers it. */
+  const selectLayer = useCallback(
     (layer: MapBaseLayerId): void => {
-      const { linked, setSettingsTab } = useViewSyncStore.getState();
-      if (linked) {
-        const tab = tabForLayer(layer);
-        if (tab) {
-          setSettingsTab(tab);
-        }
-      }
       const renderer = rendererRef.current;
       if (!renderer) {
         return;
@@ -70,7 +64,23 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     [navigation, rendererRef]
   );
 
-  useTabSync({ rendererRef, onLayerChange: handleBaseLayerChange });
+  /** User selections also move the settings tab while the panels are linked. */
+  const handleLayerChange = useCallback(
+    (layer: MapBaseLayerId): void => {
+      selectLayer(layer);
+      const { linked, setSettingsTab } = useViewSyncStore.getState();
+      if (!linked) {
+        return;
+      }
+      const tab = tabForLayer(layer);
+      if (tab) {
+        setSettingsTab(tab);
+      }
+    },
+    [selectLayer]
+  );
+
+  useTabSync({ rendererRef, onLayerChange: selectLayer });
 
   const handleOverlayChange = (id: MapOverlayId, visible: boolean): void => {
     usePreviewStore.getState().setOverlay(id, visible);
@@ -94,7 +104,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
         <Flex align='stretch' gap='3' className={styles.workspace}>
           <LayerTabs
             navigation={navigationState}
-            onLayerChange={handleBaseLayerChange}
+            onLayerChange={handleLayerChange}
             expanded={isFullscreen}
           />
           <MapCanvas
@@ -110,7 +120,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
           <MapSidebar
             preview={preview}
             navigation={navigationState}
-            onLayerChange={handleBaseLayerChange}
+            onLayerChange={handleLayerChange}
             onOverlayChange={handleOverlayChange}
             inspector={{
               items: readoutItems(readout.readout, preview.info),

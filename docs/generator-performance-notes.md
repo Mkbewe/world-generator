@@ -203,6 +203,12 @@ i próbkowaniu. Wracamy do tematu tylko, jeśli pomiary pokażą, że to koniecz
   „Border noise", a wybór jedzie z geometrią mapy do podglądu i widać go
   w statystykach. `frequency/octaves/seed` zniknęły z konfiguracji i UI.
 - `Irregularity` per region nadpisuje wspólną amplitudę.
+- Selektywne przeliczanie etapów (#257, #258) działa na deklaracjach
+  `configKeys` w `stage-definitions.ts`: brudny zbiór to pierwszy zmieniony etap
+  i wszystko za nim, worker seeduje stan rastrami zapisanej mapy i pomija czyste
+  etapy zdarzeniem `stage-skipped`. Reużyte rastry zostają w głównym wątku — nie
+  wracają przez `postMessage` — a podgląd nie przygotowuje ich ponownie. Zapisana
+  mapa i jej baseline żyją do udanego runu, więc anulowanie nic nie kasuje.
 - Otwarte: czy `noise-map` ma stać się domyślnym źródłem — wymaga wizualnego
   retuningu i pomiaru czasu etapu.
 - Otwarte: format szumu (`Uint8` vs `Uint16`, II.4), czy wchodzimy w
