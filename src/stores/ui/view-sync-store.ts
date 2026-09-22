@@ -10,6 +10,17 @@ const SETTINGS_TABS: readonly SettingsTab[] = [
   ...PIPELINE_STAGES.map(stage => stage.id),
 ];
 
+/**
+ * Preview layers driven by the settings tabs. Stage ids and layer ids coincide
+ * today; this explicit map makes the link visible and keeps a stage or layer
+ * without a counterpart out of the sync.
+ */
+const TAB_LAYERS: Readonly<Partial<Record<SettingsTab, MapBaseLayerId>>> = {
+  'world-shape': 'world-shape',
+  noise: 'noise',
+  'macro-region': 'macro-region',
+};
+
 export interface ViewSyncValues {
   /** Active settings form tab; remembered across navigation. */
   settingsTab: SettingsTab;
@@ -35,10 +46,10 @@ export const useViewSyncStore = createStore<ViewSyncState>(set => ({
 
 /** Preview layer a settings tab drives; the general tab has no counterpart. */
 export function layerForTab(tab: SettingsTab): MapBaseLayerId | undefined {
-  return tab === 'general' ? undefined : tab;
+  return TAB_LAYERS[tab];
 }
 
 /** Settings tab that owns a preview layer; layers without a stage tab are ignored. */
 export function tabForLayer(layer: MapBaseLayerId): SettingsTab | undefined {
-  return SETTINGS_TABS.find(tab => tab === layer);
+  return SETTINGS_TABS.find(tab => TAB_LAYERS[tab] === layer);
 }

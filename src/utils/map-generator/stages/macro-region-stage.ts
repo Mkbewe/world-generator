@@ -11,7 +11,7 @@ import {
 } from './macro-region-displacement';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
-import { assertStageOutput, type MapConfigKey, type MapStage } from '../stage';
+import { assertStageOutput, type MapStage } from '../stage';
 import { MACRO_REGION_STAGE } from '../stage-definitions';
 import type {
   MacroRegionConfig,
@@ -23,16 +23,11 @@ import type {
   StageProgressReporter,
 } from '../types';
 
-export class MacroRegionStage implements MapStage<MapConfig, MapState, MapConfigKey> {
+export class MacroRegionStage implements MapStage<MapConfig, MapState> {
   readonly id = MACRO_REGION_STAGE.id;
   readonly name = MACRO_REGION_STAGE.name;
-  readonly progressStep = 0.2;
-  readonly configKeys = [
-    'world.seed',
-    'world.dimensions',
-    'macroRegions',
-    'macroRegionDeformation',
-  ] as const;
+  readonly configKeys = MACRO_REGION_STAGE.configKeys;
+  readonly progressStep = 0.25;
 
   async execute(
     context: MapContext<MapConfig, MapState>,
@@ -237,17 +232,26 @@ function geometryCoordinate(
 ): number {
   if (typeof displacement === 'number') {
     const shift = displacement * amplitude;
-    return geometry.kind === 'ring'
-      ? Math.hypot(x - geometry.center.x, y - geometry.center.y) + shift
-      : (geometry.axis === 'x' ? x : y) + shift;
+    if (geometry.kind === 'ring') {
+      return Math.hypot(x - geometry.center.x, y - geometry.center.y) + shift;
+    }
+    return axisCoordinate(geometry, x, y) + shift;
   }
+
+  const shiftedX = x + displacement.x * amplitude;
+  const shiftedY = y + displacement.y * amplitude;
   if (geometry.kind === 'ring') {
-    return Math.hypot(
-      x + displacement.x * amplitude - geometry.center.x,
-      y + displacement.y * amplitude - geometry.center.y
-    );
+    return Math.hypot(shiftedX - geometry.center.x, shiftedY - geometry.center.y);
   }
-  return geometry.axis === 'x' ? x + displacement.x * amplitude : y + displacement.y * amplitude;
+  return geometry.axis === 'x' ? shiftedX : shiftedY;
+}
+
+function axisCoordinate(
+  geometry: Extract<MacroRegionGeometry, { kind: 'band' }>,
+  x: number,
+  y: number
+): number {
+  return geometry.axis === 'x' ? x : y;
 }
 
 function containsCoordinate(geometry: MacroRegionGeometry, coordinate: number): boolean {

@@ -408,6 +408,9 @@ describe('MapRenderer', () => {
   it('keeps the displayed layer and view when a run keeps the map size', async () => {
     const { preview } = setup();
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
+    // A fresh scene reports no layer, which tells the session to follow the run.
+    expect(preview.state.displayedLayer).toBeUndefined();
+
     preview.add('world-shape', new Uint8Array(4).fill(1));
     preview.add('noise', new Float32Array(4));
     await vi.runAllTimersAsync();
@@ -418,6 +421,7 @@ describe('MapRenderer', () => {
 
     preview.start({ width: 2, height: 2 }, 'disc');
 
+    // A continuing scene keeps the layer, which tells the session to stay put.
     expect(preview.state.displayedLayer).toBe('noise');
     expect(preview.viewTransform.scale).toBe(zoom);
     expect(preview.state.layers.find(layer => layer.id === 'noise')?.available).toBe(true);

@@ -22,6 +22,8 @@ const CATALOG_ENTRIES = [
     source: 'macroRegionIdMap',
     dataType: 'uint8',
     clipTo: 'world-shape',
+    regionBoundaries: true,
+    samples: ['noise'],
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
   },
   {

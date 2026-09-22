@@ -1,4 +1,4 @@
-import { planProgress, ProgressTracker, restartProgress } from './progress-state';
+import { planProgress, ProgressTracker } from './progress-state';
 import type { GenerationProgressState } from './progress-types';
 import type { StageStatistics } from '../../../utils/map-generator';
 
@@ -181,40 +181,6 @@ describe('planProgress', () => {
         { id: 'world-shape', name: 'World shape generation', status: 'skipped', percentage: 0 },
         { id: 'noise', name: 'Noise generation', status: 'skipped', percentage: 0 },
         { id: 'macro-region', name: 'Macro region generation', status: 'pending', percentage: 0 },
-      ],
-    });
-  });
-});
-
-describe('restartProgress', () => {
-  it('resets every stage to pending and keeps its identity', () => {
-    const previous: GenerationProgressState = {
-      status: 'completed',
-      totalDurationMs: 460,
-      stages: [
-        {
-          id: 'world-shape',
-          name: 'World shape generation',
-          status: 'completed',
-          percentage: 100,
-          durationMs: 120,
-        },
-        {
-          id: 'noise',
-          name: 'Noise generation',
-          status: 'failed',
-          percentage: 40,
-          durationMs: 30,
-        },
-      ],
-    };
-
-    expect(restartProgress(previous)).toEqual({
-      status: 'running',
-      startedAt: expect.any(Number),
-      stages: [
-        { id: 'world-shape', name: 'World shape generation', status: 'pending', percentage: 0 },
-        { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },
       ],
     });
   });

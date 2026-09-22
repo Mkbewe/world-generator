@@ -1,3 +1,4 @@
+import { SelectiveRegeneration } from './regeneration';
 import { type GenerationStatistics, usePreviewStore } from '../../../stores';
 import {
   DEFAULT_MACRO_DEFORMATION,
@@ -5,10 +6,7 @@ import {
   type MapConfig,
   type RunGeneration,
   runGeneration as runGenerationInWorker,
-  selectDirtyStageIds,
   selectMapInfo,
-  type StageInfo,
-  type StageStatistics,
 } from '../../../utils/map-generator';
 import { type LayerDataRecord, type MapRasters, selectRasters } from '../../../utils/map-layers';
 import {
@@ -37,22 +35,12 @@ export class WorldGenerationSession {
   private renderer?: MapRenderer;
   private layers: MapRasters = {};
   private run?: RunSnapshot;
-  /** Configuration of the saved map; cleared together with the repository. */
-  private savedConfig?: MapConfig;
-  private dirtyStages: readonly string[] = [];
   /** Whether the preview follows the stages of the current run. */
   private followRun = false;
-  /** Stages announced by the last worker, used to plan the next run early. */
-  private stageInfos: readonly StageInfo[] = [];
-  /** Real statistics of the runs that produced the displayed map, per stage. */
-  private readonly realStatistics = new Map<string, StageStatistics>();
+  /** Selective regeneration state: the saved map baseline and the current plan. */
+  private readonly regeneration = new SelectiveRegeneration();
 
   constructor(private readonly runGeneration: RunGeneration = runGenerationInWorker) {}
-
-  /** Stage ids the current run recomputes; the rest is reused from the saved map. */
-  get dirtyStageIds(): readonly string[] {
-    return this.dirtyStages;
-  }
 
   /** Starts sending run data to a renderer, replaying what already arrived. */
   attach(renderer: MapRenderer): void {
@@ -76,16 +64,14 @@ export class WorldGenerationSession {
     this.generation?.abort();
   }
 
-  /** Forgets the saved map and its baseline; the repository owns the layer data. */
+  /** Forgets the saved map, its layers and its baseline. */
   reset(): void {
     this.cancel();
     this.layers = {};
     this.run = undefined;
-    this.savedConfig = undefined;
-    this.stageInfos = [];
-    this.realStatistics.clear();
-    this.dirtyStages = [];
     this.followRun = false;
+    this.regeneration.reset();
+    mapRepository.clear();
   }
 
   /** Returns no result when generation is cancelled or replaced by another run. */
@@ -98,14 +84,13 @@ export class WorldGenerationSession {
     this.generation = generation;
     const signal = generation.signal;
     const cachedRasters = mapRepository.get()?.layers ?? {};
-    this.dirtyStages = selectDirtyStageIds(this.savedConfig, config);
+    const plan = this.regeneration.plan(config, cachedRasters);
     this.layers = { ...cachedRasters };
-    // The saved map is consumed by this run, so its baseline goes away with it.
-    mapRepository.clear();
-    this.savedConfig = undefined;
+    // The saved map stays until this run succeeds, so a failure keeps it.
     // Reused stages are marked as skipped before the worker reports anything.
-    if (this.stageInfos.length > 0) {
-      onProgress(planProgress(this.stageInfos, this.reusedStages(this.stageInfos)));
+    const announced = this.regeneration.announcedStages;
+    if (announced.length > 0) {
+      onProgress(planProgress(announced, this.regeneration.reusedStageIds));
     }
     let progress: ProgressTracker | undefined;
 
@@ -130,14 +115,16 @@ export class WorldGenerationSession {
         this.startRenderer(renderer, run);
       }
       // A fresh preview follows the stages; an existing one keeps its selection.
+      // This mirrors `MapView.start`, which keeps the displayed layer while the
+      // map size is unchanged, so the canvas and the layer tabs stay in sync.
       this.followRun = !renderer?.state.displayedLayer;
       signal.throwIfAborted();
       const result = await this.runGeneration(config, {
         signal,
-        reuse: { dirtyStageIds: this.dirtyStages, cachedRasters },
+        reuse: plan,
         onStages: stages => {
-          this.stageInfos = stages;
-          progress = new ProgressTracker(stages, onProgress, this.reusedStages(stages));
+          this.regeneration.announce(stages);
+          progress = new ProgressTracker(stages, onProgress, this.regeneration.reusedStageIds);
           progress.start();
         },
         onEvent: event => {
@@ -151,10 +138,10 @@ export class WorldGenerationSession {
 
       signal.throwIfAborted();
       mapPersistence.save({ ...run, layers: this.layers });
-      this.savedConfig = config;
+      this.regeneration.remember(config);
       progress?.complete(result.totalDurationMs);
       return {
-        statistics: this.mergeStatistics(result.statistics),
+        statistics: this.regeneration.mergeStatistics(result.statistics),
         totalDurationMs: result.totalDurationMs,
       };
     } catch (error) {
@@ -168,27 +155,6 @@ export class WorldGenerationSession {
         this.run = undefined;
       }
     }
-  }
-
-  /** Stages of the announced list that this run reuses instead of running. */
-  private reusedStages(stages: readonly StageInfo[]): readonly string[] {
-    const dirty = new Set(this.dirtyStages);
-    return stages.filter(stage => !dirty.has(stage.id)).map(stage => stage.id);
-  }
-
-  /**
-   * A reused stage keeps the cost and metrics of the run that actually produced
-   * its data; only the status marks that this run skipped it.
-   */
-  private mergeStatistics(statistics: readonly StageStatistics[]): readonly StageStatistics[] {
-    return statistics.map(stage => {
-      if (stage.status !== 'skipped') {
-        this.realStatistics.set(stage.stageId, stage);
-        return stage;
-      }
-      const real = this.realStatistics.get(stage.stageId);
-      return real ? { ...real, status: 'skipped' } : stage;
-    });
   }
 
   /** Collects catalog rasters and sends them to the attached preview when there is one. */

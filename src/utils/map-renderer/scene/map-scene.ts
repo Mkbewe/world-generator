@@ -1,7 +1,12 @@
 import { DEFAULT_REGION_NOISE_SOURCE } from '../../map-generator/stages/macro-region-defaults';
 import { createRegionDisplacement } from '../../map-generator/stages/macro-region-displacement';
 import { createMacroRegionSampler } from '../../map-generator/stages/macro-region-stage';
-import { type LayerDataRecord, type MapRasters, selectRasters } from '../../map-layers';
+import {
+  type LayerDataRecord,
+  type LayerSpec,
+  type MapRasters,
+  selectRasters,
+} from '../../map-layers';
 import {
   CatalogLayer,
   type LayerCache,
@@ -87,27 +92,29 @@ export class MapScene {
         height: size.height,
         noiseAt:
           region.deformation.source === 'noise-map'
-            ? (cellX, cellY) => this.layers.get('noise')?.sample(cellX, cellY)
+            ? (cellX, cellY) => this.noiseLayer()?.sample(cellX, cellY)
             : undefined,
       })
     );
+  }
+
+  /** Catalog layer that carries the shared noise raster, when the catalog has one. */
+  private noiseLayer(): CatalogLayer | undefined {
+    const id = this.registry.order.find(
+      layerId => this.registry.get(layerId).source === 'noiseMap'
+    );
+    return id ? this.layers.get(id) : undefined;
   }
 
   /** Adds or refreshes a layer; repeated data replaces the previous layer. */
   add(id: MapBaseLayerId, value: unknown): MapLayer {
     const size = this.size;
     const spec = this.registry.get(id);
+    const missing = this.missingDependency(spec);
+    if (missing) {
+      throw new Error(`Layer "${id}" requires "${missing}".`);
+    }
     const clipMask = spec.clipTo ? this.layers.get(spec.clipTo) : undefined;
-    if (spec.clipTo && !clipMask) {
-      throw new Error(`Layer "${id}" requires "${spec.clipTo}".`);
-    }
-    if (
-      id === 'macro-region' &&
-      this.regionConfig?.deformation.source === 'noise-map' &&
-      !this.layers.has('noise')
-    ) {
-      throw new Error('A noise layer is required for noise-map region borders.');
-    }
     const layer = this.cache.getOrCreate(
       id,
       [
@@ -118,9 +125,7 @@ export class MapScene {
         clipMask,
         this.geometry?.shape,
         this.regionConfig,
-        id === 'macro-region' && this.regionConfig?.deformation.source === 'noise-map'
-          ? this.layers.get('noise')?.data
-          : undefined,
+        ...this.sampledRasters(spec),
       ],
       () => new CatalogLayer(spec, size, value, clipMask, this.geometry)
     );
@@ -128,6 +133,26 @@ export class MapScene {
     // A refreshed layer becomes ready again once it is presented.
     this.available.delete(id);
     return layer;
+  }
+
+  /** First declared dependency this layer still misses, if any. */
+  private missingDependency(spec: LayerSpec<MapBaseLayerId>): MapBaseLayerId | undefined {
+    const clip = spec.clipTo ? [spec.clipTo] : [];
+    return [...clip, ...this.sampledLayers(spec)].find(id => !this.layers.has(id));
+  }
+
+  /** Rasters of the sampled layers, in the order the spec declares them. */
+  private sampledRasters(spec: LayerSpec<MapBaseLayerId>): readonly unknown[] {
+    return this.sampledLayers(spec).map(id => this.layers.get(id)?.data);
+  }
+
+  /**
+   * Declared samples the current map reads. Region borders sample the noise
+   * raster only while the deformation uses the noise map.
+   */
+  private sampledLayers(spec: LayerSpec<MapBaseLayerId>): readonly MapBaseLayerId[] {
+    const samples = spec.samples ?? [];
+    return this.regionConfig?.deformation.source === 'noise-map' ? samples : [];
   }
 
   get(id: MapBaseLayerId): MapLayer | undefined {

@@ -7,6 +7,7 @@ export interface MetricDescriptor {
   precision?: number;
 }
 
+/** Metric value with a fixed precision, e.g. "0.500"; use `formatMeasure` for physical values. */
 export function formatNumber(value: number, precision?: number): string {
   if (precision === undefined) {
     return Math.round(value).toLocaleString('en-US');
