@@ -89,6 +89,8 @@ export interface RenderLayerStatistics {
   /** Synchronous preparation and tile drawing time, excluding browser yields. */
   durationMs: number;
   tiles: number;
+  /** True when this run replayed the layer and the cost comes from an earlier one. */
+  reused?: boolean;
   /** Pixels drawn in this run, including transparent pixels. */
   pixels: number;
   /** Resolution of the generator raster this layer samples. */

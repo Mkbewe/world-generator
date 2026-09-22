@@ -75,18 +75,25 @@ export class RenderMetrics {
       overlayDurationMs,
       presentationDurationMs: this.presentationDurationMs,
       bufferBytes: rendered.reduce((total, layer) => total + layer.bufferBytes, 0),
-      layers: rendered.map(layer => ({
-        id: layer.id,
-        name: this.registry.get(layer.id).label,
-        durationMs: this.layers.get(layer.id)?.durationMs ?? 0,
-        tiles: this.layers.get(layer.id)?.tiles ?? 0,
-        pixels: this.layers.get(layer.id)?.pixels ?? 0,
-        sourceWidth: layer.size.width,
-        sourceHeight: layer.size.height,
-        outputWidth: layer.canvas.width,
-        outputHeight: layer.canvas.height,
-        bytes: layer.bufferBytes,
-      })),
+      layers: rendered.map(layer => {
+        // A layer replayed from the cache keeps the statistics of the run that
+        // rendered it, so the panel reports the real cost of the displayed map.
+        const measured = this.layers.get(layer.id);
+        const statistics = measured ?? layer.statistics;
+        return {
+          id: layer.id,
+          name: this.registry.get(layer.id).label,
+          durationMs: statistics?.durationMs ?? 0,
+          tiles: statistics?.tiles ?? 0,
+          pixels: statistics?.pixels ?? 0,
+          reused: measured === undefined && statistics !== undefined,
+          sourceWidth: layer.size.width,
+          sourceHeight: layer.size.height,
+          outputWidth: layer.canvas.width,
+          outputHeight: layer.canvas.height,
+          bytes: layer.bufferBytes,
+        };
+      }),
     });
   }
 }
