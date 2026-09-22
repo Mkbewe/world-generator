@@ -35,12 +35,12 @@ describe('LandmassForm', () => {
     renderForm();
 
     const slider = within(screen.getByLabelText('Structures')).getByRole('slider');
-    expect(slider).toHaveAttribute('aria-valuenow', '2');
+    expect(slider).toHaveAttribute('aria-valuenow', '5');
     expect(slider).toHaveAttribute('aria-valuemax', String(MAX_LANDMASSES));
 
     slider.focus();
     await user.keyboard('{ArrowRight}');
 
-    expect(useLandmassFormStore.getState().landmasses.count).toBe(3);
+    expect(useLandmassFormStore.getState().landmasses.count).toBe(6);
   });
 });
