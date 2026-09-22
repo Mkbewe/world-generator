@@ -1,7 +1,7 @@
 import type { LandmassConfig } from '../types';
 
 /** Maximum number of independently generated structures. */
-export const MAX_LANDMASSES = 10;
+export const MAX_LANDMASSES = 20;
 
 /** Size range of a structure; 1 is the largest. */
 export const MIN_LANDMASS_SIZE = 0.25;
@@ -16,9 +16,9 @@ export const LANDMASS_GROUP_DISTANCE = 0.2;
 /** Free space kept between two structure outlines, in normalized units. */
 export const STRUCTURE_GAP = 0.02;
 
-/** Visible layout: five gentle structures sharing their shelves. */
+/** Visible layout: ten gentle structures sharing their shelves. */
 export const DEFAULT_LANDMASS_CONFIG: LandmassConfig = {
-  count: 5,
+  count: 10,
   size: 0.6,
   irregularity: 0.45,
   shelf: { width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 },

@@ -71,7 +71,7 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
   albo `noiseMap`), a pod nim presety, układ bazowy, ustawienia granic i sekcje
   regionów.
 - Formularz landmassów pokazuje tylko to, czym steruje ten etap: liczbę
-  struktur (1–10), rozmiar (`Size`: small do big) i pulę archetypów kształtu —
+  struktur (1–20, domyślnie 10), rozmiar (`Size`: small do big) i pulę archetypów kształtu —
   karty wyboru (`CheckboxCards`) z przyciskiem „Select all"/„Clear".
   Zaznaczenie wszystkich archetypów zapisuje `archetypes: undefined`, czyli
   całą pulę; pusta pula oznacza, że układ nie rysuje żadnych struktur
@@ -427,18 +427,29 @@ blisko siebie leżących struktur (`LandmassLayout.shelves`), co jest fundamente
 archipelagu (§4.3).
 
 - Szkielet pozwala tworzyć wyspy podłużne, zakrzywione i zwężające się.
-- Rozmieszczanie sprawdza cały kontur, nie tylko szkielet: punkty szkieletu są
-  liczone z lokalną szerokością, a obrysy półwysp i poprzeczek próbkowane, więc
-  geometria nie wystaje za margines świata i nie polega na tym, że maska świata
-  ją utnie. Gdy świat jest zbyt ciasny, cała struktura się skaluje (zachowując
-  archetyp), a nie tylko jej szkielet.
-- Archetypy kształtu (`round`, `oval`, `elongated`, `l`, `u`, `s`, `z`, `v`,
-  `y`, `x`, `t`, `irregular`) to przepisy z losowanymi parametrami. Każda struktura losuje archetyp
-  z puli (`LandmassConfig.archetypes`), a potem własne kąty, długości ramion,
-  szerokość, stronę zgięcia i orientację, więc nawet dwie „U” wyglądają inaczej.
-  Kształty rozgałęzione (Y, X, T) dostają dodatkowo poprzeczkę o zmiennym
-  położeniu i asymetrii ramion. Krótkie szkielety mają punkt pośredni, aby
-  profil szerokości zachował pełniejszy środek.
+- Rozmieszczanie startuje z równomiernej siatki kotwic nad światem (z losowym
+  wychyłem, żeby kratka nie prześwitywała). Każda struktura staje na kotwicy
+  najdalszej od już postawionych; gdy się nie mieści, próbuje kolejnych obrotów
+  i dopiero potem skaluje się w dół, zachowując archetyp. Kandydat nie może
+  wejść szkieletem w wypukłą otoczkę innej struktury, więc wyspy nie lądują w
+  zatokach ani lagunach atoli.
+- Wyspa może wystawać poza brzeg — wystarczy, że większość jej wybrzeża zostaje
+  w świecie; resztę przycina maska świata. Dzięki temu struktury dochodzą do
+  samej krawędzi i biegunów, zamiast ściskać się w środku mapy.
+- Archetypy kształtu (`round`, `oval`, `elongated`, `irregular`, `o`, `c`, `l`,
+  `u`, `s`, `z`, `v`, `y`, `x`, `t`) to przepisy z losowanymi parametrami.
+  Każda struktura losuje archetyp z puli (`LandmassConfig.archetypes`), a potem
+  własne kąty, długości ramion, szerokość, stronę zgięcia i orientację, więc
+  nawet dwie „U” wyglądają inaczej.
+- Przepisy mają trzy warianty szkieletu: polilinię (`joints` + `segments`),
+  pojedynczy łuk elipsy (`arc`, atol `o` i litera `c`) oraz łańcuch stycznych
+  łuków (`arcs`, gładkie `s`). Atol ma losową grubość i spłaszczenie, a jego
+  laguna zostaje otwarta; końcówki `c` zaginają się niezależnie.
+- Kształty rozgałęzione (Y, X, T) dostają poprzeczkę o zmiennym położeniu i
+  asymetrii: Y ma nogę grubości ramion, a T krótszą i grubszą poprzeczkę.
+  Krótkie szkielety mają punkt pośredni, aby profil szerokości zachował
+  pełniejszy środek. U może mieć ramiona różnej długości, wychylenia i grubości
+  (`widthSkew`).
 - Dodatnie formy budują półwyspy, połączone części wyspy i przybrzeżne wysepki.
 - Ujemne formy wycinają zatoki, cieśniny i wcięcia wybrzeża. Półwyspy i zatoki
   są losowane wzdłuż całego szkieletu, a ich rozmiar wynika z lokalnej

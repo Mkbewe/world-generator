@@ -32,7 +32,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
   readonly id = LANDMASS_LAYOUT_STAGE.id;
   readonly name = LANDMASS_LAYOUT_STAGE.name;
   readonly configKeys = LANDMASS_LAYOUT_STAGE.configKeys;
-  readonly progressStep = 0.25;
+  readonly progressStep = 0.02;
 
   async execute(
     context: MapContext<MapConfig, MapState>,
@@ -57,7 +57,11 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
-      structures.push(createStructure(index, config, shape, random, structures));
+      structures.push(
+        createStructure(index, config, shape, random, structures, progress =>
+          report(((index + progress) / planned) * 0.5)
+        )
+      );
       report(((index + 1) / planned) * 0.5);
     }
 
@@ -114,7 +118,10 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       if (landmass.spine.length < 2 || landmass.widthProfile.length !== landmass.spine.length) {
         throw new Error(`Pipeline produced an invalid spine for "${landmass.id}".`);
       }
-      if (!landmass.spine.every(isWorldPoint) || !landmass.widthProfile.every(width => width > 0)) {
+      if (
+        !landmass.spine.every(isFinitePoint) ||
+        !landmass.widthProfile.every(width => width > 0)
+      ) {
         throw new Error(`Pipeline produced invalid geometry for "${landmass.id}".`);
       }
       if (!layout.shelves.some(shelf => shelf.id === landmass.shelfId)) {
@@ -199,8 +206,9 @@ export function measureCoverage(idMap: Uint8Array, worldMask: Uint8Array): numbe
   return worldCells === 0 ? 0 : landCells / worldCells;
 }
 
-function isWorldPoint(point: { readonly x: number; readonly y: number }): boolean {
-  return isNormalized(point.x) && isNormalized(point.y);
+/** A spine may spill over the coast, so only finiteness is required here. */
+function isFinitePoint(point: { readonly x: number; readonly y: number }): boolean {
+  return Number.isFinite(point.x) && Number.isFinite(point.y);
 }
 
 function isNormalized(value: number): boolean {

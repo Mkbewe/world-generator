@@ -1,11 +1,13 @@
 import {
   ARCHETYPE_RECIPES,
+  type ArchetypeArc,
+  type ArchetypeArcSegment,
   type ArchetypeBar,
   type ArchetypeRange,
   type ArchetypeRecipe,
   LANDMASS_ARCHETYPES,
 } from './landmass-archetypes';
-import { LANDMASS_GROUP_DISTANCE, LANDMASS_MARGIN, STRUCTURE_GAP } from './landmass-defaults';
+import { LANDMASS_GROUP_DISTANCE, STRUCTURE_GAP } from './landmass-defaults';
 import { containsWorld, type WorldShape } from '../../world-shape';
 import type { SeededRandom } from '../random/seeded-random';
 import type {
@@ -17,20 +19,43 @@ import type {
   WorldPoint,
 } from '../types';
 
-/** Placement scales tried in order until the whole spine fits inside the world. */
-const SPINE_PLACEMENT_SHRINKS = [
-  1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15,
-  0.1,
-];
+/** Shrink steps tried at an anchor until the structure fits the free space. */
+const PLACEMENT_SHRINKS = [1, 0.85, 0.7, 0.55, 0.42, 0.32, 0.24];
 
-/** Starts sampled per shrink step; the roomiest candidate wins. */
-const PLACEMENT_CANDIDATES = 8;
+/** Rotations tried per anchor, so a shape can slide past its neighbours. */
+const PLACEMENT_ROTATIONS = 6;
+
+/** Share of the outline that must stay inside the world; the coast may spill over. */
+const INSIDE_OUTLINE_SHARE = 0.5;
+
+/** Anchors generated per structure, so there is room to avoid a crowded spot. */
+const ANCHOR_HEADROOM = 1.4;
+
+/** Jitter of an anchor, as a fraction of its grid cell, so the lattice is not visible. */
+const ANCHOR_JITTER = 0.6;
 
 /** Step of the sampled spine distance, fine enough for the required gap. */
 const SPINE_SAMPLE_STEP = 0.01;
 
-/** Samples around an attached shape, so its outline cannot escape the world. */
+/** Samples around an attached shape, so the placement check sees its outline. */
 const SHAPE_OUTLINE_SAMPLES = 12;
+
+/** Fillet radius as a fraction of the local half-width at a bend. */
+const FILLET_RADIUS = 0.9;
+
+/** Angular step between the spine points of an arc, fine enough to read as a curve. */
+const ARC_STEP = 0.35;
+
+/** Scales both ends of a range. */
+function scaleRange(range: ArchetypeRange, scale: number): ArchetypeRange {
+  return [range[0] * scale, range[1] * scale];
+}
+
+/** Peninsula and bay counts of a recipe that does not override them. */
+const DEFAULT_SHAPE_COUNTS = {
+  positive: [1, 2],
+  negative: [0, 2],
+} as const;
 
 /** Structure geometry before the shelf grouping. */
 export interface StructureSeed {
@@ -43,136 +68,206 @@ export interface StructureSeed {
 }
 
 /**
- * Builds one structure from the configuration and the deterministic stream. A
- * candidate counts only when its complete outline stays inside the world margin
- * and keeps clear of the structures placed so far; of the sampled starts the
- * roomiest one wins, which also spreads the structures over the world instead
- * of letting them cluster.
+ * Builds one structure from the configuration and the deterministic stream. The
+ * structure is centred on an even anchor grid over the world, starting from the
+ * anchor farthest from the placed ones, so the layout spreads to the coast
+ * instead of piling up in the middle. At every shrink step the anchors nearest
+ * the start are tried, each with several rotations; the structure shrinks only
+ * when no anchor accepts it. A structure may spill over the coast as long as
+ * most of its outline stays inside the world.
  */
 export function createStructure(
   index: number,
   config: LandmassConfig,
   shape: WorldShape,
   random: SeededRandom,
-  placed: readonly StructureSeed[] = []
+  placed: readonly StructureSeed[] = [],
+  onProgress?: (progress: number) => void
 ): StructureSeed {
   const recipe = ARCHETYPE_RECIPES[pickArchetype(config.archetypes, random)];
   const base = sampleRange(recipe.width, random) * config.size;
   const taper = sampleRange(recipe.taper, random);
   const { offsets, handedness } = createSpineOffsets(recipe, config.size, random);
   const prefix = `landmass-${index + 1}`;
-  let roomiest: { structure: StructureSeed; clearance: number } | undefined;
-
-  for (const shrink of SPINE_PLACEMENT_SHRINKS) {
-    for (let candidate = 0; candidate < PLACEMENT_CANDIDATES; candidate++) {
-      const start = randomPointInside(shape, random);
-      const spine = offsets.map(offset => ({
-        x: start.x + offset.x * shrink,
-        y: start.y + offset.y * shrink,
-      }));
-      const structure = buildStructure(
-        prefix,
-        recipe,
-        spine,
-        base,
-        taper,
-        handedness,
-        config,
-        shape,
-        random,
-        shrink
-      );
-      if (!outlineInsideWorld(structure, shape)) {
-        continue;
-      }
-      const clearance = clearanceFrom(structure, placed);
-      if (clearance >= STRUCTURE_GAP) {
-        return structure;
-      }
-      if (!roomiest || clearance > roomiest.clearance) {
-        roomiest = { structure, clearance };
-      }
-    }
-  }
-
-  // A crowded world takes the roomiest candidate found, or the world centre.
-  return (
-    roomiest?.structure ??
-    centredStructure(prefix, recipe, offsets, base, taper, handedness, config, shape, random)
-  );
-}
-
-/**
- * Deterministic last resort for a crowded world: the world centre at the
- * largest shrink whose outline still fits inside the margin.
- */
-function centredStructure(
-  prefix: string,
-  recipe: ArchetypeRecipe,
-  offsets: readonly WorldPoint[],
-  base: number,
-  taper: number,
-  handedness: number,
-  config: LandmassConfig,
-  shape: WorldShape,
-  random: SeededRandom
-): StructureSeed {
-  const smallest = SPINE_PLACEMENT_SHRINKS[SPINE_PLACEMENT_SHRINKS.length - 1];
-
-  for (const shrink of SPINE_PLACEMENT_SHRINKS) {
-    const spine = offsets.map(offset => ({
-      x: 0.5 + offset.x * shrink,
-      y: 0.5 + offset.y * shrink,
-    }));
-    const structure = buildStructure(
-      prefix,
-      recipe,
-      spine,
-      base,
-      taper,
-      handedness,
-      config,
-      shape,
-      random,
-      shrink
-    );
-    if (outlineInsideWorld(structure, shape)) {
-      return structure;
-    }
-  }
-
-  const spine = offsets.map(offset => ({
-    x: 0.5 + offset.x * smallest,
-    y: 0.5 + offset.y * smallest,
-  }));
-  return buildStructure(
+  const unit = buildStructure(
     prefix,
     recipe,
-    spine,
+    offsets,
     base,
     taper,
     handedness,
     config,
     shape,
-    random,
-    smallest
+    random
   );
-}
+  const centre = structureCentre(unit);
+  const anchors = createAnchors(shape, config.count, random);
+  const start = freeAnchor(anchors, placed, random);
+  const order = [...anchors].sort(
+    (left, right) => anchorDistance(left, start) - anchorDistance(right, start)
+  );
+  const occupied = placed.map(outlineOf);
+  const total = PLACEMENT_SHRINKS.length * order.length * PLACEMENT_ROTATIONS;
+  let attempt = 0;
+  let roomiest: { structure: StructureSeed; clearance: number } | undefined;
 
-/** Whether the complete outline of a structure stays inside the world margin. */
-export function outlineInsideWorld(structure: StructureSeed, shape: WorldShape): boolean {
-  for (const [index, point] of structure.spine.entries()) {
-    if (!insideWorldBy(shape, point, structure.widthProfile[index])) {
-      return false;
+  for (const shrink of PLACEMENT_SHRINKS) {
+    for (const anchor of order) {
+      for (let step = 0; step < PLACEMENT_ROTATIONS; step++) {
+        const rotation = (step / PLACEMENT_ROTATIONS) * Math.PI * 2;
+        const candidate = transformStructure(unit, centre, anchor, rotation, shrink);
+        attempt++;
+        onProgress?.(attempt / total);
+        if (!outlineInsideEnough(candidate, shape) || nestlesInHull(candidate, occupied)) {
+          continue;
+        }
+        const clearance = clearanceFrom(candidate, occupied);
+        if (clearance >= STRUCTURE_GAP) {
+          return candidate;
+        }
+        if (!roomiest || clearance > roomiest.clearance) {
+          roomiest = { structure: candidate, clearance };
+        }
+      }
     }
   }
-  return structure.positiveShapes.every(land => shapeInsideWorld(land, shape));
+
+  // A crowded world takes the roomiest candidate found, or the last anchor.
+  const smallest = PLACEMENT_SHRINKS[PLACEMENT_SHRINKS.length - 1];
+  return roomiest?.structure ?? transformStructure(unit, centre, start, 0, smallest);
 }
 
-/** Samples the ellipse outline, so a peninsula or bar cannot poke out of the world. */
-function shapeInsideWorld(land: LandShape, shape: WorldShape): boolean {
+/**
+ * Even grid of anchors over the world, each one nudged inside its cell, so
+ * structures start spread out and can reach the coast and the poles instead of
+ * clustering in the middle of the map, without the lattice showing through.
+ */
+function createAnchors(shape: WorldShape, count: number, random: SeededRandom): WorldPoint[] {
+  const columns = Math.max(2, Math.ceil(Math.sqrt(count * ANCHOR_HEADROOM)));
+  const cell = 1 / columns;
+  const anchors: WorldPoint[] = [];
+  for (let row = 0; row < columns; row++) {
+    for (let column = 0; column < columns; column++) {
+      const point = {
+        x: (column + 0.5 + (random.next() - 0.5) * ANCHOR_JITTER) * cell,
+        y: (row + 0.5 + (random.next() - 0.5) * ANCHOR_JITTER) * cell,
+      };
+      if (insideWorld(shape, point)) {
+        anchors.push(point);
+      }
+    }
+  }
+  return anchors.length > 0 ? anchors : [{ x: 0.5, y: 0.5 }];
+}
+
+function anchorDistance(left: WorldPoint, right: WorldPoint): number {
+  return Math.hypot(left.x - right.x, left.y - right.y);
+}
+
+/**
+ * Anchor farthest from every structure placed so far, so consecutive islands
+ * fill the empty stretches of the map instead of stacking next to each other.
+ * A small random handicap keeps two equally free spots from always resolving
+ * the same way, which used to bias the layout towards one corner of the map.
+ */
+function freeAnchor(
+  anchors: readonly WorldPoint[],
+  placed: readonly StructureSeed[],
+  random: SeededRandom
+): WorldPoint {
+  let best = anchors[0];
+  let bestScore = -Infinity;
+  for (const anchor of anchors) {
+    let nearest = Infinity;
+    for (const structure of placed) {
+      nearest = Math.min(nearest, anchorDistance(anchor, structureCentre(structure)));
+    }
+    const score = nearest * (0.8 + random.next() * 0.4);
+    if (score > bestScore) {
+      bestScore = score;
+      best = anchor;
+    }
+  }
+  return best;
+}
+
+/** Centre of the structure's spine bounds, used to pin it onto an anchor. */
+function structureCentre(structure: StructureSeed): WorldPoint {
+  const bounds = spineBounds(structure.spine);
+  return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
+}
+
+/** Moves, rotates and scales a unit structure so its centre sits on an anchor. */
+function transformStructure(
+  structure: StructureSeed,
+  centre: WorldPoint,
+  anchor: WorldPoint,
+  rotation: number,
+  scale: number
+): StructureSeed {
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+  const move = (point: WorldPoint): WorldPoint => {
+    const x = (point.x - centre.x) * scale;
+    const y = (point.y - centre.y) * scale;
+    return { x: anchor.x + x * cos - y * sin, y: anchor.y + x * sin + y * cos };
+  };
+  const transformShape = (land: LandShape): LandShape => ({
+    ...land,
+    center: move(land.center),
+    halfLength: land.halfLength * scale,
+    halfWidth: land.halfWidth * scale,
+    orientation: land.orientation + rotation,
+  });
+
+  return {
+    spine: structure.spine.map(move),
+    widthProfile: structure.widthProfile.map(width => width * scale),
+    orientation: structure.orientation + rotation,
+    irregularity: structure.irregularity,
+    positiveShapes: structure.positiveShapes.map(transformShape),
+    negativeShapes: structure.negativeShapes.map(transformShape),
+  };
+}
+
+/**
+ * Whether enough of the coast stays inside the world; the rest may spill over
+ * the edge, where the world mask cuts it off.
+ */
+function outlineInsideEnough(structure: StructureSeed, shape: WorldShape): boolean {
+  let samples = 0;
+  let inside = 0;
+  for (const [index, point] of structure.spine.entries()) {
+    const width = structure.widthProfile[index];
+    const normal = spineNormal(structure.spine, index);
+    for (const offset of [0, -width, width]) {
+      samples++;
+      const coast = { x: point.x + normal.x * offset, y: point.y + normal.y * offset };
+      if (insideWorld(shape, coast)) {
+        inside++;
+      }
+    }
+  }
+  for (const land of structure.positiveShapes) {
+    samples += SHAPE_OUTLINE_SAMPLES;
+    inside += shapeOutlineInside(land, shape);
+  }
+  return inside >= samples * INSIDE_OUTLINE_SHARE;
+}
+
+/** Unit normal of the spine at a vertex, taken from the neighbouring points. */
+function spineNormal(spine: readonly WorldPoint[], index: number): WorldPoint {
+  const from = spine[Math.max(0, index - 1)];
+  const to = spine[Math.min(spine.length - 1, index + 1)];
+  const length = Math.hypot(to.x - from.x, to.y - from.y) || 1;
+  return { x: -(to.y - from.y) / length, y: (to.x - from.x) / length };
+}
+
+/** How many samples of an ellipse outline lie inside the world. */
+function shapeOutlineInside(land: LandShape, shape: WorldShape): number {
   const cos = Math.cos(land.orientation);
   const sin = Math.sin(land.orientation);
+  let inside = 0;
   for (let step = 0; step < SHAPE_OUTLINE_SAMPLES; step++) {
     const angle = (step / SHAPE_OUTLINE_SAMPLES) * Math.PI * 2;
     const along = Math.cos(angle) * land.halfLength;
@@ -181,31 +276,117 @@ function shapeInsideWorld(land: LandShape, shape: WorldShape): boolean {
       x: land.center.x + along * cos - across * sin,
       y: land.center.y + along * sin + across * cos,
     };
-    if (!insideWorld(shape, point)) {
+    if (insideWorld(shape, point)) {
+      inside++;
+    }
+  }
+  return inside;
+}
+
+/** Placement data of a placed structure, computed once for all candidates. */
+interface PlacedOutline {
+  readonly sampled: readonly WorldPoint[];
+  readonly bounds: SpineBounds;
+  readonly reach: number;
+  /** Convex hull of the spine and its shapes; covers bays and lagoons. */
+  readonly hull: readonly WorldPoint[];
+  readonly hullBounds: SpineBounds;
+}
+
+/** Precomputes what every candidate needs to know about a placed structure. */
+function outlineOf(structure: StructureSeed): PlacedOutline {
+  const sampled = sampleSpine(structure.spine);
+  const hull = convexHull([
+    ...structure.spine,
+    ...structure.positiveShapes.map(shape => shape.center),
+  ]);
+  return {
+    sampled,
+    bounds: spineBounds(structure.spine),
+    reach: structureReach(structure, sampled),
+    hull,
+    hullBounds: spineBounds(hull),
+  };
+}
+
+/** Whether a candidate dips into a placed structure's bay or lagoon. */
+function nestlesInHull(structure: StructureSeed, placed: readonly PlacedOutline[]): boolean {
+  const bounds = spineBounds(structure.spine);
+  return placed.some(other => {
+    if (boundsGap(bounds, other.hullBounds) > 0) {
       return false;
     }
+    return structure.spine.some(point => insideHull(other.hull, point));
+  });
+}
+
+/** Convex hull of the given points in counter-clockwise order; monotone chain. */
+function convexHull(points: readonly WorldPoint[]): WorldPoint[] {
+  const sorted = [...points].sort((left, right) => left.x - right.x || left.y - right.y);
+  if (sorted.length < 3) {
+    return sorted;
+  }
+  const cross = (origin: WorldPoint, left: WorldPoint, right: WorldPoint): number =>
+    (left.x - origin.x) * (right.y - origin.y) - (left.y - origin.y) * (right.x - origin.x);
+  const half = (input: readonly WorldPoint[]): WorldPoint[] => {
+    const chain: WorldPoint[] = [];
+    for (const point of input) {
+      while (
+        chain.length >= 2 &&
+        cross(chain[chain.length - 2], chain[chain.length - 1], point) <= 0
+      ) {
+        chain.pop();
+      }
+      chain.push(point);
+    }
+    return chain;
+  };
+
+  const lower = half(sorted);
+  const upper = half([...sorted].reverse());
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
+
+/** Whether a point lies inside a convex polygon given in order. */
+function insideHull(hull: readonly WorldPoint[], point: WorldPoint): boolean {
+  if (hull.length < 3) {
+    return false;
+  }
+  let side = 0;
+  for (let index = 0; index < hull.length; index++) {
+    const from = hull[index];
+    const to = hull[(index + 1) % hull.length];
+    const cross = (to.x - from.x) * (point.y - from.y) - (to.y - from.y) * (point.x - from.x);
+    if (cross === 0) {
+      continue;
+    }
+    const current = Math.sign(cross);
+    if (side !== 0 && current !== side) {
+      return false;
+    }
+    side = current;
   }
   return true;
 }
 
 /** Smallest gap between a candidate structure and the placed ones; negative means overlap. */
-function clearanceFrom(structure: StructureSeed, placed: readonly StructureSeed[]): number {
+function clearanceFrom(structure: StructureSeed, placed: readonly PlacedOutline[]): number {
   const bounds = spineBounds(structure.spine);
-  const reach = structureReach(structure);
+  const sampled = sampleSpine(structure.spine);
+  const reach = structureReach(structure, sampled);
   let clearance = Infinity;
   for (const other of placed) {
-    const required = reach + structureReach(other);
-    if (boundsGap(bounds, spineBounds(other.spine)) > required + STRUCTURE_GAP) {
+    const required = reach + other.reach;
+    if (boundsGap(bounds, other.bounds) > required + STRUCTURE_GAP) {
       continue;
     }
-    const distance = sampledSpineDistance(structure.spine, other.spine);
-    clearance = Math.min(clearance, distance - required);
+    clearance = Math.min(clearance, sampledSpineDistance(sampled, other.sampled) - required);
   }
   return clearance;
 }
 
-/** Farthest outline point of a placed structure from its spine. */
-function structureReach(structure: StructureSeed): number {
+/** Farthest outline point of a structure from its spine. */
+function structureReach(structure: StructureSeed, sampled: readonly WorldPoint[]): number {
   let reach = 0;
   for (const width of structure.widthProfile) {
     reach = Math.max(reach, width);
@@ -213,8 +394,7 @@ function structureReach(structure: StructureSeed): number {
   for (const shape of structure.positiveShapes) {
     reach = Math.max(
       reach,
-      sampledSpineDistance([shape.center], structure.spine) +
-        Math.max(shape.halfLength, shape.halfWidth)
+      sampledSpineDistance([shape.center], sampled) + Math.max(shape.halfLength, shape.halfWidth)
     );
   }
   return reach;
@@ -248,11 +428,11 @@ function boundsGap(left: SpineBounds, right: SpineBounds): number {
   return Math.hypot(gapX, gapY);
 }
 
-/** Nearest distance between two spines, sampled finely enough for the gap. */
+/** Nearest distance between two sampled spines, fine enough for the required gap. */
 function sampledSpineDistance(left: readonly WorldPoint[], right: readonly WorldPoint[]): number {
   let nearest = Infinity;
-  for (const first of sampleSpine(left)) {
-    for (const second of sampleSpine(right)) {
+  for (const first of left) {
+    for (const second of right) {
       nearest = Math.min(nearest, Math.hypot(first.x - second.x, first.y - second.y));
     }
   }
@@ -279,7 +459,7 @@ function sampleSpine(spine: readonly WorldPoint[]): WorldPoint[] {
   return points;
 }
 
-/** Completes a placed spine with its width profile, shapes and shelf-less metadata. */
+/** Completes a unit spine with its width profile, shapes and shelf-less metadata. */
 function buildStructure(
   prefix: string,
   recipe: ArchetypeRecipe,
@@ -289,8 +469,7 @@ function buildStructure(
   handedness: number,
   config: LandmassConfig,
   shape: WorldShape,
-  random: SeededRandom,
-  scale: number
+  random: SeededRandom
 ): StructureSeed {
   // A two-point recipe needs a midpoint so its profile can reach the sampled
   // base width instead of staying at the tapered end width everywhere.
@@ -299,6 +478,7 @@ function buildStructure(
       ? [spine[0], { x: (spine[0].x + spine[1].x) / 2, y: (spine[0].y + spine[1].y) / 2 }, spine[1]]
       : spine;
   const spineLength = polylineLength(outlineSpine);
+  const skew = recipe.widthSkew ? sampleRange(recipe.widthSkew, random) : 0;
   let traversed = 0;
   const widthProfile = outlineSpine.map((point, index) => {
     if (index > 0) {
@@ -308,9 +488,17 @@ function buildStructure(
       );
     }
     const position = spineLength > 0 ? traversed / spineLength : 0.5;
-    return base * scale * (taper + (1 - taper) * Math.sin(Math.PI * position));
+    const sine = taper + (1 - taper) * Math.sin(Math.PI * position);
+    // The skew thickens one end at the other's expense, so the two arms of a U
+    // can differ in width; the middle stays at the base width.
+    const profile = base * sine * (1 + skew * (position - 0.5) * 2);
+    // A jittered profile makes the outline wavy, with thicker and thinner
+    // stretches and uneven ends, while smooth archetypes keep the plain sine.
+    return recipe.widthJitter ? profile * sampleRange(recipe.widthJitter, random) : profile;
   });
   const last = outlineSpine[outlineSpine.length - 1];
+  const shapes = recipe.shapes ?? DEFAULT_SHAPE_COUNTS;
+  const shapeScale = recipe.shapeScale ? sampleRange(recipe.shapeScale, random) : 1;
 
   return {
     spine: outlineSpine,
@@ -318,21 +506,62 @@ function buildStructure(
     orientation: Math.atan2(last.y - outlineSpine[0].y, last.x - outlineSpine[0].x),
     irregularity: config.irregularity,
     positiveShapes: [
-      ...createShapes(`${prefix}-peninsula`, shape, outlineSpine, widthProfile, random, 1, 2, {
-        coast: 0.78,
-        reach: 0.15,
-        length: [0.3, 0.55],
-        width: [0.25, 0.4],
-      }),
-      ...createBars(prefix, recipe.bars ?? [], spine, config.size * scale, handedness, random),
+      ...createShapes(
+        `${prefix}-peninsula`,
+        shape,
+        outlineSpine,
+        widthProfile,
+        random,
+        shapes.positive[0],
+        shapes.positive[1],
+        {
+          // Sits deep enough in the body that even a large shape stays attached.
+          coast: 0.6,
+          reach: 0.1,
+          length: scaleRange([0.3, 0.55], shapeScale),
+          width: scaleRange([0.25, 0.4], shapeScale),
+        }
+      ),
+      ...createBars(prefix, recipe.bars ?? [], spine, base, handedness, random),
+      ...createFillets(prefix, outlineSpine, widthProfile),
     ],
-    negativeShapes: createShapes(`${prefix}-bay`, shape, outlineSpine, widthProfile, random, 0, 2, {
-      coast: 1.08,
-      reach: 0.15,
-      length: [0.35, 0.6],
-      width: [0.22, 0.36],
-    }),
+    negativeShapes: createShapes(
+      `${prefix}-bay`,
+      shape,
+      outlineSpine,
+      widthProfile,
+      random,
+      shapes.negative[0],
+      shapes.negative[1],
+      {
+        coast: 1.08,
+        reach: 0.15,
+        length: scaleRange([0.35, 0.6], shapeScale),
+        width: scaleRange([0.22, 0.36], shapeScale),
+      }
+    ),
   };
+}
+
+/** Rounds the inner side of a bend, where two capsules meet under an angle. */
+function createFillets(
+  prefix: string,
+  spine: readonly WorldPoint[],
+  widthProfile: readonly number[]
+): LandShape[] {
+  const fillets: LandShape[] = [];
+  for (let index = 1; index < spine.length - 1; index++) {
+    const width = widthProfile[index] * FILLET_RADIUS;
+    fillets.push({
+      id: `${prefix}-fillet-${index}`,
+      center: spine[index],
+      halfLength: width,
+      halfWidth: width,
+      orientation: 0,
+      irregularity: 0,
+    });
+  }
+  return fillets;
 }
 
 /** Deterministic branches of the recipe: crossbars and stems a spine cannot draw. */
@@ -340,7 +569,7 @@ function createBars(
   prefix: string,
   bars: readonly ArchetypeBar[],
   spine: readonly WorldPoint[],
-  size: number,
+  spineWidth: number,
   handedness: number,
   random: SeededRandom
 ): LandShape[] {
@@ -351,7 +580,7 @@ function createBars(
       bar.angle === 'bisector'
         ? cornerStemDirection(spine, at)
         : direction + handedness * sampleRange(bar.angle, random);
-    const halfLength = sampleRange(bar.length, random) * size;
+    const halfLength = sampleRange(bar.length, random) * spineWidth;
     const bias = sampleRange(bar.bias, random) * halfLength;
     return {
       id: `${prefix}-bar-${index + 1}`,
@@ -360,7 +589,7 @@ function createBars(
         y: center.y + Math.sin(orientation) * bias,
       },
       halfLength,
-      halfWidth: sampleRange(bar.width, random) * size,
+      halfWidth: sampleRange(bar.width, random) * spineWidth,
       orientation,
       irregularity: 0,
     };
@@ -479,6 +708,16 @@ function createSpineOffsets(
   size: number,
   random: SeededRandom
 ): { readonly offsets: WorldPoint[]; readonly handedness: number } {
+  if ('arc' in recipe) {
+    const handedness = random.next() < 0.5 ? -1 : 1;
+    return { offsets: createArcOffsets(recipe.arc, size, random), handedness };
+  }
+
+  if ('arcs' in recipe) {
+    const handedness = random.next() < 0.5 ? -1 : 1;
+    return { offsets: createArcsOffsets(recipe.arcs, size, random, handedness), handedness };
+  }
+
   let direction = random.next() * Math.PI * 2;
   const handedness = random.next() < 0.5 ? -1 : 1;
   let point: WorldPoint = { x: 0, y: 0 };
@@ -497,6 +736,100 @@ function createSpineOffsets(
   }
 
   return { offsets: points, handedness };
+}
+
+/**
+ * Spine of an arc-shaped structure: points swept around an ellipse, closed into
+ * a ring by a full turn. A recipe may grow a straight tip on each end, each
+ * leaving the arc under its own sampled turn, so the two ends of a C bend
+ * different ways.
+ */
+function createArcOffsets(arc: ArchetypeArc, size: number, random: SeededRandom): WorldPoint[] {
+  const sweep = sampleRange(arc.sweep, random);
+  const radius = sampleRange(arc.radius, random) * size;
+  const flatten = sampleRange(arc.flatten, random);
+  const rotation = random.next() * Math.PI * 2;
+  const start = random.next() * Math.PI * 2;
+  const steps = Math.max(2, Math.ceil(sweep / ARC_STEP));
+  const points = Array.from({ length: steps + 1 }, (_, index) =>
+    arcPoint(start + (sweep * index) / steps, radius, flatten, rotation)
+  );
+
+  if (!arc.tips) {
+    return points;
+  }
+
+  const tipLength = sampleRange(arc.tips.length, random) * radius;
+  const headTurn = sampleRange(arc.tips.turns[0], random);
+  const tailTurn = sampleRange(arc.tips.turns[1], random);
+  const first = points[0];
+  const last = points[points.length - 1];
+  const headDirection = arcDirection(start, flatten, rotation) + headTurn;
+  const tailDirection = arcDirection(start + sweep, flatten, rotation) + tailTurn;
+  return [
+    {
+      x: first.x - Math.cos(headDirection) * tipLength,
+      y: first.y - Math.sin(headDirection) * tipLength,
+    },
+    ...points,
+    {
+      x: last.x + Math.cos(tailDirection) * tipLength,
+      y: last.y + Math.sin(tailDirection) * tipLength,
+    },
+  ];
+}
+
+/** Point of the rotated ellipse at the given sweep angle. */
+function arcPoint(angle: number, radius: number, flatten: number, rotation: number): WorldPoint {
+  const along = Math.cos(angle) * radius;
+  const across = Math.sin(angle) * radius * flatten;
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+  return { x: along * cos - across * sin, y: along * sin + across * cos };
+}
+
+/** Travel direction of the ellipse at the given sweep angle. */
+function arcDirection(angle: number, flatten: number, rotation: number): number {
+  return rotation + Math.atan2(Math.cos(angle) * flatten, -Math.sin(angle));
+}
+
+/**
+ * Spine of a serpentine structure: circular arcs chained end to end, each one
+ * starting tangent to the previous, so the bends read as one smooth curve
+ * instead of the corners a polyline would leave.
+ */
+function createArcsOffsets(
+  arcs: readonly ArchetypeArcSegment[],
+  size: number,
+  random: SeededRandom,
+  handedness: number
+): WorldPoint[] {
+  const points: WorldPoint[] = [{ x: 0, y: 0 }];
+  let direction = random.next() * Math.PI * 2;
+
+  for (const arc of arcs) {
+    const sweep = sampleRange(arc.sweep, random) * handedness;
+    const radius = sampleRange(arc.radius, random) * size;
+    const steps = Math.max(2, Math.ceil(Math.abs(sweep) / ARC_STEP));
+    // The center sits on the side the arc turns towards, so a negative sweep
+    // bends the other way instead of retracing the same circle backwards.
+    const side = Math.sign(sweep) || 1;
+    const start = points[points.length - 1];
+    const center = {
+      x: start.x - side * Math.sin(direction) * radius,
+      y: start.y + side * Math.cos(direction) * radius,
+    };
+    for (let step = 1; step <= steps; step++) {
+      const angle = direction + (sweep * step) / steps;
+      points.push({
+        x: center.x + side * Math.sin(angle) * radius,
+        y: center.y - side * Math.cos(angle) * radius,
+      });
+    }
+    direction += sweep;
+  }
+
+  return points;
 }
 
 function pickArchetype(
@@ -597,19 +930,6 @@ function randomSpineAnchor(
   return { anchor: spine[0], localWidth: widthProfile[0], direction: 0 };
 }
 
-function randomPointInside(shape: WorldShape, random: SeededRandom): WorldPoint {
-  for (let attempt = 0; attempt < 16; attempt++) {
-    const point = {
-      x: LANDMASS_MARGIN + random.next() * (1 - 2 * LANDMASS_MARGIN),
-      y: LANDMASS_MARGIN + random.next() * (1 - 2 * LANDMASS_MARGIN),
-    };
-    if (insideWorld(shape, point)) {
-      return point;
-    }
-  }
-  return { x: 0.5, y: 0.5 };
-}
-
 function towardsCenter(point: WorldPoint, distance: number): WorldPoint {
   const deltaX = 0.5 - point.x;
   const deltaY = 0.5 - point.y;
@@ -621,13 +941,7 @@ function towardsCenter(point: WorldPoint, distance: number): WorldPoint {
 }
 
 function insideWorld(shape: WorldShape, point: WorldPoint): boolean {
-  return insideWorldBy(shape, point, 0);
-}
-
-/** Whether a point lies inside the world shape, eroded by an extra margin. */
-function insideWorldBy(shape: WorldShape, point: WorldPoint, extra: number): boolean {
-  const scale = 1 - 2 * (LANDMASS_MARGIN + extra);
-  return scale > 0 && containsWorld(shape, (2 * point.x - 1) / scale, (2 * point.y - 1) / scale);
+  return containsWorld(shape, 2 * point.x - 1, 2 * point.y - 1);
 }
 
 function spineDistance(left: readonly WorldPoint[], right: readonly WorldPoint[]): number {

@@ -1,4 +1,4 @@
-import { DEFAULT_LANDMASS_CONFIG, LANDMASS_MARGIN, MAX_LANDMASSES } from './landmass-defaults';
+import { DEFAULT_LANDMASS_CONFIG, MAX_LANDMASSES } from './landmass-defaults';
 import { LandmassLayoutStage } from './landmass-layout-stage';
 import { createLandmassSampler } from './landmass-sampler';
 import { containsWorld } from '../../world-shape';
@@ -72,21 +72,26 @@ describe('LandmassLayoutStage', () => {
     }
   });
 
-  it('keeps the generated geometry inside the world shape', async () => {
+  it('anchors every structure inside the world with finite geometry', async () => {
     const result = await generate(config({ count: MAX_LANDMASSES, size: 1 }));
     const layout = landmassLayout(result);
 
     for (const landmass of layout.landmasses) {
       for (const point of landmass.spine) {
-        expect(point.x).toBeGreaterThanOrEqual(0);
-        expect(point.x).toBeLessThanOrEqual(1);
-        expect(point.y).toBeGreaterThanOrEqual(0);
-        expect(point.y).toBeLessThanOrEqual(1);
-        expect(containsWorld('disc', 2 * point.x - 1, 2 * point.y - 1)).toBe(true);
+        expect(Number.isFinite(point.x)).toBe(true);
+        expect(Number.isFinite(point.y)).toBe(true);
       }
       for (const shape of [...landmass.positiveShapes, ...landmass.negativeShapes]) {
-        expect(containsWorld('disc', 2 * shape.center.x - 1, 2 * shape.center.y - 1)).toBe(true);
+        expect(Number.isFinite(shape.center.x)).toBe(true);
+        expect(Number.isFinite(shape.center.y)).toBe(true);
       }
+      const xs = landmass.spine.map(point => point.x);
+      const ys = landmass.spine.map(point => point.y);
+      const centre = {
+        x: (Math.min(...xs) + Math.max(...xs)) / 2,
+        y: (Math.min(...ys) + Math.max(...ys)) / 2,
+      };
+      expect(containsWorld('disc', 2 * centre.x - 1, 2 * centre.y - 1)).toBe(true);
     }
   });
 
@@ -152,29 +157,42 @@ describe('LandmassLayoutStage', () => {
     expect(Math.max(...idMap)).toBeLessThanOrEqual(DEFAULT_LANDMASS_CONFIG.count);
   });
 
-  it('keeps the land inside the margin, without leaning on the world mask', async () => {
-    const size = 32;
-    const result = await generate(largeConfig(), size * size);
+  it('lets structures reach the coast instead of clustering in the middle', async () => {
+    const size = 48;
+    const source: MapConfig = {
+      ...base,
+      world: {
+        ...base.world,
+        dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: size, sampleHeight: size },
+      },
+    };
+    const worldMask = new Uint8Array(size * size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const inside = containsWorld('disc', 2 * (x / (size - 1)) - 1, 2 * (y / (size - 1)) - 1);
+        worldMask[y * size + x] = inside ? 1 : 0;
+      }
+    }
+    const result = await generate(source, size * size, worldMask);
     const idMap = landmassIdMap(result);
-    const margin = 1 - 2 * LANDMASS_MARGIN;
-    let landCells = 0;
+    let outerLand = 0;
 
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         if (idMap[y * size + x] === 0) {
           continue;
         }
-        landCells++;
-        expect(
-          containsWorld('disc', (2 * (x / 31) - 1) / margin, (2 * (y / 31) - 1) / margin)
-        ).toBe(true);
+        const radius = Math.hypot(2 * (x / (size - 1)) - 1, 2 * (y / (size - 1)) - 1);
+        if (radius > 0.7) {
+          outerLand++;
+        }
       }
     }
-    expect(landCells).toBeGreaterThan(0);
+    expect(outerLand).toBeGreaterThan(0);
   });
 
-  it('shrinks a crowded world instead of letting geometry escape', async () => {
-    const size = 16;
+  it('handles a crowded world without leaving the mask', async () => {
+    const size = 32;
     const source: MapConfig = {
       ...base,
       world: {
@@ -183,24 +201,29 @@ describe('LandmassLayoutStage', () => {
       },
       landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: MAX_LANDMASSES, size: 1 },
     };
-    const result = await generate(source, size * size);
+    const worldMask = new Uint8Array(size * size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const inside = containsWorld('disc', 2 * (x / (size - 1)) - 1, 2 * (y / (size - 1)) - 1);
+        worldMask[y * size + x] = inside ? 1 : 0;
+      }
+    }
+    const result = await generate(source, size * size, worldMask);
     const idMap = landmassIdMap(result);
-    const margin = 1 - 2 * LANDMASS_MARGIN;
+    let landCells = 0;
 
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
-        if (idMap[y * size + x] === 0) {
+        if (worldMask[y * size + x] === 0) {
+          expect(idMap[y * size + x]).toBe(0);
           continue;
         }
-        expect(
-          containsWorld(
-            'disc',
-            (2 * (x / (size - 1)) - 1) / margin,
-            (2 * (y / (size - 1)) - 1) / margin
-          )
-        ).toBe(true);
+        if (idMap[y * size + x] > 0) {
+          landCells++;
+        }
       }
     }
+    expect(landCells).toBeGreaterThan(0);
   });
 
   it('leaves cells outside the world mask empty', async () => {

@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event';
 
 import { LandmassForm } from './landmass-form';
 import { LANDMASS_FORM_DEFAULTS, useLandmassFormStore } from '../../../../stores';
-import { MAX_LANDMASSES } from '../../../../utils/map-generator/stages/landmass-defaults';
+import {
+  DEFAULT_LANDMASS_CONFIG,
+  MAX_LANDMASSES,
+} from '../../../../utils/map-generator/stages/landmass-defaults';
 
 function renderForm() {
   render(
@@ -35,12 +38,14 @@ describe('LandmassForm', () => {
     renderForm();
 
     const slider = within(screen.getByLabelText('Structures')).getByRole('slider');
-    expect(slider).toHaveAttribute('aria-valuenow', '5');
+    expect(slider).toHaveAttribute('aria-valuenow', String(DEFAULT_LANDMASS_CONFIG.count));
     expect(slider).toHaveAttribute('aria-valuemax', String(MAX_LANDMASSES));
 
     slider.focus();
     await user.keyboard('{ArrowRight}');
 
-    expect(useLandmassFormStore.getState().landmasses.count).toBe(6);
+    expect(useLandmassFormStore.getState().landmasses.count).toBe(
+      DEFAULT_LANDMASS_CONFIG.count + 1
+    );
   });
 });

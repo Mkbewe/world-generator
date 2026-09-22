@@ -9,6 +9,9 @@ const ARCHETYPE_LABELS: Record<LandmassArchetype, string> = {
   round: 'Round',
   oval: 'Oval',
   elongated: 'Elongated',
+  irregular: 'Irregular',
+  o: 'O',
+  c: 'C',
   l: 'L',
   u: 'U',
   s: 'S',
@@ -17,7 +20,6 @@ const ARCHETYPE_LABELS: Record<LandmassArchetype, string> = {
   y: 'Y',
   x: 'X',
   t: 'T',
-  irregular: 'Irregular',
 };
 
 /** Enables the archetypes the layout may draw a structure from. */
