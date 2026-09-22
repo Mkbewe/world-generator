@@ -52,6 +52,7 @@ export abstract class MapLayer {
   /** Whole-map fallback drawn under the sharp frame while the view outruns it. */
   readonly overview = document.createElement('canvas');
   private overviewSurfaceTarget?: RenderTarget;
+  private committedTarget?: RenderTarget;
   private preparation?: Promise<void>;
   private preparationSignal?: AbortSignal;
   private preparationKey?: string;
@@ -77,6 +78,10 @@ export abstract class MapLayer {
   /** Projection of the whole-map fallback, or undefined before the first render. */
   get overviewTarget(): RenderTarget | undefined {
     return this.overviewSurfaceTarget;
+  }
+
+  get renderedTarget(): RenderTarget | undefined {
+    return this.committedTarget;
   }
 
   /** Estimated RGBA bytes of all surfaces held for this layer. */
@@ -145,6 +150,7 @@ export abstract class MapLayer {
     this.stage.width = this.stage.height = 0;
     this.overview.width = this.overview.height = 0;
     this.overviewSurfaceTarget = undefined;
+    this.committedTarget = undefined;
     this.preparation = undefined;
     this.preparationSignal = undefined;
     this.preparationKey = undefined;
@@ -249,6 +255,7 @@ export abstract class MapLayer {
     this.canvas.width = target.width;
     this.canvas.height = target.height;
     context.drawImage(this.stage, 0, 0);
+    this.committedTarget = target;
   }
 }
 

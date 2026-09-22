@@ -82,6 +82,40 @@ describe('MapScene', () => {
     expect(second).toBe(first);
   });
 
+  it('keeps layers cached when the landmass layout arrives late', () => {
+    const scene = new MapScene(new LayerCache());
+    const layout = {
+      landmasses: [
+        {
+          id: 'landmass-1',
+          spine: [
+            { x: 0.4, y: 0.5 },
+            { x: 0.6, y: 0.5 },
+          ],
+          widthProfile: [0.1, 0.1],
+          orientation: 0,
+          irregularity: 0,
+          positiveShapes: [],
+          negativeShapes: [],
+          shelfId: 'shelf-1',
+        },
+      ],
+      shelves: [
+        { id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 },
+      ],
+    };
+    const data = new Float32Array(4);
+    scene.start({ width: 2, height: 2 }, { shape: 'rectangle' });
+    scene.add('world-shape', new Uint8Array(4).fill(1));
+    const first = scene.add('noise', data);
+
+    // The layout arrives with a later stage, after the earlier layers exist.
+    scene.setInfo({ landmassLayout: layout });
+    const second = scene.add('noise', data);
+
+    expect(second).toBe(first);
+  });
+
   it('renders dedicated region geometry without a noise layer', () => {
     const scene = new MapScene(new LayerCache());
     scene.start(

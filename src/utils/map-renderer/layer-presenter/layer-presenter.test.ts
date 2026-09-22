@@ -63,6 +63,25 @@ describe('LayerPresenter', () => {
     vi.restoreAllMocks();
   });
 
+  it('draws a restored layer from its committed frame without rendering again', async () => {
+    const layer = createLayer();
+    await layer.prepare(new AbortController().signal, target(6, 6, 2, 1, 1));
+    const drawImage = vi.mocked(context.drawImage);
+    drawImage.mockClear();
+
+    // A fresh presenter attaches to the cached layer, as after a re-mount.
+    presenter = new LayerPresenter(
+      document.createElement('canvas'),
+      new RenderMetrics(layerRegistry),
+      () => renderTargetValue,
+      () => viewTargetValue
+    );
+    presenter.show(layer);
+
+    expect(drawImage).toHaveBeenCalled();
+    expect(layer.renderingTarget).toBeUndefined();
+  });
+
   it('shows the first tile before the whole frame is ready', async () => {
     const layer = createLayer();
 

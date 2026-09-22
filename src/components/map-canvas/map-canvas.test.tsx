@@ -1,6 +1,6 @@
 import { createRef } from 'react';
 import { Theme } from '@radix-ui/themes';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 import { MapCanvas, type MapCanvasHandlers } from './map-canvas';
 
@@ -30,8 +30,22 @@ function renderCanvas(ready: boolean) {
 }
 
 describe('MapCanvas', () => {
-  it('shows the placeholder until a map is ready', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows the placeholder only after a grace period without a map', () => {
     const { rerender, props } = renderCanvas(false);
+
+    expect(screen.queryByText('Generate a map to see the preview.')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
 
     expect(screen.getByText('Generate a map to see the preview.')).toBeInTheDocument();
     expect(screen.getByLabelText('Generated map preview')).not.toHaveAttribute('data-ready');
@@ -44,6 +58,24 @@ describe('MapCanvas', () => {
 
     expect(screen.queryByText('Generate a map to see the preview.')).toBeNull();
     expect(screen.getByLabelText('Generated map preview')).toHaveAttribute('data-ready');
+  });
+
+  it('does not flash the placeholder while a map is restoring', () => {
+    const { rerender, props } = renderCanvas(false);
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    rerender(
+      <Theme>
+        <MapCanvas {...props} ready />
+      </Theme>
+    );
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(screen.queryByText('Generate a map to see the preview.')).toBeNull();
   });
 
   it('renders the overlay canvas hidden from assistive tech', () => {
