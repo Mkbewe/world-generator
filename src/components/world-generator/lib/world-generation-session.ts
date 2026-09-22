@@ -8,7 +8,12 @@ import {
   runGeneration as runGenerationInWorker,
   selectMapInfo,
 } from '../../../utils/map-generator';
-import { type LayerDataRecord, type MapRasters, selectRasters } from '../../../utils/map-layers';
+import {
+  hasCurrentRasterSources,
+  type LayerDataRecord,
+  type MapRasters,
+  selectRasters,
+} from '../../../utils/map-layers';
 import {
   type GeneratedMapSnapshot,
   layerRegistry,
@@ -80,11 +85,17 @@ export class WorldGenerationSession {
     onProgress: (progress: GenerationProgressState) => void
   ): Promise<GenerationStatistics | undefined> {
     this.cancel();
+    const cached = mapRepository.get();
+    if (cached && !hasCurrentRasterSources(cached.layers)) {
+      // A snapshot in a format this build no longer understands (e.g. the old
+      // landmass id map) is dropped with its regeneration baseline instead of
+      // being migrated or re-saved; the run starts from scratch.
+      this.reset();
+    }
     const generation = new AbortController();
     this.generation = generation;
     const signal = generation.signal;
-    const cached = mapRepository.get();
-    const cachedRasters = cached?.layers ?? {};
+    const cachedRasters = mapRepository.get()?.layers ?? {};
     const plan = this.regeneration.plan(config, cachedRasters);
     this.layers = { ...cachedRasters };
     // The saved map stays until this run succeeds, so a failure keeps it.

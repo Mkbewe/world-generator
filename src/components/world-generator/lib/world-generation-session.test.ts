@@ -9,6 +9,7 @@ import {
   type StageStatistics,
 } from '../../../utils/map-generator';
 import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region-defaults';
+import type { MapRasters } from '../../../utils/map-layers';
 import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
 import { MapLayer } from '../../../utils/map-renderer/layer';
 import { Viewport } from '../../../utils/map-renderer/viewport';
@@ -181,6 +182,33 @@ describe('WorldGenerationSession', () => {
 
     await session.generate(withRegions, vi.fn());
     expect(planned()).toEqual([]);
+  });
+
+  it('drops a snapshot from an older format instead of reusing its rasters', async () => {
+    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
+    await session.generate(config, vi.fn());
+    // The same config would normally reuse everything, so a stale snapshot must
+    // also reset the baseline, not only its rasters.
+    mapRepository.save({
+      width: 2,
+      height: 2,
+      seed: '17',
+      shape: 'disc',
+      layers: {
+        worldMask: new Uint8Array(4).fill(1),
+        landmassIdMap: new Uint8Array(4),
+      } as unknown as MapRasters,
+    });
+
+    await session.generate(config, vi.fn());
+
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual([
+      'world-shape',
+      'noise',
+      'macro-region',
+      'landmass-layout',
+    ]);
+    expect(mapRepository.get()?.layers).not.toHaveProperty('landmassIdMap');
   });
 
   it('reuses the saved rasters for the clean stages', async () => {

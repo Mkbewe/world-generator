@@ -59,6 +59,15 @@ function stageIndex(id: string): number {
   return STAGE_ORDER.get(id) ?? PIPELINE_STAGES.length;
 }
 
+/**
+ * Whether every raster key belongs to the current catalog. Snapshots saved in an
+ * older format fail this check, so callers can drop them instead of re-saving
+ * stale rasters.
+ */
+export function hasCurrentRasterSources(data: LayerDataRecord): boolean {
+  return Object.keys(data).every(key => LAYER_CATALOG.some(spec => spec.source === key));
+}
+
 /** Selects only catalog-owned raster sources at the dynamic data boundary. */
 export function selectRasters(data: LayerDataRecord): MapRasters {
   const selected: Record<string, unknown> = {};

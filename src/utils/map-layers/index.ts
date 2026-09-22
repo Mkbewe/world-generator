@@ -1,4 +1,4 @@
-export { LAYER_CATALOG, selectRasters } from './catalog';
+export { hasCurrentRasterSources, LAYER_CATALOG, selectRasters } from './catalog';
 export { compilePalette, regionColor, validatePalette } from './palettes';
 export type { PixelWriter } from './palettes';
 export type {
