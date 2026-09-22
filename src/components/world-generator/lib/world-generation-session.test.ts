@@ -61,6 +61,27 @@ function stageStatistics(
   };
 }
 
+function landmassLayoutFixture() {
+  return {
+    landmasses: [
+      {
+        id: 'landmass-1',
+        spine: [
+          { x: 0.4, y: 0.5 },
+          { x: 0.6, y: 0.5 },
+        ],
+        widthProfile: [0.1, 0.1],
+        orientation: 0,
+        irregularity: 0,
+        positiveShapes: [],
+        negativeShapes: [],
+        shelfId: 'shelf-1',
+      },
+    ],
+    shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 }],
+  };
+}
+
 function skipped(stageId: string): GenerationEvent {
   return {
     type: 'stage-skipped',
@@ -436,6 +457,54 @@ describe('WorldGenerationSession', () => {
       macroRegionLabels: DEFAULT_MACRO_REGIONS.map(region => region.label),
       worldDimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
     });
+  });
+
+  it('keeps the generated landmass layout with the run and its raster', async () => {
+    session.attach(renderer);
+    const layout = landmassLayoutFixture();
+    const idMap = new Uint8Array(4);
+    const setInfo = vi.spyOn(renderer, 'setInfo');
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      options?.onEvent?.(
+        completed('landmass-layout', { landmassLayout: layout, landmassIdMap: idMap })
+      );
+      return {
+        statistics: [],
+        totalDurationMs: 1,
+      };
+    });
+
+    await session.generate(config, vi.fn());
+
+    expect(setInfo).toHaveBeenCalledWith(expect.objectContaining({ landmassLayout: layout }));
+    expect(mapRepository.get()?.layers.landmassIdMap).toBe(idMap);
+    expect(mapRepository.get()?.info?.landmassLayout).toEqual(layout);
+  });
+
+  it('restores the saved landmass layout while the stage is reused', async () => {
+    const layout = landmassLayoutFixture();
+    mapRepository.save({
+      width: 2,
+      height: 2,
+      seed: '17',
+      shape: 'disc',
+      layers: {},
+      info: { landmassLayout: layout },
+    });
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      return {
+        statistics: [],
+        totalDurationMs: 1,
+      };
+    });
+
+    await session.generate(config, vi.fn());
+
+    expect(mapRepository.get()?.info?.landmassLayout).toEqual(layout);
   });
 
   it('saves generated stage data even when the renderer stops', async () => {

@@ -13,6 +13,13 @@ export const MAP_INFO_CATALOG = [
     select: (config: MapConfig) => config.macroRegions?.map(region => region.label),
   },
   {
+    source: 'landmassLabels',
+    select: (config: MapConfig) =>
+      config.landmasses
+        ? Array.from({ length: config.landmasses.count }, (_, index) => `Landmass ${index + 1}`)
+        : undefined,
+  },
+  {
     source: 'worldDimensions',
     select: (config: MapConfig) => config.world.dimensions,
   },

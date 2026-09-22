@@ -33,9 +33,10 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
       throw new Error(`Layer "${spec.id}" received an invalid clip mask size.`);
     }
     this.writePixel = compilePalette(spec.palette);
-    const mode = smoothMode(spec, geometry);
+    const boundary = resolveBoundary(spec, geometry);
+    const mode = smoothMode(spec, boundary);
     this.smoothInterior = mode !== 'clipped';
-    if (geometry && (spec.providesMask || clipMask)) {
+    if (geometry && (boundary || spec.providesMask || clipMask)) {
       this.smoothPainter = new SmoothLayerPainter(
         size,
         this.data,
@@ -43,7 +44,9 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
         spec.providesMask?.insideValue,
         this.writePixel,
         geometry,
-        mode
+        mode,
+        spec.skipValue,
+        boundary
       );
     }
   }
@@ -55,6 +58,11 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
 
   protected extraBufferBytes(): number {
     return this.smoothPainter?.boundaryBytes ?? 0;
+  }
+
+  /** A skip value marks real empty area, so the overview must not fill it in. */
+  protected get overviewExtendsColors(): boolean {
+    return this.spec.skipValue === undefined;
   }
 
   sample(x: number, y: number): number | undefined {
@@ -87,6 +95,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     const { projection } = target;
     const inverseCellSize = 1 / projection.cellSize;
     const insideValue = this.spec.providesMask?.insideValue;
+    const skipValue = this.spec.skipValue;
     const clipMask = this.clipMask;
     const mapWidth = this.size.width;
     const mapHeight = this.size.height;
@@ -105,6 +114,9 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
         }
         const value = this.data[rowIndex + cellX];
         if (insideValue !== undefined && value !== insideValue) {
+          continue;
+        }
+        if (value === skipValue) {
           continue;
         }
         if (clipMask && !clipMask.contains(cellX, cellY)) {
@@ -170,10 +182,27 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   }
 }
 
-/** How a layer smooths its edges: analytic region borders, the world edge or none. */
-function smoothMode(spec: LayerSpec<MapBaseLayerId>, geometry?: SmoothGeometry): SmoothLayerMode {
-  if (spec.regionBoundaries && geometry?.regionAt) {
-    return 'region';
+/** Analytic classifier a layer declares, when the map carries the matching geometry. */
+function resolveBoundary(
+  spec: LayerSpec<MapBaseLayerId>,
+  geometry?: SmoothGeometry
+): ((x: number, y: number) => number) | undefined {
+  if (spec.boundarySource === 'region') {
+    return geometry?.regionAt;
+  }
+  if (spec.boundarySource === 'landmass') {
+    return geometry?.landmassAt;
+  }
+  return undefined;
+}
+
+/** How a layer smooths its edges: analytic borders, the world edge or none. */
+function smoothMode(
+  spec: LayerSpec<MapBaseLayerId>,
+  boundary: ((x: number, y: number) => number) | undefined
+): SmoothLayerMode {
+  if (boundary) {
+    return 'analytic';
   }
   if (spec.providesMask) {
     return 'world';

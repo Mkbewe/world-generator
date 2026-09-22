@@ -1,5 +1,5 @@
 import type { LayerSpec } from './layer-spec';
-import { REGION_COLORS } from './palettes';
+import { LANDMASS_COLORS, REGION_COLORS } from './palettes';
 import type { LayerDataRecord, MapRasters } from './types';
 import { PIPELINE_STAGES } from '../map-generator/stage-definitions';
 
@@ -22,9 +22,19 @@ const CATALOG_ENTRIES = [
     source: 'macroRegionIdMap',
     dataType: 'uint8',
     clipTo: 'world-shape',
-    regionBoundaries: true,
+    boundarySource: 'region',
     samples: ['noise'],
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
+  },
+  {
+    id: 'landmass-layout',
+    label: 'Landmasses',
+    source: 'landmassIdMap',
+    dataType: 'uint8',
+    clipTo: 'world-shape',
+    boundarySource: 'landmass',
+    skipValue: 0,
+    palette: { kind: 'discrete', colors: LANDMASS_COLORS, overflow: 'cycle', offset: -1 },
   },
   {
     id: 'noise',

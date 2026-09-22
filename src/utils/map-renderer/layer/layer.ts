@@ -93,6 +93,15 @@ export abstract class MapLayer {
     return 0;
   }
 
+  /**
+   * Whether transparent overview pixels take the color of the nearest painted
+   * cell. Layers whose transparency is meaningful, e.g. water in an id map, opt
+   * out so the fallback keeps their empty areas empty.
+   */
+  protected get overviewExtendsColors(): boolean {
+    return true;
+  }
+
   prepare(signal: AbortSignal, target: RenderTarget, onTile?: TileReporter): Promise<void> {
     const key = targetKey(target);
     if (this.preparation && this.preparationKey === key) {
@@ -224,7 +233,9 @@ export abstract class MapLayer {
     this.overview.height = target.height;
     const image = context.createImageData(target.width, target.height);
     this.paintTile(image.data, target, { x: 0, y: 0, width: target.width, height: target.height });
-    extendOverviewColors(image.data, target.width, target.height);
+    if (this.overviewExtendsColors) {
+      extendOverviewColors(image.data, target.width, target.height);
+    }
     context.putImageData(image, 0, 0);
     this.overviewSurfaceTarget = target;
   }

@@ -1,3 +1,4 @@
+import { DEFAULT_LANDMASS_CONFIG } from './stages/landmass-defaults';
 import { DEFAULT_MACRO_REGIONS } from './stages/macro-region-defaults';
 import { MAP_INFO_CATALOG, selectMapInfo } from './info-definitions';
 import type { MapConfig } from './types';
@@ -21,9 +22,22 @@ describe('selectMapInfo', () => {
     });
   });
 
+  it('captures landmass labels in structure order', () => {
+    expect(
+      selectMapInfo({
+        ...baseConfig,
+        landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 },
+      })
+    ).toEqual({
+      landmassLabels: ['Landmass 1', 'Landmass 2', 'Landmass 3'],
+      worldDimensions: dimensions,
+    });
+  });
+
   it('exposes stable source keys', () => {
     expect(MAP_INFO_CATALOG.map(spec => spec.source)).toEqual([
       'macroRegionLabels',
+      'landmassLabels',
       'worldDimensions',
     ]);
   });

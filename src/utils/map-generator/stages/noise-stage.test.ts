@@ -22,7 +22,11 @@ async function generateNoise(config: MapConfig): Promise<Float32Array> {
   const pipeline = createMapGenerator();
   const result = await pipeline.generate(config, {});
 
-  return result.context.state.noiseMap!;
+  const { noiseMap } = result.context.state;
+  if (!noiseMap) {
+    throw new Error('Expected a generated noise map.');
+  }
+  return noiseMap;
 }
 
 describe('NoiseStage', () => {

@@ -72,6 +72,37 @@ describe('MapLayer rendering lifecycle', () => {
     }
   });
 
+  it('keeps overview transparency where a layer paints a skip value', async () => {
+    const images: Uint8ClampedArray[] = [];
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => {
+        const data = new Uint8ClampedArray(width * height * 4);
+        images.push(data);
+        return { data };
+      },
+      putImageData: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const world = worldLayer({ width: 2, height: 1 }, new Uint8Array([1, 1]));
+    const landmasses = new CatalogLayer(
+      layerRegistry.get('landmass-layout'),
+      world.size,
+      new Uint8Array([0, 1]),
+      world
+    );
+    try {
+      await landmasses.prepare(new AbortController().signal, targetFor(world.size));
+      const overview = images[0];
+      const alphaAt = (x: number, y: number): number => overview[(y * 512 + x) * 4 + 3];
+      expect(alphaAt(64, 128)).toBe(0);
+      expect(alphaAt(448, 128)).toBe(255);
+    } finally {
+      world.dispose();
+      landmasses.dispose();
+      getContext.mockRestore();
+    }
+  });
+
   it('excludes time yielded to the browser from drawing time', async () => {
     let now = 0;
     const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);

@@ -112,12 +112,18 @@ canvas, natomiast granica świata jest rysowana na drugim canvasie nad nią. UI
 utrzymuje jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
 traktować każdą kombinację jako osobny typ mapy.
 
-- Główne zakładki to `World shape`, `Noise` i `Macro regions` (kolejność z
-  `PIPELINE_STAGES`), a nakładka `World boundary` jest rysowana nad warstwą
-  bazową.
+- Główne zakładki to `World shape`, `Noise`, `Macro regions` i `Landmasses`
+  (kolejność z `PIPELINE_STAGES`), a nakładka `World boundary` jest rysowana nad
+  warstwą bazową.
 - Definicje warstw mogą grupować kilka podwidoków pod jedną zakładką; przełącznik
   pokazuje się dopiero dla grupy z co najmniej dwoma podwidokami. `Macro regions`
   jest obecnie pojedynczą warstwą bez podwidoków.
+- Warstwa może zadeklarować źródło granicy analitycznej (`boundarySource`:
+  `region` dla makroregionów, `landmass` dla układu struktur). Malarz rozdziela
+  wtedy granice w rozdzielczości ekranu zamiast po komórkach rastra, a geometrię
+  dostarcza scena z konfiguracji i `MapInfo`. Layout struktur jedzie w `MapInfo`
+  i jest zapisywany razem z mapą, więc gładkie granice działają też po odtworzeniu
+  mapy oraz w warstwie `Landmasses` przy dowolnym powiększeniu.
 - Rysowanie jest progresywne, a wybór pamiętany między widokami.
 - Przelot przez etapy pokazuje się tylko przy pierwszej mapie (albo po zmianie
   rozmiaru lub kształtu, która resetuje scenę). Gdy podgląd ma już wyświetloną
@@ -314,7 +320,7 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu. **[działa]**
 2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
 3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
-4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi. **[planowane]**
+4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi. **[działa]**
 5. `IslandCharacterStage` — profile terenu struktur lądowych i ich regionów. **[planowane]**
 6. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna. **[planowane]**
 7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
@@ -355,22 +361,30 @@ może powstawać ze szkieletu, profilu szerokości i wielu nakładających się 
 
 ```ts
 interface LandmassDefinition {
+  id: string;
   spine: WorldPoint[];
   widthProfile: number[];
   orientation: number;
   irregularity: number;
   positiveShapes: LandShape[];
   negativeShapes: LandShape[];
-  shelf: ShelfDefinition;
+  shelfId: string;
 }
 
 interface ShelfDefinition {
+  id: string;
   width: number;
   targetDepth: number;
   falloff: number;
   irregularity: number;
 }
 ```
+
+Klasyfikację punktu (szkielet, kształty i szelf) udostępnia wspólny sampler
+`createLandmassSampler`, z którego korzysta mapa identyfikatorów w podglądzie,
+a w kolejnym kroku skorzysta heightmapa. Szelfy są współdzielone przez grupy
+blisko siebie leżących struktur (`LandmassLayout.shelves`), co jest fundamentem
+archipelagu (§4.3).
 
 - Szkielet pozwala tworzyć wyspy podłużne, zakrzywione i zwężające się.
 - Dodatnie formy budują półwyspy, połączone części wyspy i przybrzeżne wysepki.

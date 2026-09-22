@@ -254,6 +254,63 @@ describe('CatalogLayer', () => {
     }
   });
 
+  it('leaves cells holding the skip value transparent', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 4, height: 1 };
+    const world = new CatalogLayer(
+      layerRegistry.get('world-shape'),
+      size,
+      new Uint8Array([1, 1, 1, 1])
+    );
+    const landmasses = new CatalogLayer(
+      layerRegistry.get('landmass-layout'),
+      size,
+      new Uint8Array([0, 1, 2, 0]),
+      world
+    );
+
+    try {
+      expect(landmasses.sample(0, 0)).toBe(0);
+      await landmasses.prepare(new AbortController().signal, targetFor(4, 1));
+      const pixels = targetPixels(images);
+      expect(pixels.slice(0, 4)).toEqual([0, 0, 0, 0]);
+      expect(pixels.slice(4, 8)).toEqual([120, 160, 90, 255]);
+      expect(pixels.slice(8, 12)).toEqual([196, 172, 118, 255]);
+      expect(pixels.slice(12)).toEqual([0, 0, 0, 0]);
+    } finally {
+      world.dispose();
+      landmasses.dispose();
+      restore();
+    }
+  });
+
+  it('resolves a declared boundary source analytically when geometry is available', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 2, height: 1 };
+    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 1]));
+    const landmasses = new CatalogLayer(
+      layerRegistry.get('landmass-layout'),
+      size,
+      new Uint8Array([0, 1]),
+      world,
+      { shape: 'rectangle', landmassAt: x => (x < 0.5 ? 0 : 1) }
+    );
+
+    try {
+      await landmasses.prepare(new AbortController().signal, targetFor(2, 1));
+      const pixels = targetPixels(images);
+      expect(pixels.slice(0, 4)).toEqual([0, 0, 0, 0]);
+      const [red, green, blue, alpha] = pixels.slice(4);
+      expect([red, green, blue]).toEqual([120, 160, 90]);
+      expect(alpha).toBeGreaterThan(0);
+      expect(alpha).toBeLessThan(255);
+    } finally {
+      world.dispose();
+      landmasses.dispose();
+      restore();
+    }
+  });
+
   it('requires a matching mask for clipped layers', () => {
     const clipped = {
       id: 'noise',

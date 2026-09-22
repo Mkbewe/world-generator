@@ -120,6 +120,27 @@ describe('readoutItems', () => {
     );
   });
 
+  it('describes landmass ids with their structure labels', () => {
+    const inspection = { id: 'landmass-layout', label: 'Landmasses', value: 1 } as const;
+
+    expect(itemValue(readout(inspection), 'value')).toBe('Landmass 1');
+    expect(
+      itemValue(readout({ ...inspection, value: 2 }), 'value', {
+        landmassLabels: ['Isla Verde', 'Wasteland'],
+      })
+    ).toBe('Wasteland');
+    expect(
+      itemValue(readout({ ...inspection, value: 0 }), 'value', {
+        landmassLabels: ['Isla Verde'],
+      })
+    ).toBe('Open sea');
+    expect(
+      itemValue(readout({ ...inspection, value: 5 }), 'value', {
+        landmassLabels: 'nope',
+      })
+    ).toBe('Landmass 5');
+  });
+
   it('keeps the layer label while the value is unavailable', () => {
     const items = readoutItems(readout({ id: 'noise', label: 'Noise' }));
 

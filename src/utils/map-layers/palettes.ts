@@ -1,4 +1,4 @@
-import type { Color, PaletteSpec, RampStop } from './layer-spec';
+import type { Color, DiscreteOverflow, PaletteSpec, RampStop } from './layer-spec';
 
 export type PixelWriter = (pixels: Uint8ClampedArray, offset: number, value: number) => void;
 
@@ -11,6 +11,14 @@ export const REGION_COLORS = [
   [30, 136, 229],
   [255, 112, 67],
   [0, 137, 123],
+] as const satisfies readonly Color[];
+
+/** Earthy palette of the landmass id map; the first color belongs to structure one. */
+export const LANDMASS_COLORS = [
+  [120, 160, 90],
+  [196, 172, 118],
+  [96, 136, 84],
+  [168, 140, 100],
 ] as const satisfies readonly Color[];
 
 const UNKNOWN_COLOR = [120, 120, 120] as const satisfies Color;
@@ -31,6 +39,9 @@ export function validatePalette(palette: PaletteSpec): void {
       throw new Error('A discrete palette requires at least one color.');
     }
     palette.colors.forEach(validateColor);
+    if (palette.offset !== undefined && !Number.isInteger(palette.offset)) {
+      throw new Error('A discrete palette offset must be an integer.');
+    }
     if (palette.overflow !== 'cycle') {
       validateColor(palette.overflow.color);
     }
@@ -63,25 +74,33 @@ export function compilePalette(palette: PaletteSpec): PixelWriter {
   }
   if (palette.kind === 'discrete') {
     const { colors, overflow } = palette;
+    const shift = palette.offset ?? 0;
     return (pixels, offset, value) => {
-      const index = Number.isInteger(value) && value >= 0 ? value : undefined;
-      const color =
-        overflow === 'cycle'
-          ? index === undefined
-            ? UNKNOWN_COLOR
-            : colors[index % colors.length]
-          : index === undefined
-            ? overflow.color
-            : (colors[index] ?? overflow.color);
+      const index = Number.isInteger(value) && value + shift >= 0 ? value + shift : undefined;
+      const color = discreteColor(colors, overflow, index);
       writeColor(pixels, offset, color[0], color[1], color[2]);
     };
   }
   return compileRamp(palette.stops);
 }
 
+function discreteColor(
+  colors: readonly Color[],
+  overflow: DiscreteOverflow,
+  index: number | undefined
+): Color {
+  if (overflow !== 'cycle') {
+    return index === undefined ? overflow.color : (colors[index] ?? overflow.color);
+  }
+  if (index === undefined) {
+    return UNKNOWN_COLOR;
+  }
+  return colors[index % colors.length];
+}
+
 function compileRamp(stops: readonly RampStop[]): PixelWriter {
   const first = stops[0];
-  const last = stops.at(-1)!;
+  const last = stops[stops.length - 1];
   if (stops.length === 2 && isGray(first.color) && isGray(last.color)) {
     return compileGrayRamp(first, last);
   }

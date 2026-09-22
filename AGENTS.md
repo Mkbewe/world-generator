@@ -20,6 +20,14 @@ See `README.md` and `docs/world-generation-roadmap.md` for architecture.
 - folders stay under ~7 component files
 - prefer `children` over text props when a shared wrapper is genuinely needed
 
+## Code style
+
+- nested ternary expressions are forbidden (`no-nested-ternary`); use
+  `if`/`else` or a small helper instead,
+- non-null assertions (`!`) are forbidden
+  (`@typescript-eslint/no-non-null-assertion`); narrow values with explicit
+  guards instead of silencing the type checker.
+
 ## GitHub
 
 - Boards (owner `Mkbewe`): **World Generator Board** (project `1`, product work) and **World Generator Infra** (project `2`, `area:infra` tasks)

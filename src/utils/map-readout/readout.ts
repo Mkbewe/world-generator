@@ -76,21 +76,28 @@ function describeValue(inspection: MapInspection | undefined, info: MapInfo): st
     case 'world-shape':
       return inspection.value === 1 ? 'Inside' : 'Outside';
     case 'macro-region': {
-      const label = macroRegionLabel(info, inspection.value);
+      const label = labelAt(info, 'macroRegionLabels', inspection.value);
       return label ?? `Region ${inspection.value}`;
+    }
+    case 'landmass-layout': {
+      if (inspection.value === 0) {
+        return 'Open sea';
+      }
+      const label = labelAt(info, 'landmassLabels', inspection.value - 1);
+      return label ?? `Landmass ${inspection.value}`;
     }
     default:
       return inspection.value.toFixed(3);
   }
 }
 
-/** Reads the label captured with the generated map for the given region index. */
-function macroRegionLabel(info: MapInfo, value: number): string | undefined {
-  const labels = info.macroRegionLabels;
+/** Reads the label captured with the generated map at the given label index. */
+function labelAt(info: MapInfo, source: string, index: number): string | undefined {
+  const labels = info[source];
   if (!Array.isArray(labels)) {
     return undefined;
   }
-  const label: unknown = labels[value];
+  const label: unknown = labels[index];
   return typeof label === 'string' && label.trim().length > 0 ? label : undefined;
 }
 
