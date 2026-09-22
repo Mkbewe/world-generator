@@ -1,5 +1,5 @@
 import { ARCHETYPE_RECIPES, type ArchetypeRange, LANDMASS_ARCHETYPES } from './landmass-archetypes';
-import { DEFAULT_LANDMASS_CONFIG } from './landmass-defaults';
+import { DEFAULT_LANDMASS_CONFIG, MAX_LANDMASSES } from './landmass-defaults';
 import { createStructure, type StructureSeed } from './landmass-layout';
 import { createLandmassSampler } from './landmass-sampler';
 import { containsWorld } from '../../world-shape';
@@ -290,6 +290,72 @@ describe('landmass archetypes', () => {
         expect(components(landmassAt, 1)).toBe(1);
       }
     }
+  });
+
+  it.each([DEFAULT_LANDMASS_CONFIG.count, MAX_LANDMASSES])(
+    'keeps %i structures from sharing cells',
+    count => {
+      const random = new SeededRandom(11);
+      const placed: StructureSeed[] = [];
+      for (let index = 0; index < count; index++) {
+        placed.push(createStructure(index, config(), 'disc', random, placed));
+      }
+
+      const samplers = placed.map(seed => createLandmassSampler([seed]));
+      let overlaps = 0;
+      for (let row = 0; row <= 120; row++) {
+        for (let column = 0; column <= 120; column++) {
+          const x = column / 120;
+          const y = row / 120;
+          let owners = 0;
+          for (const landmassAt of samplers) {
+            if (landmassAt(x, y) > 0 && ++owners > 1) {
+              break;
+            }
+          }
+          if (owners > 1) {
+            overlaps++;
+          }
+        }
+      }
+      expect(overlaps).toBe(0);
+    }
+  );
+
+  it('spreads structures over the world instead of clustering them', () => {
+    const random = new SeededRandom(11);
+    const placed: StructureSeed[] = [];
+    for (let index = 0; index < DEFAULT_LANDMASS_CONFIG.count; index++) {
+      placed.push(createStructure(index, config(), 'disc', random, placed));
+    }
+
+    const centres = placed.map(seed => ({
+      x: seed.spine.reduce((sum, point) => sum + point.x, 0) / seed.spine.length,
+      y: seed.spine.reduce((sum, point) => sum + point.y, 0) / seed.spine.length,
+    }));
+    let nearest = Infinity;
+    let spreadX = 0;
+    let spreadY = 0;
+    let minX = 1;
+    let maxX = 0;
+    let minY = 1;
+    let maxY = 0;
+
+    for (const [index, centre] of centres.entries()) {
+      minX = Math.min(minX, centre.x);
+      maxX = Math.max(maxX, centre.x);
+      minY = Math.min(minY, centre.y);
+      maxY = Math.max(maxY, centre.y);
+      for (const other of centres.slice(index + 1)) {
+        nearest = Math.min(nearest, Math.hypot(centre.x - other.x, centre.y - other.y));
+      }
+    }
+    spreadX = maxX - minX;
+    spreadY = maxY - minY;
+
+    expect(nearest).toBeGreaterThan(0.12);
+    expect(spreadX).toBeGreaterThan(0.3);
+    expect(spreadY).toBeGreaterThan(0.3);
   });
 
   it('mixes archetypes when no pool is configured', () => {

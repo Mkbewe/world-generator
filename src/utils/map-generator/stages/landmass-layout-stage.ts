@@ -58,7 +58,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
-      structures.push(createStructure(index, config, shape, random));
+      structures.push(createStructure(index, config, shape, random, structures));
       report(((index + 1) / planned) * 0.5);
     }
 

@@ -5,7 +5,7 @@ import {
   type ArchetypeRecipe,
   LANDMASS_ARCHETYPES,
 } from './landmass-archetypes';
-import { LANDMASS_GROUP_DISTANCE, LANDMASS_MARGIN } from './landmass-defaults';
+import { LANDMASS_GROUP_DISTANCE, LANDMASS_MARGIN, STRUCTURE_GAP } from './landmass-defaults';
 import { containsWorld, type WorldShape } from '../../world-shape';
 import type { SeededRandom } from '../random/seeded-random';
 import type {
@@ -23,6 +23,12 @@ const SPINE_PLACEMENT_SHRINKS = [
   0.1,
 ];
 
+/** Starts sampled per shrink step; the roomiest candidate wins. */
+const PLACEMENT_CANDIDATES = 8;
+
+/** Step of the sampled spine distance, fine enough for the required gap. */
+const SPINE_SAMPLE_STEP = 0.01;
+
 /** Structure geometry before the shelf grouping. */
 export interface StructureSeed {
   readonly spine: readonly WorldPoint[];
@@ -33,38 +39,169 @@ export interface StructureSeed {
   readonly negativeShapes: readonly LandShape[];
 }
 
-/** Builds one structure from the configuration and the deterministic stream. */
+/**
+ * Builds one structure from the configuration and the deterministic stream. The
+ * structures placed so far keep it apart: of the sampled starts the roomiest
+ * one wins, which also spreads the structures over the world instead of letting
+ * them cluster.
+ */
 export function createStructure(
   index: number,
   config: LandmassConfig,
   shape: WorldShape,
-  random: SeededRandom
+  random: SeededRandom,
+  placed: readonly StructureSeed[] = []
 ): StructureSeed {
   const recipe = ARCHETYPE_RECIPES[pickArchetype(config.archetypes, random)];
   const base = sampleRange(recipe.width, random) * config.size;
   const taper = sampleRange(recipe.taper, random);
   const { offsets, handedness } = createSpineOffsets(recipe, config.size, random);
   const prefix = `landmass-${index + 1}`;
+  const reach = recipeReach(recipe, config.size);
+  let roomiest: { spine: readonly WorldPoint[]; clearance: number } | undefined;
 
   for (const shrink of SPINE_PLACEMENT_SHRINKS) {
-    const start = randomPointInside(shape, random);
-    const spine = offsets.map(offset => ({
-      x: start.x + offset.x * shrink,
-      y: start.y + offset.y * shrink,
-    }));
-    if (!spine.every(point => insideWorld(shape, point))) {
-      continue;
+    for (let candidate = 0; candidate < PLACEMENT_CANDIDATES; candidate++) {
+      const start = randomPointInside(shape, random);
+      const spine = offsets.map(offset => ({
+        x: start.x + offset.x * shrink,
+        y: start.y + offset.y * shrink,
+      }));
+      if (!spine.every(point => insideWorld(shape, point))) {
+        continue;
+      }
+      const clearance = clearanceFrom(spine, placed, reach);
+      if (clearance >= STRUCTURE_GAP) {
+        return buildStructure(
+          prefix,
+          recipe,
+          spine,
+          base,
+          taper,
+          handedness,
+          config,
+          shape,
+          random
+        );
+      }
+      if (!roomiest || clearance > roomiest.clearance) {
+        roomiest = { spine, clearance };
+      }
     }
-    return buildStructure(prefix, recipe, spine, base, taper, handedness, config, shape, random);
   }
 
-  // A fully shrunken structure always fits around the middle of the world.
-  const shrink = SPINE_PLACEMENT_SHRINKS[SPINE_PLACEMENT_SHRINKS.length - 1];
-  const spine = offsets.map(offset => ({
-    x: 0.5 + offset.x * shrink,
-    y: 0.5 + offset.y * shrink,
-  }));
+  // A crowded world takes the roomiest candidate found, or the world centre.
+  const spine = roomiest?.spine ?? centredSpine(offsets);
   return buildStructure(prefix, recipe, spine, base, taper, handedness, config, shape, random);
+}
+
+/** Fully shrunken spine around the middle of the world, the last resort. */
+function centredSpine(offsets: readonly WorldPoint[]): readonly WorldPoint[] {
+  const shrink = SPINE_PLACEMENT_SHRINKS[SPINE_PLACEMENT_SHRINKS.length - 1];
+  return offsets.map(offset => ({ x: 0.5 + offset.x * shrink, y: 0.5 + offset.y * shrink }));
+}
+
+/** Smallest gap between a candidate spine and the placed structures; negative means overlap. */
+function clearanceFrom(
+  spine: readonly WorldPoint[],
+  placed: readonly StructureSeed[],
+  reach: number
+): number {
+  const bounds = spineBounds(spine);
+  let clearance = Infinity;
+  for (const other of placed) {
+    const required = reach + structureReach(other);
+    if (boundsGap(bounds, spineBounds(other.spine)) > required + STRUCTURE_GAP) {
+      continue;
+    }
+    const distance = sampledSpineDistance(spine, other.spine);
+    clearance = Math.min(clearance, distance - required);
+  }
+  return clearance;
+}
+
+/** Conservative outline reach of a recipe, before its shapes are drawn. */
+function recipeReach(recipe: ArchetypeRecipe, size: number): number {
+  let reach = recipe.width[1] * 1.5;
+  for (const bar of recipe.bars ?? []) {
+    reach = Math.max(reach, bar.length[1] * 2 + bar.width[1]);
+  }
+  return reach * size;
+}
+
+/** Farthest outline point of a placed structure from its spine. */
+function structureReach(structure: StructureSeed): number {
+  let reach = 0;
+  for (const width of structure.widthProfile) {
+    reach = Math.max(reach, width);
+  }
+  for (const shape of structure.positiveShapes) {
+    reach = Math.max(
+      reach,
+      sampledSpineDistance([shape.center], structure.spine) +
+        Math.max(shape.halfLength, shape.halfWidth)
+    );
+  }
+  return reach;
+}
+
+interface SpineBounds {
+  readonly minX: number;
+  readonly maxX: number;
+  readonly minY: number;
+  readonly maxY: number;
+}
+
+function spineBounds(spine: readonly WorldPoint[]): SpineBounds {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const point of spine) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  }
+  return { minX, maxX, minY, maxY };
+}
+
+/** Distance between two bounding boxes; 0 when they overlap. */
+function boundsGap(left: SpineBounds, right: SpineBounds): number {
+  const gapX = Math.max(0, left.minX - right.maxX, right.minX - left.maxX);
+  const gapY = Math.max(0, left.minY - right.maxY, right.minY - left.maxY);
+  return Math.hypot(gapX, gapY);
+}
+
+/** Nearest distance between two spines, sampled finely enough for the gap. */
+function sampledSpineDistance(left: readonly WorldPoint[], right: readonly WorldPoint[]): number {
+  let nearest = Infinity;
+  for (const first of sampleSpine(left)) {
+    for (const second of sampleSpine(right)) {
+      nearest = Math.min(nearest, Math.hypot(first.x - second.x, first.y - second.y));
+    }
+  }
+  return nearest;
+}
+
+/** Points every step along the polyline, including both ends. */
+function sampleSpine(spine: readonly WorldPoint[]): WorldPoint[] {
+  const points: WorldPoint[] = [];
+  for (let index = 1; index < spine.length; index++) {
+    const from = spine[index - 1];
+    const to = spine[index];
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const steps = Math.max(1, Math.ceil(length / SPINE_SAMPLE_STEP));
+    for (let step = 0; step < steps; step++) {
+      const ratio = step / steps;
+      points.push({ x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio });
+    }
+  }
+  const last = spine[spine.length - 1];
+  if (last) {
+    points.push(last);
+  }
+  return points;
 }
 
 /** Completes a placed spine with its width profile, shapes and shelf-less metadata. */

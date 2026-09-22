@@ -13,10 +13,13 @@ export const LANDMASS_MARGIN = 0.08;
 /** Spines closer than this share one shelf, the archipelago foundation. */
 export const LANDMASS_GROUP_DISTANCE = 0.2;
 
-/** Visible layout: two gentle structures sharing a shelf. */
+/** Free space kept between two structure outlines, in normalized units. */
+export const STRUCTURE_GAP = 0.02;
+
+/** Visible layout: five gentle structures sharing their shelves. */
 export const DEFAULT_LANDMASS_CONFIG: LandmassConfig = {
-  count: 2,
-  size: 0.5,
+  count: 5,
+  size: 0.6,
   irregularity: 0.45,
   shelf: { width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 },
 };
