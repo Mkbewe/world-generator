@@ -473,22 +473,6 @@ export function createShelfTemplates(
   }));
 }
 
-/** Share of the world's land area the structures are expected to cover. */
-export function estimateCoverage(structures: readonly StructureSeed[], worldArea: number): number {
-  if (worldArea <= 0) {
-    return 0;
-  }
-
-  const area = structures.reduce((sum, structure) => {
-    const capsule = polylineLength(structure.spine) * mean(structure.widthProfile) * 2;
-    const added = structure.positiveShapes.reduce((total, shape) => total + shapeArea(shape), 0);
-    const cut = structure.negativeShapes.reduce((total, shape) => total + shapeArea(shape), 0);
-    return sum + capsule + added - cut;
-  }, 0);
-
-  return Math.min(1, Math.max(0, area / worldArea));
-}
-
 /** Relative spine of the recipe; the caller places and sizes it inside the world. */
 function createSpineOffsets(
   recipe: ArchetypeRecipe,
@@ -665,12 +649,4 @@ function polylineLength(points: readonly WorldPoint[]): number {
     );
   }
   return length;
-}
-
-function shapeArea(shape: LandShape): number {
-  return Math.PI * shape.halfLength * shape.halfWidth;
-}
-
-function mean(values: readonly number[]): number {
-  return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
 }

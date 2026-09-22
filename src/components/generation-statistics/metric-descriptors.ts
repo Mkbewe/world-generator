@@ -19,6 +19,11 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'ratio',
     description: 'Share of the grid that lies inside the world shape.',
   },
+  landCoverage: {
+    label: 'Land coverage',
+    kind: 'ratio',
+    description: 'Share of the world mask covered by land, measured from the generated id map.',
+  },
   frequency: {
     label: 'Frequency',
     kind: 'number',
