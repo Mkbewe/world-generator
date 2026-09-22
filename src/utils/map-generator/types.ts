@@ -72,15 +72,92 @@ export interface MacroRegionDeformation {
   readonly source?: MacroRegionNoiseSource;
 }
 
+/** Normalized world coordinate in the 0..1 range. */
+export interface WorldPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * Elongated blob that adds or cuts land around a structure's spine; all values
+ * are in normalized world units.
+ */
+export interface LandShape {
+  readonly id: string;
+  readonly center: WorldPoint;
+  /** Half of the shape's length along its axis. */
+  readonly halfLength: number;
+  /** Half of the shape's width across its axis. */
+  readonly halfWidth: number;
+  /** Rotation of the shape's axis in radians. */
+  readonly orientation: number;
+  /** How far the outline bends away from the ellipse; 0 keeps it smooth. */
+  readonly irregularity: number;
+}
+
+/** Shallow water apron around one or more structures; shared by archipelagos. */
+export interface ShelfDefinition {
+  readonly id: string;
+  /** Width of the shelf band in normalized units. */
+  readonly width: number;
+  /** Height of the shelf's outer edge; the deep ocean floor lies below it. */
+  readonly targetDepth: number;
+  /** How quickly the shelf falls towards the deep ocean; 0..1. */
+  readonly falloff: number;
+  readonly irregularity: number;
+}
+
+/** One geological structure: the spine, its width profile, shapes and shelf. */
+export interface LandmassDefinition {
+  readonly id: string;
+  /** Spine polyline in normalized coordinates; at least two points. */
+  readonly spine: readonly WorldPoint[];
+  /** Half-width at every spine point, in normalized units. */
+  readonly widthProfile: readonly number[];
+  /** Direction of the structure in radians; kept for later stages and debugging. */
+  readonly orientation: number;
+  readonly irregularity: number;
+  readonly positiveShapes: readonly LandShape[];
+  readonly negativeShapes: readonly LandShape[];
+  readonly shelfId: string;
+}
+
+/** Every landmass definition plus the shared shelves they reference. */
+export interface LandmassLayout {
+  readonly landmasses: readonly LandmassDefinition[];
+  readonly shelves: readonly ShelfDefinition[];
+}
+
+/** Shelf template applied to every shelf group. */
+export type ShelfConfig = Omit<ShelfDefinition, 'id'>;
+
+/** Controls the landmass layout stage. */
+export interface LandmassConfig {
+  /** Number of independently generated structures. */
+  readonly count: number;
+  /** Relative size of a structure; 1 keeps the default scale. */
+  readonly scale: number;
+  /** Border wobble of a structure; 0..1. */
+  readonly irregularity: number;
+  readonly shelf: ShelfConfig;
+}
+
 export interface MapConfig extends SeededWorldConfig {
   world: WorldConfig;
   noise: NoiseConfig;
   macroRegions?: readonly MacroRegionConfig[];
   macroRegionDeformation?: MacroRegionDeformation;
+  landmasses?: LandmassConfig;
 }
 
-/** Generator state may extend the shared rasters with stage-only domain data. */
-export type MapState<TDomainData extends object = Record<never, never>> = MapRasters & TDomainData;
+/** Stage-only domain data kept next to the shared rasters. */
+export interface MapDomainData {
+  /** Landmass definitions produced by the landmass layout stage. */
+  landmassLayout?: LandmassLayout;
+}
+
+/** Generator state: the shared rasters plus the stage-only domain data. */
+export type MapState<TDomainData extends object = MapDomainData> = MapRasters & TDomainData;
 
 export type StageMetric = number | string;
 export type StageMetrics = Record<string, StageMetric> & {
