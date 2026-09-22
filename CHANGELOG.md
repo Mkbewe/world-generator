@@ -1,5 +1,101 @@
 # Changelog
 
+## [0.9.0](https://github.com/Mkbewe/world-generator/compare/v0.8.1...v0.9.0) (2026-09-22)
+
+### Features
+
+* **[197](https://github.com/Mkbewe/world-generator/issues/197):** link settings and preview tabs ([#343](https://github.com/Mkbewe/world-generator/issues/343)) ([19671c1](https://github.com/Mkbewe/world-generator/commit/19671c1d64122ac72800d8b3c4549ee445c42b15))
+
+  - add the view sync store with the settings tab and the link flag
+  - add the chain toggle to the settings header
+  - follow the linked settings tab with the preview when data is available
+  - follow preview layer clicks with the settings tab when linked
+  - cover the store, toggle and both sync directions in tests
+* **[258](https://github.com/Mkbewe/world-generator/issues/258):** show reused stages in the progress and statistics ([#341](https://github.com/Mkbewe/world-generator/issues/341)) ([cd4f88c](https://github.com/Mkbewe/world-generator/commit/cd4f88c7fe7dcf157ee0db9383d0832d7c87a49e))
+
+  - label completed and skipped segments inside the progress bar
+  - keep the skipped segment gray after the run completes
+  - plan reused stages as skipped before the worker reports
+  - keep the real duration and metrics of the run that produced reused
+  data
+  - total the real generation cost of the map
+  - cover the progress, statistics and session merge in tests
+* **[304](https://github.com/Mkbewe/world-generator/issues/304):** show world dimensions and area in the map statistics ([#345](https://github.com/Mkbewe/world-generator/issues/345)) ([c9724ca](https://github.com/Mkbewe/world-generator/commit/c9724cac0bbd3547f87834641bb5367d9c5bdef1))
+
+  - replace the cell size with the physical dimensions in metres
+  - add the terrain detail in metres per cell and the area in km²
+  - add measure formatters that avoid floating point noise
+  - cover the formatters, the map panel and the statistics page in tests
+* **[313](https://github.com/Mkbewe/world-generator/issues/313):** select the macro region border noise source ([#332](https://github.com/Mkbewe/world-generator/issues/332)) ([2ecdfea](https://github.com/Mkbewe/world-generator/commit/2ecdfea47616bac477ec1b4874ba96d1407f021c))
+
+  - add macroRegionDeformation.source with dedicated and noise-map modes
+  - keep the dedicated two-channel field as the default, so maps stay
+  unchanged
+  - sample the noise map bilinearly, skipping cells outside the world mask
+  - share one displacement factory between the generator and the preview
+  - add the border noise switch above the presets and report the source in
+  stats
+  - update the docs and tests
+* **[342](https://github.com/Mkbewe/world-generator/issues/342):** follow the generated layers only on a fresh preview ([#344](https://github.com/Mkbewe/world-generator/issues/344)) ([76e363f](https://github.com/Mkbewe/world-generator/commit/76e363f3a8099352827284fbe5299f1eba6943dd))
+
+  - keep the displayed layer and selection when a run continues an
+  existing map
+  - walk the stages only when the preview starts empty
+  - stream tiles for the kept layer while it is prepared again
+  - cover the follow rule and the in-place swap in tests
+
+### Code Refactoring
+
+* **[312](https://github.com/Mkbewe/world-generator/issues/312):** single-source the pipeline order in one stage list ([#331](https://github.com/Mkbewe/world-generator/issues/331)) ([d7332c6](https://github.com/Mkbewe/world-generator/commit/d7332c6dfd7727d21b9ef9e212d6fd82e27166f1))
+
+  - run noise before macro regions in the generator
+  - define MACRO_REGION_STAGE and keep the order in one list
+  - drive the settings tabs and the preview layer catalog from that list
+  - look catalog layers up by id in tests instead of by position
+  - update the roadmap and the performance notes
+* **[333](https://github.com/Mkbewe/world-generator/issues/333):** declare the configuration keys of every stage ([#337](https://github.com/Mkbewe/world-generator/issues/337)) ([979f254](https://github.com/Mkbewe/world-generator/commit/979f254cae3cb3d14f8bd14b716c96e969d43143))
+
+  - add configKeys to the stage contract as dotted config paths
+  - declare them for world shape, noise and macro regions
+  - fail pipeline construction on duplicate or unknown keys
+  - cover the declarations and validation in tests
+* clean up the v0.9.0 regeneration and preview code ([#347](https://github.com/Mkbewe/world-generator/issues/347)) ([6357944](https://github.com/Mkbewe/world-generator/commit/6357944fbd920ba0ea779d1a86afcae6336b3534))
+
+  - keep the saved map and its baseline until a run succeeds
+  - extract SelectiveRegeneration and move stage config keys to
+  stage-definitions
+  - declare layer requirements in LayerSpec instead of hardcoded ids
+  - split preview layer selection from the settings sync
+  - drop restartProgress and the test-only dirtyStageIds getter
+  - update the roadmap and performance notes, add the review document
+
+### Performance Improvements
+
+* **[334](https://github.com/Mkbewe/world-generator/issues/334):** compute the dirty stage set for regeneration ([#338](https://github.com/Mkbewe/world-generator/issues/338)) ([8478250](https://github.com/Mkbewe/world-generator/commit/84782500191072a1bcdbb8f08338a6a5912d0160))
+
+  - add selectDirtyStageIds based on the stage config keys
+  - regenerate from the first stage whose configuration slice changed
+  - compare slices structurally, not by reference
+  - keep the last successful run configuration in the session
+  - cover the change matrix and the failed-run baseline in tests
+* **[335](https://github.com/Mkbewe/world-generator/issues/335):** reuse cached rasters and report skipped stages ([#339](https://github.com/Mkbewe/world-generator/issues/339)) ([4a8128c](https://github.com/Mkbewe/world-generator/commit/4a8128c0054520c1c519cd294f83fe991d8b04b7))
+
+  - seed the worker state from the cached rasters of the saved map
+  - emit a dedicated stage-skipped event with zero-duration statistics
+  - skip clean stages in the pipeline without running or validating them
+  - keep the reused layers in the snapshot and replay them silently
+  - tie the regeneration baseline to the saved map instead of the session
+  - mark skipped stages in the progress tracker with a muted bar
+  - cover the worker reuse, session reuse and skipped progress in tests
+* **[336](https://github.com/Mkbewe/world-generator/issues/336):** keep the preview steady on selective runs ([#340](https://github.com/Mkbewe/world-generator/issues/340)) ([1e6485c](https://github.com/Mkbewe/world-generator/commit/1e6485c8ff1b68408e9a6b71fc6560c8168f10f5))
+
+  - keep scene layers, view transform and selection while the map size
+  matches
+  - refresh a layer when the same id receives new data instead of failing
+  - drop the silent replay: reused layers stay prepared in the scene
+  - update region geometry without dropping the received layers
+  - cover the steady preview, layer refresh and view reset in tests
+
 ## [0.8.1](https://github.com/Mkbewe/world-generator/compare/v0.8.0...v0.8.1) (2026-09-21)
 
 ### Features
