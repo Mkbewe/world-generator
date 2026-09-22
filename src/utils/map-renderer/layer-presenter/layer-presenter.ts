@@ -65,7 +65,7 @@ export class LayerPresenter {
       return;
     }
     const overview = layer.overviewTarget;
-    const rendered = this.renderedTargets.get(layer);
+    const rendered = this.renderedTargets.get(layer) ?? layer.renderedTarget;
     const rendering = layer.renderingTarget;
     const target = this.target();
     const currentFrame = rendered && target && targetKey(rendered) === targetKey(target);
@@ -159,7 +159,7 @@ export class LayerPresenter {
       }
       return;
     }
-    const rendered = this.renderedTargets.get(layer);
+    const rendered = this.renderedTargets.get(layer) ?? layer.renderedTarget;
     if (rendered && targetKey(rendered) === targetKey(target)) {
       return;
     }

@@ -229,4 +229,26 @@ describe('MapLayer rendering lifecycle', () => {
       getContext.mockRestore();
     }
   });
+
+  it('keeps the committed render target until the layer is disposed', async () => {
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const layer = worldLayer({ width: 2, height: 2 }, new Uint8Array(4).fill(1));
+    const target = targetFor(layer.size);
+
+    try {
+      expect(layer.renderedTarget).toBeUndefined();
+      await layer.prepare(new AbortController().signal, target);
+      expect(layer.renderedTarget).toEqual(target);
+    } finally {
+      layer.dispose();
+      getContext.mockRestore();
+    }
+    expect(layer.renderedTarget).toBeUndefined();
+  });
 });

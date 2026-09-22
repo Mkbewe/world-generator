@@ -154,8 +154,8 @@ export class MapScene {
         size.height,
         clipMask,
         this.geometry?.shape,
-        this.regionConfig,
-        this.landmassLayout,
+        spec.boundarySource === 'region' ? this.regionConfig : undefined,
+        spec.boundarySource === 'landmass' ? this.landmassLayout : undefined,
         ...this.sampledRasters(spec),
       ],
       () => new CatalogLayer(spec, size, value, clipMask, this.geometry)

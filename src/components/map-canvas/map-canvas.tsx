@@ -1,7 +1,9 @@
-import type { PointerEventHandler, RefObject } from 'react';
+import { type PointerEventHandler, type RefObject, useEffect, useState } from 'react';
 import { Text } from '@radix-ui/themes';
 
 import styles from './map-canvas.module.scss';
+
+const PLACEHOLDER_DELAY_MS = 300;
 
 export interface MapCanvasHandlers {
   onPointerMove: PointerEventHandler<HTMLCanvasElement>;
@@ -32,10 +34,22 @@ export function MapCanvas({
   panning = false,
   expanded = false,
 }: MapCanvasProps) {
+  const [graceElapsed, setGraceElapsed] = useState(false);
+
+  useEffect(() => {
+    if (ready) {
+      return;
+    }
+    const timer = setTimeout(() => setGraceElapsed(true), PLACEHOLDER_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [ready]);
+
+  const showPlaceholder = !ready && graceElapsed;
+
   return (
     <div className={styles.area} data-expanded={expanded || undefined}>
       <div ref={wrapperRef} className={styles.wrapper}>
-        {!ready && (
+        {showPlaceholder && (
           <div className={styles.placeholder}>
             <img
               src='/preview-placeholder.svg'

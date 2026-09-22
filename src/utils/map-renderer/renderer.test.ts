@@ -393,11 +393,11 @@ describe('MapRenderer', () => {
     preview.add('noise', noise);
     await vi.runAllTimersAsync();
     await preview.ready;
-    // The layers come from the cache, so the panel keeps their real cost.
+
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 2,
+      elapsedDurationMs: 6,
       firstTileDurationMs: undefined,
-      presentationDurationMs: 2,
+      presentationDurationMs: 6,
       overlayDurationMs: 7,
       layers: [
         { durationMs: 504, tiles: 100, pixels: 900, reused: true },
