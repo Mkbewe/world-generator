@@ -9,9 +9,11 @@ export const LANDMASS_ARCHETYPES = [
   'u',
   's',
   'z',
+  'v',
   'y',
   'x',
   't',
+  'irregular',
 ] as const;
 
 /** Value range `[min, max]` sampled once per structure. */
@@ -21,8 +23,11 @@ export type ArchetypeRange = readonly [min: number, max: number];
 export interface ArchetypeBar {
   /** Position along the spine, 0 at its start and 1 at its end. */
   readonly at: ArchetypeRange;
-  /** Rotation relative to the spine direction at that position, in radians. */
-  readonly angle: ArchetypeRange;
+  /**
+   * Rotation relative to the spine direction in radians, or `bisector` for a
+   * stem that leaves a corner opposite its arms, computed from the geometry.
+   */
+  readonly angle: ArchetypeRange | 'bisector';
   /** Half-length, as a fraction of the structure scale. */
   readonly length: ArchetypeRange;
   /** Half-width, as a fraction of the structure scale. */
@@ -127,6 +132,15 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     width: [0.028, 0.045],
     taper: [0.5, 0.7],
   },
+  v: {
+    joints: [[1.9, 2.6]],
+    segments: [
+      [0.08, 0.14],
+      [0.08, 0.14],
+    ],
+    width: [0.035, 0.055],
+    taper: [0.4, 0.6],
+  },
   y: {
     joints: [[1.8, 2.3]],
     segments: [
@@ -138,7 +152,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     bars: [
       {
         at: [0.5, 0.5],
-        angle: [-2.3, -1.8],
+        angle: 'bisector',
         length: [0.05, 0.07],
         width: [0.014, 0.023],
         bias: [0.8, 0.95],
@@ -159,6 +173,25 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
         bias: [-0.25, 0.25],
       },
     ],
+  },
+  irregular: {
+    joints: [
+      [-0.8, 0.8],
+      [-0.8, 0.8],
+      [-0.8, 0.8],
+      [-0.8, 0.8],
+      [-0.8, 0.8],
+    ],
+    segments: [
+      [0.03, 0.05],
+      [0.03, 0.05],
+      [0.03, 0.05],
+      [0.03, 0.05],
+      [0.03, 0.05],
+      [0.03, 0.05],
+    ],
+    width: [0.06, 0.09],
+    taper: [0.7, 0.9],
   },
   t: {
     joints: [],

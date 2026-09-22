@@ -18,7 +18,10 @@ import type {
 } from '../types';
 
 /** Placement scales tried in order until the whole spine fits inside the world. */
-const SPINE_PLACEMENT_SHRINKS = [1, 0.92, 0.84, 0.76, 0.68, 0.6, 0.52, 0.44, 0.36, 0.28, 0.2, 0.12];
+const SPINE_PLACEMENT_SHRINKS = [
+  1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15,
+  0.1,
+];
 
 /** Structure geometry before the shelf grouping. */
 export interface StructureSeed {
@@ -38,9 +41,9 @@ export function createStructure(
   random: SeededRandom
 ): StructureSeed {
   const recipe = ARCHETYPE_RECIPES[pickArchetype(config.archetypes, random)];
-  const base = sampleRange(recipe.width, random) * config.scale;
+  const base = sampleRange(recipe.width, random) * config.size;
   const taper = sampleRange(recipe.taper, random);
-  const { offsets, handedness } = createSpineOffsets(recipe, config.scale, random);
+  const { offsets, handedness } = createSpineOffsets(recipe, config.size, random);
   const prefix = `landmass-${index + 1}`;
 
   for (const shrink of SPINE_PLACEMENT_SHRINKS) {
@@ -108,7 +111,7 @@ function buildStructure(
         length: [0.3, 0.55],
         width: [0.25, 0.4],
       }),
-      ...createBars(prefix, recipe.bars ?? [], spine, config.scale, handedness, random),
+      ...createBars(prefix, recipe.bars ?? [], spine, config.size, handedness, random),
     ],
     negativeShapes: createShapes(`${prefix}-bay`, shape, outlineSpine, widthProfile, random, 0, 2, {
       coast: 1.08,
@@ -124,14 +127,18 @@ function createBars(
   prefix: string,
   bars: readonly ArchetypeBar[],
   spine: readonly WorldPoint[],
-  scale: number,
+  size: number,
   handedness: number,
   random: SeededRandom
 ): LandShape[] {
   return bars.map((bar, index) => {
-    const { center, direction } = spinePointAt(spine, sampleRange(bar.at, random));
-    const orientation = direction + handedness * sampleRange(bar.angle, random);
-    const halfLength = sampleRange(bar.length, random) * scale;
+    const at = sampleRange(bar.at, random);
+    const { center, direction } = spinePointAt(spine, at);
+    const orientation =
+      bar.angle === 'bisector'
+        ? cornerStemDirection(spine, at)
+        : direction + handedness * sampleRange(bar.angle, random);
+    const halfLength = sampleRange(bar.length, random) * size;
     const bias = sampleRange(bar.bias, random) * halfLength;
     return {
       id: `${prefix}-bar-${index + 1}`,
@@ -140,7 +147,7 @@ function createBars(
         y: center.y + Math.sin(orientation) * bias,
       },
       halfLength,
-      halfWidth: sampleRange(bar.width, random) * scale,
+      halfWidth: sampleRange(bar.width, random) * size,
       orientation,
       irregularity: 0,
     };
@@ -179,6 +186,20 @@ function segmentDirection(spine: readonly WorldPoint[], index: number): number {
   const from = spine[index];
   const to = spine[index + 1];
   return Math.atan2(to.y - from.y, to.x - from.x);
+}
+
+/**
+ * Direction of a stem leaving an interior vertex opposite its two arms, so a
+ * Y always branches away from the corner, whatever the sampled turn is.
+ */
+function cornerStemDirection(spine: readonly WorldPoint[], at: number): number {
+  if (spine.length < 3) {
+    return segmentDirection(spine, 0);
+  }
+  const index = Math.min(spine.length - 2, Math.max(1, Math.round(at * (spine.length - 1))));
+  const armA = segmentDirection(spine, index - 1) + Math.PI;
+  const armB = segmentDirection(spine, index);
+  return Math.atan2(-(Math.sin(armA) + Math.sin(armB)), -(Math.cos(armA) + Math.cos(armB)));
 }
 
 /**
@@ -255,10 +276,10 @@ export function estimateCoverage(structures: readonly StructureSeed[], worldArea
   return Math.min(1, Math.max(0, area / worldArea));
 }
 
-/** Relative spine of the recipe; the caller places and scales it inside the world. */
+/** Relative spine of the recipe; the caller places and sizes it inside the world. */
 function createSpineOffsets(
   recipe: ArchetypeRecipe,
-  scale: number,
+  size: number,
   random: SeededRandom
 ): { readonly offsets: WorldPoint[]; readonly handedness: number } {
   let direction = random.next() * Math.PI * 2;
@@ -270,7 +291,7 @@ function createSpineOffsets(
     if (index > 0) {
       direction += handedness * sampleRange(recipe.joints[index - 1], random);
     }
-    const length = sampleRange(recipe.segments[index], random) * scale;
+    const length = sampleRange(recipe.segments[index], random) * size;
     point = {
       x: point.x + Math.cos(direction) * length,
       y: point.y + Math.sin(direction) * length,
@@ -285,7 +306,7 @@ function pickArchetype(
   pool: readonly LandmassArchetype[] | undefined,
   random: SeededRandom
 ): LandmassArchetype {
-  if (!pool || pool.length === 0) {
+  if (!pool) {
     return LANDMASS_ARCHETYPES[random.nextInteger(0, LANDMASS_ARCHETYPES.length - 1)];
   }
   return pool[random.nextInteger(0, pool.length - 1)];

@@ -1,8 +1,15 @@
-import { GearIcon, GlobeIcon, LayersIcon, MixerHorizontalIcon } from '@radix-ui/react-icons';
+import {
+  GearIcon,
+  GlobeIcon,
+  LayersIcon,
+  MixerHorizontalIcon,
+  SewingPinIcon,
+} from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
   GeneralForm,
+  LandmassForm,
   MacroRegionForm,
   NoiseForm,
   type WorldShape,
@@ -69,6 +76,11 @@ export function SettingsPanel({
       label: 'Macro regions',
       icon: <LayersIcon />,
       content: <MacroRegionForm />,
+    },
+    'landmass-layout': {
+      label: 'Landmasses',
+      icon: <SewingPinIcon />,
+      content: <LandmassForm />,
     },
   };
   const tabs: readonly VerticalTabItem[] = [

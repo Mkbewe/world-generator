@@ -5,6 +5,7 @@ import {
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
+  useLandmassFormStore,
   useMacroRegionFormStore,
   useMapConfigStore,
   useNoiseFormStore,
@@ -41,6 +42,7 @@ export function useWorldGeneration(): WorldGeneration {
       noise: useNoiseFormStore.getState().noise,
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
+      landmasses: useLandmassFormStore.getState().landmasses,
     });
     if ('error' in built) {
       setError(built.error);

@@ -1,5 +1,5 @@
 import { buildGenerationConfig, type GenerationConfigInput } from './generation-config';
-import { DEFAULT_NOISE, MACRO_REGION_FORM_DEFAULTS } from '../../../stores';
+import { DEFAULT_NOISE, LANDMASS_FORM_DEFAULTS, MACRO_REGION_FORM_DEFAULTS } from '../../../stores';
 
 function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfigInput {
   return {
@@ -10,6 +10,7 @@ function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfig
     noise: DEFAULT_NOISE,
     macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
     macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
+    landmasses: LANDMASS_FORM_DEFAULTS.landmasses,
     ...overrides,
   };
 }
@@ -34,6 +35,7 @@ describe('buildGenerationConfig', () => {
         noise: DEFAULT_NOISE,
         macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
         macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
+        landmasses: LANDMASS_FORM_DEFAULTS.landmasses,
       },
     });
   });

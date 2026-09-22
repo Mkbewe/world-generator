@@ -1,4 +1,5 @@
 import type {
+  LandmassConfig,
   MacroRegionConfig,
   MacroRegionDeformation,
   MapConfig,
@@ -14,6 +15,7 @@ export interface GenerationConfigInput {
   noise: NoiseConfig;
   macroRegions: readonly MacroRegionConfig[];
   macroRegionDeformation: MacroRegionDeformation;
+  landmasses: LandmassConfig;
 }
 
 export type GenerationConfigResult = { config: MapConfig } | { error: string };
@@ -32,6 +34,7 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
       noise: input.noise,
       macroRegions: input.macroRegions,
       macroRegionDeformation: input.macroRegionDeformation,
+      landmasses: input.landmasses,
     },
   };
 }

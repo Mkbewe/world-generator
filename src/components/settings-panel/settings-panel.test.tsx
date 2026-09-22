@@ -62,7 +62,7 @@ describe('SettingsPanel', () => {
       .getAllByRole('tab')
       .map(tab => tab.getAttribute('aria-label'));
 
-    expect(tabs).toEqual(['General', 'World shape', 'Noise', 'Macro regions']);
+    expect(tabs).toEqual(['General', 'World shape', 'Noise', 'Macro regions', 'Landmasses']);
   });
 
   it('shows the normal label with a loader and disables the action while generating', () => {

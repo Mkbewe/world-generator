@@ -73,7 +73,7 @@ describe('LandmassLayoutStage', () => {
   });
 
   it('keeps the generated geometry inside the world shape', async () => {
-    const result = await generate(config({ count: MAX_LANDMASSES, scale: 1.6 }));
+    const result = await generate(config({ count: MAX_LANDMASSES, size: 1 }));
     const layout = landmassLayout(result);
 
     for (const landmass of layout.landmasses) {
@@ -135,28 +135,53 @@ describe('LandmassLayoutStage', () => {
 
   it('leaves cells outside the world mask empty', async () => {
     const size = 32;
-    const mask = new Uint8Array(size * size);
-    for (let y = 0; y < size; y++) {
-      for (let x = size / 2; x < size; x++) {
-        mask[y * size + x] = 1;
-      }
-    }
-    const result = await generate(largeConfig(), size * size, mask);
-    const layout = landmassLayout(result);
-    const idMap = landmassIdMap(result);
-    const landmassAt = createLandmassSampler(layout.landmasses);
-    let wouldBeLand = 0;
+    const full = await generate(largeConfig(), size * size);
+    const landmassAt = createLandmassSampler(landmassLayout(full).landmasses);
+    let leftLand = 0;
+    let rightLand = 0;
 
     for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size / 2; x++) {
-        expect(idMap[y * size + x]).toBe(0);
+      for (let x = 0; x < size; x++) {
         if (landmassAt(x / 31, y / 31) > 0) {
-          wouldBeLand++;
+          if (x < size / 2) {
+            leftLand++;
+          } else {
+            rightLand++;
+          }
         }
       }
     }
-    expect(wouldBeLand).toBeGreaterThan(0);
+    // Mask the half without land, so the test proves masking really matters.
+    const keepRight = rightLand >= leftLand;
+    const mask = new Uint8Array(size * size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (x >= size / 2 === keepRight) {
+          mask[y * size + x] = 1;
+        }
+      }
+    }
+    const result = await generate(largeConfig(), size * size, mask);
+    const idMap = landmassIdMap(result);
+
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (mask[y * size + x] === 0) {
+          expect(idMap[y * size + x]).toBe(0);
+        }
+      }
+    }
+    expect(Math.max(leftLand, rightLand)).toBeGreaterThan(0);
     expect(idMap.some(value => value > 0)).toBe(true);
+  });
+
+  it('draws no structures for an explicitly empty archetype pool', async () => {
+    const result = await generate(config({ archetypes: [], count: 3 }));
+    const layout = landmassLayout(result);
+
+    expect(layout.landmasses).toHaveLength(0);
+    expect(layout.shelves).toHaveLength(0);
+    expect(landmassIdMap(result).every(value => value === 0)).toBe(true);
   });
 
   it('requires a valid world mask', async () => {
@@ -171,8 +196,7 @@ describe('LandmassLayoutStage', () => {
     const cases: ReadonlyArray<Partial<MapConfig['landmasses']>> = [
       { count: 0 },
       { count: MAX_LANDMASSES + 1 },
-      { scale: 0.1 },
-      { archetypes: [] },
+      { size: 0.1 },
       { archetypes: ['spiral' as LandmassArchetype] },
       { irregularity: 2 },
       { shelf: { ...DEFAULT_LANDMASS_CONFIG.shelf, falloff: 2 } },

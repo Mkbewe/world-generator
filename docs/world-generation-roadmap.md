@@ -65,11 +65,21 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
 
 ### 2.2. Ustawienia — [działa]
 
-- Formularze: general (seed), world shape (kształt, rozmiar i detal), noise
-  oraz macro regions; kolejność zakładek wynika z `PIPELINE_STAGES`.
+- Formularze: general (seed), world shape (kształt, rozmiar i detal), noise,
+  macro regions oraz landmasses; kolejność zakładek wynika z `PIPELINE_STAGES`.
 - Formularz makroregionów ma na górze przełącznik „Border noise" (własny szum
   albo `noiseMap`), a pod nim presety, układ bazowy, ustawienia granic i sekcje
   regionów.
+- Formularz landmassów pokazuje tylko to, czym steruje ten etap: liczbę
+  struktur (1–10), rozmiar (`Size`: small do big) i pulę archetypów kształtu —
+  karty wyboru (`CheckboxCards`) z przyciskiem „Select all"/„Clear".
+  Zaznaczenie wszystkich archetypów zapisuje `archetypes: undefined`, czyli
+  całą pulę; pusta pula oznacza, że układ nie rysuje żadnych struktur
+  (walidacja „co najmniej jeden archetyp" wróci później).
+- Szelf i szorstkość linii brzegowej zostają w konfiguracji z wartościami
+  domyślnymi, ale swoje kontrolki dostaną w formularzach etapów, które je
+  zużywają: szelf przy renderowaniu wysokości, roughness przy deformacji
+  wybrzeża. Landmassowy formularz ich nie dubluje.
 - Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
   widoku.
 - Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.
@@ -413,8 +423,8 @@ blisko siebie leżących struktur (`LandmassLayout.shelves`), co jest fundamente
 archipelagu (§4.3).
 
 - Szkielet pozwala tworzyć wyspy podłużne, zakrzywione i zwężające się.
-- Archetypy kształtu (`round`, `oval`, `elongated`, `l`, `u`, `s`, `z`, `y`, `x`,
-  `t`) to przepisy z losowanymi parametrami. Każda struktura losuje archetyp
+- Archetypy kształtu (`round`, `oval`, `elongated`, `l`, `u`, `s`, `z`, `v`,
+  `y`, `x`, `t`, `irregular`) to przepisy z losowanymi parametrami. Każda struktura losuje archetyp
   z puli (`LandmassConfig.archetypes`), a potem własne kąty, długości ramion,
   szerokość, stronę zgięcia i orientację, więc nawet dwie „U” wyglądają inaczej.
   Kształty rozgałęzione (Y, X, T) dostają dodatkowo poprzeczkę o zmiennym
