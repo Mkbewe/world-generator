@@ -58,7 +58,9 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
   const sections: StatisticsSection[] = statistics.layers.map(layer => ({
     key: layer.id,
     title: layer.name,
-    trailing: formatDuration(layer.durationMs),
+    trailing: layer.reused
+      ? `${formatDuration(layer.durationMs)} · reused`
+      : formatDuration(layer.durationMs),
     metrics: [
       {
         label: 'Drawing performance',
