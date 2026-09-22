@@ -10,8 +10,8 @@ function config(archetypes?: LandmassArchetype[]): LandmassConfig {
   return { ...DEFAULT_LANDMASS_CONFIG, archetypes };
 }
 
-function structure(archetype: LandmassArchetype, seed = 5, scale = 1): StructureSeed {
-  return createStructure(0, { ...config([archetype]), scale }, 'disc', new SeededRandom(seed));
+function structure(archetype: LandmassArchetype, seed = 5, size = 1): StructureSeed {
+  return createStructure(0, { ...config([archetype]), size }, 'disc', new SeededRandom(seed));
 }
 
 function angleBetween(from: WorldPoint, to: WorldPoint): number {
@@ -112,6 +112,9 @@ describe('landmass archetypes', () => {
         expect(bar.width[0]).toBeGreaterThan(0);
         expect(bar.bias[0]).toBeGreaterThan(-1);
         expect(bar.bias[1]).toBeLessThan(1);
+        if (bar.angle !== 'bisector') {
+          expect(bar.angle[0]).toBeLessThanOrEqual(bar.angle[1]);
+        }
       }
     }
   });
@@ -161,6 +164,11 @@ describe('landmass archetypes', () => {
     expect(elongated).toHaveLength(1);
     expect(Math.abs(elongated[0])).toBeLessThanOrEqual(0.35);
 
+    const v = jointTurns(structure('v').spine);
+    expect(v).toHaveLength(1);
+    expect(Math.abs(v[0])).toBeGreaterThanOrEqual(1.9);
+    expect(Math.abs(v[0])).toBeLessThanOrEqual(2.6);
+
     const y = jointTurns(structure('y').spine);
     expect(y).toHaveLength(1);
     expect(Math.abs(y[0])).toBeGreaterThanOrEqual(1.8);
@@ -201,6 +209,7 @@ describe('landmass archetypes', () => {
     expect(slenderness(structure('u'))).toBeGreaterThan(1.5);
     expect(slenderness(structure('s'))).toBeGreaterThan(1.5);
     expect(slenderness(structure('z'))).toBeGreaterThan(2.2);
+    expect(slenderness(structure('v'))).toBeGreaterThan(2);
   });
 
   it('gives short spines a full-width middle instead of a uniformly tapered body', () => {
@@ -209,6 +218,21 @@ describe('landmass archetypes', () => {
       expect(profile).toHaveLength(3);
       expect(profile[1]).toBeGreaterThan(profile[0]);
       expect(profile[1]).toBeGreaterThan(profile[2]);
+    }
+  });
+
+  it('points the Y stem away from the corner between its arms', () => {
+    for (const seed of [5, 17, 99]) {
+      const y = structure('y', seed);
+      const bar = barShape(y);
+      const junction = y.spine[1];
+      const stem = Math.atan2(bar.center.y - junction.y, bar.center.x - junction.x);
+
+      for (const armPoint of [y.spine[0], y.spine[2]]) {
+        const arm = Math.atan2(armPoint.y - junction.y, armPoint.x - junction.x);
+        const gap = Math.abs(Math.atan2(Math.sin(stem - arm), Math.cos(stem - arm)));
+        expect(gap).toBeGreaterThan(Math.PI / 2);
+      }
     }
   });
 

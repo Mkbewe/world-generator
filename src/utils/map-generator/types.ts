@@ -134,14 +134,14 @@ export type ShelfConfig = Omit<ShelfDefinition, 'id'>;
 
 /** Recognizable outlines the layout can give a structure. */
 export type LandmassArchetype =
-  'round' | 'oval' | 'elongated' | 'l' | 'u' | 's' | 'z' | 'y' | 'x' | 't';
+  'round' | 'oval' | 'elongated' | 'l' | 'u' | 's' | 'z' | 'v' | 'y' | 'x' | 't' | 'irregular';
 
 /** Controls the landmass layout stage. */
 export interface LandmassConfig {
   /** Number of independently generated structures. */
   readonly count: number;
-  /** Relative size of a structure; 1 keeps the default scale. */
-  readonly scale: number;
+  /** Relative size of a structure; 1 is the largest. */
+  readonly size: number;
   /** Archetypes drawn for the structures; undefined keeps the whole pool. */
   readonly archetypes?: readonly LandmassArchetype[];
   /** Coastline roughness reserved for later stages; 0..1. */

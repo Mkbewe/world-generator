@@ -1,9 +1,9 @@
 import { isLandmassArchetype } from './landmass-archetypes';
 import {
   DEFAULT_LANDMASS_CONFIG,
-  MAX_LANDMASS_SCALE,
+  MAX_LANDMASS_SIZE,
   MAX_LANDMASSES,
-  MIN_LANDMASS_SCALE,
+  MIN_LANDMASS_SIZE,
 } from './landmass-defaults';
 import {
   createShelfTemplates,
@@ -51,13 +51,15 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     const random = context.random.create(this.id);
     const shape = context.config.world.shape;
     const structures: StructureSeed[] = [];
+    // An explicitly empty pool means the layout draws no structures at all.
+    const planned = config.archetypes?.length === 0 ? 0 : config.count;
 
-    for (let index = 0; index < config.count; index++) {
+    for (let index = 0; index < planned; index++) {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
       structures.push(createStructure(index, config, shape, random));
-      report(((index + 1) / config.count) * 0.5);
+      report(((index + 1) / planned) * 0.5);
     }
 
     const { groups, count } = groupStructures(structures);
@@ -100,7 +102,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     assertStageOutput(state.landmassIdMap, 'uint8', sampleWidth * sampleHeight);
 
     const layout = state.landmassLayout;
-    if (!layout || layout.landmasses.length === 0 || layout.shelves.length === 0) {
+    if (!layout) {
       throw new Error('Pipeline completed without all required map data.');
     }
 
@@ -148,22 +150,17 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       throw new RangeError(`Landmass count must be between 1 and ${MAX_LANDMASSES}.`);
     }
     if (
-      !Number.isFinite(config.scale) ||
-      config.scale < MIN_LANDMASS_SCALE ||
-      config.scale > MAX_LANDMASS_SCALE
+      !Number.isFinite(config.size) ||
+      config.size < MIN_LANDMASS_SIZE ||
+      config.size > MAX_LANDMASS_SIZE
     ) {
       throw new RangeError(
-        `Landmass scale must be between ${MIN_LANDMASS_SCALE} and ${MAX_LANDMASS_SCALE}.`
+        `Landmass size must be between ${MIN_LANDMASS_SIZE} and ${MAX_LANDMASS_SIZE}.`
       );
     }
-    if (config.archetypes !== undefined) {
-      if (config.archetypes.length === 0) {
-        throw new RangeError('At least one landmass archetype is required.');
-      }
-      for (const archetype of config.archetypes) {
-        if (!isLandmassArchetype(archetype)) {
-          throw new RangeError(`Unknown landmass archetype: "${String(archetype)}".`);
-        }
+    for (const archetype of config.archetypes ?? []) {
+      if (!isLandmassArchetype(archetype)) {
+        throw new RangeError(`Unknown landmass archetype: "${String(archetype)}".`);
       }
     }
     if (!isNormalized(config.irregularity)) {

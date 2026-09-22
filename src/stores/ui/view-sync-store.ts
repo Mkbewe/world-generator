@@ -1,4 +1,5 @@
 import { PIPELINE_STAGES, type PipelineStageId } from '../../utils/map-generator';
+import { LAYER_CATALOG } from '../../utils/map-layers';
 import { type MapBaseLayerId } from '../../utils/map-renderer';
 import { createStore } from '../create-store';
 
@@ -10,16 +11,8 @@ const SETTINGS_TABS: readonly SettingsTab[] = [
   ...PIPELINE_STAGES.map(stage => stage.id),
 ];
 
-/**
- * Preview layers driven by the settings tabs. Stage ids and layer ids coincide
- * today; this explicit map makes the link visible and keeps a stage or layer
- * without a counterpart out of the sync.
- */
-const TAB_LAYERS: Readonly<Partial<Record<SettingsTab, MapBaseLayerId>>> = {
-  'world-shape': 'world-shape',
-  noise: 'noise',
-  'macro-region': 'macro-region',
-};
+/** Catalog layers that share their id with a pipeline stage. */
+const STAGE_LAYERS = new Set<string>(LAYER_CATALOG.map(layer => layer.id));
 
 export interface ViewSyncValues {
   /** Active settings form tab; remembered across navigation. */
@@ -44,12 +37,15 @@ export const useViewSyncStore = createStore<ViewSyncState>(set => ({
   setLinked: linked => set({ linked }),
 }));
 
-/** Preview layer a settings tab drives; the general tab has no counterpart. */
+/**
+ * Preview layer a settings tab drives; the general tab has no counterpart, and
+ * neither does a stage without a catalog layer.
+ */
 export function layerForTab(tab: SettingsTab): MapBaseLayerId | undefined {
-  return TAB_LAYERS[tab];
+  return tab !== 'general' && STAGE_LAYERS.has(tab) ? (tab as MapBaseLayerId) : undefined;
 }
 
 /** Settings tab that owns a preview layer; layers without a stage tab are ignored. */
 export function tabForLayer(layer: MapBaseLayerId): SettingsTab | undefined {
-  return SETTINGS_TABS.find(tab => TAB_LAYERS[tab] === layer);
+  return SETTINGS_TABS.find(tab => layerForTab(tab) === layer);
 }
