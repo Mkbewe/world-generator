@@ -1,3 +1,4 @@
+import { isLandmassArchetype } from './landmass-archetypes';
 import {
   DEFAULT_LANDMASS_CONFIG,
   MAX_LANDMASS_SCALE,
@@ -154,6 +155,16 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       throw new RangeError(
         `Landmass scale must be between ${MIN_LANDMASS_SCALE} and ${MAX_LANDMASS_SCALE}.`
       );
+    }
+    if (config.archetypes !== undefined) {
+      if (config.archetypes.length === 0) {
+        throw new RangeError('At least one landmass archetype is required.');
+      }
+      for (const archetype of config.archetypes) {
+        if (!isLandmassArchetype(archetype)) {
+          throw new RangeError(`Unknown landmass archetype: "${String(archetype)}".`);
+        }
+      }
     }
     if (!isNormalized(config.irregularity)) {
       throw new RangeError('Landmass irregularity must be within 0..1.');

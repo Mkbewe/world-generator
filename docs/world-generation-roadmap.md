@@ -413,8 +413,18 @@ blisko siebie leżących struktur (`LandmassLayout.shelves`), co jest fundamente
 archipelagu (§4.3).
 
 - Szkielet pozwala tworzyć wyspy podłużne, zakrzywione i zwężające się.
+- Archetypy kształtu (`round`, `oval`, `elongated`, `l`, `u`, `s`, `z`, `y`, `x`,
+  `t`) to przepisy z losowanymi parametrami. Każda struktura losuje archetyp
+  z puli (`LandmassConfig.archetypes`), a potem własne kąty, długości ramion,
+  szerokość, stronę zgięcia i orientację, więc nawet dwie „U” wyglądają inaczej.
+  Kształty rozgałęzione (Y, X, T) dostają dodatkowo poprzeczkę o zmiennym
+  położeniu i asymetrii ramion. Krótkie szkielety mają punkt pośredni, aby
+  profil szerokości zachował pełniejszy środek.
 - Dodatnie formy budują półwyspy, połączone części wyspy i przybrzeżne wysepki.
-- Ujemne formy wycinają zatoki, cieśniny i wcięcia wybrzeża.
+- Ujemne formy wycinają zatoki, cieśniny i wcięcia wybrzeża. Półwyspy i zatoki
+  są losowane wzdłuż całego szkieletu, a ich rozmiar wynika z lokalnej
+  szerokości struktury. Dzięki temu wcinają się w brzeg lub wyrastają z niego
+  bez dominowania nad małymi archetypami.
 - Wieloskalowy szum oraz domain warping deformują geometryczną bazę.
 - Drobniejszy szum odpowiada za nieregularną linię brzegową, a nie za globalny
   układ lądów.

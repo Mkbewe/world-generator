@@ -7,14 +7,6 @@ export const MAX_LANDMASSES = 4;
 export const MIN_LANDMASS_SCALE = 0.4;
 export const MAX_LANDMASS_SCALE = 1.6;
 
-/** Spine length limits and the base half-width at scale 1. */
-export const MIN_SPINE_POINTS = 2;
-export const MAX_SPINE_POINTS = 4;
-export const BASE_LANDMASS_WIDTH = 0.09;
-
-/** How thin a structure's ends get compared to its middle. */
-export const SPINE_TAPER = 0.55;
-
 /** Margin that keeps the generated geometry inside the world shape. */
 export const LANDMASS_MARGIN = 0.08;
 
