@@ -99,7 +99,7 @@ describe('LandmassLayoutStage', () => {
     expect(other.context.state.landmassLayout).not.toEqual(first.context.state.landmassLayout);
   });
 
-  it('reports the structures, shelves, coverage and size', async () => {
+  it('reports the structures, shelves and size', async () => {
     const result = await generate(config({ count: 3 }));
 
     expect(result.statistics[0].details).toMatchObject({
@@ -107,9 +107,28 @@ describe('LandmassLayoutStage', () => {
       shelves: expect.any(Number),
       bytes: 16,
     });
-    const { coverage } = result.statistics[0].details ?? {};
-    expect(coverage).toBeGreaterThan(0);
-    expect(coverage).toBeLessThanOrEqual(1);
+  });
+
+  it('measures land coverage from the id map, not from analytic areas', async () => {
+    const size = 32;
+    const result = await generate(largeConfig(), size * size);
+    const idMap = landmassIdMap(result);
+    let landCells = 0;
+    for (const value of idMap) {
+      if (value > 0) {
+        landCells++;
+      }
+    }
+
+    expect(result.statistics[0].details?.landCoverage).toBeCloseTo(landCells / (size * size), 10);
+  });
+
+  it('reports zero coverage for an empty world mask', async () => {
+    const size = 32;
+    const result = await generate(largeConfig(), size * size, new Uint8Array(size * size));
+
+    expect(result.statistics[0].details?.landCoverage).toBe(0);
+    expect(landmassIdMap(result).every(value => value === 0)).toBe(true);
   });
 
   it('fills the id map from the shared sampler', async () => {

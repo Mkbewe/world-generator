@@ -8,7 +8,6 @@ import {
 import {
   createShelfTemplates,
   createStructure,
-  estimateCoverage,
   groupStructures,
   type StructureSeed,
 } from './landmass-layout';
@@ -130,18 +129,21 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
   ): StageMetrics | undefined {
     const layout = data.landmassLayout as LandmassLayout | undefined;
     const idMap = data.landmassIdMap;
-    if (!layout) {
+    const worldMask = context.state.worldMask;
+    if (
+      !layout ||
+      !(idMap instanceof Uint8Array) ||
+      !worldMask ||
+      worldMask.length !== idMap.length
+    ) {
       return undefined;
     }
 
-    const worldMask = context.state.worldMask;
-    const cells = worldMask?.length ?? 0;
-    const landCells = worldMask ? worldMask.reduce((sum, value) => sum + value, 0) : 0;
     return {
       structures: layout.landmasses.length,
       shelves: layout.shelves.length,
-      coverage: estimateCoverage(layout.landmasses, cells === 0 ? 0 : landCells / cells),
-      ...(idMap instanceof Uint8Array ? { bytes: idMap.byteLength } : {}),
+      landCoverage: measureCoverage(idMap, worldMask),
+      bytes: idMap.byteLength,
     };
   }
 
@@ -179,6 +181,22 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       throw new RangeError('Landmass shelf width must be within 0..0.5.');
     }
   }
+}
+
+/** Share of the world mask covered by land, measured from the generated id map. */
+export function measureCoverage(idMap: Uint8Array, worldMask: Uint8Array): number {
+  let worldCells = 0;
+  let landCells = 0;
+  for (let index = 0; index < idMap.length; index++) {
+    if (worldMask[index] === 0) {
+      continue;
+    }
+    worldCells++;
+    if (idMap[index] > 0) {
+      landCells++;
+    }
+  }
+  return worldCells === 0 ? 0 : landCells / worldCells;
 }
 
 function isWorldPoint(point: { readonly x: number; readonly y: number }): boolean {
