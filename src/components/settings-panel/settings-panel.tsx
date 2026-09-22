@@ -45,7 +45,7 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const activeTab = useViewSyncStore(state => state.settingsTab);
   const setSettingsTab = useViewSyncStore(state => state.setSettingsTab);
-  const stageTabs: Readonly<Record<PipelineStageId, Omit<VerticalTabItem, 'value'>>> = {
+  const stageTabs: Readonly<Partial<Record<PipelineStageId, Omit<VerticalTabItem, 'value'>>>> = {
     'world-shape': {
       label: 'World shape',
       icon: <GlobeIcon />,
@@ -78,7 +78,11 @@ export function SettingsPanel({
       icon: <GearIcon />,
       content: <GeneralForm seed={seed} onSeedChange={onSeedChange} />,
     },
-    ...PIPELINE_STAGES.map(stage => ({ value: stage.id, ...stageTabs[stage.id] })),
+    // Stages without a form yet simply have no settings tab.
+    ...PIPELINE_STAGES.flatMap(stage => {
+      const tab = stageTabs[stage.id];
+      return tab ? [{ value: stage.id, ...tab }] : [];
+    }),
   ];
 
   const handleTabChange = (value: string): void => {

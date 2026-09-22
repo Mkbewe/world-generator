@@ -43,7 +43,7 @@ describe('SelectiveRegeneration', () => {
     const plan = regeneration.plan(config, {});
 
     expect(plan).toEqual({
-      dirtyStageIds: ['world-shape', 'noise', 'macro-region'],
+      dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
       cachedRasters: {},
     });
     expect(regeneration.reusedStageIds).toEqual([]);
@@ -57,7 +57,7 @@ describe('SelectiveRegeneration', () => {
 
     const plan = regeneration.plan({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, {});
 
-    expect(plan.dirtyStageIds).toEqual(['macro-region']);
+    expect(plan.dirtyStageIds).toEqual(['macro-region', 'landmass-layout']);
     expect(regeneration.reusedStageIds).toEqual(['world-shape', 'noise']);
   });
 
@@ -88,6 +88,7 @@ describe('SelectiveRegeneration', () => {
       'world-shape',
       'noise',
       'macro-region',
+      'landmass-layout',
     ]);
   });
 });

@@ -1,3 +1,4 @@
+import { DEFAULT_LANDMASS_CONFIG } from './stages/landmass-defaults';
 import { createRadialLayout } from './stages/macro-region-presets';
 import { selectDirtyStageIds } from './selective-regeneration';
 import type { MapConfig } from './types';
@@ -21,6 +22,7 @@ describe('selectDirtyStageIds', () => {
       'world-shape',
       'noise',
       'macro-region',
+      'landmass-layout',
     ]);
   });
 
@@ -44,7 +46,7 @@ describe('selectDirtyStageIds', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
-        ['world-shape', 'noise', 'macro-region'],
+        ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
       ],
       [
         {
@@ -53,12 +55,16 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'noise', 'macro-region'],
+        ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
       ],
-      [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region']],
-      [{ noise: { ...config.noise, frequency: 5 } }, ['noise', 'macro-region']],
-      [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
-      [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
+      [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region', 'landmass-layout']],
+      [{ noise: { ...config.noise, frequency: 5 } }, ['noise', 'macro-region', 'landmass-layout']],
+      [{ macroRegions: createRadialLayout(3) }, ['macro-region', 'landmass-layout']],
+      [
+        { macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } },
+        ['macro-region', 'landmass-layout'],
+      ],
+      [{ landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } }, ['landmass-layout']],
     ];
 
     for (const [patch, expected] of cases) {
@@ -69,6 +75,9 @@ describe('selectDirtyStageIds', () => {
   it('treats a removed optional slice as a change', () => {
     const withoutRegions: MapConfig = { ...config, macroRegions: undefined };
 
-    expect(selectDirtyStageIds(config, withoutRegions)).toEqual(['macro-region']);
+    expect(selectDirtyStageIds(config, withoutRegions)).toEqual([
+      'macro-region',
+      'landmass-layout',
+    ]);
   });
 });

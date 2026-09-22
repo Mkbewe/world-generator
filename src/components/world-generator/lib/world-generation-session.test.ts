@@ -174,10 +174,10 @@ describe('WorldGenerationSession', () => {
     const planned = () => runner.mock.lastCall?.[1]?.reuse.dirtyStageIds;
 
     await session.generate(config, vi.fn());
-    expect(planned()).toEqual(['world-shape', 'noise', 'macro-region']);
+    expect(planned()).toEqual(['world-shape', 'noise', 'macro-region', 'landmass-layout']);
 
     await session.generate(withRegions, vi.fn());
-    expect(planned()).toEqual(['macro-region']);
+    expect(planned()).toEqual(['macro-region', 'landmass-layout']);
 
     await session.generate(withRegions, vi.fn());
     expect(planned()).toEqual([]);
@@ -209,7 +209,7 @@ describe('WorldGenerationSession', () => {
     await renderer.ready;
 
     expect(runner.mock.lastCall?.[1]?.reuse).toEqual({
-      dirtyStageIds: ['macro-region'],
+      dirtyStageIds: ['macro-region', 'landmass-layout'],
       cachedRasters: { worldMask: mask, noiseMap: noise, macroRegionIdMap: regions },
     });
     expect(mapRepository.get()?.layers).toMatchObject({ worldMask: mask, noiseMap: noise });
@@ -377,7 +377,11 @@ describe('WorldGenerationSession', () => {
 
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(changed, vi.fn());
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['noise', 'macro-region']);
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual([
+      'noise',
+      'macro-region',
+      'landmass-layout',
+    ]);
   });
 
   it('rejects missing stage data without saving an incomplete map', async () => {

@@ -1,3 +1,4 @@
+import { LandmassLayoutStage } from './stages/landmass-layout-stage';
 import { MacroRegionStage } from './stages/macro-region-stage';
 import { NoiseStage } from './stages/noise-stage';
 import { WorldShapeStage } from './stages/world-shape-stage';
@@ -13,6 +14,7 @@ const STAGE_FACTORIES: Readonly<Record<PipelineStageId, () => MapStage<MapConfig
   'world-shape': () => new WorldShapeStage(),
   noise: () => new NoiseStage(),
   'macro-region': () => new MacroRegionStage(),
+  'landmass-layout': () => new LandmassLayoutStage(),
 };
 
 export function createMapGenerator(): MapGenerator<MapConfig, MapState> {
