@@ -2,9 +2,10 @@ import { PIPELINE_STAGES } from './stage-definitions';
 import type { MapConfig } from './types';
 
 /**
- * Stage ids that must run again for `next`: the first stage whose declared
- * configuration slices changed and every later stage, because the linear
- * pipeline makes later stages depend on the earlier ones.
+ * Stage ids that must run again for `next`: exactly the stages whose declared
+ * configuration slices changed. The keys already cover what a stage inherits
+ * through the rasters of earlier stages, so no stage is dragged in by its
+ * position in the pipeline.
  */
 export function selectDirtyStageIds(
   previous: Readonly<MapConfig> | undefined,
@@ -14,15 +15,9 @@ export function selectDirtyStageIds(
     return PIPELINE_STAGES.map(stage => stage.id);
   }
 
-  for (const [index, stage] of PIPELINE_STAGES.entries()) {
-    const changed = stage.configKeys.some(
-      key => !isEqual(configSlice(previous, key), configSlice(next, key))
-    );
-    if (changed) {
-      return PIPELINE_STAGES.slice(index).map(stage => stage.id);
-    }
-  }
-  return [];
+  return PIPELINE_STAGES.filter(stage =>
+    stage.configKeys.some(key => !isEqual(configSlice(previous, key), configSlice(next, key)))
+  ).map(stage => stage.id);
 }
 
 /** Reads a dotted configuration path such as `world.dimensions`. */

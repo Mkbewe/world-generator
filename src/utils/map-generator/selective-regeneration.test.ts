@@ -42,7 +42,7 @@ describe('selectDirtyStageIds', () => {
     expect(selectDirtyStageIds(config, copy)).toEqual([]);
   });
 
-  it('rebuilds from the first stage whose configuration slice changed', () => {
+  it('rebuilds only the stages whose configuration slice changed', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
@@ -58,12 +58,9 @@ describe('selectDirtyStageIds', () => {
         ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
       ],
       [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region', 'landmass-layout']],
-      [{ noise: { ...config.noise, frequency: 5 } }, ['noise', 'macro-region', 'landmass-layout']],
-      [{ macroRegions: createRadialLayout(3) }, ['macro-region', 'landmass-layout']],
-      [
-        { macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } },
-        ['macro-region', 'landmass-layout'],
-      ],
+      [{ noise: { ...config.noise, frequency: 5 } }, ['noise', 'macro-region']],
+      [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
+      [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
       [{ landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } }, ['landmass-layout']],
     ];
 
@@ -72,12 +69,20 @@ describe('selectDirtyStageIds', () => {
     }
   });
 
+  it('leaves the landmass layout out of changes it does not read', () => {
+    const regions = selectDirtyStageIds(config, { ...config, macroRegions: createRadialLayout(3) });
+    const noise = selectDirtyStageIds(config, {
+      ...config,
+      noise: { ...config.noise, octaves: 6 },
+    });
+
+    expect(regions).not.toContain('landmass-layout');
+    expect(noise).not.toContain('landmass-layout');
+  });
+
   it('treats a removed optional slice as a change', () => {
     const withoutRegions: MapConfig = { ...config, macroRegions: undefined };
 
-    expect(selectDirtyStageIds(config, withoutRegions)).toEqual([
-      'macro-region',
-      'landmass-layout',
-    ]);
+    expect(selectDirtyStageIds(config, withoutRegions)).toEqual(['macro-region']);
   });
 });
