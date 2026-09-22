@@ -42,10 +42,17 @@ describe('createMapGenerator', () => {
       pipeline.stages.map(stage => ({ id: stage.id, configKeys: [...stage.configKeys] }))
     ).toEqual([
       { id: 'world-shape', configKeys: ['world.dimensions', 'world.shape'] },
-      { id: 'noise', configKeys: ['world.seed', 'world.dimensions', 'noise'] },
+      { id: 'noise', configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'noise'] },
       {
         id: 'macro-region',
-        configKeys: ['world.seed', 'world.dimensions', 'macroRegions', 'macroRegionDeformation'],
+        configKeys: [
+          'world.seed',
+          'world.shape',
+          'world.dimensions',
+          'noise',
+          'macroRegions',
+          'macroRegionDeformation',
+        ],
       },
       {
         id: 'landmass-layout',

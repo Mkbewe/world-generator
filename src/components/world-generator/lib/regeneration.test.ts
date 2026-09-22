@@ -57,7 +57,7 @@ describe('SelectiveRegeneration', () => {
 
     const plan = regeneration.plan({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, {});
 
-    expect(plan.dirtyStageIds).toEqual(['macro-region', 'landmass-layout']);
+    expect(plan.dirtyStageIds).toEqual(['macro-region']);
     expect(regeneration.reusedStageIds).toEqual(['world-shape', 'noise']);
   });
 

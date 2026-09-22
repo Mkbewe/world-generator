@@ -231,11 +231,15 @@ danych roboczego podglądu.
 Przy ponownym generowaniu uruchamiają się tylko etapy, których dotyczy zmiana
 konfiguracji, a reszta jest reużyta:
 
-- każdy etap deklaruje w `stage-definitions.ts` czytane ścieżki konfiguracji
-  (`configKeys`); pipeline jest liniowy, więc zmiana unieważnia etap i wszystko
-  za nim (`selectDirtyStageIds`),
-- pierwszy run, zmiana seedu, rozmiaru lub kształtu unieważniają wszystko;
-  zmiana noise lub regionów liczy się od pierwszego dotkniętego etapu,
+- każdy etap deklaruje w `stage-definitions.ts` ścieżki konfiguracji, od których
+  zależy jego wynik (`configKeys`), wraz z tym, co dziedziczy przez rastry
+  wcześniejszych etapów — np. noise deklaruje `world.shape`, bo omija komórki
+  poza maską, a makroregiony dodatkowo `noise`, bo źródło `noise-map` próbkuje
+  jego raster (`selectDirtyStageIds`),
+- przeliczają się dokładnie te etapy, których ścieżka się zmieniła; zmiana
+  makroregionów nie rusza landmassów, a zmiana noise nie rusza ani
+  makroregionów w trybie `dedicated`, ani landmassów,
+- pierwszy run, zmiana seedu, rozmiaru lub kształtu unieważniają wszystko,
 - worker dostaje brudny zbiór i rastrowe dane zapisanej mapy, seeduje nimi stan
   i pomija czyste etapy, emitując dla nich `stage-skipped` (bez odsyłania
   rastrów z powrotem),
