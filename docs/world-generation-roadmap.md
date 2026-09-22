@@ -427,6 +427,11 @@ blisko siebie leżących struktur (`LandmassLayout.shelves`), co jest fundamente
 archipelagu (§4.3).
 
 - Szkielet pozwala tworzyć wyspy podłużne, zakrzywione i zwężające się.
+- Rozmieszczanie sprawdza cały kontur, nie tylko szkielet: punkty szkieletu są
+  liczone z lokalną szerokością, a obrysy półwysp i poprzeczek próbkowane, więc
+  geometria nie wystaje za margines świata i nie polega na tym, że maska świata
+  ją utnie. Gdy świat jest zbyt ciasny, cała struktura się skaluje (zachowując
+  archetyp), a nie tylko jej szkielet.
 - Archetypy kształtu (`round`, `oval`, `elongated`, `l`, `u`, `s`, `z`, `v`,
   `y`, `x`, `t`, `irregular`) to przepisy z losowanymi parametrami. Każda struktura losuje archetyp
   z puli (`LandmassConfig.archetypes`), a potem własne kąty, długości ramion,
@@ -538,6 +543,42 @@ Przydatne warstwy danych:
 - `slopeMap` — nachylenie,
 - `waterMap` i `drainageMap` — hydrologia,
 - `biomeMap` — wynikowa klasyfikacja biomów.
+
+### 4.7. Rozmieszczanie lądów względem makroregionów — [propozycje]
+
+Makroregiony są już słownikiem „gdzie": pasy dają północ i południe, pierścienie
+środek i peryferia. Rozmieszczanie struktur powinno z nich korzystać, zamiast
+losować po całym świecie — wtedy każdy region ma swój ląd, a rozkład da się
+w miarę równo rozłożyć i świadomie ukierunkować.
+
+```ts
+interface MacroRegionConfig {
+  // ...
+  /** Waga lądu regionu; 0 wyklucza region z rozmieszczania. */
+  landWeight?: number;
+}
+```
+
+- `count` w formularzu landmassów pozostaje jedynym źródłem liczby struktur,
+  a regiony dostają tylko wagi (`landWeight`, domyślnie 1, czyli po równo),
+- reguła podziału: po jednej strukturze na region bazowy, gdy `count` na to
+  pozwala i region ma sensowną powierzchnię; reszta struktur dzieli się według
+  wag. Przykład: układ poziomy, dwa regiony i `count` 2 dają po jednej wyspie
+  na północy i południu, a wagi 2:1 dają dwie na północy i jedną na południu,
+- etap buduje `createMacroRegionSampler` (ten sam, którego używa renderer) i
+  losuje kandydatów wewnątrz regionu docelowego, a wybiera po zapasie odstępu
+  (best-of-N z #372), więc rozkład w regionie wychodzi równomierny bez
+  dodatkowych mechanizmów,
+- przypadek ciasny (mały region, dużo struktur) działa jak dziś: struktura się
+  zmniejsza, a bez miejsca spada do najlepszego kandydata.
+
+Konsekwencja: etap landmass deklaruje wtedy `macroRegions` i
+`macroRegionDeformation` (oraz `noise` przy źródle `noise-map`), więc zmiana
+regionów przelicza layout. To poprawne, bo wynik naprawdę od nich zależy.
+
+Na później: gęstość i wielkość wysp sterowane `danger` regionu, a ręczne
+wskazywanie miejsc (piny na mapie) świadomie odłożone — wagi i układy regionów
+pokrywają większość intencji.
 
 ## 5. Hydrologia, biomy i klimat — [planowane]
 
