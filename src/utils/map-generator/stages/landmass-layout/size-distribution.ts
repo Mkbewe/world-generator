@@ -2,13 +2,24 @@ import type { SeededRandom } from '../../random/seeded-random';
 import type { LandmassConfig } from '../../types';
 
 /** Share of the world area the structures influence together at the largest size. */
-const MAX_TARGET_SHARE = 0.4;
+const MAX_TARGET_SHARE = 0.25;
+
+/** Longest side a structure may reach, as a fraction of the world. */
+const MAX_EXTENT = 0.6;
 
 /** Weight spread at the strongest diversity. */
 const MAX_SIGMA = 1;
 
 /** Weight spread at the lowest diversity; structures still differ a little. */
 const MIN_SIGMA = 0.15;
+
+/** Unit geometry of one structure, as the size plan sees it. */
+export interface StructureSize {
+  /** Approximate footprint area of the unit geometry. */
+  readonly area: number;
+  /** Longest side of the unit geometry's influence bounds. */
+  readonly extent: number;
+}
 
 export interface SizePlan {
   /** Scale factor per structure, in the input order. */
@@ -31,23 +42,29 @@ export function measureWorldArea(worldMask: Uint8Array): number {
 /**
  * Plans the influence budget: the world area and the typical scale set the total
  * target area, log-normal weights spread it over the structures, and every unit
- * geometry is scaled so its estimated area matches its share.
+ * geometry is scaled so its estimated area matches its share. A structure never
+ * grows past `MAX_EXTENT`, so a thin geometry cannot stretch across the world.
  */
 export function planSizes(
-  areas: readonly number[],
+  structures: readonly StructureSize[],
   config: LandmassConfig,
   worldArea: number,
   random: SeededRandom
 ): SizePlan {
   const targetArea = worldArea * MAX_TARGET_SHARE * config.size;
   const sigma = MIN_SIGMA + config.diversity * (MAX_SIGMA - MIN_SIGMA);
-  const weights = areas.map(() => Math.exp(sigma * gaussian(random)));
+  const weights = structures.map(() => Math.exp(sigma * gaussian(random)));
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   const shares = weights.map(weight => (total > 0 ? weight / total : 0));
-  const scales = areas.map((area, index) =>
-    Math.sqrt((targetArea * shares[index]) / Math.max(area, Number.EPSILON))
+  const scales = structures.map((structure, index) =>
+    Math.min(
+      Math.sqrt((targetArea * shares[index]) / Math.max(structure.area, Number.EPSILON)),
+      MAX_EXTENT / Math.max(structure.extent, Number.EPSILON)
+    )
   );
-  const order = areas.map((_, index) => index).sort((left, right) => shares[right] - shares[left]);
+  const order = structures
+    .map((_, index) => index)
+    .sort((left, right) => shares[right] - shares[left]);
 
   return { scales, order };
 }
