@@ -34,7 +34,7 @@ function createContext(): CanvasRenderingContext2D {
 
 function createLayer(): CatalogLayer {
   return new CatalogLayer(
-    layerRegistry.get('world-shape'),
+    layerRegistry.raster('world-shape'),
     { width: 2, height: 2 },
     new Uint8Array(4).fill(1)
   );

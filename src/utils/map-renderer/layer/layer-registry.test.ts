@@ -1,13 +1,14 @@
 import { LayerRegistry, layerRegistry } from './layer-registry';
-import type { LayerSpec } from '../../map-layers';
+import type { RasterLayerSpec } from '../../map-layers';
 
-const world = layerRegistry.get('world-shape');
-const noise = layerRegistry.get('noise');
+const world = layerRegistry.raster('world-shape');
+const noise = layerRegistry.raster('noise');
 
-function solid(id: string, overrides: Partial<LayerSpec> = {}): LayerSpec {
+function solid(id: string, overrides: Partial<RasterLayerSpec> = {}): RasterLayerSpec {
   return {
     id,
     label: id,
+    kind: 'raster',
     source: id + 'Map',
     dataType: 'uint8',
     palette: { kind: 'solid', color: [0, 0, 0] },
@@ -102,5 +103,22 @@ describe('LayerRegistry', () => {
     expect(
       () => new LayerRegistry([solid('mask', { providesMask: { insideValue: 1.5 } })])
     ).toThrow('invalid mask inside value');
+  });
+
+  it('accepts a vector layer without a palette', () => {
+    const registry = new LayerRegistry([
+      world,
+      {
+        id: 'landmass-layout',
+        label: 'Landmasses',
+        kind: 'vector',
+        source: 'landmassLayout',
+        clipTo: 'world-shape',
+      },
+    ]);
+
+    expect(registry.get('landmass-layout').kind).toBe('vector');
+    expect(registry.order).toEqual(['world-shape', 'landmass-layout']);
+    expect(() => registry.raster('landmass-layout')).toThrow('not a raster');
   });
 });

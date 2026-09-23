@@ -8,6 +8,7 @@ export type { MapSize } from './layer';
 export { FIT_VIEW_SCALE, MAX_VIEW_SCALE, MIN_VIEW_SCALE } from './view';
 export type {
   LayerGroupNode,
+  LayerHit,
   LayerTreeNode,
   MapLayerNavigation,
   MapLayerNode,
@@ -20,7 +21,11 @@ export type {
   MapOverlayId,
   MapOverlayOption,
   MapSnapshotData,
+  RasterMapInspection,
+  RasterRenderLayerStatistics,
   RenderLayerStatistics,
   RenderStatistics,
   SpatialMask,
+  VectorMapInspection,
+  VectorRenderLayerStatistics,
 } from './types';

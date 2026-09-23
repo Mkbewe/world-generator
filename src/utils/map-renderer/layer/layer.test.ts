@@ -4,11 +4,11 @@ import { layerRegistry } from './layer-registry';
 import type { RenderTarget } from '../preview-targets';
 
 function worldLayer(size: MapSize, data: Uint8Array): CatalogLayer {
-  return new CatalogLayer(layerRegistry.get('world-shape'), size, data);
+  return new CatalogLayer(layerRegistry.raster('world-shape'), size, data);
 }
 
 function noiseLayer(world: CatalogLayer, data: Float32Array): CatalogLayer {
-  return new CatalogLayer(layerRegistry.get('noise'), world.size, data, world);
+  return new CatalogLayer(layerRegistry.raster('noise'), world.size, data, world);
 }
 
 /** Output buffer mapped one pixel per source cell. */
@@ -88,6 +88,7 @@ describe('MapLayer rendering lifecycle', () => {
       {
         id: 'noise',
         label: 'Skip',
+        kind: 'raster',
         source: 'skipMap',
         dataType: 'uint8',
         clipTo: 'world-shape',

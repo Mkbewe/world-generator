@@ -1,11 +1,67 @@
 import { formatBytes, formatDuration, formatNumber } from '../../utils/format';
-import type { RenderStatistics } from '../../utils/map-renderer';
+import type { RenderLayerStatistics, RenderStatistics } from '../../utils/map-renderer';
 import {
   type StatisticsMetric,
   StatisticsPanel,
   type StatisticsSection,
 } from '../statistics-panel';
 import type { TimingSegment } from '../timing-bar';
+
+/** A vector layer reports elements; a raster layer reports its pixels and raster. */
+function layerMetrics(layer: RenderLayerStatistics): StatisticsMetric[] {
+  const shared: StatisticsMetric[] = [
+    {
+      label: 'Buffer',
+      value: `${layer.outputWidth} × ${layer.outputHeight}`,
+      description:
+        'Resolution of the buffer drawn for this layer: viewport scale when minifying, one pixel per cell when magnified.',
+    },
+    {
+      label: 'Data',
+      value: formatBytes(layer.bytes),
+      description: 'Estimated size of the surfaces held for this layer at rest.',
+    },
+  ];
+
+  if (layer.kind === 'vector') {
+    return [
+      {
+        label: 'Nodes',
+        value: formatNumber(layer.nodes),
+        description: 'Ridge nodes carried by this vector layer.',
+      },
+      {
+        label: 'Edges',
+        value: formatNumber(layer.edges),
+        description: 'Ridge edges carried by this vector layer.',
+      },
+      ...shared,
+    ];
+  }
+
+  return [
+    {
+      label: 'Drawing performance',
+      value:
+        layer.pixels > 0 && layer.durationMs > 0
+          ? `${formatNumber((layer.durationMs * 1_000_000) / layer.pixels, 2)} ms/MPix`
+          : '—',
+      description:
+        'Preparation and drawing time per million pixels, excluding waiting. Lower is faster.',
+    },
+    {
+      label: 'Tiles',
+      value: formatNumber(layer.tiles),
+      description: 'Number of tiles drawn while rendering this layer.',
+    },
+    {
+      label: 'Source',
+      value: `${layer.sourceWidth} × ${layer.sourceHeight}`,
+      description: 'Resolution of the generator raster this layer samples.',
+    },
+    ...shared,
+  ];
+}
 
 interface RenderStatisticsPanelProps {
   statistics: RenderStatistics;
@@ -61,38 +117,7 @@ export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps
     trailing: layer.reused
       ? `${formatDuration(layer.durationMs)} · reused`
       : formatDuration(layer.durationMs),
-    metrics: [
-      {
-        label: 'Drawing performance',
-        value:
-          layer.pixels > 0 && layer.durationMs > 0
-            ? `${formatNumber((layer.durationMs * 1_000_000) / layer.pixels, 2)} ms/MPix`
-            : '—',
-        description:
-          'Preparation and drawing time per million pixels, excluding waiting. Lower is faster.',
-      },
-      {
-        label: 'Tiles',
-        value: formatNumber(layer.tiles),
-        description: 'Number of tiles drawn while rendering this layer.',
-      },
-      {
-        label: 'Source',
-        value: `${layer.sourceWidth} × ${layer.sourceHeight}`,
-        description: 'Resolution of the generator raster this layer samples.',
-      },
-      {
-        label: 'Buffer',
-        value: `${layer.outputWidth} × ${layer.outputHeight}`,
-        description:
-          'Resolution of the buffer drawn for this layer: viewport scale when minifying, one pixel per cell when magnified.',
-      },
-      {
-        label: 'Data',
-        value: formatBytes(layer.bytes),
-        description: 'Estimated size of the surfaces held for this layer at rest.',
-      },
-    ],
+    metrics: layerMetrics(layer),
   }));
 
   return (

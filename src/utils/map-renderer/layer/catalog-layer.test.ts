@@ -42,8 +42,8 @@ function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
 
 describe('CatalogLayer', () => {
   it('validates the typed array constructor and cell count from the spec', () => {
-    const world = layerRegistry.get('world-shape');
-    const noise = layerRegistry.get('noise');
+    const world = layerRegistry.raster('world-shape');
+    const noise = layerRegistry.raster('noise');
 
     expect(() => new CatalogLayer(world, { width: 2, height: 2 }, new Float32Array(4))).toThrow(
       'Invalid world mask.'
@@ -55,9 +55,9 @@ describe('CatalogLayer', () => {
 
   it('counts the precomputed boundary in the layer buffers', () => {
     const size = { width: 4, height: 4 };
-    const plain = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array(16));
+    const plain = new CatalogLayer(layerRegistry.raster('world-shape'), size, new Uint8Array(16));
     const smooth = new CatalogLayer(
-      layerRegistry.get('world-shape'),
+      layerRegistry.raster('world-shape'),
       size,
       new Uint8Array(16),
       undefined,
@@ -77,7 +77,7 @@ describe('CatalogLayer', () => {
   it('samples raw mask values but paints only the exact inside value', async () => {
     const { images, restore } = mockCanvasContext();
     const layer = new CatalogLayer(
-      layerRegistry.get('world-shape'),
+      layerRegistry.raster('world-shape'),
       { width: 3, height: 1 },
       new Uint8Array([0, 1, 2])
     );
@@ -102,9 +102,13 @@ describe('CatalogLayer', () => {
   it('clips painting and sampling to another catalog layer', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 0]));
+    const world = new CatalogLayer(
+      layerRegistry.raster('world-shape'),
+      size,
+      new Uint8Array([1, 0])
+    );
     const noise = new CatalogLayer(
-      layerRegistry.get('noise'),
+      layerRegistry.raster('noise'),
       size,
       new Float32Array([0.5, 1]),
       world
@@ -132,13 +136,13 @@ describe('CatalogLayer', () => {
     values.fill(0.5);
     const geometry = { shape: 'disc' as const };
     const world = new CatalogLayer(
-      layerRegistry.get('world-shape'),
+      layerRegistry.raster('world-shape'),
       size,
       mask,
       undefined,
       geometry
     );
-    const noise = new CatalogLayer(layerRegistry.get('noise'), size, values, world, geometry);
+    const noise = new CatalogLayer(layerRegistry.raster('noise'), size, values, world, geometry);
     const screen: RenderTarget = {
       width: 16,
       height: 16,
@@ -168,12 +172,12 @@ describe('CatalogLayer', () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 3, height: 1 };
     const world = new CatalogLayer(
-      layerRegistry.get('world-shape'),
+      layerRegistry.raster('world-shape'),
       size,
       new Uint8Array([1, 1, 1])
     );
     const regions = new CatalogLayer(
-      layerRegistry.get('macro-region'),
+      layerRegistry.raster('macro-region'),
       size,
       new Uint8Array([0, 1, 8]),
       world
@@ -194,9 +198,13 @@ describe('CatalogLayer', () => {
   it('averages float noise when minifying', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 1]));
+    const world = new CatalogLayer(
+      layerRegistry.raster('world-shape'),
+      size,
+      new Uint8Array([1, 1])
+    );
     const noise = new CatalogLayer(
-      layerRegistry.get('noise'),
+      layerRegistry.raster('noise'),
       size,
       new Float32Array([0, 1]),
       world
@@ -215,9 +223,13 @@ describe('CatalogLayer', () => {
   it('skips cells outside the clip mask when averaging', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 0]));
+    const world = new CatalogLayer(
+      layerRegistry.raster('world-shape'),
+      size,
+      new Uint8Array([1, 0])
+    );
     const noise = new CatalogLayer(
-      layerRegistry.get('noise'),
+      layerRegistry.raster('noise'),
       size,
       new Float32Array([1, 1]),
       world
@@ -236,9 +248,13 @@ describe('CatalogLayer', () => {
   it('keeps discrete palettes nearest-neighbour when minifying', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
-    const world = new CatalogLayer(layerRegistry.get('world-shape'), size, new Uint8Array([1, 1]));
+    const world = new CatalogLayer(
+      layerRegistry.raster('world-shape'),
+      size,
+      new Uint8Array([1, 1])
+    );
     const regions = new CatalogLayer(
-      layerRegistry.get('macro-region'),
+      layerRegistry.raster('macro-region'),
       size,
       new Uint8Array([0, 1]),
       world
@@ -258,6 +274,7 @@ describe('CatalogLayer', () => {
     const clipped = {
       id: 'noise',
       label: 'Clipped',
+      kind: 'raster',
       source: 'clippedMap',
       dataType: 'uint8',
       clipTo: 'world-shape',

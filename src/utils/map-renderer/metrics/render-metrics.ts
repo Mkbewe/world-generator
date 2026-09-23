@@ -5,7 +5,7 @@ import {
   type TileReporter,
 } from '../layer';
 import type { RenderTarget } from '../preview-targets';
-import type { MapBaseLayerId, RenderStatistics } from '../types';
+import type { MapBaseLayerId, RenderLayerStatistics, RenderStatistics } from '../types';
 import type { ViewportSize } from '../viewport';
 
 /** Measurements belong to one generation run, independently of the cached images. */
@@ -75,25 +75,41 @@ export class RenderMetrics {
       overlayDurationMs,
       presentationDurationMs: this.presentationDurationMs,
       bufferBytes: rendered.reduce((total, layer) => total + layer.bufferBytes, 0),
-      layers: rendered.map(layer => {
-        // A layer replayed from the cache keeps the statistics of the run that
-        // rendered it, so the panel reports the real cost of the displayed map.
-        const measured = this.layers.get(layer.id);
-        const statistics = measured ?? layer.statistics;
-        return {
-          id: layer.id,
-          name: this.registry.get(layer.id).label,
-          durationMs: statistics?.durationMs ?? 0,
-          tiles: statistics?.tiles ?? 0,
-          pixels: statistics?.pixels ?? 0,
-          reused: measured === undefined && statistics !== undefined,
-          sourceWidth: layer.size.width,
-          sourceHeight: layer.size.height,
-          outputWidth: layer.canvas.width,
-          outputHeight: layer.canvas.height,
-          bytes: layer.bufferBytes,
-        };
-      }),
+      layers: rendered.map(layer => this.layerStatistics(layer)),
     });
+  }
+
+  /** Measurements of one layer, shaped by the kind of data it carries. */
+  private layerStatistics(layer: MapLayer): RenderLayerStatistics {
+    // A layer replayed from the cache keeps the statistics of the run that
+    // rendered it, so the panel reports the real cost of the displayed map.
+    const measured = this.layers.get(layer.id);
+    const statistics = measured ?? layer.statistics;
+    const spec = this.registry.get(layer.id);
+    const shared = {
+      id: layer.id,
+      name: spec.label,
+      durationMs: statistics?.durationMs ?? 0,
+      reused: measured === undefined && statistics !== undefined,
+      outputWidth: layer.canvas.width,
+      outputHeight: layer.canvas.height,
+      bytes: layer.bufferBytes,
+    };
+    if (spec.kind === 'vector') {
+      return {
+        ...shared,
+        kind: 'vector',
+        nodes: statistics?.nodes ?? 0,
+        edges: statistics?.edges ?? 0,
+      };
+    }
+    return {
+      ...shared,
+      kind: 'raster',
+      tiles: statistics?.tiles ?? 0,
+      pixels: statistics?.pixels ?? 0,
+      sourceWidth: layer.size.width,
+      sourceHeight: layer.size.height,
+    };
   }
 }

@@ -4,6 +4,24 @@ import { MapRenderer, type MapRendererOptions } from './renderer';
 import { type GeneratedMapSnapshot, MapRepository } from './repository';
 import { Viewport } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
+import type { LandmassLayout } from '../map-generator/types';
+
+/** Domain data of the landmass layout layer. */
+const LAYOUT: LandmassLayout = {
+  structures: [
+    {
+      id: 'landmass-1',
+      archetype: 'elongated',
+      nodes: [
+        { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
+        { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.05 },
+      ],
+      edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
+      shelfId: 'shelf-1',
+    },
+  ],
+  shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 }],
+};
 
 function deferred() {
   let resolve!: () => void;
@@ -99,7 +117,34 @@ describe('MapRenderer', () => {
       'world-shape',
       'noise',
       'macro-region',
+      'landmass-layout',
     ]);
+  });
+
+  it('prepares the vector layer when its domain data arrives', async () => {
+    const { preview } = setup();
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    await preview.ready;
+
+    preview.setInfo({ landmassLayout: LAYOUT });
+    await preview.ready;
+
+    const option = preview.state.layers.find(layer => layer.id === 'landmass-layout');
+    expect(option?.available).toBe(true);
+    // The silent vector layer never steals the displayed one.
+    expect(preview.state.displayedLayer).toBe('world-shape');
+  });
+
+  it('prepares the vector layer unlocked by a mask that arrives later', async () => {
+    const { preview } = setup();
+    preview.setInfo({ landmassLayout: LAYOUT });
+
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    await preview.ready;
+
+    const option = preview.state.layers.find(layer => layer.id === 'landmass-layout');
+    expect(option?.available).toBe(true);
+    preview.dispose();
   });
 
   it('switches to a layer as soon as its drawing starts', async () => {
@@ -207,7 +252,7 @@ describe('MapRenderer', () => {
 
     expect(preview.signal.aborted).toBe(true);
     expect(preview.state.displayedLayer).toBe('noise');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false]);
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
     expect(() => preview.add('noise', new Float32Array(4))).toThrow();
     preview.dispose();
   });
@@ -463,8 +508,44 @@ describe('MapRenderer', () => {
     await preview.ready;
 
     expect(preview.currentSize).toEqual({ width: 2, height: 2 });
-    expect(preview.inspect(1, 1)).toEqual({ id: 'noise', label: 'Noise', value: 1 });
-    expect(preview.inspect(0, 0)).toEqual({ id: 'noise', label: 'Noise', value: undefined });
+    expect(preview.inspect(1, 1)).toEqual({
+      kind: 'raster',
+      layerId: 'noise',
+      label: 'Noise',
+      value: 1,
+    });
+    expect(preview.inspect(0, 0)).toEqual({
+      kind: 'raster',
+      layerId: 'noise',
+      label: 'Noise',
+      value: undefined,
+    });
+  });
+
+  it('inspects the structure under the vector layer', async () => {
+    const { preview } = setup();
+    preview.start({ width: 11, height: 11 }, 'disc');
+    preview.add('world-shape', new Uint8Array(121).fill(1));
+    await vi.runAllTimersAsync();
+    await preview.ready;
+
+    preview.setInfo({ landmassLayout: LAYOUT });
+    await preview.ready;
+    preview.select('landmass-layout');
+
+    expect(preview.inspect(5, 5)).toEqual({
+      kind: 'vector',
+      layerId: 'landmass-layout',
+      label: 'Landmasses',
+      hit: { id: 'landmass-1' },
+    });
+    expect(preview.inspect(0, 0)).toEqual({
+      kind: 'vector',
+      layerId: 'landmass-layout',
+      label: 'Landmasses',
+      hit: undefined,
+    });
+    preview.dispose();
   });
 
   it('does not inspect before a run starts', () => {

@@ -3,7 +3,7 @@ import { LayerCache } from './layer-cache';
 import { layerRegistry } from './layer-registry';
 
 function world(data: Uint8Array, width = 2, height = 2): CatalogLayer {
-  return new CatalogLayer(layerRegistry.get('world-shape'), { width, height }, data);
+  return new CatalogLayer(layerRegistry.raster('world-shape'), { width, height }, data);
 }
 
 describe('LayerCache', () => {

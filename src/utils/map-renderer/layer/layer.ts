@@ -1,5 +1,5 @@
 import { type RenderTarget, targetKey } from '../preview-targets';
-import type { MapBaseLayerId } from '../types';
+import type { LayerHit, MapBaseLayerId } from '../types';
 
 export interface MapSize {
   width: number;
@@ -8,10 +8,20 @@ export interface MapSize {
 
 export type TileReporter = (x: number, y: number, width: number, height: number) => void;
 
+/** Raster layers sample numbers; vector layers sample named elements. */
+export type LayerSample = number | LayerHit;
+
+export function isLayerHit(sample: LayerSample | undefined): sample is LayerHit {
+  return typeof sample === 'object' && sample !== null;
+}
+
 export interface LayerRenderStatistics {
   durationMs: number;
   tiles: number;
   pixels: number;
+  /** Element counts a vector layer reports instead of a raster resolution. */
+  nodes?: number;
+  edges?: number;
 }
 
 /** Output tile of the preview buffer, in canvas pixels. */
@@ -98,6 +108,11 @@ export abstract class MapLayer {
     return 0;
   }
 
+  /** Extra numbers reported next to the render cost, e.g. vector element counts. */
+  protected statisticsDetails(): Partial<LayerRenderStatistics> {
+    return {};
+  }
+
   /**
    * Whether transparent overview pixels take the color of the nearest painted
    * cell. Layers whose transparency is meaningful, e.g. water in an id map, opt
@@ -158,8 +173,11 @@ export abstract class MapLayer {
     this.activeTarget = undefined;
   }
 
-  /** Raw value at a source raster cell, or undefined outside the layer's valid area. */
-  abstract sample(x: number, y: number): number | undefined;
+  /**
+   * Raw sample at a source cell: the raster value for raster layers, the named
+   * element for vector layers. Undefined outside the layer's valid area.
+   */
+  abstract sample(x: number, y: number): LayerSample | undefined;
 
   protected abstract paintTile(
     pixels: Uint8ClampedArray,
@@ -183,7 +201,12 @@ export abstract class MapLayer {
     this.stage.width = width;
     this.stage.height = height;
 
-    const statistics = { durationMs: performance.now() - startedAt, tiles: 0, pixels: 0 };
+    const statistics: LayerRenderStatistics = {
+      durationMs: performance.now() - startedAt,
+      tiles: 0,
+      pixels: 0,
+      ...this.statisticsDetails(),
+    };
     this.statistics = statistics;
     const tileWidth = Math.ceil(width / TILES_PER_AXIS);
     const tileHeight = Math.ceil(height / TILES_PER_AXIS);

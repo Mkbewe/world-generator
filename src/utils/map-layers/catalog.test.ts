@@ -1,4 +1,4 @@
-import { hasCurrentRasterSources, LAYER_CATALOG } from './catalog';
+import { hasCurrentRasterSources, LAYER_CATALOG, RASTER_CATALOG } from './catalog';
 import { PIPELINE_STAGES } from '../map-generator/stage-definitions';
 
 describe('LAYER_CATALOG', () => {
@@ -16,5 +16,12 @@ describe('LAYER_CATALOG', () => {
     expect(hasCurrentRasterSources({ worldMask: new Uint8Array(1) })).toBe(true);
     // A key from an older snapshot format makes the whole record stale.
     expect(hasCurrentRasterSources({ landmassIdMap: new Uint8Array(1) })).toBe(false);
+  });
+
+  it('keeps the vector layer out of the raster sources', () => {
+    const entry = LAYER_CATALOG.find(layer => layer.id === 'landmass-layout');
+
+    expect(entry?.kind).toBe('vector');
+    expect(RASTER_CATALOG.map(layer => layer.id)).not.toContain('landmass-layout');
   });
 });

@@ -4,8 +4,11 @@ import { createMacroRegionSampler } from '../../map-generator/stages/macro-regio
 import {
   type LayerDataRecord,
   type LayerSpec,
+  type MapInfo,
   type MapRasters,
+  type RasterLayerSpec,
   selectRasters,
+  type VectorLayerSpec,
 } from '../../map-layers';
 import type { WorldShape } from '../../world-shape';
 import {
@@ -15,6 +18,10 @@ import {
   layerRegistry,
   type MapLayer,
   type MapSize,
+  validateVectorLayerFactories,
+  vectorLayerFactories,
+  type VectorLayerFactory,
+  type VectorLayerFactoryRegistry,
 } from '../layer';
 import type { SmoothGeometry } from '../layer/smooth-geometry';
 import type { MapBaseLayerId, MapLayerOption, MapMetadata, SpatialMask } from '../types';
@@ -25,13 +32,17 @@ export class MapScene {
   private geometry?: SmoothGeometry;
   private shape?: WorldShape;
   private regionConfig?: MapMetadata['regionGeometry'];
-  private readonly layers = new Map<MapBaseLayerId, CatalogLayer>();
+  private info: MapInfo = {};
+  private readonly layers = new Map<MapBaseLayerId, MapLayer>();
   private readonly available = new Set<MapBaseLayerId>();
 
   constructor(
     private readonly cache: LayerCache,
-    private readonly registry: LayerRegistry = layerRegistry
-  ) {}
+    private readonly registry: LayerRegistry = layerRegistry,
+    private readonly vectorLayers: VectorLayerFactoryRegistry = vectorLayerFactories
+  ) {
+    validateVectorLayerFactories(registry, vectorLayers);
+  }
 
   get size(): MapSize {
     if (!this.currentSize) {
@@ -101,29 +112,83 @@ export class MapScene {
         height: size.height,
         noiseAt:
           region.deformation.source === 'noise-map'
-            ? (cellX, cellY) => this.noiseLayer()?.sample(cellX, cellY)
+            ? (cellX, cellY) => {
+                const sample = this.noiseLayer()?.sample(cellX, cellY);
+                return typeof sample === 'number' ? sample : undefined;
+              }
             : undefined,
       })
     );
   }
 
+  /**
+   * Keeps domain data the vector layers carry, e.g. the landmass layout, so a
+   * restored map shows them without re-running the generator.
+   */
+  setInfo(info: MapInfo): readonly MapLayer[] {
+    this.info = info;
+    return this.applyVectorLayers();
+  }
+
+  /** Adds every vector layer whose domain data is present and whose mask is loaded. */
+  private applyVectorLayers(): readonly MapLayer[] {
+    const added: MapLayer[] = [];
+    for (const id of this.registry.order) {
+      const spec = this.registry.get(id);
+      if (spec.kind !== 'vector') {
+        continue;
+      }
+      const factory = this.vectorLayers.get(id);
+      const value = this.info[spec.source];
+      if (!factory || value === undefined || !factory.supports(value)) {
+        continue;
+      }
+      // A vector layer waits for its mask, e.g. a restored map without rasters.
+      if (this.missingDependency(spec)) {
+        continue;
+      }
+      const previous = this.layers.get(id);
+      const layer = this.addVector(spec, factory, value);
+      if (layer !== previous) {
+        added.push(layer);
+      }
+    }
+    return added;
+  }
+
   /** Catalog layer that carries the shared noise raster, when the catalog has one. */
-  private noiseLayer(): CatalogLayer | undefined {
+  private noiseLayer(): MapLayer | undefined {
     const id = this.registry.order.find(
       layerId => this.registry.get(layerId).source === 'noiseMap'
     );
     return id ? this.layers.get(id) : undefined;
   }
 
-  /** Adds or refreshes a layer; repeated data replaces the previous layer. */
-  add(id: MapBaseLayerId, value: unknown): MapLayer {
-    const size = this.size;
+  /**
+   * Adds or refreshes a layer; repeated data replaces the previous layer. The
+   * result starts with the requested layer and continues with every vector
+   * layer this data unlocked, so the renderer can schedule them all.
+   */
+  add(id: MapBaseLayerId, value: unknown): readonly [MapLayer, ...MapLayer[]] {
     const spec = this.registry.get(id);
     const missing = this.missingDependency(spec);
     if (missing) {
       throw new Error(`Layer "${id}" requires "${missing}".`);
     }
-    const clipMask = spec.clipTo ? this.layers.get(spec.clipTo) : undefined;
+
+    if (spec.kind === 'vector') {
+      const factory = this.vectorLayers.get(id);
+      if (!factory) {
+        throw new Error(`Layer "${id}" has no vector factory.`);
+      }
+      if (!factory.supports(value)) {
+        throw new Error(`Layer "${id}" received invalid domain data.`);
+      }
+      return [this.addVector(spec, factory, value)];
+    }
+
+    const size = this.size;
+    const clipMask = spec.clipTo ? this.rasterLayer(spec.clipTo) : undefined;
     const layer = this.cache.getOrCreate(
       id,
       [
@@ -141,27 +206,57 @@ export class MapScene {
     this.layers.set(id, layer);
     // A refreshed layer becomes ready again once it is presented.
     this.available.delete(id);
+    // A raster may complete the mask a waiting vector layer needs.
+    return [layer, ...this.applyVectorLayers()];
+  }
+
+  /** Adds or refreshes the vector layer of one catalog entry. */
+  private addVector(
+    spec: VectorLayerSpec<MapBaseLayerId>,
+    factory: VectorLayerFactory,
+    value: unknown
+  ): MapLayer {
+    const size = this.size;
+    const clipMask = spec.clipTo ? this.rasterLayer(spec.clipTo) : undefined;
+    const previous = this.layers.get(spec.id);
+    const layer = this.cache.getOrCreate(
+      spec.id,
+      [spec, value, size.width, size.height, clipMask, this.geometry?.shape],
+      () => factory.create({ id: spec.id, size, value })
+    );
+    this.layers.set(spec.id, layer);
+    // A refreshed layer becomes ready again once it is presented.
+    if (layer !== previous) {
+      this.available.delete(spec.id);
+    }
     return layer;
   }
 
   /** First declared dependency this layer still misses, if any. */
   private missingDependency(spec: LayerSpec<MapBaseLayerId>): MapBaseLayerId | undefined {
     const clip = spec.clipTo ? [spec.clipTo] : [];
-    return [...clip, ...this.sampledLayers(spec)].find(id => !this.layers.has(id));
+    const samples = spec.kind === 'raster' ? this.sampledLayers(spec) : [];
+    return [...clip, ...samples].find(id => !this.layers.has(id));
   }
 
   /** Rasters of the sampled layers, in the order the spec declares them. */
-  private sampledRasters(spec: LayerSpec<MapBaseLayerId>): readonly unknown[] {
-    return this.sampledLayers(spec).map(id => this.layers.get(id)?.data);
+  private sampledRasters(spec: RasterLayerSpec<MapBaseLayerId>): readonly unknown[] {
+    return this.sampledLayers(spec).map(id => this.rasterLayer(id)?.data);
   }
 
   /**
    * Declared samples the current map reads. Region borders sample the noise
    * raster only while the deformation uses the noise map.
    */
-  private sampledLayers(spec: LayerSpec<MapBaseLayerId>): readonly MapBaseLayerId[] {
+  private sampledLayers(spec: RasterLayerSpec<MapBaseLayerId>): readonly MapBaseLayerId[] {
     const samples = spec.samples ?? [];
     return this.regionConfig?.deformation.source === 'noise-map' ? samples : [];
+  }
+
+  /** Layer that carries a raster, or undefined when it is absent or vector. */
+  private rasterLayer(id: MapBaseLayerId): CatalogLayer | undefined {
+    const layer = this.layers.get(id);
+    return layer instanceof CatalogLayer ? layer : undefined;
   }
 
   get(id: MapBaseLayerId): MapLayer | undefined {
@@ -170,9 +265,11 @@ export class MapScene {
 
   load(data: MapRasters): readonly MapLayer[] {
     const values: LayerDataRecord = data;
+    // Rasters may complete the mask a vector layer waits for, so each add
+    // reports the vector layers it unlocked together with the raster itself.
     return this.registry
       .presentIn(values)
-      .map(id => this.add(id, values[this.registry.get(id).source]));
+      .flatMap(id => this.add(id, values[this.registry.get(id).source]));
   }
 
   readyLayer(id: MapBaseLayerId): MapLayer | undefined {
@@ -202,8 +299,10 @@ export class MapScene {
   get masks(): ReadonlyMap<MapBaseLayerId, SpatialMask> {
     const masks = new Map<MapBaseLayerId, SpatialMask>();
     for (const [id, layer] of this.layers) {
-      if (this.registry.get(id).providesMask) {
-        masks.set(id, layer);
+      const spec = this.registry.get(id);
+      const raster = layer instanceof CatalogLayer ? layer : undefined;
+      if (raster && spec.kind === 'raster' && spec.providesMask) {
+        masks.set(id, raster);
       }
     }
     return masks;
@@ -215,14 +314,14 @@ export class MapScene {
   }
 
   getLayers(): MapRasters {
-    return selectRasters(
-      Object.fromEntries(
-        [...this.layers.values()].map(layer => {
-          const spec = this.registry.get(layer.id);
-          return [spec.source, layer.data];
-        })
-      )
-    );
+    const values: Record<string, unknown> = {};
+    for (const [id, layer] of this.layers) {
+      const raster = layer instanceof CatalogLayer ? layer : undefined;
+      if (raster) {
+        values[this.registry.get(id).source] = raster.data;
+      }
+    }
+    return selectRasters(values);
   }
 
   reset(): void {
@@ -230,6 +329,7 @@ export class MapScene {
     this.geometry = undefined;
     this.shape = undefined;
     this.regionConfig = undefined;
+    this.info = {};
     this.layers.clear();
     this.available.clear();
   }

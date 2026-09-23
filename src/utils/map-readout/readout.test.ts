@@ -88,23 +88,31 @@ describe('readoutItems', () => {
   });
 
   it('describes world shape values', () => {
-    expect(itemValue(readout({ id: 'world-shape', label: 'World shape', value: 1 }), 'value')).toBe(
-      'Inside'
-    );
-    expect(itemValue(readout({ id: 'world-shape', label: 'World shape', value: 0 }), 'value')).toBe(
-      'Outside'
-    );
+    const inspection = { kind: 'raster', layerId: 'world-shape', label: 'World shape' } as const;
+
+    expect(itemValue(readout({ ...inspection, value: 1 }), 'value')).toBe('Inside');
+    expect(itemValue(readout({ ...inspection, value: 0 }), 'value')).toBe('Outside');
   });
 
   it('describes macro region ids and noise values', () => {
     expect(
-      itemValue(readout({ id: 'macro-region', label: 'Macro regions', value: 3 }), 'value')
+      itemValue(
+        readout({ kind: 'raster', layerId: 'macro-region', label: 'Macro regions', value: 3 }),
+        'value'
+      )
     ).toBe('Region 3');
-    expect(itemValue(readout({ id: 'noise', label: 'Noise', value: 0.25 }), 'value')).toBe('0.250');
+    expect(
+      itemValue(readout({ kind: 'raster', layerId: 'noise', label: 'Noise', value: 0.25 }), 'value')
+    ).toBe('0.250');
   });
 
   it('shows macro region labels captured with the generated map', () => {
-    const inspection = { id: 'macro-region', label: 'Macro regions', value: 1 } as const;
+    const inspection = {
+      kind: 'raster',
+      layerId: 'macro-region',
+      label: 'Macro regions',
+      value: 1,
+    } as const;
 
     expect(
       readoutItems(readout(inspection), { macroRegionLabels: ['Safe haven', 'Wasteland'] })[1].value
@@ -120,9 +128,28 @@ describe('readoutItems', () => {
     );
   });
 
-  it('keeps the layer label while the value is unavailable', () => {
-    const items = readoutItems(readout({ id: 'noise', label: 'Noise' }));
+  it('names the vector element under the pointer', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'landmass-layout',
+      label: 'Landmasses',
+      hit: { id: 'landmass-1', label: 'Isla Verde' },
+    } as const;
 
-    expect(items[1]).toMatchObject({ label: 'Noise', value: '—' });
+    expect(itemValue(readout(inspection), 'value')).toBe('Isla Verde');
+    expect(itemValue(readout({ ...inspection, hit: { id: 'landmass-1' } }), 'value')).toBe(
+      'landmass-1'
+    );
+    expect(itemValue(readout({ ...inspection, hit: undefined }), 'value')).toBe('—');
+  });
+
+  it('keeps the layer label while the sample is unavailable', () => {
+    const raster = readoutItems(readout({ kind: 'raster', layerId: 'noise', label: 'Noise' }));
+    const vector = readoutItems(
+      readout({ kind: 'vector', layerId: 'landmass-layout', label: 'Landmasses' })
+    );
+
+    expect(raster[1]).toMatchObject({ label: 'Noise', value: '—' });
+    expect(vector[1]).toMatchObject({ label: 'Landmasses', value: '—' });
   });
 });

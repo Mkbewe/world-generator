@@ -1,8 +1,32 @@
 import { MapScene } from './map-scene';
 import { createRadialLayout } from '../../map-generator/stages/macro-region-presets';
-import { LayerCache, LayerRegistry, layerRegistry, MapLayer } from '../layer';
+import type { LandmassLayout } from '../../map-generator/types';
+import {
+  LandmassLayoutVectorLayer,
+  LayerCache,
+  LayerRegistry,
+  layerRegistry,
+  MapLayer,
+} from '../layer';
 
 const BASE_CATALOG = [layerRegistry.get('world-shape'), layerRegistry.get('noise')];
+
+/** Domain data of the landmass layout layer. */
+const LAYOUT: LandmassLayout = {
+  structures: [
+    {
+      id: 'landmass-1',
+      archetype: 'elongated',
+      nodes: [
+        { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
+        { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.05 },
+      ],
+      edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
+      shelfId: 'shelf-1',
+    },
+  ],
+  shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 }],
+};
 
 function setup() {
   const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_CATALOG));
@@ -26,12 +50,12 @@ describe('MapScene', () => {
     scene.start(size, metadata);
     scene.add('world-shape', mask);
     scene.add('noise', new Float32Array(9).fill(0.25));
-    const first = scene.add('macro-region', regions);
+    const [first] = scene.add('macro-region', regions);
 
     scene.start(size, metadata);
     scene.add('world-shape', mask);
     scene.add('noise', new Float32Array(9).fill(0.75));
-    const second = scene.add('macro-region', regions);
+    const [second] = scene.add('macro-region', regions);
 
     expect(second).not.toBe(first);
   });
@@ -78,19 +102,19 @@ describe('MapScene', () => {
     const mask = new Uint8Array(4).fill(1);
     const noise = new Float32Array(4);
     scene.start({ width: 2, height: 2 });
-    const firstWorld = scene.add('world-shape', mask);
-    const firstNoise = scene.add('noise', noise);
+    const [firstWorld] = scene.add('world-shape', mask);
+    const [firstNoise] = scene.add('noise', noise);
 
     scene.start({ width: 1, height: 4 });
-    const resizedWorld = scene.add('world-shape', mask);
+    const [resizedWorld] = scene.add('world-shape', mask);
     expect(resizedWorld).not.toBe(firstWorld);
     expect(resizedWorld.size).toEqual({ width: 1, height: 4 });
-    const resizedNoise = scene.add('noise', noise);
+    const [resizedNoise] = scene.add('noise', noise);
     expect(resizedNoise).not.toBe(firstNoise);
 
     scene.start({ width: 1, height: 4 });
     scene.add('world-shape', new Uint8Array(4));
-    const otherNoise = scene.add('noise', noise);
+    const [otherNoise] = scene.add('noise', noise);
     expect(otherNoise).not.toBe(resizedNoise);
     expect(otherNoise.sample(0, 0)).toBeUndefined();
 
@@ -105,7 +129,8 @@ describe('MapScene', () => {
     );
     otherScene.start({ width: 1, height: 4 });
     otherScene.add('world-shape', scene.getLayers().worldMask);
-    expect(otherScene.add('noise', noise)).not.toBe(otherNoise);
+    const [otherNoiseLayer] = otherScene.add('noise', noise);
+    expect(otherNoiseLayer).not.toBe(otherNoise);
   });
 
   afterEach(() => {
@@ -119,7 +144,7 @@ describe('MapScene', () => {
     const noise = new Float32Array(4);
 
     expect(scene.isComplete()).toBe(false);
-    const world = scene.add('world-shape', mask);
+    const [world] = scene.add('world-shape', mask);
     expect(scene.isComplete()).toBe(false);
     scene.add('noise', noise);
 
@@ -141,12 +166,12 @@ describe('MapScene', () => {
     expect(() => scene.add('noise', new Float32Array(4))).toThrow('requires "world-shape"');
     expect([...scene.values()]).toEqual([]);
 
-    const world = scene.add('world-shape', new Uint8Array(4));
+    const [world] = scene.add('world-shape', new Uint8Array(4));
     const dispose = vi.spyOn(world, 'dispose');
     scene.markReady(world);
     expect(scene.readyLayer('world-shape')).toBe(world);
 
-    const refreshed = scene.add('world-shape', new Uint8Array(4));
+    const [refreshed] = scene.add('world-shape', new Uint8Array(4));
 
     expect(refreshed).not.toBe(world);
     expect(scene.get('world-shape')).toBe(refreshed);
@@ -157,7 +182,7 @@ describe('MapScene', () => {
 
   it('keeps received layers when a run starts with the same map size', () => {
     const scene = setup();
-    const world = scene.add('world-shape', new Uint8Array(4));
+    const [world] = scene.add('world-shape', new Uint8Array(4));
     scene.markReady(world);
 
     scene.start({ width: 2, height: 2 });
@@ -184,7 +209,7 @@ describe('MapScene', () => {
     const scene = new MapScene(new LayerCache());
     expect(() => scene.add('world-shape', new Uint8Array(4))).toThrow('has not been started');
     scene.start({ width: 2, height: 2 });
-    const world = scene.add('world-shape', new Uint8Array(4));
+    const [world] = scene.add('world-shape', new Uint8Array(4));
     const dispose = vi.spyOn(world, 'dispose');
     scene.markReady(world);
 
@@ -199,7 +224,7 @@ describe('MapScene', () => {
 
   it('discards a failed layer and lets the cache dispose its image', () => {
     const scene = setup();
-    const world = scene.add('world-shape', new Uint8Array(4));
+    const [world] = scene.add('world-shape', new Uint8Array(4));
     const dispose = vi.spyOn(world, 'dispose');
 
     scene.discard(world);
@@ -211,14 +236,77 @@ describe('MapScene', () => {
 
   it('does not mark a new layer ready when given a layer from a previous map', () => {
     const scene = setup();
-    const previous = scene.add('world-shape', new Uint8Array(4));
+    const [previous] = scene.add('world-shape', new Uint8Array(4));
     scene.start({ width: 3, height: 3 });
-    const current = scene.add('world-shape', new Uint8Array(9));
+    const [current] = scene.add('world-shape', new Uint8Array(9));
 
     scene.markReady(previous);
     expect(scene.size).toEqual({ width: 3, height: 3 });
     expect(scene.readyLayer('world-shape')).toBeUndefined();
     scene.markReady(current);
     expect(scene.readyLayer('world-shape')).toBe(current);
+  });
+
+  it('adds the vector layer when its domain data and mask are present', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+
+    scene.setInfo({ landmassLayout: LAYOUT });
+
+    expect(scene.get('landmass-layout')).toBeInstanceOf(LandmassLayoutVectorLayer);
+  });
+
+  it('waits for the mask before adding the vector layer', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
+    scene.setInfo({ landmassLayout: LAYOUT });
+
+    expect(scene.get('landmass-layout')).toBeUndefined();
+
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+
+    expect(scene.get('landmass-layout')).toBeInstanceOf(LandmassLayoutVectorLayer);
+  });
+
+  it('refuses a vector catalog without a factory', () => {
+    expect(() => new MapScene(new LayerCache(), layerRegistry, new Map())).toThrow(
+      'Missing vector layer factory: landmass-layout'
+    );
+  });
+
+  it('returns the vector layers a new mask unlocks', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
+    scene.setInfo({ landmassLayout: LAYOUT });
+
+    const added = scene.add('world-shape', new Uint8Array(16).fill(1));
+
+    expect(added[0].id).toBe('world-shape');
+    expect(added[1]).toBeInstanceOf(LandmassLayoutVectorLayer);
+  });
+
+  it('ignores malformed domain data', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+
+    scene.setInfo({ landmassLayout: { structures: 'nope', shelves: [] } });
+
+    expect(scene.get('landmass-layout')).toBeUndefined();
+  });
+
+  it('reuses the vector layer while the domain data is unchanged', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+    scene.setInfo({ landmassLayout: LAYOUT });
+    const first = scene.get('landmass-layout');
+
+    const added = scene.setInfo({ landmassLayout: LAYOUT });
+
+    expect(first).toBeDefined();
+    expect(scene.get('landmass-layout')).toBe(first);
+    expect(added).toEqual([]);
   });
 });
