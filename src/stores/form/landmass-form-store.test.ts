@@ -18,15 +18,20 @@ describe('useLandmassFormStore', () => {
     expect(selectedArchetypes(landmasses)).toEqual([...LANDMASS_ARCHETYPES]);
   });
 
-  it('updates the count and size the stage renders', () => {
+  it('updates the count, size and diversity the stage renders', () => {
     const store = useLandmassFormStore.getState();
     store.setCount(3);
     store.setSize(0.8);
+    store.setDiversity(0.9);
 
-    expect(useLandmassFormStore.getState().landmasses).toMatchObject({ count: 3, size: 0.8 });
+    expect(useLandmassFormStore.getState().landmasses).toMatchObject({
+      count: 3,
+      size: 0.8,
+      diversity: 0.9,
+    });
   });
 
-  it('narrows the archetype pool and clears it when everything is enabled', () => {
+  it('narrows the archetype pool and drops it when everything is enabled', () => {
     const { setArchetypes } = useLandmassFormStore.getState();
     setArchetypes(LANDMASS_ARCHETYPES.filter(archetype => archetype !== 'round'));
 
@@ -39,7 +44,7 @@ describe('useLandmassFormStore', () => {
     expect(useLandmassFormStore.getState().landmasses.archetypes).toBeUndefined();
   });
 
-  it('keeps the pool in the archetype order and allows clearing it', () => {
+  it('keeps the pool in the archetype order and never empties it', () => {
     const { setArchetypes } = useLandmassFormStore.getState();
     setArchetypes(['atoll', 'round']);
 
@@ -47,6 +52,7 @@ describe('useLandmassFormStore', () => {
 
     setArchetypes([]);
 
-    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual([]);
+    // A valid configuration always draws at least one structure.
+    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(['round', 'atoll']);
   });
 });

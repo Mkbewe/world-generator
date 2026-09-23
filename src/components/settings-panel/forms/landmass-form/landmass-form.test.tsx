@@ -22,11 +22,12 @@ describe('LandmassForm', () => {
     useLandmassFormStore.setState({ ...LANDMASS_FORM_DEFAULTS });
   });
 
-  it('shows only what this stage drives: count, size and the shape pool', () => {
+  it('shows only what this stage drives: count, typical size, diversity and the shape pool', () => {
     renderForm();
 
     expect(screen.getByLabelText('Structures')).toBeInTheDocument();
-    expect(screen.getByLabelText('Size')).toBeInTheDocument();
+    expect(screen.getByLabelText('Typical size')).toBeInTheDocument();
+    expect(screen.getByLabelText('Size diversity')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Round' })).toBeChecked();
     // The shelf and coastline roughness belong to the stages that consume them.
     expect(screen.queryByLabelText('Shelf width')).not.toBeInTheDocument();

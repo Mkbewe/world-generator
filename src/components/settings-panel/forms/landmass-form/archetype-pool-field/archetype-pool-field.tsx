@@ -27,15 +27,13 @@ export function ArchetypePoolField() {
       <Flex justify='between' align='center'>
         <InfoLabel
           label='Shapes'
-          description='Archetypes the structures are drawn from. Every structure picks one from the enabled pool, so one world can mix round, elongated and letter shapes. With an empty pool the layout draws no structures at all.'
+          description='Shape intents the structures are drawn from. Every structure picks one from the enabled pool, so one world can mix round, elongated and winding forms; at least one intent stays enabled.'
         />
-        <Button
-          size='1'
-          variant='ghost'
-          onClick={() => setArchetypes(everyArchetypeSelected ? [] : LANDMASS_ARCHETYPES)}
-        >
-          {everyArchetypeSelected ? 'Clear' : 'Select all'}
-        </Button>
+        {everyArchetypeSelected ? null : (
+          <Button size='1' variant='ghost' onClick={() => setArchetypes(LANDMASS_ARCHETYPES)}>
+            Select all
+          </Button>
+        )}
       </Flex>
       <CheckboxCards.Root
         columns={{ initial: '2', sm: '3' }}

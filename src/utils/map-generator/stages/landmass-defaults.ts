@@ -7,6 +7,10 @@ export const MAX_LANDMASSES = 20;
 export const MIN_LANDMASS_SIZE = 0.25;
 export const MAX_LANDMASS_SIZE = 1;
 
+/** How strongly the structure sizes may differ; 0 keeps them nearly equal. */
+export const MIN_LANDMASS_DIVERSITY = 0;
+export const MAX_LANDMASS_DIVERSITY = 1;
+
 /** Margin that keeps the generated geometry inside the world shape. */
 export const LANDMASS_MARGIN = 0.08;
 
