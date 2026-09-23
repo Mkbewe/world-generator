@@ -64,6 +64,8 @@ export interface PlacementResult {
 interface Placement {
   readonly entry: PlacedEntry;
   readonly draftIndex: number;
+  /** Intended group of the structure; absent for isolated placements. */
+  readonly group?: number;
 }
 
 interface PlacementState {
@@ -73,6 +75,7 @@ interface PlacementState {
 
 interface PlacementContext {
   readonly drafts: readonly StructureDraft[];
+  readonly groups: readonly (readonly number[])[];
   readonly state: PlacementState;
   readonly insideWorld: WorldSampler;
   readonly random: SeededRandom;
@@ -80,7 +83,6 @@ interface PlacementContext {
   readonly anchors: readonly WorldPoint[];
   readonly groupAnchors: readonly WorldPoint[];
   readonly placements: Placement[];
-  readonly dissolved: Set<number>;
 }
 
 /**
@@ -101,6 +103,7 @@ export function placeStructures(
   const groupAnchors = anchors.filter(anchor => centreDistance(anchor) <= GROUP_CENTRE_LIMIT);
   const context: PlacementContext = {
     drafts,
+    groups: intended,
     state: { entries: [], index: new StructureIndex() },
     insideWorld,
     random,
@@ -108,7 +111,6 @@ export function placeStructures(
     anchors,
     groupAnchors: groupAnchors.length > 0 ? groupAnchors : anchors,
     placements: [],
-    dissolved: new Set<number>(),
   };
 
   // Groups first, so they still find room; largest-first order within each kind.
@@ -125,8 +127,13 @@ export function placeStructures(
   }
 
   const repaired = validateAndRepair(context.placements, insideWorld);
+  // Final groups come from the placements that really survived: a group whose
+  // leader failed, or whose member was dissolved or dropped, must not share a
+  // shelf across the map.
   const finalGroups = intended
-    .map(members => members.filter(member => !context.dissolved.has(member)))
+    .map((_, group) =>
+      repaired.filter(placement => placement.group === group).map(placement => placement.draftIndex)
+    )
     .filter(members => members.length >= 2);
   const { shelfOf, shelves } = createGroupShelves(
     finalGroups,
@@ -143,25 +150,26 @@ export function placeStructures(
 
 /** Places one group as a unit: leader first, members side by side next to it. */
 function placeGroup(context: PlacementContext, unit: readonly number[]): void {
-  const { drafts, state, insideWorld, random, shelf, placements, dissolved } = context;
+  const { drafts, state, insideWorld, random, shelf, placements } = context;
+  const group = context.groups.findIndex(members => members.includes(unit[0]));
   const leader = findPlacement(drafts[unit[0]], context.groupAnchors, state, insideWorld, random);
   if (!leader) {
+    // Without a leader the whole group dissolves into isolated structures.
     for (const member of unit) {
       placeIsolated(context, member);
     }
     return;
   }
 
-  const members: Placement[] = [addPlaced(leader, unit[0], state)];
+  const members: Placement[] = [addPlaced(leader, unit[0], state, group)];
   const limit = shelf.width + GROUP_GAP;
 
   for (const member of unit.slice(1)) {
     const entry = findGroupMember(drafts[member], members, limit, state, insideWorld, random);
     if (entry) {
-      members.push(addPlaced(entry, member, state));
+      members.push(addPlaced(entry, member, state, group));
     } else {
       // A member that cannot fit next to its group stops being part of it.
-      dissolved.add(member);
       placeIsolated(context, member);
     }
   }
@@ -182,10 +190,15 @@ function placeIsolated(context: PlacementContext, draftIndex: number): void {
   }
 }
 
-function addPlaced(entry: PlacedEntry, draftIndex: number, state: PlacementState): Placement {
+function addPlaced(
+  entry: PlacedEntry,
+  draftIndex: number,
+  state: PlacementState,
+  group?: number
+): Placement {
   state.index.insert(state.entries.length, entry.bounds);
   state.entries.push(entry);
-  return { entry, draftIndex };
+  return { entry, draftIndex, group };
 }
 
 /** First position, rotation and shrink that overlap nothing. */

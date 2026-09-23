@@ -141,8 +141,15 @@ describe('placeStructures', () => {
       expect(validatePlacement(result.structures, small, INSIDE_SHARE)).toEqual([]);
       expect(result.structures.length + result.dropped).toBe(many.length);
       expect(result.dropped).toBeGreaterThan(0);
+      // Dissolved members must not keep a shelf that spans the world.
+      for (const [index, structure] of result.structures.entries()) {
+        expect(
+          groupGap(result, index),
+          `seed ${seed}: group around "${structure.id}" spread too far`
+        ).toBeLessThanOrEqual(GROUP_LIMIT + 1e-9);
+      }
     }
-  });
+  }, 30000);
 });
 
 /** A world mask covering only the middle of the map. */

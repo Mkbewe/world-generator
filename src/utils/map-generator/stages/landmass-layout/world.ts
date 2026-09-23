@@ -14,6 +14,10 @@ export function createMaskSampler(
   const yDivisor = Math.max(1, height - 1);
 
   return point => {
+    // Points outside the map are outside the world, never on its edge.
+    if (point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) {
+      return false;
+    }
     const x = Math.min(width - 1, Math.max(0, Math.round(point.x * xDivisor)));
     const y = Math.min(height - 1, Math.max(0, Math.round(point.y * yDivisor)));
     return worldMask[y * width + x] === 1;
