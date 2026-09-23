@@ -1,5 +1,22 @@
 import { type InspectorReadout, type ReadoutItem, readoutItems } from './readout';
+import type { LandmassLayout } from '../map-generator/types';
 import type { MapInspection } from '../map-renderer';
+
+const LAYOUT: LandmassLayout = {
+  structures: [
+    {
+      id: 'landmass-1',
+      archetype: 'elongated',
+      nodes: [
+        { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
+        { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.03 },
+      ],
+      edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
+      shelfId: 'shelf-1',
+    },
+  ],
+  shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 }],
+};
 
 function readout(inspection?: MapInspection): InspectorReadout {
   return {
@@ -133,23 +150,75 @@ describe('readoutItems', () => {
       kind: 'vector',
       layerId: 'landmass-layout',
       label: 'Landmasses',
-      hit: { id: 'landmass-1', label: 'Isla Verde' },
+      hit: { id: 'landmass-1' },
     } as const;
 
-    expect(itemValue(readout(inspection), 'value')).toBe('Isla Verde');
-    expect(itemValue(readout({ ...inspection, hit: { id: 'landmass-1' } }), 'value')).toBe(
-      'landmass-1'
-    );
-    expect(itemValue(readout({ ...inspection, hit: undefined }), 'value')).toBe('—');
+    expect(itemValue(readout(inspection), 'name')).toBe('landmass-1');
+    expect(itemValue(readout({ ...inspection, hit: undefined }), 'name')).toBe('—');
   });
 
-  it('keeps the layer label while the sample is unavailable', () => {
+  it('keeps the layer label while the raster sample is unavailable', () => {
     const raster = readoutItems(readout({ kind: 'raster', layerId: 'noise', label: 'Noise' }));
-    const vector = readoutItems(
-      readout({ kind: 'vector', layerId: 'landmass-layout', label: 'Landmasses' })
-    );
 
     expect(raster[1]).toMatchObject({ label: 'Noise', value: '—' });
-    expect(vector[1]).toMatchObject({ label: 'Landmasses', value: '—' });
+  });
+
+  it('shows the landmass type and its measurements', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'landmass-layout',
+      label: 'Landmasses',
+      hit: { id: 'landmass-1' },
+    } as const;
+    const info = {
+      landmassLayout: LAYOUT,
+      worldDimensions: {
+        widthMeters: 4000,
+        heightMeters: 2000,
+        sampleWidth: 2000,
+        sampleHeight: 1000,
+      },
+    };
+    const items = readoutItems(readout(inspection), info);
+
+    expect(items.map(item => item.id)).toEqual([
+      'position',
+      'name',
+      'archetype',
+      'nodes',
+      'length',
+      'width',
+    ]);
+    expect(itemValue(readout(inspection), 'name', info)).toBe('landmass-1');
+    expect(itemValue(readout(inspection), 'archetype', info)).toBe('elongated');
+    expect(itemValue(readout(inspection), 'nodes', info)).toBe('2');
+    expect(itemValue(readout(inspection), 'length', info)).toBe('800 m');
+    expect(itemValue(readout(inspection), 'width', info)).toBe('180 m–300 m');
+  });
+
+  it('falls back to normalized measurements without world dimensions', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'landmass-layout',
+      label: 'Landmasses',
+      hit: { id: 'landmass-1' },
+    } as const;
+    const info = { landmassLayout: LAYOUT };
+
+    expect(itemValue(readout(inspection), 'length', info)).toBe('0.200');
+    expect(itemValue(readout(inspection), 'width', info)).toBe('0.060–0.100');
+  });
+
+  it('shows no measurements for a hit outside the captured layout', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'landmass-layout',
+      label: 'Landmasses',
+      hit: { id: 'landmass-9' },
+    } as const;
+    const items = readoutItems(readout(inspection), { landmassLayout: LAYOUT });
+
+    expect(items[1]).toMatchObject({ id: 'name', value: 'landmass-9' });
+    expect(items).toHaveLength(2);
   });
 });

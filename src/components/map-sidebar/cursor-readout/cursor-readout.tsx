@@ -17,8 +17,8 @@ export function CursorReadout({ items, pinned = false, bare = false }: CursorRea
   const content = (
     <Flex
       align='start'
-      gap='4'
-      wrap='wrap'
+      direction='column'
+      gap='0'
       className={pinned ? `${styles.inspector} ${styles.pinned}` : styles.inspector}
       role='group'
       aria-label={pinned ? 'Cursor readout (pinned)' : 'Cursor readout'}

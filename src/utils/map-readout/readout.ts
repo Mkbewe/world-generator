@@ -1,3 +1,6 @@
+import { structureSegments } from '../map-generator/stages/landmass-layout/geometry';
+import { isLandmassLayout } from '../map-generator/stages/landmass-layout/validation';
+import type { GeologicalStructure } from '../map-generator/types';
 import type { MapInfo, MapInspection } from '../map-renderer';
 import { cellOriginMeters, type WorldDimensions } from '../world-dimensions';
 
@@ -36,6 +39,8 @@ export function readoutItems(
   readout: InspectorReadout | undefined,
   info: MapInfo = {}
 ): readonly ReadoutItem[] {
+  const inspection = readout?.inspection;
+  const structure = inspection ? landmassStructure(inspection, info) : undefined;
   return [
     {
       id: 'position',
@@ -43,10 +48,28 @@ export function readoutItems(
       value: EMPTY,
       lines: readout ? describePositionLines(readout.position, info) : undefined,
     },
+    ...inspectionItems(inspection, info, structure),
+  ];
+}
+
+/** Raster layers report their value; vector layers name the hovered element. */
+function inspectionItems(
+  inspection: MapInspection | undefined,
+  info: MapInfo,
+  structure: GeologicalStructure | undefined
+): readonly ReadoutItem[] {
+  if (inspection?.kind === 'vector') {
+    return [
+      { id: 'name', label: 'Name', value: inspection.hit?.id ?? EMPTY },
+      ...(structure ? [{ id: 'archetype', label: 'Archetype', value: structure.archetype }] : []),
+      ...structureItems(structure, info),
+    ];
+  }
+  return [
     {
       id: 'value',
-      label: readout?.inspection?.label ?? 'Value',
-      value: describeValue(readout?.inspection, info),
+      label: inspection?.label ?? 'Value',
+      value: describeValue(inspection, info),
     },
   ];
 }
@@ -69,14 +92,8 @@ function describePositionLines(position: PointerSample, info: MapInfo): readonly
 }
 
 function describeValue(inspection: MapInspection | undefined, info: MapInfo): string {
-  if (!inspection) {
+  if (!inspection || inspection.kind === 'vector') {
     return EMPTY;
-  }
-  if (inspection.kind === 'vector') {
-    if (!inspection.hit) {
-      return EMPTY;
-    }
-    return inspection.hit.label ?? inspection.hit.id;
   }
   if (inspection.value === undefined) {
     return EMPTY;
@@ -91,6 +108,67 @@ function describeValue(inspection: MapInspection | undefined, info: MapInfo): st
     default:
       return inspection.value.toFixed(3);
   }
+}
+
+/** Structure a vector hit points at, when the map carries the generated layout. */
+function landmassStructure(
+  inspection: MapInspection,
+  info: MapInfo
+): GeologicalStructure | undefined {
+  if (inspection.kind !== 'vector' || !inspection.hit) {
+    return undefined;
+  }
+  const id = inspection.hit.id;
+  const layout: unknown = info.landmassLayout;
+  if (!isLandmassLayout(layout)) {
+    return undefined;
+  }
+  return layout.structures.find(structure => structure.id === id);
+}
+
+/** Measurements of the hovered structure, shown as extra readout rows. */
+function structureItems(
+  structure: GeologicalStructure | undefined,
+  info: MapInfo
+): readonly ReadoutItem[] {
+  if (!structure) {
+    return [];
+  }
+  const metrics = structureMetrics(structure, worldDimensions(info));
+  return [
+    { id: 'nodes', label: 'Nodes', value: String(metrics.nodes) },
+    { id: 'length', label: 'Length', value: metrics.length },
+    { id: 'width', label: 'Width', value: metrics.width },
+  ];
+}
+
+interface StructureMetrics {
+  readonly nodes: number;
+  readonly length: string;
+  readonly width: string;
+}
+
+function structureMetrics(
+  structure: GeologicalStructure,
+  dimensions: WorldDimensions | undefined
+): StructureMetrics {
+  let length = 0;
+  for (const segment of structureSegments(structure)) {
+    const dx = segment.to.x - segment.from.x;
+    const dy = segment.to.y - segment.from.y;
+    length += dimensions
+      ? Math.hypot(dx * dimensions.widthMeters, dy * dimensions.heightMeters)
+      : Math.hypot(dx, dy);
+  }
+  const meanScale = dimensions ? (dimensions.widthMeters + dimensions.heightMeters) / 2 : 1;
+  const widths = structure.nodes.map(node => node.radius * 2 * meanScale);
+  const format = (value: number): string =>
+    dimensions ? `${formatMeters(Math.round(value * 10) / 10)} m` : value.toFixed(3);
+  return {
+    nodes: structure.nodes.length,
+    length: format(length),
+    width: `${format(Math.min(...widths))}–${format(Math.max(...widths))}`,
+  };
 }
 
 /** Reads the label captured with the generated map at the given label index. */
