@@ -344,6 +344,43 @@ describe('WorldGenerationSession', () => {
     expect(renderer.state.displayedLayer).toBe('macro-region');
   });
 
+  it('follows the landmass layout while a fresh map is built', async () => {
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      options?.onEvent?.(completed('noise', { noiseMap: new Float32Array(4) }));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
+      options?.onEvent?.(completed('landmass-layout', { landmassLayout: landmassLayoutFixture() }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
+    session.attach(renderer);
+
+    await session.generate(config, vi.fn());
+    await renderer.ready;
+
+    expect(renderer.state.displayedLayer).toBe('landmass-layout');
+  });
+
+  it('keeps the selection when a later run reports a new layout', async () => {
+    runner.mockImplementation(async (_, options) => {
+      options?.onStages?.(stages);
+      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
+      options?.onEvent?.(completed('landmass-layout', { landmassLayout: landmassLayoutFixture() }));
+      return { statistics: [], totalDurationMs: 1 };
+    });
+    session.attach(renderer);
+    await session.generate(config, vi.fn());
+    await renderer.ready;
+    expect(renderer.state.displayedLayer).toBe('landmass-layout');
+
+    await session.generate(config, vi.fn());
+    await renderer.ready;
+
+    // The refreshed instance takes over the slot the user is already watching.
+    expect(renderer.state.displayedLayer).toBe('landmass-layout');
+  });
+
   it('plans reused stages as skipped before the worker reports', async () => {
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages);

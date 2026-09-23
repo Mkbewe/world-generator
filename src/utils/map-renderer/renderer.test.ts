@@ -128,7 +128,7 @@ describe('MapRenderer', () => {
     ]);
   });
 
-  it('prepares the vector layer when its domain data arrives', async () => {
+  it('follows the vector layer when its domain data arrives', async () => {
     const { preview } = setup();
     preview.add('world-shape', new Uint8Array(4).fill(1));
     await preview.ready;
@@ -138,11 +138,11 @@ describe('MapRenderer', () => {
 
     const option = preview.state.layers.find(layer => layer.id === 'landmass-layout');
     expect(option?.available).toBe(true);
-    // The silent vector layer never steals the displayed one.
-    expect(preview.state.displayedLayer).toBe('world-shape');
+    // A fresh map follows every stage, the vector layout included.
+    expect(preview.state.displayedLayer).toBe('landmass-layout');
   });
 
-  it('prepares the vector layer unlocked by a mask that arrives later', async () => {
+  it('follows the vector layer unlocked by a mask that arrives later', async () => {
     const { preview } = setup();
     preview.setInfo({ landmassLayout: LAYOUT });
 
@@ -151,6 +151,7 @@ describe('MapRenderer', () => {
 
     const option = preview.state.layers.find(layer => layer.id === 'landmass-layout');
     expect(option?.available).toBe(true);
+    expect(preview.state.displayedLayer).toBe('landmass-layout');
     preview.dispose();
   });
 

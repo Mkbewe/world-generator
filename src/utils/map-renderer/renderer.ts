@@ -209,9 +209,10 @@ export class MapRenderer {
     this.signal.throwIfAborted();
     const [layer, ...unlocked] = this.scene.add(id, value);
     this.queue.enqueue(layer, silent);
-    // Vector layers unlocked by this data render without stealing the view.
-    for (const vector of unlocked) {
-      this.queue.enqueue(vector, true);
+    // Layers unlocked by this data follow the same rule as the added one: a
+    // fresh run walks through them, a silent replay keeps the view in place.
+    for (const extra of unlocked) {
+      this.queue.enqueue(extra, silent);
     }
   }
 
@@ -276,11 +277,10 @@ export class MapRenderer {
   /** Keeps non-raster information captured with the current map. */
   setInfo(info: MapInfo): void {
     this.info = info;
-    const displayed = this.view.displayedLayer;
+    // Vector layers join the run like any other layer: the view follows them
+    // while a fresh map is being built and leaves an existing selection alone.
     for (const layer of this.scene.setInfo(info)) {
-      // A refreshed layer that is currently displayed takes over its slot;
-      // the others render in the background without stealing the view.
-      this.queue.enqueue(layer, layer.id !== displayed);
+      this.queue.enqueue(layer);
     }
     this.emitState();
   }
