@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
-import { FrameIcon, GlobeIcon, LayersIcon, MixerHorizontalIcon } from '@radix-ui/react-icons';
+import {
+  FrameIcon,
+  GlobeIcon,
+  LayersIcon,
+  MixerHorizontalIcon,
+  SewingPinIcon,
+} from '@radix-ui/react-icons';
 import { Tabs } from '@radix-ui/themes';
 
 import type { MapBaseLayerId, MapLayerNavigation } from '../../utils/map-renderer';
@@ -8,6 +14,7 @@ import styles from './layer-tabs.module.scss';
 const LAYER_ICONS = {
   'world-shape': <GlobeIcon />,
   'macro-region': <LayersIcon />,
+  'landmass-layout': <SewingPinIcon />,
   noise: <MixerHorizontalIcon />,
 } satisfies Partial<Record<MapBaseLayerId, ReactNode>>;
 

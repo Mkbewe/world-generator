@@ -43,13 +43,32 @@ export interface MapLayerOption<TId extends string> {
   available: boolean;
 }
 
-/** Raw value of the displayed layer at a source raster cell. */
-export interface MapInspection {
-  id: MapBaseLayerId;
-  label: string;
-  /** Undefined when the cell lies outside the layer's valid area. */
-  value?: number;
+/** Named element of a vector layer under the pointer. */
+export interface LayerHit {
+  readonly id: string;
+  readonly label?: string;
 }
+
+/** Raster value of the displayed layer at a source cell. */
+export interface RasterMapInspection {
+  readonly kind: 'raster';
+  readonly layerId: MapBaseLayerId;
+  readonly label: string;
+  /** Undefined when the cell lies outside the layer's valid area. */
+  readonly value?: number;
+}
+
+/** Vector element of the displayed layer at a source cell. */
+export interface VectorMapInspection {
+  readonly kind: 'vector';
+  readonly layerId: MapBaseLayerId;
+  readonly label: string;
+  /** Undefined when the pointer misses every element of the layer. */
+  readonly hit?: LayerHit;
+}
+
+/** Sample of the displayed layer at a source raster cell. */
+export type MapInspection = RasterMapInspection | VectorMapInspection;
 
 export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
   visible: boolean;
@@ -83,25 +102,38 @@ export interface MapLayerNavigation {
   readonly activeTab?: string;
 }
 
-export interface RenderLayerStatistics {
+/** Measurements every rendered layer reports, whatever its data. */
+interface RenderLayerStatisticsBase {
   id: MapBaseLayerId;
   name: string;
-  /** Synchronous preparation and tile drawing time, excluding browser yields. */
+  /** Synchronous preparation and drawing time, excluding browser yields. */
   durationMs: number;
-  tiles: number;
   /** True when this run replayed the layer and the cost comes from an earlier one. */
   reused?: boolean;
-  /** Pixels drawn in this run, including transparent pixels. */
-  pixels: number;
-  /** Resolution of the generator raster this layer samples. */
-  sourceWidth: number;
-  sourceHeight: number;
   /** Resolution of the viewport buffer drawn for this layer. */
   outputWidth: number;
   outputHeight: number;
   /** Estimated RGBA bytes of all surfaces held for this layer. */
   bytes: number;
 }
+
+export interface RasterRenderLayerStatistics extends RenderLayerStatisticsBase {
+  kind: 'raster';
+  tiles: number;
+  /** Pixels drawn in this run, including transparent pixels. */
+  pixels: number;
+  /** Resolution of the generator raster this layer samples. */
+  sourceWidth: number;
+  sourceHeight: number;
+}
+
+export interface VectorRenderLayerStatistics extends RenderLayerStatisticsBase {
+  kind: 'vector';
+  nodes: number;
+  edges: number;
+}
+
+export type RenderLayerStatistics = RasterRenderLayerStatistics | VectorRenderLayerStatistics;
 
 export interface RenderStatistics {
   /** Wall-clock time from starting the run to this report, including waiting. */

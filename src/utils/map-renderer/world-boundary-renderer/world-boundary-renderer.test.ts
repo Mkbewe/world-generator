@@ -21,7 +21,7 @@ function createCanvas(context: CanvasRenderingContext2D): HTMLCanvasElement {
 
 function createWorld(): CatalogLayer {
   return new CatalogLayer(
-    layerRegistry.get('world-shape'),
+    layerRegistry.raster('world-shape'),
     { width: 4, height: 4 },
     new Uint8Array(16).fill(1)
   );

@@ -26,7 +26,7 @@ describe('SmoothLayerPainter', () => {
       labels,
       { size, contains: () => true },
       undefined,
-      compilePalette(layerRegistry.get('macro-region').palette),
+      compilePalette(layerRegistry.raster('macro-region').palette),
       { shape: 'rectangle' },
       'analytic',
       undefined,
@@ -86,7 +86,7 @@ describe('SmoothLayerPainter', () => {
       mask,
       undefined,
       1,
-      compilePalette(layerRegistry.get('world-shape').palette),
+      compilePalette(layerRegistry.raster('world-shape').palette),
       { shape: 'disc' },
       'world'
     );
@@ -113,7 +113,7 @@ describe('SmoothLayerPainter', () => {
       noise,
       { size, contains: (x, y) => mask[y * size.width + x] === 1 },
       undefined,
-      compilePalette(layerRegistry.get('noise').palette),
+      compilePalette(layerRegistry.raster('noise').palette),
       { shape: 'disc' },
       'clipped'
     );

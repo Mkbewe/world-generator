@@ -11,6 +11,7 @@ const CATALOG_ENTRIES = [
   {
     id: 'world-shape',
     label: 'World shape',
+    kind: 'raster',
     source: 'worldMask',
     dataType: 'uint8',
     providesMask: { insideValue: 1 },
@@ -19,6 +20,7 @@ const CATALOG_ENTRIES = [
   {
     id: 'macro-region',
     label: 'Macro regions',
+    kind: 'raster',
     source: 'macroRegionIdMap',
     dataType: 'uint8',
     clipTo: 'world-shape',
@@ -27,8 +29,16 @@ const CATALOG_ENTRIES = [
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
   },
   {
+    id: 'landmass-layout',
+    label: 'Landmasses',
+    kind: 'vector',
+    source: 'landmassLayout',
+    clipTo: 'world-shape',
+  },
+  {
     id: 'noise',
     label: 'Noise',
+    kind: 'raster',
     source: 'noiseMap',
     dataType: 'float32',
     clipTo: 'world-shape',
@@ -59,19 +69,26 @@ function stageIndex(id: string): number {
   return STAGE_ORDER.get(id) ?? PIPELINE_STAGES.length;
 }
 
+type CatalogEntry = (typeof LAYER_CATALOG)[number];
+
+/** Catalog entries that carry a raster. */
+export const RASTER_CATALOG = LAYER_CATALOG.filter(
+  (spec): spec is Extract<CatalogEntry, { kind: 'raster' }> => spec.kind === 'raster'
+);
+
 /**
  * Whether every raster key belongs to the current catalog. Snapshots saved in an
  * older format fail this check, so callers can drop them instead of re-saving
  * stale rasters.
  */
 export function hasCurrentRasterSources(data: LayerDataRecord): boolean {
-  return Object.keys(data).every(key => LAYER_CATALOG.some(spec => spec.source === key));
+  return Object.keys(data).every(key => RASTER_CATALOG.some(spec => spec.source === key));
 }
 
 /** Selects only catalog-owned raster sources at the dynamic data boundary. */
 export function selectRasters(data: LayerDataRecord): MapRasters {
   const selected: Record<string, unknown> = {};
-  for (const spec of LAYER_CATALOG) {
+  for (const spec of RASTER_CATALOG) {
     if (Object.hasOwn(data, spec.source) && data[spec.source] !== undefined) {
       selected[spec.source] = data[spec.source];
     }

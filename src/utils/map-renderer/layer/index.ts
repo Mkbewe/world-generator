@@ -1,7 +1,11 @@
 export { LayerCache, layerCache } from './layer-cache';
 export { CatalogLayer } from './catalog-layer';
 export { LayerRegistry, layerRegistry } from './layer-registry';
-export { MapLayer } from './layer';
+export { MapLayer, isLayerHit } from './layer';
+export { LandmassLayoutVectorLayer } from './landmass-layout-vector-layer';
+export { vectorLayerFactories } from './vector-layer-factories';
+export { validateVectorLayerFactories } from './vector-layer-factory';
 export { LayerQueue } from './layer-queue';
 export type { LayerQueueHandlers } from './layer-queue';
-export type { LayerRenderStatistics, LayerTile, MapSize, TileReporter } from './layer';
+export type { VectorLayerFactory, VectorLayerFactoryRegistry } from './vector-layer-factory';
+export type { LayerRenderStatistics, LayerSample, LayerTile, MapSize, TileReporter } from './layer';

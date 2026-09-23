@@ -69,10 +69,19 @@ function describePositionLines(position: PointerSample, info: MapInfo): readonly
 }
 
 function describeValue(inspection: MapInspection | undefined, info: MapInfo): string {
-  if (!inspection || inspection.value === undefined) {
+  if (!inspection) {
     return EMPTY;
   }
-  switch (inspection.id) {
+  if (inspection.kind === 'vector') {
+    if (!inspection.hit) {
+      return EMPTY;
+    }
+    return inspection.hit.label ?? inspection.hit.id;
+  }
+  if (inspection.value === undefined) {
+    return EMPTY;
+  }
+  switch (inspection.layerId) {
     case 'world-shape':
       return inspection.value === 1 ? 'Inside' : 'Outside';
     case 'macro-region': {

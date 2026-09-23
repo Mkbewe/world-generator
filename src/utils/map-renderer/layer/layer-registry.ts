@@ -2,6 +2,7 @@ import {
   LAYER_CATALOG,
   type LayerDataRecord,
   type LayerSpec,
+  type RasterLayerSpec,
   validatePalette,
 } from '../../map-layers';
 import type { LayerLeafNode, LayerTreeNode, MapBaseLayerId } from '../types';
@@ -25,8 +26,10 @@ export class LayerRegistry<TId extends string = MapBaseLayerId> {
       if (sources.has(spec.source)) {
         throw new Error('Duplicate layer source: ' + spec.source);
       }
-      validatePalette(spec.palette);
-      validateMaskValue(spec);
+      if (spec.kind === 'raster') {
+        validatePalette(spec.palette);
+        validateMaskValue(spec);
+      }
       this.specs.set(spec.id, spec);
       sources.add(spec.source);
     }
@@ -66,7 +69,7 @@ export class LayerRegistry<TId extends string = MapBaseLayerId> {
       if (!mask) {
         throw new Error('Unknown layer: ' + spec.clipTo);
       }
-      if (!mask.providesMask) {
+      if (mask.kind !== 'raster' || !mask.providesMask) {
         throw new Error(`Layer "${spec.id}" cannot clip to non-mask layer "${spec.clipTo}".`);
       }
     }
@@ -108,6 +111,15 @@ export class LayerRegistry<TId extends string = MapBaseLayerId> {
     return spec;
   }
 
+  /** Raster spec of a layer; throws when the layer carries domain data instead. */
+  raster(id: string): RasterLayerSpec<TId> {
+    const spec = this.get(id);
+    if (spec.kind !== 'raster') {
+      throw new Error('Layer is not a raster: ' + id);
+    }
+    return spec;
+  }
+
   presentIn(data: LayerDataRecord): readonly TId[] {
     return this.buildOrder.filter(id => {
       const source = this.get(id).source;
@@ -118,7 +130,7 @@ export class LayerRegistry<TId extends string = MapBaseLayerId> {
 
 export const layerRegistry = new LayerRegistry(LAYER_CATALOG);
 
-function validateMaskValue(spec: LayerSpec): void {
+function validateMaskValue(spec: RasterLayerSpec): void {
   const value = spec.providesMask?.insideValue;
   if (value === undefined) {
     return;

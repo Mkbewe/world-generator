@@ -1,5 +1,12 @@
 import { isFitted, type ViewTransform } from './view/view-transform';
-import { layerCache, LayerQueue, layerRegistry, type MapLayer, type MapSize } from './layer';
+import {
+  isLayerHit,
+  layerCache,
+  LayerQueue,
+  layerRegistry,
+  type MapLayer,
+  type MapSize,
+} from './layer';
 import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
 import {
@@ -148,9 +155,10 @@ export class MapRenderer {
     this.setInfo(snapshot.info ?? {});
     this.metrics.reset();
     const layers = this.scene.load(snapshot.layers);
-    this.view.restoreSelection(layers.at(-1)?.id);
+    const rasters = layers.filter(layer => this.registry.get(layer.id).kind === 'raster');
+    this.view.restoreSelection(rasters.at(-1)?.id);
     for (const layer of layers) {
-      this.queue.enqueue(layer);
+      this.queue.enqueue(layer, this.registry.get(layer.id).kind === 'vector');
     }
   }
 
@@ -168,7 +176,7 @@ export class MapRenderer {
     return this.view.viewTransform;
   }
 
-  /** Reads the displayed layer's raw value at a source raster cell. */
+  /** Reads the displayed layer's sample at a source raster cell. */
   inspect(x: number, y: number): MapInspection | undefined {
     const id = this.view.displayedLayer;
     if (!id) {
@@ -178,13 +186,33 @@ export class MapRenderer {
     if (!layer) {
       return undefined;
     }
-    return { id, label: this.registry.get(id).label, value: layer.sample(x, y) };
+    const spec = this.registry.get(id);
+    const sample = layer.sample(x, y);
+    if (spec.kind === 'vector') {
+      return {
+        kind: 'vector',
+        layerId: id,
+        label: spec.label,
+        hit: isLayerHit(sample) ? sample : undefined,
+      };
+    }
+    return {
+      kind: 'raster',
+      layerId: id,
+      label: spec.label,
+      value: typeof sample === 'number' ? sample : undefined,
+    };
   }
 
   /** Silent layers are prepared without becoming the displayed one; used for replays. */
   add(id: MapBaseLayerId, value: unknown, silent = false): void {
     this.signal.throwIfAborted();
-    this.queue.enqueue(this.scene.add(id, value), silent);
+    const [layer, ...unlocked] = this.scene.add(id, value);
+    this.queue.enqueue(layer, silent);
+    // Vector layers unlocked by this data render without stealing the view.
+    for (const vector of unlocked) {
+      this.queue.enqueue(vector, true);
+    }
   }
 
   select(id: MapBaseLayerId): void {
@@ -248,6 +276,10 @@ export class MapRenderer {
   /** Keeps non-raster information captured with the current map. */
   setInfo(info: MapInfo): void {
     this.info = info;
+    // Vector layers render in the background; the displayed layer stays.
+    for (const layer of this.scene.setInfo(info)) {
+      this.queue.enqueue(layer, true);
+    }
     this.emitState();
   }
 

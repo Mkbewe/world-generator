@@ -204,7 +204,10 @@ export class WorldGenerationSession {
     if (!run) {
       return;
     }
-    run.info = { ...run.info, landmassLayout: layout };
+    run.info = {
+      ...run.info,
+      landmassLayout: layout,
+    };
     this.renderer?.setInfo(run.info);
   }
 

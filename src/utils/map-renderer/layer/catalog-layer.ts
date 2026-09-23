@@ -3,9 +3,9 @@ import type { SmoothGeometry } from './smooth-geometry';
 import { type SmoothLayerMode, SmoothLayerPainter } from './smooth-layer-painter';
 import {
   compilePalette,
-  type LayerSpec,
   type PixelWriter,
   type RasterData,
+  type RasterLayerSpec,
 } from '../../map-layers';
 import type { RenderTarget } from '../preview-targets';
 import type { MapBaseLayerId, SpatialMask } from '../types';
@@ -18,7 +18,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   private readonly smoothInterior: boolean;
 
   constructor(
-    readonly spec: LayerSpec<MapBaseLayerId>,
+    readonly spec: RasterLayerSpec<MapBaseLayerId>,
     size: MapSize,
     value: unknown,
     private readonly clipMask?: SpatialMask,
@@ -184,7 +184,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
 
 /** Analytic classifier a layer declares, when the map carries the matching geometry. */
 function resolveBoundary(
-  spec: LayerSpec<MapBaseLayerId>,
+  spec: RasterLayerSpec<MapBaseLayerId>,
   geometry?: SmoothGeometry
 ): ((x: number, y: number) => number) | undefined {
   if (spec.boundarySource === 'region') {
@@ -195,7 +195,7 @@ function resolveBoundary(
 
 /** How a layer smooths its edges: analytic borders, the world edge or none. */
 function smoothMode(
-  spec: LayerSpec<MapBaseLayerId>,
+  spec: RasterLayerSpec<MapBaseLayerId>,
   boundary: ((x: number, y: number) => number) | undefined
 ): SmoothLayerMode {
   if (boundary) {
@@ -218,7 +218,7 @@ function filterSamplesPerAxis(cellSize: number): number {
 }
 
 function validateRasterData(
-  spec: LayerSpec<MapBaseLayerId>,
+  spec: RasterLayerSpec<MapBaseLayerId>,
   size: MapSize,
   value: unknown
 ): RasterData {

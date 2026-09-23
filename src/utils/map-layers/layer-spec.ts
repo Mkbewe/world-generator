@@ -25,13 +25,19 @@ export interface LayerGroupSpec {
   readonly label: string;
 }
 
-/** Declarative description of one renderable raster. */
-export interface LayerSpec<TId extends string = string> {
+/** Fields every catalog entry shares. */
+interface LayerSpecBase<TId extends string = string> {
   readonly id: TId;
   readonly label: string;
   readonly source: string;
-  readonly dataType: RasterDataType;
   readonly clipTo?: TId;
+  readonly group?: LayerGroupSpec;
+}
+
+/** Declarative description of one renderable raster. */
+export interface RasterLayerSpec<TId extends string = string> extends LayerSpecBase<TId> {
+  readonly kind: 'raster';
+  readonly dataType: RasterDataType;
   /**
    * Analytic boundary classifier painted at screen resolution instead of cell
    * edges, so borders stay smooth at any zoom. The renderer resolves the
@@ -43,9 +49,19 @@ export interface LayerSpec<TId extends string = string> {
   readonly providesMask?: { readonly insideValue: number };
   /** Cells holding this value stay transparent, e.g. "no structure" in an id map. */
   readonly skipValue?: number;
-  readonly group?: LayerGroupSpec;
   readonly palette: PaletteSpec;
 }
+
+/**
+ * Declarative description of one vector layer. Its source is a key of the map
+ * info and its data is domain geometry instead of a typed array, so it has no
+ * palette; the layer factory validates that data before building the layer.
+ */
+export interface VectorLayerSpec<TId extends string = string> extends LayerSpecBase<TId> {
+  readonly kind: 'vector';
+}
+
+export type LayerSpec<TId extends string = string> = RasterLayerSpec<TId> | VectorLayerSpec<TId>;
 
 export type RasterData = Uint8Array | Float32Array;
 

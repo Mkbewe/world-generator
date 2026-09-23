@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { RenderStatisticsPanel } from './render-statistics';
 import type { RenderStatistics } from '../../utils/map-renderer';
 
-const statistics: RenderStatistics = {
+const statistics = {
   elapsedDurationMs: 1200,
   firstTileDurationMs: 250,
   viewport: { width: 640, height: 480, devicePixelRatio: 2 },
@@ -13,6 +13,7 @@ const statistics: RenderStatistics = {
   bufferBytes: 12_000_000,
   layers: [
     {
+      kind: 'raster',
       id: 'world-shape',
       name: 'World shape',
       durationMs: 30,
@@ -25,6 +26,7 @@ const statistics: RenderStatistics = {
       bytes: 4_000_000,
     },
     {
+      kind: 'raster',
       id: 'noise',
       name: 'Noise',
       durationMs: 20,
@@ -37,7 +39,7 @@ const statistics: RenderStatistics = {
       bytes: 8_000_000,
     },
   ],
-};
+} satisfies RenderStatistics;
 
 describe('RenderStatisticsPanel', () => {
   it('renders the render summary and layers', () => {
@@ -82,5 +84,37 @@ describe('RenderStatisticsPanel', () => {
     );
     expect(screen.getAllByText('—')).toHaveLength(2);
     expect(screen.queryByText(/ms\/MPix/)).not.toBeInTheDocument();
+  });
+
+  it('reports vector element counts instead of raster pixels', () => {
+    render(
+      <Theme>
+        <RenderStatisticsPanel
+          statistics={{
+            ...statistics,
+            layers: [
+              {
+                kind: 'vector',
+                id: 'landmass-layout',
+                name: 'Landmasses',
+                durationMs: 5,
+                nodes: 120,
+                edges: 134,
+                outputWidth: 320,
+                outputHeight: 240,
+                bytes: 1_000_000,
+              },
+            ],
+          }}
+        />
+      </Theme>
+    );
+
+    expect(screen.getByText('Nodes')).toBeInTheDocument();
+    expect(screen.getByText('120')).toBeInTheDocument();
+    expect(screen.getByText('Edges')).toBeInTheDocument();
+    expect(screen.getByText('134')).toBeInTheDocument();
+    expect(screen.queryByText('Drawing performance')).not.toBeInTheDocument();
+    expect(screen.queryByText('Source')).not.toBeInTheDocument();
   });
 });
