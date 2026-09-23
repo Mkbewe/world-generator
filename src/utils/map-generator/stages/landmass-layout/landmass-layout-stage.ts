@@ -72,9 +72,8 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     }
 
     const sizes = planSizes(
-      drafts.map(draft => ({ area: draft.area, extent: structureExtent(draft) })),
+      drafts.map(draft => ({ extent: structureExtent(draft) })),
       config,
-      worldArea,
       random
     );
     // The size plan lists the largest structures first, so they are placed first.

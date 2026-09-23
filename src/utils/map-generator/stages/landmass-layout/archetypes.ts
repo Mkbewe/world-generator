@@ -28,17 +28,19 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     skew: [-0.25, 0.25],
     variation: [0.1, 0.3],
     branches: [0, 0],
+    nodes: [2, 6],
   },
   irregular: {
     length: [0.8, 1.2],
     turn: [0, 1.2],
     wobble: [0.9, 1.6],
     bends: [1.5, 3],
-    radius: [0.1, 0.17],
+    radius: [0.085, 0.14],
     taper: [0.5, 0.8],
     skew: [-0.35, 0.35],
     variation: [0.25, 0.5],
     branches: [0, 1],
+    nodes: [4, 8],
   },
   elongated: {
     length: [1.4, 2],
@@ -50,17 +52,22 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     skew: [-0.2, 0.2],
     variation: [0.1, 0.25],
     branches: [0, 0],
+    nodes: [2, 6],
   },
   winding: {
-    length: [1.1, 1.6],
-    turn: [0, 3.2],
-    wobble: [0.6, 1.4],
-    bends: [0.75, 1.5],
-    radius: [0.08, 0.12],
-    taper: [0.45, 0.7],
-    skew: [-0.3, 0.3],
-    variation: [0.15, 0.35],
+    // A random walk of a few bends instead of one sine: `bends` is the piece
+    // count, `turn` the per-piece angle and `wobble` the chance of a straight
+    // run, so no two windings repeat and some corners are sharp, some shallow.
+    length: [1.2, 1.8],
+    turn: [0.4, 1.9],
+    wobble: [0.1, 0.3],
+    bends: [3, 5],
+    radius: [0.028, 0.045],
+    taper: [0.6, 0.85],
+    skew: [0, 0],
+    variation: [0, 0],
     branches: [0, 0],
+    nodes: [4, 8],
   },
   branched: {
     length: [0.9, 1.3],
@@ -72,6 +79,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     skew: [-0.25, 0.25],
     variation: [0.15, 0.3],
     branches: [1, 3],
+    nodes: [2, 6],
   },
   lagoon: {
     length: [1.1, 1.4],
@@ -83,6 +91,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     skew: [-0.2, 0.2],
     variation: [0.1, 0.25],
     branches: [0, 0],
+    nodes: [8, 14],
   },
   atoll: {
     length: [1.2, 1.6],
@@ -94,6 +103,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     skew: [-0.15, 0.15],
     variation: [0.08, 0.2],
     branches: [0, 0],
+    nodes: [8, 14],
   },
 };
 

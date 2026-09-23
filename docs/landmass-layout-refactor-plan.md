@@ -441,3 +441,114 @@ przechodzą.
   kompatybilności wstecznej.
 - Reguły dla bardzo małych makroregionów zostają świadomie nierozstrzygnięte do
   czasu osobnego etapu integracji regionów.
+
+## 11. Kontrakt geometrii i podglądu technicznego — doprecyzowanie
+
+Ta sekcja doprecyzowuje i zastępuje wcześniejsze, zbyt ogólne założenia o
+wireframe. Wszystkie poniższe reguły są częścią obecnego refaktoru; nie należy
+odkładać ich do etapu heightmapy lub finalnych coastlines.
+
+### 11.1. Jedna kanoniczna oś struktury
+
+Każda krawędź ma dokładnie jeden przebieg geometryczny. Z niego muszą wynikać:
+
+- rendering szkieletu,
+- lokalne styczne i normalne,
+- przekroje szerokości,
+- corridor używany do kolizji i placementu,
+- przyszłe próbkowanie wysokości.
+
+Renderer nie może samodzielnie wygładzać osi inną krzywą niż używa generator.
+W szczególności nie wolno rysować skeletonu splajnem Catmull–Rom, gdy kolizje i
+wireframe korzystają z łamanej przez te same control pointy: podgląd wtedy
+pokazuje inną strukturę niż dane.
+
+Na obecnym etapie rekomendowany jest najprostszy i jednoznaczny wariant:
+zaokrąglona łamana przechodząca po kanonicznych punktach krawędzi. Jeżeli
+produkt wymaga krzywych gładkich, spline musi zostać wprowadzony do modelu
+domenowego wraz ze wspólnym, deterministycznym samplerem używanym przez każdy
+konsument geometrii.
+
+Każda transformacja struktury (skalowanie, obrót, przesunięcie) obejmuje nody,
+ich promienie oraz wszystkie control pointy. Testy muszą chronić ten invariant:
+po skalowaniu każdy punkt osi ma współrzędne pomnożone przez ten sam faktor.
+
+### 11.2. Język wizualny podglądu
+
+Podgląd jest rysunkiem konstrukcyjnym przyszłej wyspy, a nie stylizowanym
+obrysem lądu:
+
+1. spokojny ocean w obrębie świata i neutralne tło aplikacji poza nim;
+2. tylko rzeczywiste `LandmassNode` jako widoczne kropki;
+3. cienka oś łącząca kropki, nad wszystkimi pomocniczymi elementami;
+4. dokładnie jedna krótka poprzeczka szerokości na node, prostopadła do jego
+   lokalnej stycznej;
+5. opcjonalny, bardzo delikatny fill między sąsiednimi przekrojami;
+6. branch node większy od zwykłego node'a, bez powielania jego poprzeczki przez
+   każdą krawędź.
+
+Control pointy są niewidocznymi parametrami przebiegu, a nie dodatkowymi
+kropkami lub przekrojami. Kolor może rozróżniać struktury, ale fill i pomocnicze
+linie muszą mieć wyraźnie mniejszy kontrast niż skeleton. Podgląd przy dużym
+zoomie ma pozostać równie czytelny jak przybliżony szkic: kropki, oś, krótkie
+przekroje, a nie mozaika paneli.
+
+### 11.3. Szerokość na zakrętach i rozwidleniach
+
+Proste odsunięcie punktów osi o promień nie tworzy poprawnego korytarza na
+ciasnym łuku: po stronie wewnętrznej offset sam się przecina, a po zewnętrznej
+rozchodzi. Dlatego pełne rails i fill można pokazać tylko dla odcinka, który
+spełnia warunek bezpiecznej krzywizny. Szerokość musi być ograniczona przez
+lokalny promień krzywizny (konserwatywnie `width <= 0.4 * curvatureRadius`) albo
+ten odcinek pokazuje wyłącznie oś i przekroje.
+
+Nie wolno tworzyć osobnych, niezależnych poligonów fill dla każdej krawędzi i
+oczekiwać, że złączą się poprawnie w node'ach. Dopuszczalne strategie to:
+
+- połączyć sąsiednie przekroje jednym kontrolowanym trapezem lub kapsułą;
+- stosować połączenia `round` albo `bevel` z limitem mitera;
+- pominąć fill i rails, gdy test poprawności offsetu nie przejdzie.
+
+W branchu oś każdej odnogi pozostaje niezależna, ale centralny node ma tylko
+jeden widoczny marker. Ewentualne fill między odnogami nie jest częścią tego
+etapu; nie wolno go udawać przypadkowym nakładaniem paneli.
+
+### 11.4. Granica świata jest kontraktem placementu
+
+Preview nie może maskować problemu placementu samym clippingiem. Zwykła
+struktura wraz z całym korytarzem wpływu ma znajdować się wewnątrz maski świata
+(`inside share = 1`, z niewielką tolerancją numeryczną). Kandydat, który nie
+mieści się w świecie, jest zmniejszany albo odrzucany.
+
+Struktura celowo przecięta granicą może powstać dopiero jako jawny typ lub flaga
+domenowa z osobnym znaczeniem. Nie może być skutkiem ubocznym ustawienia
+`inside share = 0.5`, ponieważ daje w podglądzie ucięte, niezrozumiałe szkielety
+i fałszuje obszar przyszłego lądu.
+
+### 11.5. Gęstość node'ów i archetypy
+
+Liczba node'ów jest semantyką modelu, więc nie może być przypadkowym skutkiem
+wyłącznie promienia bazowego. Reguła generatora powinna uwzględniać długość,
+krzywiznę i topologię archetypu:
+
+- prosta struktura: 2–6 node'ów;
+- struktura wygięta: 4–8 node'ów;
+- pierścień, laguna lub atoll: co najmniej 8 node'ów;
+- branch: jeden node centralny i 2–5 node'ów na każdej odnodze.
+
+Granice nie są celem estetycznym samym w sobie, lecz zapewniają, że podgląd
+komunikuje podobną ilość informacji dla struktur o podobnej złożoności. Testy
+seedów powinny sprawdzać zarówno zakres liczby node'ów, jak i brak
+samoprzecięcia osi oraz korytarza wpływu.
+
+### 11.6. Kryteria odbioru wizualizacji
+
+- Na prostym grzbiecie widać kolejno: kropki, jedną oś i pojedyncze krótkie
+  przekroje.
+- Na ciasnym łuku nie ma nakładających się pól ani przecinających się rails.
+- Na branchu nie ma zwielokrotnionych crossbarów ani fill udającego połączenie
+  odnóg.
+- Żadna zwykła struktura nie jest ucięta przez granicę świata.
+- Skeleton, hit testing, kolizje i placement opisują ten sam przebieg.
+- Przy zoomie 1× i dużym przybliżeniu podgląd nie zamienia się w wachlarze,
+  trójkąty ani przypadkowe panele.

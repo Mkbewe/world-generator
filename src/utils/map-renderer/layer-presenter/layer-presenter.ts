@@ -1,4 +1,4 @@
-import type { WorldShape } from '../../world-shape';
+﻿import type { WorldShape } from '../../world-shape';
 import type { MapLayer } from '../layer';
 import type { RenderMetrics } from '../metrics';
 import { type RenderTarget, targetKey } from '../preview-targets';
@@ -57,7 +57,8 @@ export class LayerPresenter {
   /** Rebuilds the view from the overview, complete frame and finished stage tiles. */
   draw(): void {
     const layer = this.current;
-    if (!layer) {
+    if (!layer || layer.isDisposed) {
+      // A disposed layer keeps the last drawn frame instead of an empty surface.
       return;
     }
     const view = this.view();
@@ -102,7 +103,7 @@ export class LayerPresenter {
 
   /** Copies one completed tile without rebuilding the entire presentation. */
   tileReady(layer: MapLayer, x: number, y: number, width: number, height: number): void {
-    if (this.current !== layer) {
+    if (this.current !== layer || layer.isDisposed) {
       return;
     }
     if (!this.hasBase) {
@@ -219,6 +220,9 @@ export class LayerPresenter {
     view: RenderTarget,
     smooth: boolean
   ): void {
+    if (surface.width === 0 || surface.height === 0) {
+      return;
+    }
     const scale = view.projection.cellSize / source.projection.cellSize;
     const offsetX = view.projection.left - source.projection.left * scale;
     const offsetY = view.projection.top - source.projection.top * scale;

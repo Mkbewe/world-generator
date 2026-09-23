@@ -1,5 +1,5 @@
 import { ARCHETYPE_RECIPES } from './archetypes';
-import { distanceBetween, pointAlong, polylineLength } from './geometry';
+import { distanceBetween, pointAlong, polylineLength, scaleStructure } from './geometry';
 import type { ArchetypeRange, ArchetypeRecipe, StructureDraft } from './types';
 import type { SeededRandom } from '../../random/seeded-random';
 import type { LandmassArchetype, LandmassEdge, LandmassNode, WorldPoint } from '../../types';
@@ -9,16 +9,25 @@ const CORRIDOR_STEP = 0.02;
 
 /** Node spacing along a corridor, as a multiple of the local radius. */
 const NODE_SPACING = 1.5;
+const WINDING_NODE_SPACING = 3;
 
-/** Node count limits of the main corridor. */
-const MIN_NODES = 2;
-const MAX_NODES = 14;
+/** Node count limits of a branch arm (plan §11.5). */
+const MIN_BRANCH_NODES = 2;
+const MAX_BRANCH_NODES = 5;
 
-/** Control points kept per edge; the dense corridor is reduced to this many. */
-const MAX_CONTROL_POINTS = 2;
+/** Control points kept per edge; enough samples preserve winding corridors. */
+const MAX_CONTROL_POINTS = 6;
 
 /** A turn this large closes the corridor into a ring. */
 const CLOSED_TURN = 6.1;
+
+/** Samples closer than this to a node are the node, not control points. */
+const CONTROL_ENDPOINT_GAP = CORRIDOR_STEP * 0.5;
+
+/** Arc-length step used when measuring how tight a corridor bends. */
+const SAFE_SAMPLE_STEP = 0.1;
+
+const TAU = Math.PI * 2;
 
 /** Builds the unit geometry of one structure from its archetype recipe. */
 export function buildStructure(
@@ -27,8 +36,8 @@ export function buildStructure(
   random: SeededRandom
 ): StructureDraft {
   const recipe = ARCHETYPE_RECIPES[archetype];
-  const corridor = buildCorridor(recipe, random);
-  const main = corridorNodes(id, corridor, recipe, random);
+  const corridor = buildCorridor(archetype, recipe, random);
+  const main = corridorNodes(id, archetype, corridor, recipe, random);
   const branches = branchNodes(id, main.nodes, recipe, random);
   const nodes = [...main.nodes, ...branches.nodes];
   const edges = [...main.edges, ...branches.edges];
@@ -63,15 +72,14 @@ export function estimateArea(
   return area;
 }
 
-/** Scales the positions and radii of a draft, e.g. to fit its area budget. */
+/**
+ * Scales the whole draft geometry around the origin, e.g. to fit its area
+ * budget. Node positions, radii and edge control points move together, so the
+ * skeleton, its smoothing and the collision geometry stay consistent.
+ */
 export function scaleDraft(draft: StructureDraft, factor: number): StructureDraft {
   return {
-    ...draft,
-    nodes: draft.nodes.map(node => ({
-      ...node,
-      position: { x: node.position.x * factor, y: node.position.y * factor },
-      radius: node.radius * factor,
-    })),
+    ...scaleStructure(draft, factor, { x: 0, y: 0 }),
     area: draft.area * factor * factor,
   };
 }
@@ -86,7 +94,14 @@ interface Corridor {
  * oscillation and a random opening angle, so one recipe covers straight ridges,
  * gentle curves, S-bends and rings.
  */
-function buildCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
+function buildCorridor(
+  archetype: LandmassArchetype,
+  recipe: ArchetypeRecipe,
+  random: SeededRandom
+): Corridor {
+  if (archetype === 'winding') {
+    return buildWindingCorridor(recipe, random);
+  }
   const length = sampleRange(recipe.length, random);
   const turn = sampleRange(recipe.turn, random) * (random.next() < 0.5 ? -1 : 1);
   const wobble = sampleRange(recipe.wobble, random);
@@ -94,6 +109,9 @@ function buildCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor 
   const phase = random.next() * Math.PI * 2;
   const direction0 = random.next() * Math.PI * 2;
   const closed = Math.abs(turn) >= CLOSED_TURN;
+  if (closed) {
+    return { points: closedRing(length, wobble, bends, phase, direction0), closed: true };
+  }
   const steps = Math.max(8, Math.ceil(length / CORRIDOR_STEP));
   const step = length / steps;
   const points: WorldPoint[] = [{ x: 0, y: 0 }];
@@ -102,16 +120,72 @@ function buildCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor 
 
   for (let index = 1; index <= steps; index++) {
     const at = index / steps;
-    const direction = direction0 + turn * at + wobble * Math.sin(Math.PI * 2 * bends * at + phase);
+    const direction = direction0 + turn * at + wobble * Math.sin(TAU * bends * at + phase);
     x += Math.cos(direction) * step;
     y += Math.sin(direction) * step;
     points.push({ x, y });
   }
-  if (closed) {
-    // A ring has to meet itself; the oscillation leaves a small gap otherwise.
-    points[points.length - 1] = points[0];
+  return { points, closed: false };
+}
+
+/**
+ * Winding corridors are a random walk of a few bends instead of one sine: every
+ * piece has its own length and turn angle, and some pieces stay nearly straight
+ * between the corners, so no two windings repeat the same way.
+ */
+function buildWindingCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
+  const length = sampleRange(recipe.length, random);
+  const pieces = Math.max(2, Math.round(sampleRange(recipe.bends, random)));
+  const straightChance = Math.max(0, Math.min(0.5, sampleRange(recipe.wobble, random)));
+  const weights = Array.from({ length: pieces }, () => 0.5 + random.next());
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  const points: WorldPoint[] = [{ x: 0, y: 0 }];
+  let x = 0;
+  let y = 0;
+  let direction = random.next() * Math.PI * 2;
+  let sign = random.next() < 0.5 ? -1 : 1;
+
+  for (let piece = 0; piece < pieces; piece++) {
+    const pieceLength = (length * weights[piece]) / totalWeight;
+    const straight = random.next() < straightChance;
+    const turn = straight ? (random.next() - 0.5) * 0.4 : sign * sampleRange(recipe.turn, random);
+    if (random.next() < 0.7) {
+      sign = -sign;
+    }
+    const steps = Math.max(4, Math.ceil(pieceLength / CORRIDOR_STEP));
+    const step = pieceLength / steps;
+    for (let index = 0; index < steps; index++) {
+      direction += turn / steps;
+      x += Math.cos(direction) * step;
+      y += Math.sin(direction) * step;
+      points.push({ x, y });
+    }
   }
-  return { points, closed };
+  return { points, closed: false };
+}
+
+/**
+ * Periodic ring: equal angles plus a radial wave that itself closes, so the
+ * seam has the same position, tangent and width as the start.
+ */
+function closedRing(
+  length: number,
+  wobble: number,
+  bends: number,
+  phase: number,
+  direction0: number
+): WorldPoint[] {
+  const radius = length / TAU;
+  const steps = Math.max(16, Math.ceil(length / CORRIDOR_STEP));
+  const waves = Math.max(1, Math.round(bends));
+  const points: WorldPoint[] = [];
+  for (let index = 0; index < steps; index++) {
+    const at = index / steps;
+    const angle = direction0 + TAU * at;
+    const local = radius * (1 + 0.45 * wobble * Math.sin(TAU * waves * at + phase));
+    points.push({ x: Math.cos(angle) * local, y: Math.sin(angle) * local });
+  }
+  return points;
 }
 
 interface RadiusShape {
@@ -138,12 +212,16 @@ function radiusProfile(at: number, shape: RadiusShape): number {
 
 function corridorNodes(
   id: string,
+  archetype: LandmassArchetype,
   corridor: Corridor,
   recipe: ArchetypeRecipe,
   random: SeededRandom
 ): { readonly nodes: LandmassNode[]; readonly edges: LandmassEdge[] } {
-  const points = corridor.points;
-  const base = sampleRange(recipe.radius, random);
+  const points = samplingPoints(corridor);
+  const intendedBase = sampleRange(recipe.radius, random);
+  // A corridor wider than its tightest turn would fold its own outline, so the
+  // generator narrows it here instead of the painter trimming single ribs.
+  const base = safeCorridorRadius(points, intendedBase);
   const shape: RadiusShape = {
     taper: sampleRange(recipe.taper, random),
     skew: sampleRange(recipe.skew, random),
@@ -154,21 +232,27 @@ function corridorNodes(
     frequencyB: 1.5 + random.next() * 2,
     closed: corridor.closed,
   };
+  // The archetype decides how many nodes its corridor carries: a ridge stays
+  // legible with few, a ring needs enough to close smoothly (plan §11.5).
+  const spacing = archetype === 'winding' ? WINDING_NODE_SPACING : NODE_SPACING;
   const count = Math.min(
-    MAX_NODES,
-    Math.max(MIN_NODES, Math.round(polylineLength(points) / (base * NODE_SPACING)))
+    recipe.nodes[1],
+    Math.max(recipe.nodes[0], Math.round(polylineLength(points) / (base * spacing)))
   );
   const nodes: LandmassNode[] = [];
   const indices: number[] = [];
 
   for (let index = 0; index < count; index++) {
     const at = corridor.closed ? index / count : index / (count - 1);
+    // The node sits on the sampled corridor point, so the control-point gap
+    // filter measures the same endpoints the edges later reference.
+    const pointIndex = Math.min(points.length - 1, Math.round(at * (points.length - 1)));
     nodes.push({
       id: `${id}-n${index + 1}`,
-      position: pointAlong(points, at).point,
+      position: points[pointIndex],
       radius: base * radiusProfile(at, shape),
     });
-    indices.push(Math.min(points.length - 1, Math.round(at * (points.length - 1))));
+    indices.push(pointIndex);
   }
 
   const edges: LandmassEdge[] = [];
@@ -186,6 +270,50 @@ function corridorNodes(
   return { nodes, edges };
 }
 
+/**
+ * Keeps a corridor thinner than its tightest local turn, whatever the intent.
+ * The measurement runs on a coarse sampling: the outline follows the reduced
+ * axis, so high-frequency wobble of the dense corridor must not shrink a
+ * compact island that the preview never draws as a wiggle.
+ */
+function safeCorridorRadius(points: readonly WorldPoint[], intended: number): number {
+  const sampled = decimate(points, SAFE_SAMPLE_STEP);
+  let safe = intended;
+  for (let index = 1; index < sampled.length - 1; index++) {
+    const before = sampled[index - 1];
+    const current = sampled[index];
+    const after = sampled[index + 1];
+    const first = distanceBetween(before, current);
+    const second = distanceBetween(current, after);
+    const opposite = distanceBetween(before, after);
+    const cross = Math.abs(
+      (current.x - before.x) * (after.y - before.y) - (current.y - before.y) * (after.x - before.x)
+    );
+    if (cross > Number.EPSILON) {
+      const curvatureRadius = (first * second * opposite) / (2 * cross);
+      safe = Math.min(safe, curvatureRadius * 0.38);
+    }
+  }
+  return safe;
+}
+
+/** Points at least one arc-length step apart, first and last always kept. */
+function decimate(points: readonly WorldPoint[], step: number): readonly WorldPoint[] {
+  if (points.length < 3) {
+    return points;
+  }
+  const kept: WorldPoint[] = [points[0]];
+  let travelled = 0;
+  for (let index = 1; index < points.length; index++) {
+    travelled += distanceBetween(points[index - 1], points[index]);
+    if (travelled >= step || index === points.length - 1) {
+      kept.push(points[index]);
+      travelled = 0;
+    }
+  }
+  return kept;
+}
+
 /** Grows branch corridors from interior nodes of the main corridor. */
 function branchNodes(
   id: string,
@@ -200,9 +328,13 @@ function branchNodes(
     return { nodes: branchNodes, edges: branchEdges };
   }
   const total = polylineLength(nodes.map(node => node.position));
+  const availableParents = Array.from({ length: nodes.length - 2 }, (_, index) => index + 1);
 
-  for (let branch = 0; branch < count; branch++) {
-    const parentIndex = 1 + Math.floor(random.next() * (nodes.length - 2));
+  for (let branch = 0; branch < count && availableParents.length > 0; branch++) {
+    const parentIndex = availableParents.splice(
+      Math.floor(random.next() * availableParents.length),
+      1
+    )[0];
     const parent = nodes[parentIndex];
     const next = nodes[parentIndex + 1];
     const baseDirection = Math.atan2(
@@ -215,7 +347,10 @@ function branchNodes(
     const taper = 0.35 + random.next() * 0.3;
     const turn = (random.next() - 0.5) * 1.2;
     const points = straightPath(parent.position, direction, turn, length);
-    const nodeCount = Math.max(2, Math.min(6, Math.round(length / (radius * NODE_SPACING))));
+    const nodeCount = Math.max(
+      MIN_BRANCH_NODES,
+      Math.min(MAX_BRANCH_NODES, Math.round(length / (radius * NODE_SPACING)))
+    );
     const indices: number[] = [];
 
     for (let index = 0; index < nodeCount; index++) {
@@ -287,15 +422,31 @@ function controlPoints(
       between.push(points[index]);
     }
   }
-  if (between.length === 0) {
+  const fromPoint = points[fromIndex];
+  const toPoint = points[toIndex];
+  const usable = between.filter(
+    point =>
+      distanceBetween(point, fromPoint) > CONTROL_ENDPOINT_GAP &&
+      distanceBetween(point, toPoint) > CONTROL_ENDPOINT_GAP
+  );
+  if (usable.length === 0) {
     return {};
   }
 
+  const count = Math.min(MAX_CONTROL_POINTS, usable.length);
   const kept: WorldPoint[] = [];
-  for (let index = 1; index <= MAX_CONTROL_POINTS; index++) {
-    kept.push(between[Math.floor((between.length * index) / (MAX_CONTROL_POINTS + 1))]);
+  for (let index = 1; index <= count; index++) {
+    kept.push(usable[Math.floor((usable.length * index) / (count + 1))]);
   }
   return { controlPoints: kept };
+}
+
+/** Closed corridors wrap; the repeated first point is only for arc-length sampling. */
+function samplingPoints(corridor: Corridor): WorldPoint[] {
+  if (!corridor.closed || corridor.points.length === 0) {
+    return [...corridor.points];
+  }
+  return [...corridor.points, corridor.points[0]];
 }
 
 function sampleRange(range: ArchetypeRange, random: SeededRandom): number {

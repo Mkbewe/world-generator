@@ -1,1 +1,1 @@
-export { WorldBoundaryRenderer } from './world-boundary-renderer';
+export { WorldBoundaryRenderer, traceWorldBoundary } from './world-boundary-renderer';

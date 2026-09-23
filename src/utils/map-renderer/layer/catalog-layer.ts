@@ -1,4 +1,4 @@
-import { type LayerTile, MapLayer, type MapSize } from './layer';
+import { type LayerTile, MapLayer, type MapSize, type TileReporter } from './layer';
 import type { SmoothGeometry } from './smooth-geometry';
 import { type SmoothLayerMode, SmoothLayerPainter } from './smooth-layer-painter';
 import {
@@ -7,8 +7,28 @@ import {
   type RasterData,
   type RasterLayerSpec,
 } from '../../map-layers';
-import type { RenderTarget } from '../preview-targets';
+import { type RenderTarget, targetKey } from '../preview-targets';
 import type { MapBaseLayerId, SpatialMask } from '../types';
+
+/** Progressive raster drawing splits the frame into this many tiles per axis. */
+const TILES_PER_AXIS = 10;
+
+function createYieldToBrowser(): () => Promise<void> {
+  if (typeof MessageChannel === 'undefined') {
+    return () => new Promise(resolve => setTimeout(resolve, 0));
+  }
+  const channel = new MessageChannel();
+  const resolvers: (() => void)[] = [];
+  channel.port1.onmessage = () => resolvers.shift()?.();
+  channel.port1.start();
+  return () =>
+    new Promise(resolve => {
+      resolvers.push(resolve);
+      channel.port2.postMessage(undefined);
+    });
+}
+
+const yieldToBrowser = createYieldToBrowser();
 
 /** Generic validated raster rendered through a catalog palette. */
 export class CatalogLayer extends MapLayer implements SpatialMask {
@@ -61,8 +81,54 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   }
 
   /** A skip value marks real empty area, so the overview must not fill it in. */
-  protected get overviewExtendsColors(): boolean {
+  private get overviewExtendsColors(): boolean {
     return this.spec.skipValue === undefined;
+  }
+
+  /** Draws the frame as a grid of pixel tiles, yielding between them. */
+  protected async renderFrame(
+    signal: AbortSignal,
+    target: RenderTarget,
+    context: CanvasRenderingContext2D,
+    onTile?: TileReporter
+  ): Promise<void> {
+    const { width, height } = target;
+    const tileWidth = Math.ceil(width / TILES_PER_AXIS);
+    const tileHeight = Math.ceil(height / TILES_PER_AXIS);
+    for (let top = 0; top < height; top += tileHeight) {
+      const tileH = Math.min(tileHeight, height - top);
+      for (let left = 0; left < width; left += tileWidth) {
+        signal.throwIfAborted();
+        const tileStartedAt = performance.now();
+        const tileW = Math.min(tileWidth, width - left);
+        const image = context.createImageData(tileW, tileH);
+        this.paintTile(image.data, target, { x: left, y: top, width: tileW, height: tileH });
+        context.putImageData(image, left, top);
+        onTile?.(left, top, tileW, tileH);
+        this.addFrameStatistics(performance.now() - tileStartedAt, 1, tileW * tileH);
+        await yieldToBrowser();
+      }
+    }
+  }
+
+  /** Paints the whole map once into a small surface, the fallback for fast view changes. */
+  protected renderOverview(signal: AbortSignal): void {
+    const target = this.fallbackTarget();
+    if (!target) {
+      return;
+    }
+    if (this.overviewSurfaceTarget && targetKey(this.overviewSurfaceTarget) === targetKey(target)) {
+      return;
+    }
+    signal.throwIfAborted();
+    const context = this.surfaceContext(this.overview, target);
+    const image = context.createImageData(target.width, target.height);
+    this.paintTile(image.data, target, { x: 0, y: 0, width: target.width, height: target.height });
+    if (this.overviewExtendsColors) {
+      extendOverviewColors(image.data, target.width, target.height);
+    }
+    context.putImageData(image, 0, 0);
+    this.overviewSurfaceTarget = target;
   }
 
   sample(x: number, y: number): number | undefined {
@@ -75,7 +141,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     return this.data[y * this.size.width + x];
   }
 
-  protected paintTile(pixels: Uint8ClampedArray, target: RenderTarget, tile: LayerTile): void {
+  private paintTile(pixels: Uint8ClampedArray, target: RenderTarget, tile: LayerTile): void {
     if (this.smoothPainter && this.smoothInterior) {
       this.smoothPainter.paint(pixels, target, tile);
       return;
@@ -242,4 +308,58 @@ function validateRasterData(
 
 function sourceName(source: string): string {
   return source.replaceAll(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase();
+}
+
+/** Extends edge colors outside the world so a screen-space clip has no transparent fringe. */
+function extendOverviewColors(pixels: Uint8ClampedArray, width: number, height: number): void {
+  const count = width * height;
+  let empty = false;
+  for (let index = 0; index < count; index++) {
+    const alpha = index * 4 + 3;
+    if (pixels[alpha] === 0) {
+      empty = true;
+    } else {
+      pixels[alpha] = 255;
+    }
+  }
+  if (!empty) {
+    return;
+  }
+  const queue = new Uint32Array(count);
+  let tail = 0;
+  for (let index = 0; index < count; index++) {
+    if (pixels[index * 4 + 3] === 255) {
+      queue[tail++] = index;
+    }
+  }
+  for (let head = 0; head < tail; head++) {
+    const index = queue[head];
+    const x = index % width;
+    const y = Math.floor(index / width);
+    if (x > 0) {
+      fillNeighbor(index - 1, index);
+    }
+    if (x + 1 < width) {
+      fillNeighbor(index + 1, index);
+    }
+    if (y > 0) {
+      fillNeighbor(index - width, index);
+    }
+    if (y + 1 < height) {
+      fillNeighbor(index + width, index);
+    }
+  }
+
+  function fillNeighbor(index: number, source: number): void {
+    const offset = index * 4;
+    if (pixels[offset + 3] !== 0) {
+      return;
+    }
+    const from = source * 4;
+    pixels[offset] = pixels[from];
+    pixels[offset + 1] = pixels[from + 1];
+    pixels[offset + 2] = pixels[from + 2];
+    pixels[offset + 3] = 255;
+    queue[tail++] = index;
+  }
 }

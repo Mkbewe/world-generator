@@ -1,5 +1,5 @@
+import { structureExtent } from './geometry';
 import { LandmassLayoutStage } from './landmass-layout-stage';
-import { estimateArea } from './topology';
 import { validateLayout } from './validation';
 import { MapGenerator } from '../../pipeline';
 import type { LandmassArchetype, MapConfig, MapState } from '../../types';
@@ -44,9 +44,6 @@ describe('LandmassLayoutStage', () => {
   });
 
   it('holds its invariants across a wide seed pool', async () => {
-    // The mask is full, so the world area is 1 and the budget is predictable.
-    const targetArea = 0.4 * DEFAULT_LANDMASS_CONFIG.size;
-
     for (const seed of Array.from({ length: 12 }, (_, index) => index + 1)) {
       const source = { ...base, world: { ...base.world, seed } };
       const result = await generate(source);
@@ -57,14 +54,11 @@ describe('LandmassLayoutStage', () => {
       }
 
       expect(() => validateLayout(layout)).not.toThrow();
-      const areas = layout.structures.map(structure =>
-        estimateArea(structure.nodes, structure.edges)
-      );
-      const total = areas.reduce((sum, area) => sum + area, 0);
-      // Placement may shrink a structure in a crowded world, never enlarge it.
-      expect(total).toBeGreaterThan(0);
-      expect(total).toBeLessThanOrEqual(targetArea * 1.01);
-      expect(Math.max(...areas) / Math.min(...areas)).toBeGreaterThan(1.1);
+      const extents = layout.structures.map(structure => structureExtent(structure));
+      // The size plan caps every extent; placement may only shrink it further.
+      expect(extents.every(extent => extent > 0)).toBe(true);
+      expect(Math.max(...extents)).toBeLessThanOrEqual(0.6 + 1e-9);
+      expect(Math.max(...extents) / Math.min(...extents)).toBeGreaterThan(1.1);
     }
   });
 

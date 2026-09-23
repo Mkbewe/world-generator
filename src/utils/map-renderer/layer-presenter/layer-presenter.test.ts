@@ -82,6 +82,22 @@ describe('LayerPresenter', () => {
     expect(layer.renderingTarget).toBeUndefined();
   });
 
+  it('keeps the last frame instead of drawing a disposed layer', async () => {
+    const layer = createLayer();
+    const renderTargetValue = target(6, 6, 2, 1, 1);
+    await layer.prepare(new AbortController().signal, renderTargetValue);
+    presenter.markRendered(layer, renderTargetValue);
+    presenter.show(layer);
+    vi.mocked(context.drawImage).mockClear();
+    vi.mocked(context.clearRect).mockClear();
+
+    layer.dispose();
+    presenter.draw();
+
+    expect(context.clearRect).not.toHaveBeenCalled();
+    expect(context.drawImage).not.toHaveBeenCalled();
+  });
+
   it('shows the first tile before the whole frame is ready', async () => {
     const layer = createLayer();
 
