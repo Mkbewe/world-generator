@@ -1,8 +1,11 @@
 import { isLandmassArchetype, LANDMASS_ARCHETYPES } from './archetypes';
+import { validatePlacement } from './collision';
+import { structureExtent } from './geometry';
 import { placeStructures } from './placement';
 import { measureWorldArea, planSizes } from './size-distribution';
 import { buildStructure, scaleDraft } from './topology';
 import { validateLayout } from './validation';
+import { createMaskSampler } from './world';
 import type { MapContext } from '../../context';
 import { GenerationCancelledError } from '../../errors';
 import type { SeededRandom } from '../../random/seeded-random';
@@ -43,7 +46,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     context: MapContext<MapConfig, MapState>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ landmassLayout: LandmassLayout }> {
+  ): Promise<{ landmassLayout: LandmassLayout; dropped: number }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const worldMask = context.state.worldMask;
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
@@ -69,7 +72,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     }
 
     const sizes = planSizes(
-      drafts.map(draft => draft.area),
+      drafts.map(draft => ({ area: draft.area, extent: structureExtent(draft) })),
       config,
       worldArea,
       random
@@ -77,28 +80,36 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     // The size plan lists the largest structures first, so they are placed first.
     const scaled = drafts.map((draft, index) => scaleDraft(draft, sizes.scales[index]));
     const ordered = sizes.order.map(index => scaled[index]);
-    const placed = placeStructures(ordered, context.config.world.shape, random);
-    const shelves = placed.map((_, index) => ({ id: `shelf-${index + 1}`, ...config.shelf }));
+    const insideWorld = createMaskSampler(worldMask, sampleWidth, sampleHeight);
+    const placement = placeStructures(ordered, insideWorld, config.shelf, random);
     const layout: LandmassLayout = {
-      structures: placed.map((structure, index) => ({
-        ...structure,
-        shelfId: shelves[index].id,
-      })),
-      shelves,
+      structures: placement.structures,
+      shelves: placement.shelves,
     };
     validateLayout(layout);
 
     context.state.landmassLayout = layout;
     report(1);
-    return { landmassLayout: layout };
+    return { landmassLayout: layout, dropped: placement.dropped };
   }
 
-  validate(state: Readonly<MapState>): void {
+  validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
     const layout = state.landmassLayout;
-    if (!layout) {
+    const worldMask = state.worldMask;
+    if (!layout || !worldMask) {
       throw new Error('Pipeline completed without all required map data.');
     }
     validateLayout(layout);
+    // The hard placement contract: nothing overlaps and nothing hangs outside.
+    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    const problems = validatePlacement(
+      layout.structures,
+      createMaskSampler(worldMask, sampleWidth, sampleHeight),
+      0.5
+    );
+    if (problems.length > 0) {
+      throw new Error(`Pipeline produced an invalid placement: ${problems[0]}`);
+    }
   }
 
   summarize(
@@ -115,6 +126,7 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       shelves: layout.shelves.length,
       nodes: layout.structures.reduce((total, structure) => total + structure.nodes.length, 0),
       edges: layout.structures.reduce((total, structure) => total + structure.edges.length, 0),
+      dropped: typeof data.dropped === 'number' ? data.dropped : 0,
     };
   }
 
