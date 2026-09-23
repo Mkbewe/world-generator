@@ -222,7 +222,8 @@ export class MapScene {
     const layer = this.cache.getOrCreate(
       spec.id,
       [spec, value, size.width, size.height, clipMask, this.geometry?.shape],
-      () => factory.create({ id: spec.id, size, value })
+      () =>
+        factory.create({ id: spec.id, size, value, mask: clipMask, shape: this.geometry?.shape })
     );
     this.layers.set(spec.id, layer);
     // A refreshed layer becomes ready again once it is presented.

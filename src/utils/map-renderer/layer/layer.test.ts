@@ -260,6 +260,7 @@ describe('MapLayer rendering lifecycle', () => {
 
     try {
       expect(layer.renderedTarget).toBeUndefined();
+      expect(layer.isDisposed).toBe(false);
       await layer.prepare(new AbortController().signal, target);
       expect(layer.renderedTarget).toEqual(target);
     } finally {
@@ -267,5 +268,6 @@ describe('MapLayer rendering lifecycle', () => {
       getContext.mockRestore();
     }
     expect(layer.renderedTarget).toBeUndefined();
+    expect(layer.isDisposed).toBe(true);
   });
 });

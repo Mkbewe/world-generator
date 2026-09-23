@@ -4,6 +4,7 @@ import {
 } from './landmass-layout-vector-layer';
 import type { LandmassLayout } from '../../map-generator/types';
 import type { RenderTarget } from '../preview-targets';
+import type { SpatialMask } from '../types';
 
 const layout: LandmassLayout = {
   structures: [
@@ -25,6 +26,42 @@ function targetFor(width: number, height: number): RenderTarget {
   return { width, height, projection: { cellSize: 1, left: 0, top: 0, width, height } };
 }
 
+interface CanvasCalls {
+  readonly ellipse: unknown[][];
+  readonly arc: unknown[][];
+  readonly stroke: unknown[][];
+}
+
+function mockCanvas(): { calls: CanvasCalls; restore: () => void } {
+  const calls: CanvasCalls = { ellipse: [], arc: [], stroke: [] };
+  const record =
+    (bucket: unknown[][]) =>
+    (...args: unknown[]) => {
+      bucket.push(args);
+    };
+  const spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    createImageData: (width: number, height: number) => ({
+      data: new Uint8ClampedArray(width * height * 4),
+    }),
+    putImageData: vi.fn(),
+    drawImage: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    beginPath: vi.fn(),
+    closePath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    bezierCurveTo: vi.fn(),
+    arc: record(calls.arc),
+    ellipse: record(calls.ellipse),
+    rect: vi.fn(),
+    clip: vi.fn(),
+    fill: vi.fn(),
+    stroke: record(calls.stroke),
+  } as unknown as CanvasRenderingContext2D);
+  return { calls, restore: () => spy.mockRestore() };
+}
+
 describe('LandmassLayoutVectorLayer', () => {
   it('returns the structure under the cell, or nothing for open sea', () => {
     const layer = new LandmassLayoutVectorLayer(
@@ -42,21 +79,55 @@ describe('LandmassLayoutVectorLayer', () => {
     }
   });
 
-  it('reports nodes and edges instead of pixels', async () => {
-    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
-      createImageData: (width: number, height: number) => ({
-        data: new Uint8ClampedArray(width * height * 4),
-      }),
-      putImageData: vi.fn(),
-      drawImage: vi.fn(),
-    } as unknown as CanvasRenderingContext2D);
-    const layer = new LandmassLayoutVectorLayer('landmass-layout', { width: 4, height: 4 }, layout);
+  it('ignores structures outside the world mask', () => {
+    const mask: SpatialMask = { size: { width: 11, height: 11 }, contains: x => x >= 5 };
+    const layer = new LandmassLayoutVectorLayer(
+      'landmass-layout',
+      { width: 11, height: 11 },
+      layout,
+      { mask }
+    );
     try {
-      await layer.prepare(new AbortController().signal, targetFor(4, 4));
+      expect(layer.sample(5, 5)).toEqual({ id: 'landmass-1' });
+      expect(layer.sample(4, 5)).toBeUndefined();
+    } finally {
+      layer.dispose();
+    }
+  });
+
+  it('paints the ocean background, the wireframe and the skeleton', async () => {
+    const { calls, restore } = mockCanvas();
+    const layer = new LandmassLayoutVectorLayer(
+      'landmass-layout',
+      { width: 11, height: 11 },
+      layout,
+      { shape: 'disc' }
+    );
+    try {
+      await layer.prepare(new AbortController().signal, targetFor(11, 11));
+
+      expect(calls.ellipse.length).toBeGreaterThanOrEqual(1);
+      // One dot per real node in one drawing.
+      expect(calls.arc.length).toBeGreaterThanOrEqual(2);
+      // Two side rails, one width stroke and the skeleton per edge.
+      expect(calls.stroke.length).toBeGreaterThanOrEqual(4);
       expect(layer.statistics).toMatchObject({ nodes: 2, edges: 1 });
     } finally {
       layer.dispose();
-      getContext.mockRestore();
+      restore();
+    }
+  });
+
+  it('paints rounded end caps without a world outline', async () => {
+    const { calls, restore } = mockCanvas();
+    const layer = new LandmassLayoutVectorLayer('landmass-layout', { width: 4, height: 4 }, layout);
+    try {
+      await layer.prepare(new AbortController().signal, targetFor(4, 4));
+
+      expect(calls.ellipse.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      layer.dispose();
+      restore();
     }
   });
 

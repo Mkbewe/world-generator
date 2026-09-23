@@ -1,11 +1,14 @@
 import type { SeededRandom } from '../../random/seeded-random';
 import type { LandmassConfig } from '../../types';
 
-/** Share of the world area the structures influence together at the largest size. */
-const MAX_TARGET_SHARE = 0.25;
+/** Longest side a structure reaches at the largest size with a median weight. */
+const TYPICAL_EXTENT = 0.5;
 
 /** Longest side a structure may reach, as a fraction of the world. */
 const MAX_EXTENT = 0.6;
+
+/** Smallest longest side, so the diversity never shrinks a structure to a speck. */
+const MIN_EXTENT = 0.1;
 
 /** Weight spread at the strongest diversity. */
 const MAX_SIGMA = 1;
@@ -15,8 +18,6 @@ const MIN_SIGMA = 0.15;
 
 /** Unit geometry of one structure, as the size plan sees it. */
 export interface StructureSize {
-  /** Approximate footprint area of the unit geometry. */
-  readonly area: number;
   /** Longest side of the unit geometry's influence bounds. */
   readonly extent: number;
 }
@@ -40,33 +41,34 @@ export function measureWorldArea(worldMask: Uint8Array): number {
 }
 
 /**
- * Plans the influence budget: the world area and the typical scale set the total
- * target area, log-normal weights spread it over the structures, and every unit
- * geometry is scaled so its estimated area matches its share. A structure never
- * grows past `MAX_EXTENT`, so a thin geometry cannot stretch across the world.
+ * Plans the visual size: the typical scale and the log-normal weights set a
+ * target extent per structure, and every unit geometry is scaled to reach it.
+ * Sizing by extent keeps a compact and a slender shape equally readable, and a
+ * thinner corridor really renders thinner instead of growing longer.
  */
 export function planSizes(
   structures: readonly StructureSize[],
   config: LandmassConfig,
-  worldArea: number,
   random: SeededRandom
 ): SizePlan {
-  const targetArea = worldArea * MAX_TARGET_SHARE * config.size;
+  const typical = TYPICAL_EXTENT * config.size;
   const sigma = MIN_SIGMA + config.diversity * (MAX_SIGMA - MIN_SIGMA);
   const weights = structures.map(() => Math.exp(sigma * gaussian(random)));
-  const total = weights.reduce((sum, weight) => sum + weight, 0);
-  const shares = weights.map(weight => (total > 0 ? weight / total : 0));
-  const scales = structures.map((structure, index) =>
-    Math.min(
-      Math.sqrt((targetArea * shares[index]) / Math.max(structure.area, Number.EPSILON)),
-      MAX_EXTENT / Math.max(structure.extent, Number.EPSILON)
-    )
-  );
+  const mean = weights.reduce((sum, weight) => sum + weight, 0) / Math.max(1, weights.length);
+  const scales = structures.map((structure, index) => {
+    const extent = Math.max(structure.extent, Number.EPSILON);
+    const target = mean > 0 ? (typical * weights[index]) / mean : typical;
+    return clamp(target / extent, MIN_EXTENT / extent, MAX_EXTENT / extent);
+  });
   const order = structures
     .map((_, index) => index)
-    .sort((left, right) => shares[right] - shares[left]);
+    .sort((left, right) => weights[right] - weights[left]);
 
   return { scales, order };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 /** Standard normal sample from two uniforms (Box-Muller). */

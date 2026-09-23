@@ -79,8 +79,15 @@ describe('MapRenderer', () => {
       save: vi.fn(),
       restore: vi.fn(),
       beginPath: vi.fn(),
+      closePath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
+      arc: vi.fn(),
       ellipse: vi.fn(),
       rect: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
       clip: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
   });

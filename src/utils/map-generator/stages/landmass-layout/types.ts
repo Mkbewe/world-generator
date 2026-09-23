@@ -18,6 +18,8 @@ export interface ArchetypeRecipe {
   readonly bends: ArchetypeRange;
   /** Base influence radius in unit geometry. */
   readonly radius: ArchetypeRange;
+  /** Node count of the main corridor; the archetype intent decides the range. */
+  readonly nodes: ArchetypeRange;
   /** End taper: 1 keeps the full radius at the tips, lower values pinch them. */
   readonly taper: ArchetypeRange;
   /** How much thicker one end is than the other, as a fraction of the radius. */

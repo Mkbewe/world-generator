@@ -35,16 +35,15 @@ function discSampler(size = 64) {
 
 const disc = discSampler();
 
-/** Drafts sized by the influence budget, exactly like the stage does. */
+/** Drafts sized by the size plan, exactly like the stage does. */
 function drafts(count: number, seed: number): StructureDraft[] {
   const random = new SeededRandom(seed);
   const units = Array.from({ length: count }, (_, index) =>
     buildStructure(`landmass-${index + 1}`, ARCHETYPES[index % ARCHETYPES.length], random)
   );
   const sizes = planSizes(
-    units.map(draft => ({ area: draft.area, extent: structureExtent(draft) })),
+    units.map(draft => ({ extent: structureExtent(draft) })),
     DEFAULT_LANDMASS_CONFIG,
-    1,
     random
   );
   const scaled = units.map((draft, index) => scaleDraft(draft, sizes.scales[index]));
@@ -126,7 +125,7 @@ describe('placeStructures', () => {
   }, 20000);
 
   it('never leaves a collision when the world cannot take everything', () => {
-    // A world much smaller than the structures: the placement has to drop some.
+    // A world much smaller than the influence budget: the placement must drop.
     const small = createMaskSampler(smallDiscMask(), 32, 32);
 
     for (const seed of [1, 2, 3, 4, 5]) {
@@ -153,13 +152,13 @@ describe('placeStructures', () => {
 });
 
 /** A world mask covering only the middle of the map. */
-function smallDiscMask(size = 32): Uint8Array {
+function smallDiscMask(size = 32, radius = 0.1): Uint8Array {
   const mask = new Uint8Array(size * size);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const dx = x / (size - 1) - 0.5;
       const dy = y / (size - 1) - 0.5;
-      mask[y * size + x] = Math.hypot(dx, dy) <= 0.25 ? 1 : 0;
+      mask[y * size + x] = Math.hypot(dx, dy) <= radius ? 1 : 0;
     }
   }
   return mask;

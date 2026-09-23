@@ -276,9 +276,11 @@ export class MapRenderer {
   /** Keeps non-raster information captured with the current map. */
   setInfo(info: MapInfo): void {
     this.info = info;
-    // Vector layers render in the background; the displayed layer stays.
+    const displayed = this.view.displayedLayer;
     for (const layer of this.scene.setInfo(info)) {
-      this.queue.enqueue(layer, true);
+      // A refreshed layer that is currently displayed takes over its slot;
+      // the others render in the background without stealing the view.
+      this.queue.enqueue(layer, layer.id !== displayed);
     }
     this.emitState();
   }

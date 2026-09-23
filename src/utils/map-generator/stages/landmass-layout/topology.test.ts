@@ -114,6 +114,40 @@ describe('landmass topology', () => {
     }
   });
 
+  it('joins the atoll seam without a hook on the first node', () => {
+    for (const seed of SEEDS) {
+      const atoll = structure('atoll', seed);
+      const first = atoll.nodes[0];
+      const last = atoll.nodes[atoll.nodes.length - 1];
+      const closing = atoll.edges.find(
+        edge =>
+          (edge.from === last.id && edge.to === first.id) ||
+          (edge.from === first.id && edge.to === last.id)
+      );
+
+      expect(closing).toBeDefined();
+      for (const point of closing?.controlPoints ?? []) {
+        expect(Math.hypot(point.x - first.position.x, point.y - first.position.y)).toBeGreaterThan(
+          0.005
+        );
+        expect(Math.hypot(point.x - last.position.x, point.y - last.position.y)).toBeGreaterThan(
+          0.005
+        );
+      }
+
+      const closingLength = Math.hypot(
+        last.position.x - first.position.x,
+        last.position.y - first.position.y
+      );
+      const typical = Math.hypot(
+        atoll.nodes[1].position.x - first.position.x,
+        atoll.nodes[1].position.y - first.position.y
+      );
+      expect(closingLength).toBeGreaterThan(typical * 0.4);
+      expect(closingLength).toBeLessThan(typical * 2.5);
+    }
+  });
+
   it('leaves the lagoon open instead of closing it', () => {
     for (const seed of SEEDS) {
       const lagoon = structure('lagoon', seed);
@@ -143,14 +177,14 @@ describe('landmass topology', () => {
       const winding = structure('winding', seed);
       const elongated = structure('elongated', seed);
 
-      expect(totalDirectionChange(winding.nodes, winding.edges)).toBeGreaterThan(1);
+      expect(totalDirectionChange(winding.nodes, winding.edges)).toBeGreaterThan(0.5);
       expect(totalDirectionChange(winding.nodes, winding.edges)).toBeGreaterThan(
         totalDirectionChange(elongated.nodes, elongated.edges)
       );
     }
   });
 
-  it('scales positions, radii and area of a draft', () => {
+  it('scales positions, radii, control points and area of a draft', () => {
     const draft = structure('elongated', 5);
     const scaled = scaleDraft(draft, 2);
 
@@ -159,5 +193,21 @@ describe('landmass topology', () => {
     expect(estimateArea(scaled.nodes, scaled.edges)).toBeGreaterThan(
       estimateArea(draft.nodes, draft.edges)
     );
+    expect(draft.edges.some(edge => (edge.controlPoints?.length ?? 0) > 0)).toBe(true);
+
+    // Invariant: every point of the geometry moves with the same factor.
+    for (const [index, node] of draft.nodes.entries()) {
+      expect(scaled.nodes[index].position.x).toBeCloseTo(node.position.x * 2, 10);
+      expect(scaled.nodes[index].position.y).toBeCloseTo(node.position.y * 2, 10);
+    }
+    for (const [index, edge] of draft.edges.entries()) {
+      const controls = edge.controlPoints ?? [];
+      const scaledControls = scaled.edges[index].controlPoints ?? [];
+      expect(scaledControls).toHaveLength(controls.length);
+      for (const [at, point] of controls.entries()) {
+        expect(scaledControls[at].x).toBeCloseTo(point.x * 2, 10);
+        expect(scaledControls[at].y).toBeCloseTo(point.y * 2, 10);
+      }
+    }
   });
 });

@@ -154,7 +154,7 @@ export function structureSegments(structure: PlaceableStructure): StructureSegme
 }
 
 /** Radii along a polyline, distributed by arc length between the node radii. */
-function interpolatedRadii(
+export function interpolatedRadii(
   points: readonly WorldPoint[],
   fromRadius: number,
   toRadius: number
