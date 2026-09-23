@@ -9,6 +9,9 @@ export default mergeConfig(
       globals: true,
       environment: 'jsdom',
       setupFiles: ['./src/test-setup.ts'],
+      // Property tests over wide seed pools need more than the 5 s default,
+      // especially on CI; individual heavy tests may raise it further.
+      testTimeout: 20000,
     },
   })
 );

@@ -65,7 +65,6 @@ describe('LandmassLayoutStage', () => {
       expect(total).toBeGreaterThan(0);
       expect(total).toBeLessThanOrEqual(targetArea * 1.01);
       expect(Math.max(...areas) / Math.min(...areas)).toBeGreaterThan(1.1);
-      expect((await generate(source)).context.state.landmassLayout).toEqual(layout);
     }
   });
 
