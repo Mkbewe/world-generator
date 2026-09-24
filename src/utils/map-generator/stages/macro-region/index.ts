@@ -21,8 +21,8 @@ export {
   regionSegments,
   removeBaseRegion,
   splitLargestRegion,
-} from './boundary-model';
-export type { MacroRegionLayoutChange, MacroRegionSegment } from './boundary-model';
+} from './editor/boundary-model';
+export type { MacroRegionLayoutChange, MacroRegionSegment } from './editor/boundary-model';
 export {
   createBandOverlay,
   createHorizontalLayout,
@@ -32,9 +32,9 @@ export {
   createVerticalLayout,
   MACRO_REGION_PRESETS,
   macroRegionPreset,
-} from './presets';
+} from './editor/presets';
 export type {
   MacroRegionLayout,
   MacroRegionPresetDefinition,
   MacroRegionPresetId,
-} from './presets';
+} from './editor/presets';

@@ -1,6 +1,6 @@
 import { clearanceFrom, entryOf, structureDistance, StructureIndex } from './collision';
-import { structureBounds } from './influence';
-import type { GeologicalStructure } from '../../types';
+import type { GeologicalStructure } from '../../../types';
+import { structureBounds } from '../influence';
 
 /** A straight two-node structure of length 0.1 and radius 0.03. */
 function structure(id: string, x: number, y: number): GeologicalStructure {

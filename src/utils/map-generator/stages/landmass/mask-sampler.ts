@@ -1,4 +1,4 @@
-import type { PlaceableStructure } from './draft';
+import type { PlaceableStructure } from './shape/draft';
 import { type Bounds, structureBounds, structureSegments } from './influence';
 import { containsWorld, type WorldShape } from '../../../world-shape';
 import { createWorldSpace, planarDistance } from '../../space';

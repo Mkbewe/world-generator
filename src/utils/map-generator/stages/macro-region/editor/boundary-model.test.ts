@@ -7,7 +7,7 @@ import {
   splitLargestRegion,
 } from './boundary-model';
 import { createBandOverlay, createRadialLayout } from './presets';
-import type { MacroRegionConfig } from '../../types';
+import type { MacroRegionConfig } from '../../../types';
 
 describe('macro region sizing', () => {
   it('expresses adjacent regions as one set of shared boundaries', () => {

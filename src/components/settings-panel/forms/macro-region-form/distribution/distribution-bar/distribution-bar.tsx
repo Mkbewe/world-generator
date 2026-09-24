@@ -1,4 +1,4 @@
-import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region/boundary-model';
+import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import { regionColor } from '../../../../../../utils/map-layers';
 import type { BoundaryDraft } from '../../hooks/use-boundary-draft';
 import { colorString } from '../../lib/color';

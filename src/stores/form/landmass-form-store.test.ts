@@ -3,7 +3,7 @@ import {
   selectedArchetypes,
   useLandmassFormStore,
 } from './landmass-form-store';
-import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass/archetypes';
+import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass';
 import { DEFAULT_LANDMASS_CONFIG } from '../../utils/map-generator/stages/landmass/defaults';
 
 describe('useLandmassFormStore', () => {

@@ -7,8 +7,8 @@ import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../..
 import {
   baseRegions,
   overlayRegions,
-} from '../../../../../utils/map-generator/stages/macro-region/boundary-model';
-import { macroRegionPreset } from '../../../../../utils/map-generator/stages/macro-region/presets';
+} from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
+import { macroRegionPreset } from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
 
 function renderPicker() {
   render(

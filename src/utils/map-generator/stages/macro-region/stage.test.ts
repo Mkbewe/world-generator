@@ -1,10 +1,10 @@
-import type { RegionDisplacement } from './border-displacement';
 import {
   createBandOverlay,
   createHorizontalLayout,
   createRadialLayout,
   createRadialPolesLayout,
-} from './presets';
+} from './editor/presets';
+import type { RegionDisplacement } from './border-displacement';
 import { createMacroRegionSampler, MacroRegionStage } from './stage';
 import { MapGenerator } from '../../pipeline/pipeline';
 import { planarDistance } from '../../space';

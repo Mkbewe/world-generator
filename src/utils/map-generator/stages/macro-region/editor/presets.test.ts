@@ -1,4 +1,3 @@
-import { DEFAULT_MACRO_DEFORMATION } from './defaults';
 import {
   createBandOverlay,
   createHorizontalLayout,
@@ -9,6 +8,7 @@ import {
   MACRO_REGION_PRESETS,
   macroRegionPreset,
 } from './presets';
+import { DEFAULT_MACRO_DEFORMATION } from '../defaults';
 
 describe('macro region presets', () => {
   it('builds adjacent radial regions ordered by danger', () => {

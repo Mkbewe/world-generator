@@ -1,9 +1,9 @@
 import { ARCHETYPE_RECIPES } from './archetypes';
 import type { ArchetypeRange, ArchetypeRecipe, CorridorKind, StructureDraft } from './draft';
-import { distanceBetween, pointAlong, polylineLength } from './influence';
-import { scaleStructure } from './transform';
-import type { SeededRandom } from '../../random/seeded-random';
-import type { LandmassArchetype, LandmassEdge, LandmassNode, WorldPoint } from '../../types';
+import type { SeededRandom } from '../../../random/seeded-random';
+import type { LandmassArchetype, LandmassEdge, LandmassNode, WorldPoint } from '../../../types';
+import { distanceBetween, pointAlong, polylineLength } from '../influence';
+import { scaleStructure } from '../transform';
 
 /** Integration step of a unit corridor; dense enough for smooth control points. */
 const CORRIDOR_STEP = 0.02;

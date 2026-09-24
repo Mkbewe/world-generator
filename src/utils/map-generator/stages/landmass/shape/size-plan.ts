@@ -1,5 +1,5 @@
-import type { SeededRandom } from '../../random/seeded-random';
-import type { LandmassConfig } from '../../types';
+import type { SeededRandom } from '../../../random/seeded-random';
+import type { LandmassConfig } from '../../../types';
 
 /** Longest side a structure reaches at the largest size with a median weight. */
 const TYPICAL_EXTENT = 0.5;

@@ -1,4 +1,4 @@
-import type { PlaceableStructure } from './draft';
+import type { PlaceableStructure } from './shape/draft';
 import type { WorldPoint } from '../../types';
 
 /** Moves a point by the given offset. */

@@ -1,5 +1,7 @@
-import { isLandmassArchetype, LANDMASS_ARCHETYPES } from './archetypes';
-import { buildStructure, scaleDraft } from './corridor';
+import { placeStructures } from './search/placement';
+import { isLandmassArchetype, LANDMASS_ARCHETYPES } from './shape/archetypes';
+import { buildStructure, scaleDraft } from './shape/corridor';
+import { planSizes } from './shape/size-plan';
 import {
   DEFAULT_LANDMASS_CONFIG,
   MAX_LANDMASS_SIZE,
@@ -9,8 +11,6 @@ import {
 import { structureExtent } from './influence';
 import { validateLayout, validatePlacement } from './layout-check';
 import { createMaskSampler } from './mask-sampler';
-import { placeStructures } from './placement';
-import { planSizes } from './size-plan';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { type MapStage } from '../../pipeline/stage';

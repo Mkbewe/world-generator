@@ -2,11 +2,11 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
+import { MAX_MACRO_REGIONS } from '../../../../../utils/map-generator/stages/macro-region/defaults';
 import {
   baseRegions,
   overlayRegions,
-} from '../../../../../utils/map-generator/stages/macro-region/boundary-model';
-import { MAX_MACRO_REGIONS } from '../../../../../utils/map-generator/stages/macro-region/defaults';
+} from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import { OverlayRegionCard } from '../region-card';
 
 export function OverlayRegionSection() {

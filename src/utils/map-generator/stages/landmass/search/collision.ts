@@ -1,12 +1,12 @@
-import { STRUCTURE_GAP } from './defaults';
-import type { PlaceableStructure, StructureDraft } from './draft';
+import { STRUCTURE_GAP } from '../defaults';
 import {
   type Bounds,
   segmentDistance,
   structureBounds,
   type StructureSegment,
   structureSegments,
-} from './influence';
+} from '../influence';
+import type { PlaceableStructure, StructureDraft } from '../shape/draft';
 
 /** Cell size of the placement index, roughly one structure footprint. */
 const INDEX_CELL_SIZE = 0.15;

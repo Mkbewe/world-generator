@@ -4,7 +4,7 @@ import { useMacroRegionFormStore } from '../../../../../stores';
 import {
   MACRO_REGION_PRESETS,
   type MacroRegionPresetId,
-} from '../../../../../utils/map-generator/stages/macro-region/presets';
+} from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
 
 export function PresetPicker() {
   const applyPreset = useMacroRegionFormStore(state => state.applyPreset);

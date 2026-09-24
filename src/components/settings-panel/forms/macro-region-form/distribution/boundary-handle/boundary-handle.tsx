@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-import { MIN_MACRO_REGION_SHARE } from '../../../../../../utils/map-generator/stages/macro-region/boundary-model';
+import { MIN_MACRO_REGION_SHARE } from '../../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import styles from './boundary-handle.module.scss';
 
 interface BoundaryHandleProps {

@@ -2,7 +2,7 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen, within } from '@testing-library/react';
 
 import { RegionDistribution } from './region-distribution';
-import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region/boundary-model';
+import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import type { BoundaryDraft } from '../../hooks/use-boundary-draft';
 
 const segments: readonly MacroRegionSegment[] = [
