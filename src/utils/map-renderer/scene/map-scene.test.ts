@@ -1,5 +1,5 @@
 import { MapScene } from './map-scene';
-import { createRadialLayout } from '../../map-generator/stages/macro-region-presets';
+import { createRadialLayout } from '../../map-generator/stages/macro-region/presets';
 import type { LandmassLayout } from '../../map-generator/types';
 import {
   LandmassLayoutVectorLayer,

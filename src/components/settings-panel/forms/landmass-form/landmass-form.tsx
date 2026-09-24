@@ -8,7 +8,7 @@ import {
   MAX_LANDMASSES,
   MIN_LANDMASS_DIVERSITY,
   MIN_LANDMASS_SIZE,
-} from '../../../../utils/map-generator/stages/landmass-defaults';
+} from '../../../../utils/map-generator/stages/landmass';
 import { SliderField } from '../../../slider-field';
 
 export function LandmassForm() {

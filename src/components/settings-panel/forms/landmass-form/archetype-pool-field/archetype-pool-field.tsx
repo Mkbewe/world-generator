@@ -1,7 +1,7 @@
 import { Button, CheckboxCards, Flex } from '@radix-ui/themes';
 
 import { selectedArchetypes, useLandmassFormStore } from '../../../../../stores';
-import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass-layout/archetypes';
+import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass';
 import type { LandmassArchetype } from '../../../../../utils/map-generator/types';
 import { InfoLabel } from '../../../../info-label';
 

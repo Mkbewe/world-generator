@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import {
   boundariesToShares,
   clampBoundaries,
-} from '../../../../../utils/map-generator/stages/macro-region-sizes';
+} from '../../../../../utils/map-generator/stages/macro-region/boundary-model';
 
 export interface BoundaryDraft {
   /** Cumulative boundaries including the local drag preview. */

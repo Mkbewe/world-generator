@@ -5,7 +5,7 @@ import type {
   MapConfig,
   NoiseConfig,
 } from '../../../utils/map-generator';
-import { summarizeWorldGrid } from '../../../utils/map-generator/world-grid';
+import { summarizeWorldGrid } from '../../../utils/world-grid';
 
 export interface GenerationConfigInput {
   seed: string;

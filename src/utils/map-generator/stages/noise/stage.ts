@@ -1,0 +1,157 @@
+import { createNoise2D } from 'simplex-noise';
+
+import { GenerationCancelledError } from '../../errors';
+import type { MapContext } from '../../pipeline/context';
+import { assertStageOutput, type MapStage } from '../../pipeline/stage';
+import { NOISE_STAGE, type PipelineStageId } from '../../pipeline/stage-definitions';
+import { spaceOf } from '../../space';
+import type { MapConfig, MapState, StageMetrics, StageProgressReporter } from '../../types';
+
+export class NoiseStage implements MapStage<
+  MapConfig,
+  MapState,
+  PipelineStageId,
+  { noiseMap: Float32Array }
+> {
+  readonly id: PipelineStageId = NOISE_STAGE.id;
+  readonly name = NOISE_STAGE.name;
+  readonly configKeys = NOISE_STAGE.configKeys;
+  readonly reads: readonly (keyof MapState)[] = ['worldMask'];
+  readonly writes = ['noiseMap'] as const;
+  readonly progressStep = 0.1;
+
+  async execute(
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
+    signal: AbortSignal,
+    report: StageProgressReporter
+  ): Promise<{ noiseMap: Float32Array }> {
+    const { sampleWidth, sampleHeight } = context.config.world.dimensions;
+    const { frequency, octaves, persistence, lacunarity } = context.config.noise;
+    const worldMask = context.state.worldMask;
+
+    this.validateConfig(context.config);
+
+    if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
+      throw new Error('A valid world mask must be generated before noise.');
+    }
+
+    const random = context.random.create(this.id);
+    const noise2D = createNoise2D(() => random.next());
+    const noiseMap = new Float32Array(sampleWidth * sampleHeight);
+    const space = spaceOf(context);
+
+    for (let y = 0; y < sampleHeight; y++) {
+      if (signal.aborted) {
+        throw new GenerationCancelledError();
+      }
+
+      for (let x = 0; x < sampleWidth; x++) {
+        const index = y * sampleWidth + x;
+
+        if (worldMask[index] === 0) {
+          continue;
+        }
+
+        const world = space.cellToNormalized(x, y);
+        let amplitude = 1;
+        let octaveFrequency = frequency;
+        let noiseValue = 0;
+        let amplitudeSum = 0;
+
+        for (let octave = 0; octave < octaves; octave++) {
+          noiseValue += noise2D(world.x * octaveFrequency, world.y * octaveFrequency) * amplitude;
+          amplitudeSum += amplitude;
+          amplitude *= persistence;
+          octaveFrequency *= lacunarity;
+        }
+
+        const normalizedNoise = noiseValue / amplitudeSum;
+        noiseMap[index] = (normalizedNoise + 1) / 2;
+      }
+
+      report((y + 1) / sampleHeight);
+    }
+
+    return { noiseMap };
+  }
+
+  validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
+    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    assertStageOutput(state.noiseMap, 'float32', sampleWidth * sampleHeight);
+  }
+
+  summarize(
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
+    data: { noiseMap: Float32Array }
+  ): StageMetrics | undefined {
+    const noiseMap = data.noiseMap;
+    if (!(noiseMap instanceof Float32Array)) {
+      return undefined;
+    }
+
+    const worldMask = context.state.worldMask;
+    const { frequency, octaves, persistence, lacunarity } = context.config.noise;
+    let samples = 0;
+    let min = Infinity;
+    let max = -Infinity;
+    let sum = 0;
+    let sumSquares = 0;
+
+    for (let index = 0; index < noiseMap.length; index++) {
+      if (worldMask && worldMask[index] === 0) {
+        continue;
+      }
+      const value = noiseMap[index];
+      samples++;
+      min = Math.min(min, value);
+      max = Math.max(max, value);
+      sum += value;
+      sumSquares += value * value;
+    }
+
+    if (samples === 0) {
+      return undefined;
+    }
+
+    const mean = sum / samples;
+    const variance = Math.max(0, sumSquares / samples - mean * mean);
+
+    return {
+      frequency,
+      octaves,
+      persistence,
+      lacunarity,
+      samples,
+      min,
+      max,
+      mean,
+      stdDev: Math.sqrt(variance),
+      bytes: noiseMap.byteLength,
+    };
+  }
+
+  private validateConfig(config: MapConfig): void {
+    const { seed } = config.world;
+    const { frequency, octaves, persistence, lacunarity } = config.noise;
+
+    if (!Number.isFinite(seed)) {
+      throw new RangeError('World seed must be a finite number.');
+    }
+
+    if (!Number.isFinite(frequency) || frequency <= 0) {
+      throw new RangeError('Noise frequency must be greater than zero.');
+    }
+
+    if (!Number.isInteger(octaves) || octaves <= 0) {
+      throw new RangeError('Noise octaves must be a positive integer.');
+    }
+
+    if (!Number.isFinite(persistence) || persistence <= 0) {
+      throw new RangeError('Noise persistence must be greater than zero.');
+    }
+
+    if (!Number.isFinite(lacunarity) || lacunarity <= 0) {
+      throw new RangeError('Noise lacunarity must be greater than zero.');
+    }
+  }
+}

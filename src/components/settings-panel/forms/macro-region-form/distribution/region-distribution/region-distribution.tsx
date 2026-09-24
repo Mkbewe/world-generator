@@ -1,6 +1,6 @@
 import { Flex, Text } from '@radix-ui/themes';
 
-import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region-sizes';
+import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region/boundary-model';
 import type { BoundaryDraft } from '../../hooks/use-boundary-draft';
 import { DistributionBar } from '../distribution-bar';
 

@@ -7,7 +7,7 @@ import { LANDMASS_FORM_DEFAULTS, useLandmassFormStore } from '../../../../stores
 import {
   DEFAULT_LANDMASS_CONFIG,
   MAX_LANDMASSES,
-} from '../../../../utils/map-generator/stages/landmass-defaults';
+} from '../../../../utils/map-generator/stages/landmass/defaults';
 
 function renderForm() {
   render(

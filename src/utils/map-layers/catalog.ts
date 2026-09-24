@@ -1,7 +1,7 @@
 import type { LayerSpec } from './layer-spec';
 import { REGION_COLORS } from './palettes';
 import type { LayerDataRecord, MapRasters } from './types';
-import { PIPELINE_STAGES } from '../map-generator/stage-definitions';
+import { PIPELINE_STAGES } from '../map-generator/pipeline/stage-definitions';
 
 const STAGE_ORDER = new Map<string, number>(
   PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)

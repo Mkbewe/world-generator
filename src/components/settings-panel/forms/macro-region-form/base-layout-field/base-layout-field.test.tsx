@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { BaseLayoutField } from './base-layout-field';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../../stores';
-import { baseRegions } from '../../../../../utils/map-generator/stages/macro-region-sizes';
+import { baseRegions } from '../../../../../utils/map-generator/stages/macro-region/boundary-model';
 
 function renderField() {
   render(

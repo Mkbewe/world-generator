@@ -1,0 +1,1 @@
+export { WorldShapeStage } from './stage';

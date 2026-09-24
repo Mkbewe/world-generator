@@ -3,8 +3,8 @@ import type {
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
 import { GenerationStageError } from '../errors';
-import { createMapGenerator } from '../pipeline-factory';
-import { isPipelineStageId, type StageInfo } from '../stage-definitions';
+import { createMapGenerator } from '../pipeline/pipeline-factory';
+import { isPipelineStageId, type StageInfo } from '../pipeline/stage-definitions';
 
 export interface GenerationWorkerScope {
   onmessage: ((event: MessageEvent<PipelineWorkerGenerateRequest>) => void) | null;

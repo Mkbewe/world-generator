@@ -1,4 +1,4 @@
-import type { PipelineStageId, StageInfo } from '../stage-definitions';
+import type { PipelineStageId, StageInfo } from '../pipeline/stage-definitions';
 import type { GenerationEvent, MapConfig, MapState, StageStatistics } from '../types';
 
 /** Stage outputs reused from the saved map instead of being generated again. */

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { BaseRegionSection } from './base-region-section';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../../stores';
-import { regionSegments } from '../../../../../utils/map-generator/stages/macro-region-sizes';
+import { regionSegments } from '../../../../../utils/map-generator/stages/macro-region/boundary-model';
 
 function renderSection() {
   render(
