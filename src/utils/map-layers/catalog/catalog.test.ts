@@ -1,6 +1,6 @@
 import { hasCurrentRasterSources, LAYER_CATALOG, RASTER_CATALOG } from './catalog';
-import { PIPELINE_STAGES } from '../map-generator/pipeline/stage-definitions';
-import { RASTER_OUTPUT_KEYS } from '../map-generator/pipeline/stage-outputs';
+import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
+import { RASTER_OUTPUT_KEYS } from '../../map-generator/pipeline/stage-outputs';
 
 describe('LAYER_CATALOG', () => {
   it('orders stage layers by the pipeline stage order', () => {

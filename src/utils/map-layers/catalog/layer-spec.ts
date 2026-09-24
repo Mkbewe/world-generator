@@ -29,6 +29,7 @@ export interface LayerGroupSpec {
 interface LayerSpecBase<TId extends string = string> {
   readonly id: TId;
   readonly label: string;
+  /** Generator output this layer paints. */
   readonly source: string;
   readonly clipTo?: TId;
   readonly group?: LayerGroupSpec;
