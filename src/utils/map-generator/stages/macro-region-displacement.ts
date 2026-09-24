@@ -1,18 +1,33 @@
 import { createNoise2D } from 'simplex-noise';
 
 import { RandomFactory } from '../random/random-factory';
-import type { MacroRegionNoiseSource } from '../types';
+import { planarDistance } from '../space';
+import type { MacroRegionNoiseSource, MacroRegionPoint } from '../types';
 
 /** Reads a noise value in the 0..1 range inside the world mask. */
 export type NoiseSampler = (cellX: number, cellY: number) => number | undefined;
 
 /**
- * Border offset: a scalar shifts the ring radius or the band axis (the
- * noise-map source), a vector moves the sampled point (the dedicated source).
+ * Applies one border-deformation source at normalized map coordinates. Each
+ * source owns how its field moves the geometry: the dedicated field shifts
+ * the sampled point, the noise map shifts the measured coordinate. Callers
+ * never branch on the source — the factory below is the only fork.
+ *
+ * The field is probed once per cell via `at`: the returned cell object
+ * reuses that probe for every region, so deformation costs one field sample
+ * per cell no matter how many regions read it.
  */
-export type RegionOffset = number | { readonly x: number; readonly y: number };
-/** Signed border displacement sampled at normalized map coordinates. */
-export type RegionDisplacement = (x: number, y: number) => RegionOffset;
+export interface RegionDisplacement {
+  at(x: number, y: number): CellDeformation;
+}
+
+/** Deformation of one probed cell, applied per region and amplitude. */
+export interface CellDeformation {
+  /** Shifted ring radius around `center`. */
+  ringRadius(center: MacroRegionPoint, amplitude: number): number;
+  /** Shifted band position on `axis`. */
+  bandPosition(axis: 'x' | 'y', amplitude: number): number;
+}
 
 interface RegionDisplacementOptions {
   readonly source: MacroRegionNoiseSource;
@@ -28,7 +43,16 @@ export function createRegionDisplacement(options: RegionDisplacementOptions): Re
     return createDedicatedDisplacement(options.seed);
   }
   if (options.source === 'noise-map' && options.noiseAt) {
-    return createNoiseDisplacement(options.noiseAt, options.width, options.height);
+    const sample = createNoiseDisplacement(options.noiseAt, options.width, options.height);
+    return {
+      at: (x, y) => {
+        const shift = sample(x, y);
+        return {
+          ringRadius: (center, amplitude) => planarDistance({ x, y }, center) + shift * amplitude,
+          bandPosition: (axis, amplitude) => (axis === 'x' ? x : y) + shift * amplitude,
+        };
+      },
+    };
   }
   throw new Error(`Invalid or unavailable region noise source: ${options.source}.`);
 }
@@ -39,10 +63,20 @@ function createDedicatedDisplacement(seed: number): RegionDisplacement {
   const displacementX = createNoise2D(() => random.next());
   const displacementY = createNoise2D(() => random.next());
 
-  return (x, y) => ({
-    x: fbm(displacementX, x * 3, y * 3),
-    y: fbm(displacementY, x * 3, y * 3),
-  });
+  return {
+    at: (x, y) => {
+      const shiftX = fbm(displacementX, x * 3, y * 3);
+      const shiftY = fbm(displacementY, x * 3, y * 3);
+      return {
+        ringRadius(center, amplitude) {
+          return planarDistance({ x: x + shiftX * amplitude, y: y + shiftY * amplitude }, center);
+        },
+        bandPosition(axis, amplitude) {
+          return axis === 'x' ? x + shiftX * amplitude : y + shiftY * amplitude;
+        },
+      };
+    },
+  };
 }
 
 function fbm(noise: (x: number, y: number) => number, x: number, y: number): number {

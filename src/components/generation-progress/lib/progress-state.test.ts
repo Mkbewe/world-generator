@@ -1,11 +1,11 @@
 import { planProgress, ProgressTracker } from './progress-state';
 import type { GenerationProgressState } from './progress-types';
-import type { StageStatistics } from '../../../utils/map-generator';
+import type { StageInfo, StageStatistics } from '../../../utils/map-generator';
 
 const stageInfos = [
   { id: 'world-shape', name: 'World shape generation' },
   { id: 'noise', name: 'Noise generation' },
-];
+] as const satisfies readonly StageInfo[];
 
 function statistics(
   stageId: string,

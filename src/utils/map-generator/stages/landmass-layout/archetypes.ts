@@ -19,6 +19,7 @@ export const LANDMASS_ARCHETYPES = [
  */
 export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
   round: {
+    corridor: 'sine',
     length: [0.4, 0.6],
     turn: [0, 0.3],
     wobble: [0.3, 0.7],
@@ -31,6 +32,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     nodes: [2, 6],
   },
   irregular: {
+    corridor: 'sine',
     length: [0.8, 1.2],
     turn: [0, 1.2],
     wobble: [0.9, 1.6],
@@ -43,6 +45,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     nodes: [4, 8],
   },
   elongated: {
+    corridor: 'sine',
     length: [1.4, 2],
     turn: [0, 0.8],
     wobble: [0.2, 0.5],
@@ -55,6 +58,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     nodes: [2, 6],
   },
   winding: {
+    corridor: 'walk',
     // A random walk of a few bends instead of one sine: `bends` is the piece
     // count, `turn` the per-piece angle and `wobble` the chance of a straight
     // run, so no two windings repeat and some corners are sharp, some shallow.
@@ -70,6 +74,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     nodes: [4, 8],
   },
   branched: {
+    corridor: 'sine',
     length: [0.9, 1.3],
     turn: [0, 0.8],
     wobble: [0.2, 0.5],
@@ -82,6 +87,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     nodes: [2, 6],
   },
   lagoon: {
+    corridor: 'sine',
     length: [1.1, 1.4],
     turn: [4.2, 5.6],
     wobble: [0.1, 0.3],
@@ -94,6 +100,7 @@ export const ARCHETYPE_RECIPES: Record<LandmassArchetype, ArchetypeRecipe> = {
     nodes: [8, 14],
   },
   atoll: {
+    corridor: 'ring',
     length: [1.2, 1.6],
     turn: [6.15, 6.28],
     wobble: [0.05, 0.15],

@@ -82,6 +82,31 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'text',
     description: 'Noise source used to bend macro-region borders.',
   },
+  structures: {
+    label: 'Structures',
+    kind: 'number',
+    description: 'Geological structures placed in the world.',
+  },
+  shelves: {
+    label: 'Shelves',
+    kind: 'number',
+    description: 'Shared shallow-water shelves around the structures.',
+  },
+  nodes: {
+    label: 'Nodes',
+    kind: 'number',
+    description: 'Ridge-graph nodes across all structures.',
+  },
+  edges: {
+    label: 'Edges',
+    kind: 'number',
+    description: 'Ridge-graph edges across all structures.',
+  },
+  dropped: {
+    label: 'Dropped',
+    kind: 'number',
+    description: 'Structures the world could not place without a collision.',
+  },
   bytes: {
     label: 'Data',
     kind: 'bytes',

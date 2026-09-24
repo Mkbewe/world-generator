@@ -1,11 +1,12 @@
 import {
   type MapConfig,
+  type MapState,
+  type PipelineStageId,
   type PipelineWorkerReuse,
   selectDirtyStageIds,
   type StageInfo,
   type StageStatistics,
 } from '../../../utils/map-generator';
-import type { MapRasters } from '../../../utils/map-layers';
 
 /**
  * Selective regeneration state kept between runs: the configuration and the real
@@ -16,7 +17,7 @@ export class SelectiveRegeneration {
   private config?: MapConfig;
   private stages: readonly StageInfo[] = [];
   private readonly statistics = new Map<string, StageStatistics>();
-  private dirty: readonly string[] = [];
+  private dirty: readonly PipelineStageId[] = [];
 
   /** Stages the last worker announced; empty before the first run. */
   get announcedStages(): readonly StageInfo[] {
@@ -24,15 +25,15 @@ export class SelectiveRegeneration {
   }
 
   /** Stages of the announced list that this run reuses instead of running. */
-  get reusedStageIds(): readonly string[] {
+  get reusedStageIds(): readonly PipelineStageId[] {
     const dirty = new Set(this.dirty);
     return this.stages.filter(stage => !dirty.has(stage.id)).map(stage => stage.id);
   }
 
   /** Plans a run against the saved map and returns what the worker may reuse. */
-  plan(config: MapConfig, cachedRasters: MapRasters): PipelineWorkerReuse {
+  plan(config: MapConfig, cachedState: MapState): PipelineWorkerReuse {
     this.dirty = selectDirtyStageIds(this.config, config);
-    return { dirtyStageIds: this.dirty, cachedRasters };
+    return { dirtyStageIds: this.dirty, cachedState };
   }
 
   /** Remembers the stage list the worker announced. */

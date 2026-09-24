@@ -1,3 +1,4 @@
+import type { RegionDisplacement } from './macro-region-displacement';
 import {
   createBandOverlay,
   createHorizontalLayout,
@@ -7,6 +8,7 @@ import {
 import { createMacroRegionSampler, MacroRegionStage } from './macro-region-stage';
 import { NoiseStage } from './noise-stage';
 import { MapGenerator } from '../pipeline';
+import { planarDistance } from '../space';
 import type { MacroRegionConfig, MapConfig, MapState } from '../types';
 
 const noise = { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 };
@@ -49,7 +51,13 @@ function regionMap(result: Awaited<ReturnType<typeof generate>>): Uint8Array {
 
 describe('MacroRegionStage', () => {
   it('uses one radial displacement without favoring a diagonal direction', () => {
-    const regionAt = createMacroRegionSampler(createRadialLayout(2), { amplitude: 0.1 }, () => 1);
+    const unit: RegionDisplacement = {
+      at: (x, y) => ({
+        ringRadius: (center, amplitude) => planarDistance({ x, y }, center) + amplitude,
+        bandPosition: (axis, amplitude) => (axis === 'x' ? x : y) + amplitude,
+      }),
+    };
+    const regionAt = createMacroRegionSampler(createRadialLayout(2), { amplitude: 0.1 }, unit);
 
     expect(regionAt(0.7, 0.5)).toBe(1);
     expect(regionAt(0.3, 0.5)).toBe(1);
@@ -239,7 +247,7 @@ describe('MacroRegionStage', () => {
     await expect(
       pipeline.generate(source, { noiseMap: new Float32Array(9) })
     ).rejects.toMatchObject({
-      cause: { message: expect.stringContaining('world mask') },
+      cause: { message: expect.stringContaining('worldMask') },
     });
   });
 
@@ -253,7 +261,7 @@ describe('MacroRegionStage', () => {
     await expect(
       pipeline.generate(source, { worldMask: new Uint8Array(9).fill(1) })
     ).rejects.toMatchObject({
-      cause: { message: expect.stringContaining('noise map') },
+      cause: { message: expect.stringContaining('noiseMap') },
     });
   });
 

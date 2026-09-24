@@ -1,14 +1,12 @@
 import type { LAYER_CATALOG } from './catalog';
-import type { TypedArrayFor } from './layer-spec';
+import type { MapRasterOutputs } from '../map-generator/stage-outputs';
 
 type CatalogEntry = (typeof LAYER_CATALOG)[number];
-type RasterEntry = Extract<CatalogEntry, { kind: 'raster' }>;
 export type MapBaseLayerId = CatalogEntry['id'];
 export type LayerSource = CatalogEntry['source'];
 
-export type MapRasters = Partial<{
-  [Entry in RasterEntry as Entry['source']]: TypedArrayFor<Entry['dataType']>;
-}>;
+/** Presentation view of the rasters the generator owns. */
+export type MapRasters = MapRasterOutputs;
 
 /** Loose representation used only where source keys are discovered at runtime. */
 export type LayerDataRecord = Readonly<Record<string, unknown>>;

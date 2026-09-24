@@ -1,21 +1,31 @@
 import { MapContext } from './context';
 import { GenerationCancelledError, GenerationStageError } from './errors';
-import type { MapStage } from './stage';
+import type { WorldSpace } from './space';
+import { type MapStage, resolveReads } from './stage';
+import { commitStageWrites } from './stage-outputs';
 import type {
   GenerationEvent,
   GenerationOptions,
   GenerationResult,
   MapGeneratorOptions,
   SeededWorldConfig,
+  StageData,
   StageMetrics,
   StageProgressReporter,
   StageStatistics,
 } from './types';
 
-export class MapGenerator<TConfig extends SeededWorldConfig, TState extends object> {
+export class MapGenerator<
+  TConfig extends SeededWorldConfig,
+  TState extends object,
+  TId extends string = string,
+> {
   constructor(
-    readonly stages: readonly MapStage<TConfig, TState>[],
-    private readonly options: MapGeneratorOptions<TConfig> = {}
+    readonly stages: readonly MapStage<TConfig, TState, TId, StageData>[],
+    private readonly options: MapGeneratorOptions<TConfig> & {
+      /** Derives the run's coordinate frame; absent on generic test pipelines. */
+      createSpace?: (config: Readonly<TConfig>) => WorldSpace;
+    } = {}
   ) {
     const ids = new Set<string>();
     const knownConfigKeys = this.options.knownConfigKeys
@@ -44,12 +54,16 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
   async generate(
     config: Readonly<TConfig>,
     initialState: TState,
-    options: GenerationOptions = {}
-  ): Promise<GenerationResult<MapContext<TConfig, TState>>> {
+    options: GenerationOptions<TId> = {}
+  ): Promise<GenerationResult<MapContext<TConfig, TState, TId>, TId>> {
     this.options.validateConfig?.(config);
-    const context = new MapContext(config, initialState);
+    const context = new MapContext<TConfig, TState, TId>(
+      config,
+      initialState,
+      this.options.createSpace?.(config)
+    );
     const signal = options.signal ?? new AbortController().signal;
-    const skipStageIds = new Set(options.skipStageIds ?? []);
+    const skipStageIds = new Set<TId>(options.skipStageIds ?? []);
     const generationStartedAt = performance.now();
 
     for (const [stageIndex, stage] of this.stages.entries()) {
@@ -93,8 +107,10 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
 
       let data;
       try {
+        this.assertReads(stage, context.state, context.config);
         data = await stage.execute(context, signal, report);
         this.throwIfCancelled(signal);
+        commitStageWrites(context.state, stage.id, stage.writes, data);
         stage.validate?.(context.state, context.config);
       } catch (error) {
         if (error instanceof GenerationCancelledError) {
@@ -153,6 +169,18 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
     await new Promise(resolve => globalThis.setTimeout(resolve, durationMs));
   }
 
+  private assertReads(
+    stage: MapStage<TConfig, TState, TId, StageData>,
+    state: TState,
+    config: Readonly<TConfig>
+  ): void {
+    for (const key of resolveReads(stage, config)) {
+      if (state[key] === undefined) {
+        throw new Error(`Stage "${stage.id}" is missing input "${String(key)}".`);
+      }
+    }
+  }
+
   private throwIfCancelled(signal: AbortSignal): void {
     if (signal.aborted) {
       throw new GenerationCancelledError();
@@ -160,11 +188,11 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
   }
 
   private createStatistics(
-    stage: MapStage<TConfig, TState>,
+    stage: MapStage<TConfig, TState, TId, StageData>,
     startedAt: number,
-    status: StageStatistics['status'],
+    status: StageStatistics<TId>['status'],
     details?: StageMetrics
-  ): StageStatistics {
+  ): StageStatistics<TId> {
     const finishedAt = performance.now();
 
     return {
@@ -179,9 +207,11 @@ export class MapGenerator<TConfig extends SeededWorldConfig, TState extends obje
   }
 }
 
-function createSkippedStatistics<TConfig extends SeededWorldConfig, TState extends object>(
-  stage: MapStage<TConfig, TState>
-): StageStatistics {
+function createSkippedStatistics<
+  TConfig extends SeededWorldConfig,
+  TState extends object,
+  TId extends string,
+>(stage: MapStage<TConfig, TState, TId, StageData>): StageStatistics<TId> {
   return {
     stageId: stage.id,
     stageName: stage.name,
@@ -192,10 +222,10 @@ function createSkippedStatistics<TConfig extends SeededWorldConfig, TState exten
   };
 }
 
-function createProgressReporter(
-  base: { stageId: string; stageName: string; stageIndex: number; stageCount: number },
+function createProgressReporter<TId extends string>(
+  base: { stageId: TId; stageName: string; stageIndex: number; stageCount: number },
   step: number,
-  onEvent?: (event: GenerationEvent) => void
+  onEvent?: (event: GenerationEvent<TId>) => void
 ): StageProgressReporter {
   const size = step > 0 && step <= 1 ? step : 0.01;
   let lastBucket = -1;

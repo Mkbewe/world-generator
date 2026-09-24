@@ -1,6 +1,4 @@
-import { DEFAULT_REGION_NOISE_SOURCE } from '../../map-generator/stages/macro-region-defaults';
-import { createRegionDisplacement } from '../../map-generator/stages/macro-region-displacement';
-import { createMacroRegionSampler } from '../../map-generator/stages/macro-region-stage';
+import { createMacroRegionClassifier } from '../../map-generator/macro-region-classifier';
 import {
   type LayerDataRecord,
   type LayerSpec,
@@ -102,23 +100,17 @@ export class MapScene {
     if (!region) {
       return undefined;
     }
-    return createMacroRegionSampler(
-      region.regions,
-      region.deformation,
-      createRegionDisplacement({
-        source: region.deformation.source ?? DEFAULT_REGION_NOISE_SOURCE,
-        seed: region.seed,
-        width: size.width,
-        height: size.height,
-        noiseAt:
-          region.deformation.source === 'noise-map'
-            ? (cellX, cellY) => {
-                const sample = this.noiseLayer()?.sample(cellX, cellY);
-                return typeof sample === 'number' ? sample : undefined;
-              }
-            : undefined,
-      })
-    );
+    return createMacroRegionClassifier({
+      seed: region.seed,
+      regions: region.regions,
+      deformation: region.deformation,
+      width: size.width,
+      height: size.height,
+      noiseAt: (cellX, cellY) => {
+        const sample = this.noiseLayer()?.sample(cellX, cellY);
+        return typeof sample === 'number' ? sample : undefined;
+      },
+    });
   }
 
   /**

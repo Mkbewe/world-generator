@@ -7,6 +7,7 @@ import type { StructureDraft } from './types';
 import { createMaskSampler } from './world';
 import { containsWorld } from '../../../world-shape';
 import { SeededRandom } from '../../random/seeded-random';
+import { createWorldSpace } from '../../space';
 import type { LandmassArchetype } from '../../types';
 import { DEFAULT_LANDMASS_CONFIG } from '../landmass-defaults';
 
@@ -23,10 +24,12 @@ const ARCHETYPES: readonly LandmassArchetype[] = ['elongated', 'branched', 'wind
 
 /** Disc world mask, generated from the same shape the stage uses. */
 function discSampler(size = 64) {
+  const space = createWorldSpace({ sampleWidth: size, sampleHeight: size });
   const mask = new Uint8Array(size * size);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const inside = containsWorld('disc', 2 * (x / (size - 1)) - 1, 2 * (y / (size - 1)) - 1);
+      const maskCoords = space.cellToMask(x, y);
+      const inside = containsWorld('disc', maskCoords.x, maskCoords.y);
       mask[y * size + x] = inside ? 1 : 0;
     }
   }

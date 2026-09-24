@@ -81,7 +81,7 @@ describe('LandmassLayoutStage', () => {
     const pipeline = new MapGenerator<MapConfig, MapState>([new LandmassLayoutStage()]);
 
     await expect(pipeline.generate(base, {})).rejects.toMatchObject({
-      cause: { message: expect.stringContaining('world mask') },
+      cause: { message: expect.stringContaining('worldMask') },
     });
   });
 

@@ -3,11 +3,11 @@ import { type GenerationStatistics, usePreviewStore } from '../../../stores';
 import {
   DEFAULT_MACRO_DEFORMATION,
   DEFAULT_MACRO_REGIONS,
-  isLandmassLayout,
-  type LandmassLayout,
   type MapConfig,
+  type MapState,
   type RunGeneration,
   runGeneration as runGenerationInWorker,
+  selectDomainOutputs,
   selectMapInfo,
 } from '../../../utils/map-generator';
 import {
@@ -87,8 +87,8 @@ export class WorldGenerationSession {
     onProgress: (progress: GenerationProgressState) => void
   ): Promise<GenerationStatistics | undefined> {
     this.cancel();
-    const cached = mapRepository.get();
-    if (cached && !hasCurrentRasterSources(cached.layers)) {
+    const saved = mapRepository.get();
+    if (saved && !hasCurrentRasterSources(saved.layers)) {
       // A snapshot in a format this build no longer understands (e.g. the old
       // landmass id map) is dropped with its regeneration baseline instead of
       // being migrated or re-saved; the run starts from scratch.
@@ -97,9 +97,13 @@ export class WorldGenerationSession {
     const generation = new AbortController();
     this.generation = generation;
     const signal = generation.signal;
-    const cachedRasters = mapRepository.get()?.layers ?? {};
-    const plan = this.regeneration.plan(config, cachedRasters);
-    this.layers = { ...cachedRasters };
+    const cached = mapRepository.get();
+    const cachedState: MapState = {
+      ...(cached?.layers ?? {}),
+      ...selectDomainOutputs(cached?.info ?? {}),
+    };
+    const plan = this.regeneration.plan(config, cachedState);
+    this.layers = { ...(cached?.layers ?? {}) };
     // The saved map stays until this run succeeds, so a failure keeps it.
     // Reused stages are marked as skipped before the worker reports anything.
     const announced = this.regeneration.announcedStages;
@@ -109,12 +113,10 @@ export class WorldGenerationSession {
     let progress: ProgressTracker | undefined;
 
     try {
-      const info = { ...selectMapInfo(config) };
-      const savedLayout = cached?.info?.landmassLayout;
-      if (isLandmassLayout(savedLayout)) {
-        // Reused stages never report again, so the saved graph travels with the run.
-        info.landmassLayout = savedLayout;
-      }
+      const info = {
+        ...selectMapInfo(config),
+        ...selectDomainOutputs(cached?.info ?? {}),
+      };
       const regionGeometry = {
         seed: config.world.seed,
         regions: config.macroRegions ?? DEFAULT_MACRO_REGIONS,
@@ -178,9 +180,9 @@ export class WorldGenerationSession {
 
   /** Collects catalog rasters and sends them to the attached preview when there is one. */
   private receiveStage(data: LayerDataRecord): void {
-    const layout = data.landmassLayout;
-    if (isLandmassLayout(layout)) {
-      this.updateLayoutInfo(layout);
+    const domain = selectDomainOutputs(data);
+    if (Object.keys(domain).length > 0) {
+      this.mergeInfo(domain);
     }
     const rasters = selectRasters(data);
     Object.assign(this.layers, rasters);
@@ -198,15 +200,15 @@ export class WorldGenerationSession {
     this.send(renderer, rasters);
   }
 
-  /** Keeps the generated graph with the run, so the snapshot can restore it. */
-  private updateLayoutInfo(layout: LandmassLayout): void {
+  /** Merges stage domain outputs into the run so a reused stage does not drop them. */
+  private mergeInfo(domain: MapState): void {
     const run = this.run;
     if (!run) {
       return;
     }
     run.info = {
       ...run.info,
-      landmassLayout: layout,
+      ...domain,
     };
     this.renderer?.setInfo(run.info);
   }

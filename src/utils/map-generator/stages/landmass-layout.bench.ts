@@ -4,7 +4,9 @@ import { DEFAULT_LANDMASS_CONFIG } from './landmass-defaults';
 import { LandmassLayoutStage } from './landmass-layout';
 import { containsWorld } from '../../world-shape';
 import { MapContext } from '../context';
-import type { MapConfig } from '../types';
+import { createWorldSpace } from '../space';
+import type { PipelineStageId } from '../stage-definitions';
+import type { MapConfig, MapState } from '../types';
 
 /** World resolutions the baseline compares, in sample cells per axis. */
 const RESOLUTIONS = [256, 512, 1024, 2048];
@@ -30,14 +32,12 @@ function config(resolution: number): MapConfig {
 }
 
 function discMask(resolution: number): Uint8Array {
+  const space = createWorldSpace({ sampleWidth: resolution, sampleHeight: resolution });
   const mask = new Uint8Array(resolution * resolution);
   for (let y = 0; y < resolution; y++) {
     for (let x = 0; x < resolution; x++) {
-      const inside = containsWorld(
-        'disc',
-        2 * (x / (resolution - 1)) - 1,
-        2 * (y / (resolution - 1)) - 1
-      );
+      const maskCoords = space.cellToMask(x, y);
+      const inside = containsWorld('disc', maskCoords.x, maskCoords.y);
       mask[y * resolution + x] = inside ? 1 : 0;
     }
   }
@@ -50,7 +50,9 @@ for (const resolution of RESOLUTIONS) {
   describe(`landmass stage at ${resolution} x ${resolution}`, () => {
     bench('full stage', async () => {
       const stage = new LandmassLayoutStage();
-      const context = new MapContext(config(resolution), { worldMask: masks.get(resolution) });
+      const context = new MapContext<MapConfig, MapState, PipelineStageId>(config(resolution), {
+        worldMask: masks.get(resolution),
+      });
       await stage.execute(context, new AbortController().signal, () => {});
     });
   });

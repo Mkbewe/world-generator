@@ -58,7 +58,7 @@ describe('selectDirtyStageIds', () => {
         ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
       ],
       [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region', 'landmass-layout']],
-      [{ noise: { ...config.noise, frequency: 5 } }, ['noise', 'macro-region']],
+      [{ noise: { ...config.noise, frequency: 5 } }, ['noise']],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
       [{ landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } }, ['landmass-layout']],
@@ -67,6 +67,20 @@ describe('selectDirtyStageIds', () => {
     for (const [patch, expected] of cases) {
       expect(selectDirtyStageIds(config, { ...config, ...patch })).toEqual(expected);
     }
+  });
+
+  it('follows the noise raster only under the noise-map border source', () => {
+    const noiseMap = {
+      ...config,
+      macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } as const,
+    };
+    const changedNoise: MapConfig = {
+      ...noiseMap,
+      noise: { ...noiseMap.noise, frequency: 5 },
+    };
+
+    expect(selectDirtyStageIds(noiseMap, changedNoise)).toEqual(['noise', 'macro-region']);
+    expect(selectDirtyStageIds(changedNoise, noiseMap)).toEqual(['noise', 'macro-region']);
   });
 
   it('leaves the landmass layout out of changes it does not read', () => {

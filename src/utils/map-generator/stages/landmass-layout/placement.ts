@@ -4,7 +4,6 @@ import {
   insideWorldShare,
   type PlacedEntry,
   segmentsDistance,
-  structureDistance,
   StructureIndex,
   type WorldSampler,
 } from './collision';
@@ -22,6 +21,7 @@ import {
 import { createGroupShelves, planGroups } from './grouping';
 import type { StructureDraft } from './types';
 import type { SeededRandom } from '../../random/seeded-random';
+import { planarDistance } from '../../space';
 import type { GeologicalStructure, ShelfConfig, ShelfDefinition, WorldPoint } from '../../types';
 import { LANDMASS_GROUP_DISTANCE, STRUCTURE_GAP } from '../landmass-defaults';
 
@@ -50,9 +50,6 @@ const GROUP_ATTEMPTS = 12;
 
 /** Groups start no further than this from the world centre, so they can spread. */
 const GROUP_CENTRE_LIMIT = 0.25;
-
-/** Relaxation passes that push apart structures a crowded world overlapped. */
-const SEPARATION_PASSES = 8;
 
 export interface PlacementResult {
   readonly structures: readonly GeologicalStructure[];
@@ -126,26 +123,35 @@ export function placeStructures(
     }
   }
 
-  const repaired = validateAndRepair(context.placements, insideWorld);
+  const placements = context.placements;
   // Final groups come from the placements that really survived: a group whose
   // leader failed, or whose member was dissolved or dropped, must not share a
   // shelf across the map.
   const finalGroups = intended
     .map((_, group) =>
-      repaired.filter(placement => placement.group === group).map(placement => placement.draftIndex)
+      placements
+        .filter(placement => placement.group === group)
+        .map(placement => placement.draftIndex)
     )
     .filter(members => members.length >= 2);
   const { shelfOf, shelves } = createGroupShelves(
     finalGroups,
-    repaired.map(placement => placement.draftIndex),
+    placements.map(placement => placement.draftIndex),
     shelf
   );
-  const structures = repaired.map(placement => ({
-    ...placement.entry.structure,
-    shelfId: shelfOf.get(placement.draftIndex) ?? '',
-  }));
+  const structures = placements.map(placement => {
+    const shelfId = shelfOf.get(placement.draftIndex);
+    if (shelfId === undefined) {
+      throw new Error(`Placement lost the shelf of structure #${placement.draftIndex}.`);
+    }
+    return { ...placement.entry.structure, shelfId };
+  });
 
-  return { structures, shelves, dropped: drafts.length - repaired.length };
+  return {
+    structures,
+    shelves,
+    dropped: drafts.length - placements.length,
+  };
 }
 
 /** Places one group as a unit: leader first, members side by side next to it. */
@@ -279,7 +285,7 @@ function tryRotations(
     if (clearanceFrom(candidate, state.entries, state.index, segments, bounds) < 0) {
       continue;
     }
-    return entryOf({ ...candidate, shelfId: '' }, bounds, segments);
+    return entryOf(candidate, bounds, segments);
   }
   return undefined;
 }
@@ -329,64 +335,11 @@ function findGroupMember(
         member => segmentsDistance(segments, member.entry.segments) <= limit
       );
       if (grouped) {
-        return entryOf({ ...candidate, shelfId: '' }, bounds, segments);
+        return entryOf(candidate, bounds, segments);
       }
     }
   }
   return undefined;
-}
-
-/**
- * Hard contract after placement: push apart the rare overlap with bounded moves,
- * then drop whatever still overlaps or sits too far outside the world.
- */
-function validateAndRepair(
-  placements: readonly Placement[],
-  insideWorld: WorldSampler
-): Placement[] {
-  const result = [...placements];
-
-  for (let pass = 0; pass < SEPARATION_PASSES; pass++) {
-    let moved = false;
-    for (let left = 0; left < result.length; left++) {
-      for (let right = left + 1; right < result.length; right++) {
-        const distance = structureDistance(
-          result[left].entry.structure,
-          result[right].entry.structure
-        );
-        if (distance >= 0) {
-          continue;
-        }
-        const from = structureCentre(result[left].entry.structure);
-        const to = structureCentre(result[right].entry.structure);
-        const angle = Math.atan2(to.y - from.y, to.x - from.x);
-        const push = STRUCTURE_GAP - distance;
-        const candidate = translateStructure(result[right].entry.structure, {
-          x: Math.cos(angle) * push,
-          y: Math.sin(angle) * push,
-        });
-        if (insideWorldShare(candidate, insideWorld) >= INSIDE_SHARE) {
-          result[right] = { ...result[right], entry: entryOf(candidate) };
-          moved = true;
-        }
-      }
-    }
-    if (!moved) {
-      break;
-    }
-  }
-
-  const kept: Placement[] = [];
-  for (const placement of result) {
-    const share = insideWorldShare(placement.entry.structure, insideWorld);
-    const overlaps = kept.some(
-      other => structureDistance(placement.entry.structure, other.entry.structure) < 0
-    );
-    if (share >= INSIDE_SHARE && !overlaps) {
-      kept.push(placement);
-    }
-  }
-  return kept;
 }
 
 /** Clearance of a candidate, with its influence segments computed only once. */
@@ -463,7 +416,7 @@ function anchorPoints(
 
 /** Distance of an anchor from the world centre. */
 function centreDistance(point: WorldPoint): number {
-  return Math.hypot(point.x - 0.5, point.y - 0.5);
+  return planarDistance(point, { x: 0.5, y: 0.5 });
 }
 
 /** Anchor farthest from every placed structure, so new ones fill free space. */

@@ -2,18 +2,26 @@ import { createNoise2D } from 'simplex-noise';
 
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
+import { spaceOf } from '../space';
 import { assertStageOutput, type MapStage } from '../stage';
-import { NOISE_STAGE } from '../stage-definitions';
-import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
+import { NOISE_STAGE, type PipelineStageId } from '../stage-definitions';
+import type { MapConfig, MapState, StageMetrics, StageProgressReporter } from '../types';
 
-export class NoiseStage implements MapStage<MapConfig, MapState> {
-  readonly id = NOISE_STAGE.id;
+export class NoiseStage implements MapStage<
+  MapConfig,
+  MapState,
+  PipelineStageId,
+  { noiseMap: Float32Array }
+> {
+  readonly id: PipelineStageId = NOISE_STAGE.id;
   readonly name = NOISE_STAGE.name;
   readonly configKeys = NOISE_STAGE.configKeys;
+  readonly reads: readonly (keyof MapState)[] = ['worldMask'];
+  readonly writes = ['noiseMap'] as const;
   readonly progressStep = 0.1;
 
   async execute(
-    context: MapContext<MapConfig, MapState>,
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ noiseMap: Float32Array }> {
@@ -30,15 +38,12 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
     const random = context.random.create(this.id);
     const noise2D = createNoise2D(() => random.next());
     const noiseMap = new Float32Array(sampleWidth * sampleHeight);
-    const xDivisor = Math.max(1, sampleWidth - 1);
-    const yDivisor = Math.max(1, sampleHeight - 1);
+    const space = spaceOf(context);
 
     for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
-
-      const worldY = y / yDivisor;
 
       for (let x = 0; x < sampleWidth; x++) {
         const index = y * sampleWidth + x;
@@ -47,14 +52,14 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
           continue;
         }
 
-        const worldX = x / xDivisor;
+        const world = space.cellToNormalized(x, y);
         let amplitude = 1;
         let octaveFrequency = frequency;
         let noiseValue = 0;
         let amplitudeSum = 0;
 
         for (let octave = 0; octave < octaves; octave++) {
-          noiseValue += noise2D(worldX * octaveFrequency, worldY * octaveFrequency) * amplitude;
+          noiseValue += noise2D(world.x * octaveFrequency, world.y * octaveFrequency) * amplitude;
           amplitudeSum += amplitude;
           amplitude *= persistence;
           octaveFrequency *= lacunarity;
@@ -67,7 +72,6 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
       report((y + 1) / sampleHeight);
     }
 
-    context.state.noiseMap = noiseMap;
     return { noiseMap };
   }
 
@@ -76,7 +80,10 @@ export class NoiseStage implements MapStage<MapConfig, MapState> {
     assertStageOutput(state.noiseMap, 'float32', sampleWidth * sampleHeight);
   }
 
-  summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {
+  summarize(
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
+    data: { noiseMap: Float32Array }
+  ): StageMetrics | undefined {
     const noiseMap = data.noiseMap;
     if (!(noiseMap instanceof Float32Array)) {
       return undefined;

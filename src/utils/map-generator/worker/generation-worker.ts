@@ -4,6 +4,7 @@ import type {
 } from './pipeline-worker.types';
 import { GenerationStageError } from '../errors';
 import { createMapGenerator } from '../pipeline-factory';
+import { isPipelineStageId, type StageInfo } from '../stage-definitions';
 
 export interface GenerationWorkerScope {
   onmessage: ((event: MessageEvent<PipelineWorkerGenerateRequest>) => void) | null;
@@ -24,7 +25,7 @@ async function generate(
   const generator = createMapGenerator();
   scope.postMessage({
     type: 'stages',
-    stages: generator.stages.map(({ id, name }) => ({ id, name })),
+    stages: announceStages(generator.stages),
   });
 
   const dirty = new Set(request.reuse.dirtyStageIds);
@@ -35,7 +36,7 @@ async function generate(
   try {
     const generation = await generator.generate(
       request.config,
-      { ...request.reuse.cachedRasters },
+      { ...request.reuse.cachedState },
       {
         skipStageIds,
         onEvent: event => {
@@ -57,6 +58,15 @@ async function generate(
       message: errorMessage(error),
     });
   }
+}
+
+function announceStages(stages: readonly { id: string; name: string }[]): StageInfo[] {
+  return stages.map(stage => {
+    if (!isPipelineStageId(stage.id)) {
+      throw new Error(`Unknown stage id: "${stage.id}".`);
+    }
+    return { id: stage.id, name: stage.name };
+  });
 }
 
 function errorMessage(error: unknown): string {

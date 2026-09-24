@@ -5,9 +5,12 @@ describe('landmass archetypes', () => {
   it('keeps every recipe range consistent', () => {
     for (const archetype of LANDMASS_ARCHETYPES) {
       const recipe = ARCHETYPE_RECIPES[archetype];
-      const ranges = Object.values(recipe) as readonly ArchetypeRange[];
+      const ranges = Object.values(recipe).filter((value): value is ArchetypeRange =>
+        Array.isArray(value)
+      );
 
       expect(ranges.every(range => range[0] <= range[1])).toBe(true);
+      expect(['sine', 'walk', 'ring']).toContain(recipe.corridor);
       expect(recipe.length[0]).toBeGreaterThan(0);
       expect(recipe.radius[0]).toBeGreaterThan(0);
       expect(recipe.taper[0]).toBeGreaterThan(0);
