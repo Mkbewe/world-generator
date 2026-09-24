@@ -1,3 +1,4 @@
+import { planarDistance } from '../../space';
 import type { LandmassEdge, LandmassNode, WorldPoint } from '../../types';
 
 export interface Bounds {
@@ -60,7 +61,7 @@ function boundsCentre(bounds: Bounds): WorldPoint {
 }
 
 export function distanceBetween(left: WorldPoint, right: WorldPoint): number {
-  return Math.hypot(right.x - left.x, right.y - left.y);
+  return planarDistance(left, right);
 }
 
 /** Moves a point by the given offset. */

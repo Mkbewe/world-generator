@@ -138,4 +138,36 @@ describe('GenerationStatisticsPanel', () => {
     expect(screen.getByText('Deformation source')).toBeInTheDocument();
     expect(screen.getByText('dedicated')).toBeInTheDocument();
   });
+
+  it('formats landmass layout counts as integers', () => {
+    renderPanel({
+      statistics: [
+        createStage({
+          stageId: 'landmass-layout',
+          stageName: 'Landmass layout generation',
+          details: {
+            structures: 10,
+            shelves: 8,
+            nodes: 73,
+            edges: 63,
+            dropped: 0,
+          },
+        }),
+      ],
+      totalDurationMs: 40,
+    });
+
+    expect(screen.getByText('Structures')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('Shelves')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('Nodes')).toBeInTheDocument();
+    expect(screen.getByText('73')).toBeInTheDocument();
+    expect(screen.getByText('Edges')).toBeInTheDocument();
+    expect(screen.getByText('63')).toBeInTheDocument();
+    expect(screen.getByText('Dropped')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.queryByText('10.000')).not.toBeInTheDocument();
+    expect(screen.queryByText('0.000')).not.toBeInTheDocument();
+  });
 });

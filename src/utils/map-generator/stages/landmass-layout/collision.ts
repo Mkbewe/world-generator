@@ -6,6 +6,8 @@ import {
   type StructureSegment,
   structureSegments,
 } from './geometry';
+import type { StructureDraft } from './types';
+import { planarDistance } from '../../space';
 import type { GeologicalStructure, WorldPoint } from '../../types';
 import { STRUCTURE_GAP } from '../landmass-defaults';
 
@@ -24,14 +26,14 @@ export type WorldSampler = (point: WorldPoint) => boolean;
 
 /** A placed structure with the data placement needs for collision checks. */
 export interface PlacedEntry {
-  readonly structure: GeologicalStructure;
+  readonly structure: StructureDraft;
   readonly bounds: Bounds;
   readonly segments: readonly StructureSegment[];
 }
 
 /** Precomputes the collision data of a placed structure. */
 export function entryOf(
-  structure: GeologicalStructure,
+  structure: StructureDraft,
   bounds: Bounds = structureBounds(structure),
   segments: readonly StructureSegment[] = structureSegments(structure)
 ): PlacedEntry {
@@ -176,7 +178,7 @@ export function insideWorldShare(
   };
 
   for (const segment of structureSegments(structure)) {
-    const length = Math.hypot(segment.to.x - segment.from.x, segment.to.y - segment.from.y);
+    const length = planarDistance(segment.from, segment.to);
     const radius = Math.max(Number.EPSILON, Math.min(segment.fromRadius, segment.toRadius));
     const step = Math.min(MAX_SAMPLE_STEP, radius / 2);
     const steps = Math.min(

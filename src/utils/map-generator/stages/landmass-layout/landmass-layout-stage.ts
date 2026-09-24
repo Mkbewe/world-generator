@@ -10,7 +10,7 @@ import type { MapContext } from '../../context';
 import { GenerationCancelledError } from '../../errors';
 import type { SeededRandom } from '../../random/seeded-random';
 import { type MapStage } from '../../stage';
-import { LANDMASS_LAYOUT_STAGE } from '../../stage-definitions';
+import { LANDMASS_LAYOUT_STAGE, type PipelineStageId } from '../../stage-definitions';
 import type {
   LandmassArchetype,
   LandmassConfig,
@@ -37,14 +37,21 @@ const BUILD_PROGRESS = 0.6;
  * only sampled through the placement. Heights, coastlines and islands belong to
  * later stages.
  */
-export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
-  readonly id = LANDMASS_LAYOUT_STAGE.id;
+export class LandmassLayoutStage implements MapStage<
+  MapConfig,
+  MapState,
+  PipelineStageId,
+  { landmassLayout: LandmassLayout; dropped: number }
+> {
+  readonly id: PipelineStageId = LANDMASS_LAYOUT_STAGE.id;
   readonly name = LANDMASS_LAYOUT_STAGE.name;
   readonly configKeys = LANDMASS_LAYOUT_STAGE.configKeys;
+  readonly reads: readonly (keyof MapState)[] = ['worldMask'];
+  readonly writes = ['landmassLayout'] as const;
   readonly progressStep = 0.05;
 
   async execute(
-    context: MapContext<MapConfig, MapState>,
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ landmassLayout: LandmassLayout; dropped: number }> {
@@ -88,7 +95,6 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     };
     validateLayout(layout);
 
-    context.state.landmassLayout = layout;
     report(1);
     return { landmassLayout: layout, dropped: placement.dropped };
   }
@@ -113,10 +119,10 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
   }
 
   summarize(
-    _context: MapContext<MapConfig, MapState>,
-    data: Record<string, unknown>
+    _context: MapContext<MapConfig, MapState, PipelineStageId>,
+    data: { landmassLayout: LandmassLayout; dropped: number }
   ): StageMetrics | undefined {
-    const layout = data.landmassLayout as LandmassLayout | undefined;
+    const layout = data.landmassLayout;
     if (!layout) {
       return undefined;
     }

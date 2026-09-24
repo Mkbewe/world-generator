@@ -1,12 +1,12 @@
-import type { MapRasters } from '../../map-layers';
-import type { StageInfo } from '../stage-definitions';
-import type { GenerationEvent, MapConfig, StageStatistics } from '../types';
+import type { PipelineStageId, StageInfo } from '../stage-definitions';
+import type { GenerationEvent, MapConfig, MapState, StageStatistics } from '../types';
 
 /** Stage outputs reused from the saved map instead of being generated again. */
 export interface PipelineWorkerReuse {
   /** Stage ids that must run; every other stage is skipped. */
-  dirtyStageIds: readonly string[];
-  cachedRasters: MapRasters;
+  dirtyStageIds: readonly PipelineStageId[];
+  /** Rasters and domain outputs the skipped stages already produced. */
+  cachedState: MapState;
 }
 
 export interface PipelineWorkerGenerateRequest {

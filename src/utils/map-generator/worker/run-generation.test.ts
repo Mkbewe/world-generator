@@ -1,4 +1,4 @@
-import type { PipelineWorkerResponse } from './pipeline-worker.types';
+import type { PipelineWorkerResponse, PipelineWorkerReuse } from './pipeline-worker.types';
 import { runGeneration } from './run-generation';
 import { GenerationCancelledError } from '../errors';
 import type { MapConfig } from '../types';
@@ -43,8 +43,8 @@ const config: MapConfig = {
 
 const reuse = {
   dirtyStageIds: ['world-shape', 'noise', 'macro-region'],
-  cachedRasters: {},
-};
+  cachedState: {},
+} satisfies PipelineWorkerReuse;
 
 describe('runGeneration', () => {
   beforeEach(() => {

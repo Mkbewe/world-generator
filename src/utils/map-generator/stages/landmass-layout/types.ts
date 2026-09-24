@@ -4,10 +4,24 @@ import type { LandmassArchetype, LandmassEdge, LandmassNode } from '../../types'
 export type ArchetypeRange = readonly [min: number, max: number];
 
 /**
+ * How a recipe turns its ranges into a corridor: `sine` integrates one total
+ * turn with an oscillation, `walk` chains a few independent bends, `ring`
+ * closes into a periodic loop. The recipe selects the builder — never the
+ * archetype name — so a new shape is a new recipe row, not an engine edit.
+ */
+export type CorridorKind = 'sine' | 'walk' | 'ring';
+
+/**
  * Parameter ranges of one shape intent. The generator samples every range, so
  * two structures of the same archetype still differ in size, bend and detail.
+ * Each builder reads the shared fields in its own way: `bends` counts sine
+ * half-waves for `sine`/`ring` but walk pieces for `walk`; `wobble` is an
+ * oscillation amplitude for `sine`/`ring` but a straight-run chance for
+ * `walk`. The `ring` builder ignores `turn`.
  */
 export interface ArchetypeRecipe {
+  /** Corridor builder behind this recipe. */
+  readonly corridor: CorridorKind;
   /** Corridor arc length in unit geometry. */
   readonly length: ArchetypeRange;
   /** Total direction change along the corridor, in radians; the sign is random. */

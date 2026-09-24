@@ -1,4 +1,3 @@
-import type { MapRasters } from '../map-layers';
 import type { WorldDimensions } from '../world-dimensions';
 import type { WorldShape } from '../world-shape';
 
@@ -153,14 +152,20 @@ export interface MapConfig extends SeededWorldConfig {
   landmasses?: LandmassConfig;
 }
 
-/** Stage-only domain data kept next to the shared rasters. */
-export interface MapDomainData {
-  /** Landmass definitions produced by the landmass layout stage. */
+/**
+ * Generator state. Each field is an output of one stage. The layer catalog
+ * displays a subset of these keys; it does not define them.
+ */
+export interface MapState {
+  /** Produced by the world-shape stage. */
+  worldMask?: Uint8Array;
+  /** Produced by the noise stage. */
+  noiseMap?: Float32Array;
+  /** Produced by the macro-region stage. */
+  macroRegionIdMap?: Uint8Array;
+  /** Produced by the landmass-layout stage. */
   landmassLayout?: LandmassLayout;
 }
-
-/** Generator state: the shared rasters plus the stage-only domain data. */
-export type MapState<TDomainData extends object = MapDomainData> = MapRasters & TDomainData;
 
 export type StageMetric = number | string;
 export type StageMetrics = Record<string, StageMetric> & {
@@ -168,8 +173,8 @@ export type StageMetrics = Record<string, StageMetric> & {
   bytes?: number;
 };
 
-export interface StageStatistics {
-  stageId: string;
+export interface StageStatistics<TId extends string = string> {
+  stageId: TId;
   stageName: string;
   status: 'completed' | 'failed' | 'skipped';
   startedAt: number;
@@ -180,54 +185,65 @@ export interface StageStatistics {
 
 export type StageData = Record<string, unknown>;
 
-interface StageEventBase {
-  stageId: string;
+/**
+ * A state input a stage reads only while the config selects it — the data
+ * twin of `ConditionalConfigKey`. The pipeline asserts the resolved set at
+ * runtime; the factory orders by the union, so presentation order never
+ * breaks the data flow.
+ */
+export interface ConditionalRead<TConfig extends SeededWorldConfig, TState extends object> {
+  readonly key: keyof TState;
+  readonly when: (config: Readonly<TConfig>) => boolean;
+}
+
+interface StageEventBase<TId extends string = string> {
+  stageId: TId;
   stageName: string;
   stageIndex: number;
   stageCount: number;
 }
 
-type StageStartedEvent = StageEventBase & {
+type StageStartedEvent<TId extends string = string> = StageEventBase<TId> & {
   type: 'stage-started';
 };
 
-type StageProgressEvent = StageEventBase & {
+type StageProgressEvent<TId extends string = string> = StageEventBase<TId> & {
   type: 'stage-progress';
   /** Completion of the stage in the 0..1 range. */
   progress: number;
 };
 
-type StageCompletedEvent = StageEventBase & {
+type StageCompletedEvent<TId extends string = string> = StageEventBase<TId> & {
   type: 'stage-completed';
-  statistics: StageStatistics;
+  statistics: StageStatistics<TId>;
   /** Read-only snapshot; typed arrays are shared with the generator state. */
   data: Readonly<StageData>;
 };
 
-type StageFailedEvent = StageEventBase & {
+type StageFailedEvent<TId extends string = string> = StageEventBase<TId> & {
   type: 'stage-failed';
-  statistics: StageStatistics;
+  statistics: StageStatistics<TId>;
 };
 
-type StageSkippedEvent = StageEventBase & {
+type StageSkippedEvent<TId extends string = string> = StageEventBase<TId> & {
   type: 'stage-skipped';
-  statistics: StageStatistics;
+  statistics: StageStatistics<TId>;
 };
 
-export type GenerationEvent =
-  | StageStartedEvent
-  | StageProgressEvent
-  | StageCompletedEvent
-  | StageFailedEvent
-  | StageSkippedEvent;
+export type GenerationEvent<TId extends string = string> =
+  | StageStartedEvent<TId>
+  | StageProgressEvent<TId>
+  | StageCompletedEvent<TId>
+  | StageFailedEvent<TId>
+  | StageSkippedEvent<TId>;
 
 export type StageProgressReporter = (progress: number) => void;
 
-export interface GenerationOptions {
+export interface GenerationOptions<TId extends string = string> {
   signal?: AbortSignal;
-  onEvent?: (event: GenerationEvent) => void;
+  onEvent?: (event: GenerationEvent<TId>) => void;
   /** Stages reused from cached outputs; their data must already be in the state. */
-  skipStageIds?: readonly string[];
+  skipStageIds?: readonly TId[];
 }
 
 export interface MapGeneratorOptions<TConfig = unknown> {
@@ -238,8 +254,8 @@ export interface MapGeneratorOptions<TConfig = unknown> {
   knownConfigKeys?: readonly string[];
 }
 
-export interface GenerationResult<TContext> {
+export interface GenerationResult<TContext, TId extends string = string> {
   context: TContext;
-  statistics: readonly StageStatistics[];
+  statistics: readonly StageStatistics<TId>[];
   totalDurationMs: number;
 }

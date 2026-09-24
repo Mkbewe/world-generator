@@ -1,26 +1,33 @@
 import { containsWorld } from '../../world-shape';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
+import { spaceOf } from '../space';
 import { assertStageOutput, type MapStage } from '../stage';
-import { WORLD_SHAPE_STAGE } from '../stage-definitions';
-import type { MapConfig, MapState, StageData, StageMetrics, StageProgressReporter } from '../types';
+import { type PipelineStageId, WORLD_SHAPE_STAGE } from '../stage-definitions';
+import type { MapConfig, MapState, StageMetrics, StageProgressReporter } from '../types';
 
-export class WorldShapeStage implements MapStage<MapConfig, MapState> {
-  readonly id = WORLD_SHAPE_STAGE.id;
+export class WorldShapeStage implements MapStage<
+  MapConfig,
+  MapState,
+  PipelineStageId,
+  { worldMask: Uint8Array }
+> {
+  readonly id: PipelineStageId = WORLD_SHAPE_STAGE.id;
   readonly name = WORLD_SHAPE_STAGE.name;
   readonly configKeys = WORLD_SHAPE_STAGE.configKeys;
+  readonly reads: readonly (keyof MapState)[] = [];
+  readonly writes = ['worldMask'] as const;
   readonly progressStep = 0.5;
 
   async execute(
-    context: MapContext<MapConfig, MapState>,
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ worldMask: Uint8Array }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
+    const space = spaceOf(context);
 
     const worldMask = new Uint8Array(sampleWidth * sampleHeight);
-    const xDivisor = Math.max(1, sampleWidth - 1);
-    const yDivisor = Math.max(1, sampleHeight - 1);
     const shape = context.config.world.shape;
 
     for (let y = 0; y < sampleHeight; y++) {
@@ -28,18 +35,15 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
         throw new GenerationCancelledError();
       }
 
-      const normalizedY = (2 * y) / yDivisor - 1;
-
       for (let x = 0; x < sampleWidth; x++) {
-        const normalizedX = (2 * x) / xDivisor - 1;
-        const isInsideWorld = containsWorld(shape, normalizedX, normalizedY);
+        const mask = space.cellToMask(x, y);
+        const isInsideWorld = containsWorld(shape, mask.x, mask.y);
         worldMask[y * sampleWidth + x] = isInsideWorld ? 1 : 0;
       }
 
       report((y + 1) / sampleHeight);
     }
 
-    context.state.worldMask = worldMask;
     return { worldMask };
   }
 
@@ -48,7 +52,10 @@ export class WorldShapeStage implements MapStage<MapConfig, MapState> {
     assertStageOutput(state.worldMask, 'uint8', sampleWidth * sampleHeight);
   }
 
-  summarize(context: MapContext<MapConfig, MapState>, data: StageData): StageMetrics | undefined {
+  summarize(
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
+    data: { worldMask: Uint8Array }
+  ): StageMetrics | undefined {
     const mask = data.worldMask;
     if (!(mask instanceof Uint8Array)) {
       return undefined;

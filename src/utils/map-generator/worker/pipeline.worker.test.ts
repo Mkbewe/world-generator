@@ -16,7 +16,7 @@ const request: PipelineWorkerGenerateRequest = {
   },
   reuse: {
     dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
-    cachedRasters: {},
+    cachedState: {},
   },
 };
 
@@ -80,14 +80,15 @@ describe('generation worker', () => {
   it('reuses cached rasters and reports the clean stages as skipped', async () => {
     const { createMapGenerator } = await import('../pipeline-factory');
     const full = await createMapGenerator().generate(request.config, {});
-    const cachedRasters = {
+    const cachedState = {
       worldMask: full.context.state.worldMask,
       noiseMap: full.context.state.noiseMap,
+      landmassLayout: full.context.state.landmassLayout,
     };
 
     const message = await generate({
       ...request,
-      reuse: { dirtyStageIds: ['macro-region'], cachedRasters },
+      reuse: { dirtyStageIds: ['macro-region'], cachedState },
     });
 
     expect(message?.type).toBe('result');

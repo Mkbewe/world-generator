@@ -1,6 +1,6 @@
 import { ARCHETYPE_RECIPES } from './archetypes';
 import { distanceBetween, pointAlong, polylineLength, scaleStructure } from './geometry';
-import type { ArchetypeRange, ArchetypeRecipe, StructureDraft } from './types';
+import type { ArchetypeRange, ArchetypeRecipe, CorridorKind, StructureDraft } from './types';
 import type { SeededRandom } from '../../random/seeded-random';
 import type { LandmassArchetype, LandmassEdge, LandmassNode, WorldPoint } from '../../types';
 
@@ -9,7 +9,7 @@ const CORRIDOR_STEP = 0.02;
 
 /** Node spacing along a corridor, as a multiple of the local radius. */
 const NODE_SPACING = 1.5;
-const WINDING_NODE_SPACING = 3;
+const WALK_NODE_SPACING = 3;
 
 /** Node count limits of a branch arm (plan §11.5). */
 const MIN_BRANCH_NODES = 2;
@@ -17,9 +17,6 @@ const MAX_BRANCH_NODES = 5;
 
 /** Control points kept per edge; enough samples preserve winding corridors. */
 const MAX_CONTROL_POINTS = 6;
-
-/** A turn this large closes the corridor into a ring. */
-const CLOSED_TURN = 6.1;
 
 /** Samples closer than this to a node are the node, not control points. */
 const CONTROL_ENDPOINT_GAP = CORRIDOR_STEP * 0.5;
@@ -36,8 +33,8 @@ export function buildStructure(
   random: SeededRandom
 ): StructureDraft {
   const recipe = ARCHETYPE_RECIPES[archetype];
-  const corridor = buildCorridor(archetype, recipe, random);
-  const main = corridorNodes(id, archetype, corridor, recipe, random);
+  const corridor = buildCorridor(recipe, random);
+  const main = corridorNodes(id, corridor, recipe, random);
   const branches = branchNodes(id, main.nodes, recipe, random);
   const nodes = [...main.nodes, ...branches.nodes];
   const edges = [...main.edges, ...branches.edges];
@@ -60,28 +57,36 @@ interface Corridor {
 }
 
 /**
- * Dense corridor of a structure: the direction integrates a total turn, an
- * oscillation and a random opening angle, so one recipe covers straight ridges,
- * gentle curves, S-bends and rings.
+ * Corridor builders behind the recipe kinds. The recipe selects the builder,
+ * never the archetype name: a new shape is a new `corridor` value in
+ * `ARCHETYPE_RECIPES`, not a branch here.
  */
-function buildCorridor(
-  archetype: LandmassArchetype,
-  recipe: ArchetypeRecipe,
-  random: SeededRandom
-): Corridor {
-  if (archetype === 'winding') {
-    return buildWindingCorridor(recipe, random);
-  }
+const CORRIDOR_BUILDERS: Record<
+  CorridorKind,
+  (recipe: ArchetypeRecipe, random: SeededRandom) => Corridor
+> = {
+  sine: buildSineCorridor,
+  walk: buildWalkCorridor,
+  ring: buildRingCorridor,
+};
+
+/** Dense corridor of a structure, built by the strategy its recipe selects. */
+function buildCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
+  return CORRIDOR_BUILDERS[recipe.corridor](recipe, random);
+}
+
+/**
+ * Sine corridor: the direction integrates a total turn, an oscillation and a
+ * random opening angle, so one recipe covers straight ridges, gentle curves
+ * and S-bends. Open by construction; closed loops belong to `ring`.
+ */
+function buildSineCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
   const length = sampleRange(recipe.length, random);
   const turn = sampleRange(recipe.turn, random) * (random.next() < 0.5 ? -1 : 1);
   const wobble = sampleRange(recipe.wobble, random);
   const bends = sampleRange(recipe.bends, random);
   const phase = random.next() * Math.PI * 2;
   const direction0 = random.next() * Math.PI * 2;
-  const closed = Math.abs(turn) >= CLOSED_TURN;
-  if (closed) {
-    return { points: closedRing(length, wobble, bends, phase, direction0), closed: true };
-  }
   const steps = Math.max(8, Math.ceil(length / CORRIDOR_STEP));
   const step = length / steps;
   const points: WorldPoint[] = [{ x: 0, y: 0 }];
@@ -99,11 +104,13 @@ function buildCorridor(
 }
 
 /**
- * Winding corridors are a random walk of a few bends instead of one sine: every
+ * Walk corridor: a random walk of a few bends instead of one sine — every
  * piece has its own length and turn angle, and some pieces stay nearly straight
- * between the corners, so no two windings repeat the same way.
+ * between the corners, so no two walks repeat the same way. Here `bends` is
+ * the piece count, `turn` the per-piece angle and `wobble` the chance of a
+ * straight run.
  */
-function buildWindingCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
+function buildWalkCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
   const length = sampleRange(recipe.length, random);
   const pieces = Math.max(2, Math.round(sampleRange(recipe.bends, random)));
   const straightChance = Math.max(0, Math.min(0.5, sampleRange(recipe.wobble, random)));
@@ -132,6 +139,20 @@ function buildWindingCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Co
     }
   }
   return { points, closed: false };
+}
+
+/**
+ * Ring corridor: the recipe asks for a closed loop explicitly instead of a
+ * turn range crossing a magic threshold. `turn` is not sampled here, so a
+ * ring draws different random offsets than the sine path would.
+ */
+function buildRingCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
+  const length = sampleRange(recipe.length, random);
+  const wobble = sampleRange(recipe.wobble, random);
+  const bends = sampleRange(recipe.bends, random);
+  const phase = random.next() * Math.PI * 2;
+  const direction0 = random.next() * Math.PI * 2;
+  return { points: closedRing(length, wobble, bends, phase, direction0), closed: true };
 }
 
 /**
@@ -182,7 +203,6 @@ function radiusProfile(at: number, shape: RadiusShape): number {
 
 function corridorNodes(
   id: string,
-  archetype: LandmassArchetype,
   corridor: Corridor,
   recipe: ArchetypeRecipe,
   random: SeededRandom
@@ -202,9 +222,10 @@ function corridorNodes(
     frequencyB: 1.5 + random.next() * 2,
     closed: corridor.closed,
   };
-  // The archetype decides how many nodes its corridor carries: a ridge stays
+  // The recipe decides how many nodes its corridor carries: a ridge stays
   // legible with few, a ring needs enough to close smoothly (plan §11.5).
-  const spacing = archetype === 'winding' ? WINDING_NODE_SPACING : NODE_SPACING;
+  // Walks spread their nodes wider along the pieces they are made of.
+  const spacing = recipe.corridor === 'walk' ? WALK_NODE_SPACING : NODE_SPACING;
   const count = Math.min(
     recipe.nodes[1],
     Math.max(recipe.nodes[0], Math.round(polylineLength(points) / (base * spacing)))

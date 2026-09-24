@@ -44,7 +44,7 @@ describe('SelectiveRegeneration', () => {
 
     expect(plan).toEqual({
       dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
-      cachedRasters: {},
+      cachedState: {},
     });
     expect(regeneration.reusedStageIds).toEqual([]);
   });

@@ -1,5 +1,6 @@
 import { createMapGenerator } from './pipeline-factory';
-import type { MapConfig } from './types';
+import { DOMAIN_OUTPUT_KEYS, RASTER_OUTPUT_KEYS } from './stage-outputs';
+import type { MapConfig, MapState } from './types';
 
 describe('createMapGenerator', () => {
   it('creates the current world-generation stages in order', async () => {
@@ -39,26 +40,56 @@ describe('createMapGenerator', () => {
     const pipeline = createMapGenerator();
 
     expect(
-      pipeline.stages.map(stage => ({ id: stage.id, configKeys: [...stage.configKeys] }))
+      pipeline.stages.map(stage => ({
+        id: stage.id,
+        reads: [...(stage.reads ?? [])],
+        writes: [...(stage.writes ?? [])],
+        configKeys: [...stage.configKeys],
+      }))
     ).toEqual([
-      { id: 'world-shape', configKeys: ['world.dimensions', 'world.shape'] },
-      { id: 'noise', configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'noise'] },
+      {
+        id: 'world-shape',
+        reads: [],
+        writes: ['worldMask'],
+        configKeys: ['world.dimensions', 'world.shape'],
+      },
+      {
+        id: 'noise',
+        reads: ['worldMask'],
+        writes: ['noiseMap'],
+        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'noise'],
+      },
       {
         id: 'macro-region',
+        reads: ['worldMask'],
+        writes: ['macroRegionIdMap'],
         configKeys: [
           'world.seed',
           'world.shape',
           'world.dimensions',
-          'noise',
           'macroRegions',
           'macroRegionDeformation',
         ],
       },
       {
         id: 'landmass-layout',
+        reads: ['worldMask'],
+        writes: ['landmassLayout'],
         configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses'],
       },
     ]);
+  });
+
+  it('classifies every stage write as a raster or domain output', () => {
+    const pipeline = createMapGenerator();
+    const classified = new Set<keyof MapState>([...RASTER_OUTPUT_KEYS, ...DOMAIN_OUTPUT_KEYS]);
+
+    expect(pipeline.stages.length).toBeGreaterThan(0);
+    for (const stage of pipeline.stages) {
+      for (const key of stage.writes ?? []) {
+        expect(classified.has(key)).toBe(true);
+      }
+    }
   });
 
   it('rejects configs above the sample budget before running any stage', async () => {

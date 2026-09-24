@@ -1,5 +1,7 @@
 import type { MapConfig } from './types';
-import type { MapInfo } from '../map-layers';
+
+/** Non-raster facts derived from the generation config, not from a stage raster. */
+export type ConfigMapInfo = Readonly<Record<string, unknown>>;
 
 interface InfoSpec {
   readonly source: string;
@@ -19,7 +21,7 @@ export const MAP_INFO_CATALOG = [
 ] as const satisfies readonly InfoSpec[];
 
 /** Selects every configured map info entry present in the given config. */
-export function selectMapInfo(config: MapConfig): MapInfo {
+export function selectMapInfo(config: MapConfig): ConfigMapInfo {
   const info: Record<string, unknown> = {};
   for (const spec of MAP_INFO_CATALOG) {
     const value = spec.select(config);

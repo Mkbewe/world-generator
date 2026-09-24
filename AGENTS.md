@@ -26,7 +26,32 @@ See `README.md` and `docs/world-generation-roadmap.md` for architecture.
   `if`/`else` or a small helper instead,
 - non-null assertions (`!`) are forbidden
   (`@typescript-eslint/no-non-null-assertion`); narrow values with explicit
-  guards instead of silencing the type checker.
+  guards instead of silencing the type checker,
+- do not silence a wrong model with `as`. A cast is allowed only at a real
+  boundary (worker message, parsed JSON) and must sit next to a type guard,
+- do not add a second algorithm that repairs the first. Fix the contract or
+  replace the algorithm; a fallback that restores an invariant is a design bug,
+- do not branch on a variant name (`kind`, archetype, noise source) when that
+  variant should carry the behavior. Extend the variant instead of a new `if`.
+
+## Generator boundaries
+
+The pipeline stays independent of rendering and UI. Rationale and the current
+breaks are in `docs/map-generator-architecture-review.md`.
+
+- `src/utils/map-generator` must not import from `map-layers`, `map-renderer`,
+  components, or stores. Those layers depend on the generator, never the reverse,
+- a stage declares typed inputs and outputs. Do not read an undeclared
+  `context.state` key, and do not add a session, worker, or renderer `if` that
+  special-cases one domain object (the `landmassLayout` stitch),
+- one coordinate frame and one distance function. Do not add a second
+  normalization or a `wrap` branch inside a stage; topology belongs to a shared
+  spatial port,
+- `PIPELINE_STAGES` order is not a data-dependency graph. Do not reorder it to
+  fix a dependency, and do not encode a conditional dependency as an always-on
+  `configKeys` entry,
+- form-only policy (slider percents, preset labels, grid-cost copy) does not
+  belong next to a raster loop. Domain limits (`MAX_*`, valid ranges) do.
 
 ## GitHub
 

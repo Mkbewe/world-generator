@@ -5,14 +5,15 @@ import {
   MAX_MACRO_REGIONS,
 } from './macro-region-defaults';
 import {
+  type CellDeformation,
   createRegionDisplacement,
   type RegionDisplacement,
-  type RegionOffset,
 } from './macro-region-displacement';
 import type { MapContext } from '../context';
 import { GenerationCancelledError } from '../errors';
+import { planarDistance, spaceOf } from '../space';
 import { assertStageOutput, type MapStage } from '../stage';
-import { MACRO_REGION_STAGE } from '../stage-definitions';
+import { MACRO_REGION_STAGE, type PipelineStageId } from '../stage-definitions';
 import type {
   MacroRegionConfig,
   MacroRegionDeformation,
@@ -23,14 +24,22 @@ import type {
   StageProgressReporter,
 } from '../types';
 
-export class MacroRegionStage implements MapStage<MapConfig, MapState> {
-  readonly id = MACRO_REGION_STAGE.id;
+export class MacroRegionStage implements MapStage<
+  MapConfig,
+  MapState,
+  PipelineStageId,
+  { macroRegionIdMap: Uint8Array }
+> {
+  readonly id: PipelineStageId = MACRO_REGION_STAGE.id;
   readonly name = MACRO_REGION_STAGE.name;
   readonly configKeys = MACRO_REGION_STAGE.configKeys;
+  readonly reads: readonly (keyof MapState)[] = ['worldMask'];
+  readonly conditionalReads = MACRO_REGION_STAGE.conditionalReads;
+  readonly writes = ['macroRegionIdMap'] as const;
   readonly progressStep = 0.25;
 
   async execute(
-    context: MapContext<MapConfig, MapState>,
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ macroRegionIdMap: Uint8Array }> {
@@ -68,28 +77,25 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     );
 
     const macroRegionIdMap = new Uint8Array(sampleWidth * sampleHeight);
-    const xDivisor = Math.max(1, sampleWidth - 1);
-    const yDivisor = Math.max(1, sampleHeight - 1);
+    const space = spaceOf(context);
 
     for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
         throw new GenerationCancelledError();
       }
 
-      const normalizedY = y / yDivisor;
       for (let x = 0; x < sampleWidth; x++) {
         const cell = y * sampleWidth + x;
         if (worldMask[cell] === 0) {
           continue;
         }
-        const normalizedX = x / xDivisor;
-        macroRegionIdMap[cell] = regionAt(normalizedX, normalizedY);
+        const normalized = space.cellToNormalized(x, y);
+        macroRegionIdMap[cell] = regionAt(normalized.x, normalized.y);
       }
 
       report((y + 1) / sampleHeight);
     }
 
-    context.state.macroRegionIdMap = macroRegionIdMap;
     return { macroRegionIdMap };
   }
 
@@ -99,7 +105,10 @@ export class MacroRegionStage implements MapStage<MapConfig, MapState> {
     assertStageOutput(state.macroRegionIdMap, 'uint8', sampleWidth * sampleHeight);
   }
 
-  summarize(context: MapContext<MapConfig, MapState>, data: Record<string, unknown>) {
+  summarize(
+    context: MapContext<MapConfig, MapState, PipelineStageId>,
+    data: { macroRegionIdMap: Uint8Array }
+  ) {
     const regionIdMap = data.macroRegionIdMap;
     if (!(regionIdMap instanceof Uint8Array) || regionIdMap.length === 0) {
       return undefined;
@@ -176,11 +185,12 @@ export function createMacroRegionSampler(
   const needsDisplacement =
     displacement !== undefined &&
     regions.some(region => (region.irregularity ?? deformation.amplitude) > 0);
-  const offset = needsDisplacement ? displacement : undefined;
+  const field = needsDisplacement ? displacement : undefined;
 
   return (x, y) => {
-    const shift: RegionOffset = offset ? offset(x, y) : 0;
-    return ownerIndex(regions, x, y, shift, deformation.amplitude);
+    // One probe per cell: every region below reuses the same field sample.
+    const cell = field?.at(x, y);
+    return ownerIndex(regions, x, y, cell, deformation.amplitude);
   };
 }
 
@@ -188,7 +198,7 @@ function ownerIndex(
   regions: readonly MacroRegionConfig[],
   x: number,
   y: number,
-  displacement: RegionOffset,
+  displacement: CellDeformation | undefined,
   fallbackAmplitude: number
 ): number {
   // Overlays are painter-ordered: the last matching overlay is on top.
@@ -227,23 +237,19 @@ function geometryCoordinate(
   geometry: MacroRegionGeometry,
   x: number,
   y: number,
-  displacement: RegionOffset,
+  displacement: CellDeformation | undefined,
   amplitude: number
 ): number {
-  if (typeof displacement === 'number') {
-    const shift = displacement * amplitude;
-    if (geometry.kind === 'ring') {
-      return Math.hypot(x - geometry.center.x, y - geometry.center.y) + shift;
-    }
-    return axisCoordinate(geometry, x, y) + shift;
-  }
-
-  const shiftedX = x + displacement.x * amplitude;
-  const shiftedY = y + displacement.y * amplitude;
   if (geometry.kind === 'ring') {
-    return Math.hypot(shiftedX - geometry.center.x, shiftedY - geometry.center.y);
+    if (!displacement) {
+      return planarDistance({ x, y }, geometry.center);
+    }
+    return displacement.ringRadius(geometry.center, amplitude);
   }
-  return geometry.axis === 'x' ? shiftedX : shiftedY;
+  if (!displacement) {
+    return axisCoordinate(geometry, x, y);
+  }
+  return displacement.bandPosition(geometry.axis, amplitude);
 }
 
 function axisCoordinate(

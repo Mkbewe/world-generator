@@ -8,9 +8,13 @@ describe('createRegionDisplacement', () => {
     const second = createRegionDisplacement(options);
     const different = createRegionDisplacement({ ...options, seed: 456 });
 
-    expect(first(0.3, 0.4)).toEqual(second(0.3, 0.4));
-    expect(first(0.3, 0.4)).not.toEqual(different(0.3, 0.4));
-    expect(first(0.3, 0.4)).toMatchObject({ x: expect.any(Number), y: expect.any(Number) });
+    expect(first.at(0.3, 0.4).bandPosition('x', 0.1)).toEqual(
+      second.at(0.3, 0.4).bandPosition('x', 0.1)
+    );
+    expect(first.at(0.3, 0.4).bandPosition('x', 0.1)).not.toEqual(
+      different.at(0.3, 0.4).bandPosition('x', 0.1)
+    );
+    expect(first.at(0.3, 0.4).ringRadius({ x: 0.5, y: 0.5 }, 0.1)).toEqual(expect.any(Number));
     expect(noiseAt).not.toHaveBeenCalled();
   });
 
@@ -23,7 +27,8 @@ describe('createRegionDisplacement', () => {
       noiseAt: () => 0.75,
     });
 
-    expect(displacement(0.5, 0.5)).toBe(0.5);
+    expect(displacement.at(0.5, 0.5).ringRadius({ x: 0.5, y: 0.5 }, 1)).toBe(0.5);
+    expect(displacement.at(0.5, 0.5).bandPosition('x', 1)).toBe(1);
     expect(() =>
       createRegionDisplacement({ source: 'noise-map', seed: 123, width: 2, height: 2 })
     ).toThrow('unavailable region noise source');
