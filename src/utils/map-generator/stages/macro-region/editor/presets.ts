@@ -1,4 +1,4 @@
-import type { MacroRegionConfig } from '../../types';
+import type { MacroRegionConfig } from '../../../types';
 
 export type MacroRegionLayout = 'radial' | 'horizontal' | 'vertical';
 export type MacroRegionPresetId = 'rings' | 'horizontal' | 'vertical' | 'rings-with-poles';

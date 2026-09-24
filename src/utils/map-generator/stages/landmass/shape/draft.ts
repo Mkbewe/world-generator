@@ -1,4 +1,4 @@
-import type { LandmassArchetype, LandmassEdge, LandmassNode } from '../../types';
+import type { LandmassArchetype, LandmassEdge, LandmassNode } from '../../../types';
 
 /** Value range `[min, max]` sampled once per structure. */
 export type ArchetypeRange = readonly [min: number, max: number];

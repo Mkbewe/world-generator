@@ -1,5 +1,5 @@
 import type { ArchetypeRecipe } from './draft';
-import type { LandmassArchetype } from '../../types';
+import type { LandmassArchetype } from '../../../types';
 
 /** Every archetype the settings form can enable, in the order it shows them. */
 export const LANDMASS_ARCHETYPES = [

@@ -1,4 +1,4 @@
-import { createRadialLayout } from './presets';
+import { createRadialLayout } from './editor/presets';
 import type { MacroRegionConfig, MacroRegionDeformation } from '../../types';
 
 /** Maximum number of editable macro regions in one world. */

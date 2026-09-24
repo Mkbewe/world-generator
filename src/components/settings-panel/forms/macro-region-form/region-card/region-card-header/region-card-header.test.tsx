@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { RegionCardHeader } from './region-card-header';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../../../stores';
-import { baseRegions } from '../../../../../../utils/map-generator/stages/macro-region/boundary-model';
+import { baseRegions } from '../../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 
 /** Mirrors the section: the card reads its region from the store. */
 function Harness({ canRemove = true }: { canRemove?: boolean }) {

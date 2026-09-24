@@ -1,16 +1,16 @@
 import { segmentsDistance } from './collision';
-import { buildStructure, scaleDraft } from './corridor';
-import { DEFAULT_LANDMASS_CONFIG } from './defaults';
-import type { StructureDraft } from './draft';
-import { structureExtent, structureSegments } from './influence';
-import { validatePlacement } from './layout-check';
-import { createMaskSampler } from './mask-sampler';
 import { type PlacementResult, placeStructures } from './placement';
-import { planSizes } from './size-plan';
-import { containsWorld } from '../../../world-shape';
-import { SeededRandom } from '../../random/seeded-random';
-import { createWorldSpace } from '../../space';
-import type { LandmassArchetype } from '../../types';
+import { containsWorld } from '../../../../world-shape';
+import { SeededRandom } from '../../../random/seeded-random';
+import { createWorldSpace } from '../../../space';
+import type { LandmassArchetype } from '../../../types';
+import { DEFAULT_LANDMASS_CONFIG } from '../defaults';
+import { structureExtent, structureSegments } from '../influence';
+import { validatePlacement } from '../layout-check';
+import { createMaskSampler } from '../mask-sampler';
+import { buildStructure, scaleDraft } from '../shape/corridor';
+import type { StructureDraft } from '../shape/draft';
+import { planSizes } from '../shape/size-plan';
 
 /** Share of the influence corridor that must stay inside the world. */
 const INSIDE_SHARE = 0.5;

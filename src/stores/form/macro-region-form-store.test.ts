@@ -3,8 +3,8 @@ import {
   baseRegions,
   overlayRegions,
   regionSegments,
-} from '../../utils/map-generator/stages/macro-region/boundary-model';
-import { macroRegionPreset } from '../../utils/map-generator/stages/macro-region/presets';
+} from '../../utils/map-generator/stages/macro-region/editor/boundary-model';
+import { macroRegionPreset } from '../../utils/map-generator/stages/macro-region/editor/presets';
 
 describe('useMacroRegionFormStore', () => {
   beforeEach(() => {

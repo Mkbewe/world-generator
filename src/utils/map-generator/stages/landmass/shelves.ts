@@ -72,6 +72,33 @@ export function createGroupShelves(
   return { shelfOf, shelves };
 }
 
+/**
+ * Units preserve the incoming largest-first order while keeping the members of
+ * one group together, so a group is placed as a whole.
+ */
+export function buildUnits(count: number, groups: readonly (readonly number[])[]): number[][] {
+  const groupOf = new Map<number, number>();
+  groups.forEach((group, groupIndex) => group.forEach(member => groupOf.set(member, groupIndex)));
+  const done = new Set<number>();
+  const units: number[][] = [];
+
+  for (let index = 0; index < count; index++) {
+    if (done.has(index)) {
+      continue;
+    }
+    const groupIndex = groupOf.get(index);
+    if (groupIndex === undefined) {
+      units.push([index]);
+      done.add(index);
+      continue;
+    }
+    const members = [...groups[groupIndex]].sort((left, right) => left - right);
+    members.forEach(member => done.add(member));
+    units.push(members);
+  }
+  return units;
+}
+
 /** Deterministic Fisher-Yates order of the structure indices. */
 function shuffledIndices(count: number, random: SeededRandom): number[] {
   const order = Array.from({ length: count }, (_, index) => index);

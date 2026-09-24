@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { DistributionBar } from './distribution-bar';
-import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region/boundary-model';
+import type { MacroRegionSegment } from '../../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import type { BoundaryDraft } from '../../hooks/use-boundary-draft';
 
 const segments: readonly MacroRegionSegment[] = [

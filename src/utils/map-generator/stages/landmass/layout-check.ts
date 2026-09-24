@@ -1,4 +1,4 @@
-import { structureDistance } from './collision';
+import { structureDistance } from './search/collision';
 import { insideWorldShare, type WorldSampler } from './mask-sampler';
 import type { GeologicalStructure, LandmassLayout } from '../../types';
 

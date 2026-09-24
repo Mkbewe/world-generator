@@ -1,7 +1,7 @@
-import { DEFAULT_LANDMASS_CONFIG } from './defaults';
 import { planSizes, type SizePlan, type StructureSize } from './size-plan';
-import { SeededRandom } from '../../random/seeded-random';
-import type { LandmassConfig } from '../../types';
+import { SeededRandom } from '../../../random/seeded-random';
+import type { LandmassConfig } from '../../../types';
+import { DEFAULT_LANDMASS_CONFIG } from '../defaults';
 
 /** Unit geometries the plan sees: the longest side of the influence bounds. */
 const UNITS: readonly StructureSize[] = [

@@ -1,4 +1,4 @@
-import type { PlaceableStructure } from './draft';
+import type { PlaceableStructure } from './shape/draft';
 import { planarDistance } from '../../space';
 import type { WorldPoint } from '../../types';
 

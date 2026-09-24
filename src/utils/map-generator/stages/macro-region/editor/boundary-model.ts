@@ -1,5 +1,5 @@
 import type { MacroRegionLayout } from './presets';
-import type { MacroRegionConfig } from '../../types';
+import type { MacroRegionConfig } from '../../../types';
 
 export interface MacroRegionSegment {
   readonly id: string;

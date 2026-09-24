@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { OverlayRegionSection } from './overlay-region-section';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../../stores';
-import { overlayRegions } from '../../../../../utils/map-generator/stages/macro-region/boundary-model';
+import { overlayRegions } from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 
 function renderSection() {
   render(

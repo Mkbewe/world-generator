@@ -1,9 +1,9 @@
-export { ARCHETYPE_RECIPES, isLandmassArchetype, LANDMASS_ARCHETYPES } from './archetypes';
+export { ARCHETYPE_RECIPES, isLandmassArchetype, LANDMASS_ARCHETYPES } from './shape/archetypes';
 export { LandmassLayoutStage } from './stage';
 export { isLandmassLayout, validateLayout, validatePlacement } from './layout-check';
 export { interpolatedRadii, structureSegments } from './influence';
 export type { Bounds, StructureSegment } from './influence';
-export { segmentsDistance } from './collision';
+export { segmentsDistance } from './search/collision';
 export {
   DEFAULT_LANDMASS_CONFIG,
   MAX_LANDMASS_DIVERSITY,

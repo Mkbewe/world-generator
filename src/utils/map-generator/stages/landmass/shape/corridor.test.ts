@@ -1,10 +1,10 @@
 import { LANDMASS_ARCHETYPES } from './archetypes';
 import { buildStructure, scaleDraft } from './corridor';
 import type { StructureDraft } from './draft';
-import { boundsOf } from './influence';
-import { validateLayout } from './layout-check';
-import { SeededRandom } from '../../random/seeded-random';
-import type { LandmassArchetype, LandmassEdge, LandmassNode } from '../../types';
+import { SeededRandom } from '../../../random/seeded-random';
+import type { LandmassArchetype, LandmassEdge, LandmassNode } from '../../../types';
+import { boundsOf } from '../influence';
+import { validateLayout } from '../layout-check';
 
 /** Wide seed pool: the properties must hold for every sampled structure. */
 const SEEDS = Array.from({ length: 100 }, (_, index) => index + 1);

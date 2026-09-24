@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { ArchetypePoolField } from './archetype-pool-field';
 import { LANDMASS_FORM_DEFAULTS, useLandmassFormStore } from '../../../../../stores';
-import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass/archetypes';
+import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass';
 import { DEFAULT_LANDMASS_CONFIG } from '../../../../../utils/map-generator/stages/landmass/defaults';
 
 function renderField() {
