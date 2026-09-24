@@ -2,7 +2,7 @@ import { isLandmassArchetype, LANDMASS_ARCHETYPES } from './archetypes';
 import { validatePlacement } from './collision';
 import { structureExtent } from './geometry';
 import { placeStructures } from './placement';
-import { measureWorldArea, planSizes } from './size-distribution';
+import { planSizes } from './size-distribution';
 import { buildStructure, scaleDraft } from './topology';
 import { validateLayout } from './validation';
 import { createMaskSampler } from './world';
@@ -32,9 +32,10 @@ const BUILD_PROGRESS = 0.6;
 
 /**
  * Builds the global layout of geological structures: every structure is a graph
- * of ridge nodes and edges, sized from an influence budget and centred on an
- * anchor inside the world. Heights, coastlines and islands belong to later
- * stages.
+ * of ridge nodes and edges, sized from the typical extent and centred on an
+ * anchor inside the world. The stage never walks the world cells; the mask is
+ * only sampled through the placement. Heights, coastlines and islands belong to
+ * later stages.
  */
 export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
   readonly id = LANDMASS_LAYOUT_STAGE.id;
@@ -56,9 +57,9 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
     const config = context.config.landmasses ?? DEFAULT_LANDMASS_CONFIG;
     this.validateConfig(config);
     const random = context.random.create(this.id);
-    const worldArea = measureWorldArea(worldMask);
-    // An explicitly empty pool or an empty world means the layout draws nothing.
-    const planned = config.archetypes?.length === 0 || worldArea <= 0 ? 0 : config.count;
+    // An explicitly empty pool means the layout draws nothing; an empty world
+    // has no room, so the placement drops every candidate by itself.
+    const planned = config.archetypes?.length === 0 ? 0 : config.count;
     const drafts = [];
 
     for (let index = 0; index < planned; index++) {
@@ -149,9 +150,6 @@ export class LandmassLayoutStage implements MapStage<MapConfig, MapState> {
       if (!isLandmassArchetype(archetype)) {
         throw new RangeError(`Unknown landmass archetype: "${String(archetype)}".`);
       }
-    }
-    if (!isNormalized(config.irregularity)) {
-      throw new RangeError('Landmass irregularity must be within 0..1.');
     }
     if (!isNormalized(config.shelf.falloff)) {
       throw new RangeError('Landmass shelf falloff must be within 0..1.');

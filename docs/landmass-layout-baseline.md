@@ -21,6 +21,10 @@ refaktorze dało się je zestawić tym samym poleceniem i tym samym seedem.
 `pnpm run bench` uruchamia `src/utils/map-generator/stages/landmass-layout.bench.ts`
 (vitest bench, seed 17). Wartości średnie z 2026-09-22:
 
+Środowisko pomiaru: Windows, Node v26.5.0, AMD Ryzen 5 7500F, 32 GB RAM. Liczby
+są orientacyjne — liczy się rząd wielkości i porównanie tego samego benchmarku
+na tej samej maszynie.
+
 | Składnik                              |   256² |   512² |   1024² |    2048² |
 | ------------------------------------- | -----: | -----: | ------: | -------: |
 | Budowa layoutu (10 struktur)          | 0.33 ms (nie zależy od rozdzielczości) |
@@ -59,7 +63,50 @@ Podział składników, którego nie mierzy benchmark:
 | overview          | brak osobnego licznika; część przygotowania warstwy         |
 | render viewportu  | `Presentation` w panelu Rendering                           |
 
-## 5. Potwierdzone nazwy i ustawienia
+## 5. Pomiar po przebudowie (2026-09-24)
+
+Ten sam benchmark (`pnpm run bench`, seed 17) na nowym modelu; środowisko jak
+w sekcji 3, a liczby traktujemy orientacyjnie — lokalnie mogą wyjść o kilka ms
+inne, ale nie zmienia to wniosku o braku zależności od rozdzielczości.
+
+| Składnik                          |   256² |   512² |   1024² |   2048² |
+| --------------------------------- | -----: | -----: | ------: | ------: |
+| Cały etap (`LandmassLayoutStage`) | 23.7 ms | 23.7 ms | 22.6 ms | 22.8 ms |
+
+Porównanie z baseline:
+
+| Rozdzielczość |   przed |      po |  zysk |
+| ------------- | ------: | ------: | ----: |
+| 256²          |  146 ms | 23.7 ms |  ~6× |
+| 512²          |  569 ms | 23.7 ms | ~24× |
+| 1024²         | 2205 ms | 22.6 ms | ~98× |
+| 2048²         | 10211 ms | 22.8 ms | ~448× |
+
+Etap nie zależy już od rozdzielczości: nie ma przebiegu po komórkach świata ani
+rastra identyfikatorów. Koszt to budowa geometrii (10 struktur), plan rozmiaru
+i placement. Pamięć: id mapa (1 B/komórkę, czyli 1 MB przy 1024² i 4 MB przy
+2048²) zniknęła, a layout trzyma wyłącznie węzły i krawędzie. „Pokrycie lądem"
+z baseline'u nie ma odpowiednika — jego miejsce w statystykach etapu zajmują
+struktury, szelfy, węzły, krawędzie i liczba odrzuconych kandydatów.
+
+Różnorodność dla seedów ze zrzutów (1024², domyślna konfiguracja):
+
+| Miara                 | seed 17   | seed 42   | seed 99   |
+| --------------------- | --------- | --------- | --------- |
+| Struktury             | 10        | 10        | 10        |
+| Szelfy                | 6         | 8         | 9         |
+| Węzły / krawędzie     | 98 / 93   | 72 / 62   | 87 / 78   |
+| Odrzucone kandydaty   | 0         | 0         | 0         |
+| Extent (min..max)     | 0.09..0.60 | 0.10..0.52 | 0.16..0.56 |
+| Mieszanka archetypów  | irregular:1 atoll:5 winding:1 round:2 branched:1 | winding:3 irregular:2 round:3 elongated:1 branched:1 | elongated:4 lagoon:2 round:1 irregular:1 branched:1 atoll:1 |
+
+Zrzuty paneli aplikacji dla tych seedów trzeba odtworzyć tym samym poleceniem
+(sekcja 4); do tego czasu tabela w sekcji 4 opisuje stary model. Różnica
+widoczna od razu: wiersz `Landmass layout generation` spada z ~2 s do kilku ms,
+a warstwa `Landmasses` renderuje geometrię zamiast rastra identyfikatorów.
+Status: zrzuty do uzupełnienia.
+
+## 6. Potwierdzone nazwy i ustawienia
 
 - archetypy docelowe: `round`, `irregular`, `elongated`, `winding`, `branched`,
   `lagoon`, `atoll` (plan §5),
@@ -67,7 +114,7 @@ Podział składników, którego nie mierzy benchmark:
   skala i różnorodność wielkości (plan, Etap 5),
 - bez ustawień makroregionów w tym refaktorze (plan §2.1).
 
-## 6. Powtórzenie
+## 7. Powtórzenie
 
 1. `pnpm run bench` — pełny przebieg trwa kilka minut, bo `2048²` dominuje;
    do szybkich porównań można zawęzić listę rozdzielczości w pliku bench.

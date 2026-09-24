@@ -22,7 +22,7 @@ export interface StructureSegment {
 }
 
 /** Closest points of two segments and the distance between them. */
-export interface SegmentDistance {
+interface SegmentDistance {
   readonly distance: number;
   /** Position of the closest point on the left segment, 0..1. */
   readonly leftAt: number;
@@ -55,7 +55,7 @@ export function boundsOf(points: readonly WorldPoint[]): Bounds {
 }
 
 /** Centre of a bounds rectangle. */
-export function boundsCentre(bounds: Bounds): WorldPoint {
+function boundsCentre(bounds: Bounds): WorldPoint {
   return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
 }
 
@@ -66,13 +66,6 @@ export function distanceBetween(left: WorldPoint, right: WorldPoint): number {
 /** Moves a point by the given offset. */
 export function offsetPoint(point: WorldPoint, offset: WorldPoint): WorldPoint {
   return { x: point.x + offset.x, y: point.y + offset.y };
-}
-
-/** Distance between two bounding boxes; 0 when they overlap. */
-export function boundsGap(left: Bounds, right: Bounds): number {
-  const gapX = Math.max(0, left.minX - right.maxX, right.minX - left.maxX);
-  const gapY = Math.max(0, left.minY - right.maxY, right.minY - left.maxY);
-  return Math.hypot(gapX, gapY);
 }
 
 /** Centre of a structure's node cloud, used to pin it onto an anchor. */

@@ -37,7 +37,7 @@ export function planGroups(count: number, random: SeededRandom): number[][] {
   return groups;
 }
 
-export interface GroupShelves {
+interface GroupShelves {
   /** Shelf id per placed structure, keyed by its draft index. */
   readonly shelfOf: ReadonlyMap<number, string>;
   readonly shelves: readonly ShelfDefinition[];

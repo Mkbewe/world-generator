@@ -1,6 +1,6 @@
 import { LANDMASS_ARCHETYPES } from './archetypes';
 import { boundsOf } from './geometry';
-import { buildStructure, estimateArea, scaleDraft } from './topology';
+import { buildStructure, scaleDraft } from './topology';
 import type { StructureDraft } from './types';
 import { validateLayout } from './validation';
 import { SeededRandom } from '../../random/seeded-random';
@@ -68,7 +68,6 @@ describe('landmass topology', () => {
 
         expect(draft.nodes.length).toBeGreaterThanOrEqual(2);
         expect(draft.edges.length).toBeGreaterThanOrEqual(1);
-        expect(draft.area).toBeGreaterThan(0);
         expect(() => validateLayout(layoutFor(draft))).not.toThrow();
       }
     }
@@ -184,15 +183,11 @@ describe('landmass topology', () => {
     }
   });
 
-  it('scales positions, radii, control points and area of a draft', () => {
+  it('scales positions, radii and control points of a draft', () => {
     const draft = structure('elongated', 5);
     const scaled = scaleDraft(draft, 2);
 
     expect(scaled.nodes[0].radius).toBeCloseTo(draft.nodes[0].radius * 2, 10);
-    expect(scaled.area).toBeCloseTo(draft.area * 4, 10);
-    expect(estimateArea(scaled.nodes, scaled.edges)).toBeGreaterThan(
-      estimateArea(draft.nodes, draft.edges)
-    );
     expect(draft.edges.some(edge => (edge.controlPoints?.length ?? 0) > 0)).toBe(true);
 
     // Invariant: every point of the geometry moves with the same factor.

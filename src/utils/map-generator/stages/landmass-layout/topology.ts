@@ -42,46 +42,16 @@ export function buildStructure(
   const nodes = [...main.nodes, ...branches.nodes];
   const edges = [...main.edges, ...branches.edges];
 
-  return { id, archetype, nodes, edges, area: estimateArea(nodes, edges) };
-}
-
-/** Approximate footprint area of a node-and-edge graph. */
-export function estimateArea(
-  nodes: readonly LandmassNode[],
-  edges: readonly LandmassEdge[]
-): number {
-  const byId = new Map(nodes.map(node => [node.id, node]));
-  const degree = new Map<string, number>();
-  let area = 0;
-
-  for (const edge of edges) {
-    const from = byId.get(edge.from);
-    const to = byId.get(edge.to);
-    if (!from || !to) {
-      continue;
-    }
-    area += distanceBetween(from.position, to.position) * (from.radius + to.radius);
-    degree.set(edge.from, (degree.get(edge.from) ?? 0) + 1);
-    degree.set(edge.to, (degree.get(edge.to) ?? 0) + 1);
-  }
-  for (const node of nodes) {
-    if ((degree.get(node.id) ?? 0) <= 1) {
-      area += Math.PI * node.radius * node.radius * 0.5;
-    }
-  }
-  return area;
+  return { id, archetype, nodes, edges };
 }
 
 /**
- * Scales the whole draft geometry around the origin, e.g. to fit its area
- * budget. Node positions, radii and edge control points move together, so the
+ * Scales the whole draft geometry around the origin, e.g. to reach the planned
+ * extent. Node positions, radii and edge control points move together, so the
  * skeleton, its smoothing and the collision geometry stay consistent.
  */
 export function scaleDraft(draft: StructureDraft, factor: number): StructureDraft {
-  return {
-    ...scaleStructure(draft, factor, { x: 0, y: 0 }),
-    area: draft.area * factor * factor,
-  };
+  return scaleStructure(draft, factor, { x: 0, y: 0 });
 }
 
 interface Corridor {

@@ -30,12 +30,10 @@ export interface ArchetypeRecipe {
   readonly branches: ArchetypeRange;
 }
 
-/** One generated structure before the size budget scales and places it. */
+/** One generated structure before the size plan scales and places it. */
 export interface StructureDraft {
   readonly id: string;
   readonly archetype: LandmassArchetype;
   readonly nodes: readonly LandmassNode[];
   readonly edges: readonly LandmassEdge[];
-  /** Approximate footprint area of the unit geometry. */
-  readonly area: number;
 }

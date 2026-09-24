@@ -71,15 +71,15 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
   albo `noiseMap`), a pod nim presety, układ bazowy, ustawienia granic i sekcje
   regionów.
 - Formularz landmassów pokazuje tylko to, czym steruje ten etap: liczbę
-  struktur (1–20, domyślnie 10), rozmiar (`Size`: small do big) i pulę archetypów kształtu —
-  karty wyboru (`CheckboxCards`) z przyciskiem „Select all"/„Clear".
+  struktur (1–20, domyślnie 10), typowy rozmiar (`Typical size`: small do big),
+  zróżnicowanie rozmiarów (`Size diversity`: equal do varied) i pulę archetypów
+  kształtu — karty wyboru (`CheckboxCards`) z przyciskiem „Select all".
   Zaznaczenie wszystkich archetypów zapisuje `archetypes: undefined`, czyli
-  całą pulę; pusta pula oznacza, że układ nie rysuje żadnych struktur
-  (walidacja „co najmniej jeden archetyp" wróci później).
-- Szelf i szorstkość linii brzegowej zostają w konfiguracji z wartościami
-  domyślnymi, ale swoje kontrolki dostaną w formularzach etapów, które je
-  zużywają: szelf przy renderowaniu wysokości, roughness przy deformacji
-  wybrzeża. Landmassowy formularz ich nie dubluje.
+  całą pulę; ostatniej intencji nie da się odznaczyć, więc układ zawsze rysuje
+  co najmniej jedną strukturę.
+- Szelf zostaje w konfiguracji z wartościami domyślnymi i swoją kontrolkę
+  dostanie w formularzu etapu, który go zużywa (renderowanie wysokości).
+  Landmassowy formularz go nie dubluje.
 - Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
   widoku.
 - Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.
@@ -100,13 +100,17 @@ Rastry renderowalne są wyprowadzane z deklaratywnego katalogu
 }
 ```
 
-- `LayerSpec` niesie `id`, `label`, `source`, `dataType`, `clipTo`,
-  `providesMask`, grupę zakładek i paletę (`solid`/`ramp`/`discrete`).
+- `LayerSpec` to unia: `RasterLayerSpec` (`id`, `label`, `source`, `dataType`,
+  `clipTo`, `providesMask`, grupa zakładek i paleta `solid`/`ramp`/`discrete`)
+  oraz `VectorLayerSpec` (`id`, `label`, `source`, `clipTo`, grupa) dla warstw
+  z danymi domenowymi, bez typed array i palety.
 - `LayerRegistry` waliduje katalog, wykrywa cykle i wystawia niezależne `order`
   (UI) oraz `buildOrder` (zależności).
-- `CatalogLayer` waliduje typed array i maluje piksele skompilowaną paletą.
-- `MapState` generatora rozszerza `MapRasters` o dane nierastrowe, np. definicje
-  lądów, szkielety i profile terenu, więc etapy nie muszą znać renderera.
+- `CatalogLayer` waliduje typed array i maluje piksele skompilowaną paletą;
+  warstwy wektorowe powstają w rejestrze fabryk po `layerId`, więc scena nie zna
+  typów domenowych, a nowy wektor to fabryka i klasa warstwy.
+- `MapState` generatora rozszerza `MapRasters` o dane nierastrowe, np. układ
+  struktur, więc etapy nie muszą znać renderera.
 - Nowa warstwa rastrowa to wpis w katalogu, plik stage'a, fabryka w
   `pipeline-factory.ts` i pozycja w `PIPELINE_STAGES`; kolejność katalogu
   wynika z kolejności etapów, więc wpisu nie trzeba przestawiać ręcznie.
@@ -128,12 +132,14 @@ traktować każdą kombinację jako osobny typ mapy.
 - Definicje warstw mogą grupować kilka podwidoków pod jedną zakładką; przełącznik
   pokazuje się dopiero dla grupy z co najmniej dwoma podwidokami. `Macro regions`
   jest obecnie pojedynczą warstwą bez podwidoków.
-- Warstwa może zadeklarować źródło granicy analitycznej (`boundarySource`:
-  `region` dla makroregionów, `landmass` dla układu struktur). Malarz rozdziela
-  wtedy granice w rozdzielczości ekranu zamiast po komórkach rastra, a geometrię
-  dostarcza scena z konfiguracji i `MapInfo`. Layout struktur jedzie w `MapInfo`
-  i jest zapisywany razem z mapą, więc gładkie granice działają też po odtworzeniu
-  mapy oraz w warstwie `Landmasses` przy dowolnym powiększeniu.
+- Raster może zadeklarować źródło granicy analitycznej (`boundarySource`:
+  `region` dla makroregionów). Malarz rozdziela wtedy granice w rozdzielczości
+  ekranu zamiast po komórkach rastra, a geometrię dostarcza scena z konfiguracji.
+- Warstwa `Landmasses` jest wektorowa: ocean w granicach świata, oś szkieletu,
+  jedna poprzeczka szerokości i kropka na węzeł, kolor rozróżnia struktury.
+  Układ struktur jedzie w `MapInfo` i jest zapisywany razem z mapą, więc warstwa
+  działa też po odtworzeniu mapy. Odczyt pod kursorem zwraca id struktury, jej
+  archetyp, liczbę węzłów, długość grzbietu i zakres szerokości.
 - Rysowanie jest progresywne, a wybór pamiętany między widokami.
 - Przelot przez etapy pokazuje się tylko przy pierwszej mapie (albo po zmianie
   rozmiaru lub kształtu, która resetuje scenę). Gdy podgląd ma już wyświetloną
@@ -376,9 +382,9 @@ Wyspa nie powinna powstawać w jednym etapie jako gotowy obiekt. Pipeline najpie
 opisuje strukturę geologiczną i zamiar generatora, następnie tworzy ciągłą
 wysokość, a dopiero poziom morza wyznacza faktyczny podział na wyspy.
 
-- `LandmassLayoutStage` odpowiada za kształt w dużej skali: wydłużenie,
-  orientację, szkielet, szerokość, zatoki, cieśniny, półwyspy, stopień
-  rozwinięcia linii brzegowej i zasięg szelfu.
+- `LandmassLayoutStage` odpowiada za kształt w dużej skali: szkielet (graf
+  węzłów i krawędzi), intencję archetypu, szerokość wpływu i wspólne szelfy.
+  Linia brzegowa, zatoki i półwyspy powstają później, z form i szumu.
 - `IslandCharacterStage` przypisuje profile terenu i regiony, np. góry na
   zachodzie, równiny na wschodzie albo płaskowyż w centrum.
 - `HeightmapStage` płynnie łączy geometrię, profile regionalne i szum w jedną
@@ -394,70 +400,66 @@ z zakrzywionego szkieletu albo ujemnego kształtu wycinającego dużą zatokę.
 Informacja o górzystym zachodzie i równinnym wschodzie należy natomiast do
 regionalnych profili terenu, a nie do samej geometrii wyspy.
 
-### 4.2. Masy lądowe i kształty wysp — [planowane]
+### 4.2. Masy lądowe i kształty wysp — [działa]
 
-Wyspa nie powinna być opisywana pojedynczym centrum i promieniem. Ogólny kształt
-może powstawać ze szkieletu, profilu szerokości i wielu nakładających się form.
+Wyspa nie jest opisywana pojedynczym centrum i promieniem. Układ struktur to
+graf: węzły niosą pozycję i promień wpływu, krawędzie łączą je i mogą być
+zgięte punktami kontrolnymi, a całość przechodzi przez plan rozmiaru i placement.
 
 ```ts
-interface LandmassDefinition {
+interface LandmassNode {
   id: string;
-  spine: WorldPoint[];
-  widthProfile: number[];
-  orientation: number;
-  irregularity: number;
-  positiveShapes: LandShape[];
-  negativeShapes: LandShape[];
+  position: WorldPoint; // 0..1
+  radius: number; // promień wpływu, 0..1
+}
+
+interface LandmassEdge {
+  id: string;
+  from: string;
+  to: string;
+  controlPoints?: WorldPoint[];
+}
+
+interface GeologicalStructure {
+  id: string;
+  archetype: LandmassArchetype;
+  nodes: LandmassNode[];
+  edges: LandmassEdge[];
   shelfId: string;
 }
 
-interface ShelfDefinition {
-  id: string;
-  width: number;
-  targetDepth: number;
-  falloff: number;
-  irregularity: number;
+interface LandmassLayout {
+  structures: GeologicalStructure[];
+  shelves: ShelfDefinition[];
 }
 ```
 
-Klasyfikację punktu (szkielet, kształty i szelf) udostępnia wspólny sampler
-`createLandmassSampler`, z którego korzysta mapa identyfikatorów w podglądzie,
-a w kolejnym kroku skorzysta heightmapa. Szelfy są współdzielone przez grupy
-blisko siebie leżących struktur (`LandmassLayout.shelves`), co jest fundamentem
-archipelagu (§4.3).
-
-- Szkielet pozwala tworzyć wyspy podłużne, zakrzywione i zwężające się.
-- Rozmieszczanie startuje z równomiernej siatki kotwic nad światem (z losowym
+- Archetypy to intencje kształtu: `round`, `irregular`, `elongated`, `winding`,
+  `branched`, `lagoon`, `atoll`. Każdy jest przepisem z losowanymi zakresami
+  (długość, skręt, falowanie, promień, zwężenie końców, odgałęzienia) i własnym
+  zakresem liczby węzłów. `winding` losuje kilka odcinków o różnych długościach
+  i kątach, więc skręty nie powtarzają się między strukturami.
+- Z gęstego korytarza powstaje zredukowana łamana: węzły plus punkty kontrolne
+  (do 6 na krawędź). Ta sama łamana jest osią szkieletu, geometrią kolizji
+  i źródłem hit testingu — podgląd nie wygładza jej własnym splajnem.
+- Promień jest bezpieczny dla krzywizny: generator mierzy najciaśniejszy zakręt
+  (na rzadkim próbkowaniu) i nie pozwala korytarzowi złożyć własnego obrysu.
+- Plan rozmiaru dobiera **typowy extent** (`size`) i rozrzut (`diversity`, wagi
+  log-normalne) z podłogą i sufitem (`MIN_EXTENT`/`MAX_EXTENT`). Dzięki temu
+  kompaktowa i cienka struktura mają porównywalny rozmiar, a nie tylko pole.
+- Placement startuje z równomiernej siatki kotwic nad światem (z losowym
   wychyłem, żeby kratka nie prześwitywała). Każda struktura staje na kotwicy
-  najdalszej od już postawionych; gdy się nie mieści, próbuje kolejnych obrotów
-  i dopiero potem skaluje się w dół, zachowując archetyp. Kandydat nie może
-  wejść szkieletem w wypukłą otoczkę innej struktury, więc wyspy nie lądują w
-  zatokach ani lagunach atoli.
-- Wyspa może wystawać poza brzeg — wystarczy, że większość jej wybrzeża zostaje
-  w świecie; resztę przycina maska świata. Dzięki temu struktury dochodzą do
-  samej krawędzi i biegunów, zamiast ściskać się w środku mapy.
-- Archetypy kształtu (`round`, `oval`, `elongated`, `irregular`, `o`, `c`, `l`,
-  `u`, `s`, `z`, `v`, `y`, `x`, `t`) to przepisy z losowanymi parametrami.
-  Każda struktura losuje archetyp z puli (`LandmassConfig.archetypes`), a potem
-  własne kąty, długości ramion, szerokość, stronę zgięcia i orientację, więc
-  nawet dwie „U” wyglądają inaczej.
-- Przepisy mają trzy warianty szkieletu: polilinię (`joints` + `segments`),
-  pojedynczy łuk elipsy (`arc`, atol `o` i litera `c`) oraz łańcuch stycznych
-  łuków (`arcs`, gładkie `s`). Atol ma losową grubość i spłaszczenie, a jego
-  laguna zostaje otwarta; końcówki `c` zaginają się niezależnie.
-- Kształty rozgałęzione (Y, X, T) dostają poprzeczkę o zmiennym położeniu i
-  asymetrii: Y ma nogę grubości ramion, a T krótszą i grubszą poprzeczkę.
-  Krótkie szkielety mają punkt pośredni, aby profil szerokości zachował
-  pełniejszy środek. U może mieć ramiona różnej długości, wychylenia i grubości
-  (`widthSkew`).
-- Dodatnie formy budują półwyspy, połączone części wyspy i przybrzeżne wysepki.
-- Ujemne formy wycinają zatoki, cieśniny i wcięcia wybrzeża. Półwyspy i zatoki
-  są losowane wzdłuż całego szkieletu, a ich rozmiar wynika z lokalnej
-  szerokości struktury. Dzięki temu wcinają się w brzeg lub wyrastają z niego
-  bez dominowania nad małymi archetypami.
-- Wieloskalowy szum oraz domain warping deformują geometryczną bazę.
-- Drobniejszy szum odpowiada za nieregularną linię brzegową, a nie za globalny
-  układ lądów.
+  najdalszej od już postawionych; gdy się nie mieści, próbuje kolejnych obrotów,
+  potem się zmniejsza, a na końcu zostaje odrzucona. Część struktur celowo tworzy
+  grupy o wspólnym szelfie (`LandmassLayout.shelves`), co jest fundamentem
+  archipelagu (§4.3).
+- Część korytarza może wystawać poza świat — dziś do połowy szerokości wpływu;
+  resztę przycina maska świata. Dzięki temu struktury dochodzą do krawędzi
+  zamiast ściskać się w środku mapy.
+- Etap nie skanuje komórek świata: maska jest wyłącznie próbkowana przez
+  placement, więc koszt zależy od liczby struktur, nie od rozdzielczości.
+- Statystyki etapu: struktury, szelfy, węzły, krawędzie i liczba odrzuconych
+  kandydatów.
 
 ### 4.3. Archipelagi — [planowane]
 
@@ -470,7 +472,7 @@ tworzących archipelag.
 ```ts
 interface ArchipelagoDefinition {
   id: string;
-  landmassId: string;
+  structureId: string;
   shelfId: string;
   islandIds: string[];
 }

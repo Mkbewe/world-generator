@@ -25,6 +25,5 @@ export const DEFAULT_LANDMASS_CONFIG: LandmassConfig = {
   count: 10,
   size: 0.6,
   diversity: 0.5,
-  irregularity: 0.45,
   shelf: { width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 },
 };
