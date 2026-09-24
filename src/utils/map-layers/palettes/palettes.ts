@@ -1,4 +1,4 @@
-import type { Color, DiscreteOverflow, PaletteSpec, RampStop } from './layer-spec';
+import type { Color, DiscreteOverflow, PaletteSpec, RampStop } from '../catalog/layer-spec';
 
 export type PixelWriter = (pixels: Uint8ClampedArray, offset: number, value: number) => void;
 

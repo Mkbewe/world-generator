@@ -1,11 +1,15 @@
 import type { LayerSpec } from './layer-spec';
-import { REGION_COLORS } from './palettes';
 import type { LayerDataRecord, MapRasters } from './types';
-import { PIPELINE_STAGES } from '../map-generator/pipeline/stage-definitions';
+import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
+import type { DomainOutputKey, RasterOutputKey } from '../../map-generator/pipeline/stage-outputs';
+import { REGION_COLORS } from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
   PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)
 );
+
+/** A catalog entry bound to a real generator output; a typo fails here, not in the renderer. */
+type BoundLayerSpec = LayerSpec & { readonly source: RasterOutputKey | DomainOutputKey };
 
 const CATALOG_ENTRIES = [
   {
@@ -50,7 +54,7 @@ const CATALOG_ENTRIES = [
       ],
     },
   },
-] as const satisfies readonly LayerSpec[];
+] as const satisfies readonly BoundLayerSpec[];
 
 /**
  * Raster layers currently available in the product. The order follows the

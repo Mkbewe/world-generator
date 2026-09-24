@@ -1,5 +1,5 @@
-import type { PaletteSpec } from './layer-spec';
 import { compilePalette, regionColor, validatePalette } from './palettes';
+import type { PaletteSpec } from '../catalog/layer-spec';
 
 function color(palette: PaletteSpec, value: number): number[] {
   const pixels = new Uint8ClampedArray(4);
