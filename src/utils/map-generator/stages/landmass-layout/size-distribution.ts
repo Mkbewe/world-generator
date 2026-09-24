@@ -29,17 +29,6 @@ export interface SizePlan {
   readonly order: readonly number[];
 }
 
-/** Share of the world mask that lies inside the world shape. */
-export function measureWorldArea(worldMask: Uint8Array): number {
-  let inside = 0;
-  for (const cell of worldMask) {
-    if (cell !== 0) {
-      inside++;
-    }
-  }
-  return worldMask.length === 0 ? 0 : inside / worldMask.length;
-}
-
 /**
  * Plans the visual size: the typical scale and the log-normal weights set a
  * target extent per structure, and every unit geometry is scaled to reach it.

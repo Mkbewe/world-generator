@@ -142,8 +142,6 @@ export interface LandmassConfig {
   readonly diversity: number;
   /** Archetypes drawn for the structures; undefined keeps the whole pool. */
   readonly archetypes?: readonly LandmassArchetype[];
-  /** Coastline roughness reserved for later stages; 0..1. */
-  readonly irregularity: number;
   readonly shelf: ShelfConfig;
 }
 

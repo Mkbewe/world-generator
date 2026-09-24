@@ -1,9 +1,4 @@
-import {
-  measureWorldArea,
-  planSizes,
-  type SizePlan,
-  type StructureSize,
-} from './size-distribution';
+import { planSizes, type SizePlan, type StructureSize } from './size-distribution';
 import { SeededRandom } from '../../random/seeded-random';
 import type { LandmassConfig } from '../../types';
 import { DEFAULT_LANDMASS_CONFIG } from '../landmass-defaults';
@@ -76,13 +71,5 @@ describe('planSizes', () => {
     const plan = planSizes(thin, config(), new SeededRandom(5));
 
     expect(plan.scales[0] * thin[0].extent).toBeLessThanOrEqual(0.6);
-  });
-});
-
-describe('measureWorldArea', () => {
-  it('measures the share of the mask inside the world', () => {
-    expect(measureWorldArea(new Uint8Array([1, 1, 0, 0]))).toBe(0.5);
-    expect(measureWorldArea(new Uint8Array([1, 1]))).toBe(1);
-    expect(measureWorldArea(new Uint8Array(0))).toBe(0);
   });
 });

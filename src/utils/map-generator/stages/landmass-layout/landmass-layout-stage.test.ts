@@ -92,7 +92,6 @@ describe('LandmassLayoutStage', () => {
       { size: 0.1 },
       { diversity: 2 },
       { archetypes: ['spiral' as LandmassArchetype] },
-      { irregularity: 2 },
       { shelf: { ...DEFAULT_LANDMASS_CONFIG.shelf, falloff: 2 } },
       { shelf: { ...DEFAULT_LANDMASS_CONFIG.shelf, width: 0 } },
     ];

@@ -95,6 +95,20 @@ Per komórka wewnątrz maski:
 - `Math.hypot` jest w V8 wolniejsze od `Math.sqrt(dx*dx + dy*dy)` i nie jest
   inline'owane; obiekty i branch po `geometry.kind` psują monomorficzność pętli.
 
+### I.8. Etap landmass nie czyta komórek świata — wdrożone (#389)
+
+Stary etap rasteryzował mapę identyfikatorów struktur, czyli przechodził wszystkie
+komórki świata (~2,4 µs/komórkę: 146 ms przy 256², 10,2 s przy 2048²) i trzymał
+dodatkowy raster 1 B/komórkę (1 MB przy 1024², 4 MB przy 2048²).
+
+Nowy etap buduje wyłącznie geometrię: 10 struktur (węzły + krawędzie), plan
+rozmiaru po extincie i placement, który próbkuje maskę punktowo. `pnpm run bench`
+(seed 17) daje ~23 ms przy każdej rozdzielczości — 6× szybciej niż baseline przy
+256² i ~450× przy 2048², bez zależności od rozdzielczości. Pomiar orientacyjny
+(Windows, Node v26.5.0, Ryzen 5 7500F); lokalnie może wyjść o kilka ms inaczej,
+ale brak zależności od rozdzielczości i rząd wielkości się potwierdzają.
+Szczegóły i tabela porównawcza: `docs/landmass-layout-baseline.md` (§5).
+
 ---
 
 ## II. Pomysły
