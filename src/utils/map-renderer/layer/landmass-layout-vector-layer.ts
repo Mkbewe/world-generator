@@ -1,12 +1,12 @@
 import { type LandmassScene, paintLandmassLayout } from './landmass-layout-painter';
 import { type LayerRenderStatistics, MapLayer, type MapSize, type TileReporter } from './layer';
 import type { VectorLayerFactory } from './vector-layer-factory';
-import { segmentsDistance } from '../../map-generator/stages/landmass-layout/collision';
 import {
+  isLandmassLayout,
+  segmentsDistance,
   type StructureSegment,
   structureSegments,
-} from '../../map-generator/stages/landmass-layout/geometry';
-import { isLandmassLayout } from '../../map-generator/stages/landmass-layout/validation';
+} from '../../map-generator/stages/landmass';
 import type { LandmassLayout } from '../../map-generator/types';
 import type { WorldShape } from '../../world-shape';
 import { type RenderTarget, targetKey } from '../preview-targets';

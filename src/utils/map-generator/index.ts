@@ -1,17 +1,17 @@
-export { createMapGenerator } from './pipeline-factory';
-export { createMacroRegionClassifier } from './macro-region-classifier';
-export type { MacroRegionClassifierInput } from './macro-region-classifier';
+export { createMapGenerator } from './pipeline/pipeline-factory';
+export { createMacroRegionClassifier } from './stages/macro-region';
+export type { MacroRegionClassifierInput } from './stages/macro-region';
 export { selectMapInfo } from './info-definitions';
-export { selectDomainOutputs } from './stage-outputs';
+export { selectDomainOutputs } from './pipeline/stage-outputs';
 export { createWorldSpace, planarDistance, spaceOf } from './space';
 export type { SampleGrid, WorldSpace } from './space';
-export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region-defaults';
-export { isLandmassLayout } from './stages/landmass-layout';
-export { selectDirtyStageIds } from './selective-regeneration';
-export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './stage-definitions';
-export type { MapConfigKey, PipelineStageId, StageInfo } from './stage-definitions';
-import type { MapContext } from './context';
-import type { PipelineStageId as PipelineId } from './stage-definitions';
+export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region';
+export { isLandmassLayout } from './stages/landmass';
+export { selectDirtyStageIds } from './pipeline/selective-regeneration';
+export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './pipeline/stage-definitions';
+export type { MapConfigKey, PipelineStageId, StageInfo } from './pipeline/stage-definitions';
+import type { MapContext } from './pipeline/context';
+import type { PipelineStageId as PipelineId } from './pipeline/stage-definitions';
 import type {
   GenerationEvent as GenericEvent,
   GenerationResult as GenericResult,

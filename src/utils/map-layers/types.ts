@@ -1,5 +1,5 @@
 import type { LAYER_CATALOG } from './catalog';
-import type { MapRasterOutputs } from '../map-generator/stage-outputs';
+import type { MapRasterOutputs } from '../map-generator/pipeline/stage-outputs';
 
 type CatalogEntry = (typeof LAYER_CATALOG)[number];
 export type MapBaseLayerId = CatalogEntry['id'];

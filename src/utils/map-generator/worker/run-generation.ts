@@ -5,7 +5,7 @@ import type {
   PipelineWorkerReuse,
 } from './pipeline-worker.types';
 import { GenerationCancelledError } from '../errors';
-import type { StageInfo } from '../stage-definitions';
+import type { StageInfo } from '../pipeline/stage-definitions';
 import type { GenerationEvent, MapConfig } from '../types';
 
 export interface GenerationWorkerOptions {

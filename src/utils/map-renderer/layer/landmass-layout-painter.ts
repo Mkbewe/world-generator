@@ -1,5 +1,5 @@
 import type { MapSize } from './layer';
-import { interpolatedRadii } from '../../map-generator/stages/landmass-layout/geometry';
+import { interpolatedRadii } from '../../map-generator/stages/landmass';
 import {
   type GeologicalStructure,
   type LandmassEdge,

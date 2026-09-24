@@ -8,7 +8,7 @@ import {
   type StageInfo,
   type StageStatistics,
 } from '../../../utils/map-generator';
-import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region-defaults';
+import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region/defaults';
 import type { MapRasters } from '../../../utils/map-layers';
 import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
 import { MapLayer } from '../../../utils/map-renderer/layer';

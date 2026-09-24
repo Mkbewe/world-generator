@@ -78,7 +78,7 @@ describe('generation worker', () => {
   });
 
   it('reuses cached rasters and reports the clean stages as skipped', async () => {
-    const { createMapGenerator } = await import('../pipeline-factory');
+    const { createMapGenerator } = await import('../pipeline/pipeline-factory');
     const full = await createMapGenerator().generate(request.config, {});
     const cachedState = {
       worldMask: full.context.state.worldMask,
@@ -108,7 +108,7 @@ describe('generation worker', () => {
 
   it.each(['missing', 'wrong size'] as const)('rejects %s final map data', async kind => {
     // Import the same module instance used by the freshly loaded worker.
-    const { NoiseStage: WorkerNoiseStage } = await import('../stages/noise-stage');
+    const { NoiseStage: WorkerNoiseStage } = await import('../stages/noise');
     vi.spyOn(WorkerNoiseStage.prototype, 'execute').mockImplementation(async context => {
       const noiseMap = new Float32Array(1);
       if (kind === 'wrong size') {

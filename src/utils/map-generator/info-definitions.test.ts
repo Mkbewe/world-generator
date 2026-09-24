@@ -1,4 +1,4 @@
-import { DEFAULT_MACRO_REGIONS } from './stages/macro-region-defaults';
+import { DEFAULT_MACRO_REGIONS } from './stages/macro-region';
 import { MAP_INFO_CATALOG, selectMapInfo } from './info-definitions';
 import type { MapConfig } from './types';
 

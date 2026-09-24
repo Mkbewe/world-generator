@@ -1,10 +1,10 @@
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from './macro-region-form-store';
-import { macroRegionPreset } from '../../utils/map-generator/stages/macro-region-presets';
 import {
   baseRegions,
   overlayRegions,
   regionSegments,
-} from '../../utils/map-generator/stages/macro-region-sizes';
+} from '../../utils/map-generator/stages/macro-region/boundary-model';
+import { macroRegionPreset } from '../../utils/map-generator/stages/macro-region/presets';
 
 describe('useMacroRegionFormStore', () => {
   beforeEach(() => {

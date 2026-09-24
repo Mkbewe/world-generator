@@ -1,5 +1,4 @@
-import { structureSegments } from '../map-generator/stages/landmass-layout/geometry';
-import { isLandmassLayout } from '../map-generator/stages/landmass-layout/validation';
+import { isLandmassLayout, structureSegments } from '../map-generator/stages/landmass';
 import type { GeologicalStructure } from '../map-generator/types';
 import type { MapInfo, MapInspection } from '../map-renderer';
 import { cellOriginMeters, type WorldDimensions } from '../world-dimensions';

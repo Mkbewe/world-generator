@@ -1,7 +1,7 @@
 import { Flex, Text } from '@radix-ui/themes';
 
 import { formatBytes } from '../../../../../utils/format';
-import { summarizeWorldGrid } from '../../../../../utils/map-generator/world-grid';
+import { summarizeWorldGrid } from '../../../../../utils/world-grid';
 
 interface GridSummaryFieldProps {
   sizeMeters: number;

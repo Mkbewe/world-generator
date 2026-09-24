@@ -1,4 +1,4 @@
-import { createMacroRegionClassifier } from '../../map-generator/macro-region-classifier';
+import { createMacroRegionClassifier } from '../../map-generator/stages/macro-region';
 import {
   type LayerDataRecord,
   type LayerSpec,

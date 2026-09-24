@@ -2,7 +2,7 @@ import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
 import type { MacroRegionNoiseSource } from '../../../../../utils/map-generator';
-import { DEFAULT_REGION_NOISE_SOURCE } from '../../../../../utils/map-generator/stages/macro-region-defaults';
+import { DEFAULT_REGION_NOISE_SOURCE } from '../../../../../utils/map-generator/stages/macro-region/defaults';
 import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
 
 export function BorderSourceField() {
