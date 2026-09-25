@@ -2,6 +2,7 @@ import {
   LandmassLayoutVectorLayer,
   landmassLayoutVectorLayerFactory,
 } from './landmass-layout-vector-layer';
+import { OCEAN_MARGIN_METERS } from '../../map-generator/stages/landmass';
 import type { LandmassLayout } from '../../map-generator/types';
 import type { RenderTarget } from '../preview-targets';
 import type { SpatialMask } from '../types';
@@ -154,5 +155,67 @@ describe('LandmassLayoutVectorLayer', () => {
         value: { structures: 'nope' },
       })
     ).toThrow('Invalid landmass layout data');
+  });
+
+  it('clips painting to the ocean margin when the physical size is known', async () => {
+    const { calls, restore } = mockCanvas();
+    const layer = new LandmassLayoutVectorLayer(
+      'landmass-layout',
+      { width: 11, height: 11 },
+      layout,
+      { shape: 'disc', dimensionsMeters: { widthMeters: 1100, heightMeters: 1100 } }
+    );
+    try {
+      await layer.prepare(new AbortController().signal, targetFor(11, 11));
+
+      // Base radius 5 eroded by the ocean margin: its share of the 10-cell span.
+      const eroded = calls.ellipse.find(call => (call[2] as number) < 5);
+      expect(eroded?.[2]).toBeCloseTo(5 - (OCEAN_MARGIN_METERS / 1100) * 10, 10);
+      expect(eroded?.[3]).toBeCloseTo(5 - (OCEAN_MARGIN_METERS / 1100) * 10, 10);
+    } finally {
+      layer.dispose();
+      restore();
+    }
+  });
+
+  it('ignores hits in the ocean margin but keeps them without meters', () => {
+    const edgeLayout: LandmassLayout = {
+      structures: [
+        {
+          id: 'landmass-1',
+          archetype: 'elongated',
+          nodes: [
+            { id: 'landmass-1-n1', position: { x: 0.9, y: 0.5 }, radius: 0.05 },
+            { id: 'landmass-1-n2', position: { x: 0.95, y: 0.5 }, radius: 0.08 },
+          ],
+          edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
+          shelfId: 'shelf-1',
+        },
+      ],
+      shelves: [],
+    };
+    const edge = new LandmassLayoutVectorLayer(
+      'landmass-layout',
+      { width: 11, height: 11 },
+      edgeLayout,
+      {
+        shape: 'disc',
+        dimensionsMeters: { widthMeters: 1100, heightMeters: 1100 },
+      }
+    );
+    const plain = new LandmassLayoutVectorLayer(
+      'landmass-layout',
+      { width: 11, height: 11 },
+      edgeLayout,
+      { shape: 'disc' }
+    );
+    try {
+      // Cell (10, 5) sits on the rim inside the world but outside the margin.
+      expect(edge.sample(10, 5)).toBeUndefined();
+      expect(plain.sample(10, 5)).toEqual({ id: 'landmass-1' });
+    } finally {
+      edge.dispose();
+      plain.dispose();
+    }
   });
 });

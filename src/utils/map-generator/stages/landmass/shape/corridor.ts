@@ -8,10 +8,6 @@ import { scaleStructure } from '../transform';
 /** Integration step of a unit corridor; dense enough for smooth control points. */
 const CORRIDOR_STEP = 0.02;
 
-/** Node spacing along a corridor, as a multiple of the local radius. */
-const NODE_SPACING = 1.5;
-const WALK_NODE_SPACING = 3;
-
 /** Node count limits of a branch arm (plan §11.5). */
 const MIN_BRANCH_NODES = 2;
 const MAX_BRANCH_NODES = 5;
@@ -55,6 +51,12 @@ export function scaleDraft(draft: StructureDraft, factor: number): StructureDraf
 interface Corridor {
   readonly points: readonly WorldPoint[];
   readonly closed: boolean;
+  /**
+   * Dense-point indexes of discrete joints. The control-point reduction
+   * always keeps them, so an even thinning never irons a kink flat;
+   * smooth builders leave this unset.
+   */
+  readonly creases?: readonly number[];
 }
 
 /**
@@ -68,6 +70,7 @@ const CORRIDOR_BUILDERS: Record<
 > = {
   sine: buildSineCorridor,
   walk: buildWalkCorridor,
+  angular: buildAngularCorridor,
   ring: buildRingCorridor,
 };
 
@@ -143,6 +146,42 @@ function buildWalkCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corri
 }
 
 /**
+ * Angular corridor: straight runs joined by discrete kinks instead of one
+ * continuous curve — every piece keeps its heading and the whole joint angle
+ * lands at once, so the axis reads as L, U or Z bars. Open by construction;
+ * alternating joint signs zigzag while repeated signs box around.
+ */
+function buildAngularCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
+  const length = sampleRange(recipe.length, random);
+  const pieces = Math.max(2, Math.round(sampleRange(recipe.bends, random)));
+  const weights = Array.from({ length: pieces }, () => 0.5 + random.next());
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  const points: WorldPoint[] = [{ x: 0, y: 0 }];
+  const creases: number[] = [];
+  let x = 0;
+  let y = 0;
+  let direction = random.next() * Math.PI * 2;
+
+  for (let piece = 0; piece < pieces; piece++) {
+    if (piece > 0) {
+      direction += (random.next() < 0.5 ? -1 : 1) * sampleRange(recipe.turn, random);
+    }
+    const pieceLength = (length * weights[piece]) / totalWeight;
+    const steps = Math.max(2, Math.ceil(pieceLength / CORRIDOR_STEP));
+    const step = pieceLength / steps;
+    for (let index = 0; index < steps; index++) {
+      x += Math.cos(direction) * step;
+      y += Math.sin(direction) * step;
+      points.push({ x, y });
+    }
+    if (piece < pieces - 1) {
+      creases.push(points.length - 1);
+    }
+  }
+  return { points, closed: false, creases };
+}
+
+/**
  * Ring corridor: the recipe asks for a closed loop explicitly instead of a
  * turn range crossing a magic threshold. `turn` is not sampled here, so a
  * ring draws different random offsets than the sine path would.
@@ -212,7 +251,8 @@ function corridorNodes(
   const intendedBase = sampleRange(recipe.radius, random);
   // A corridor wider than its tightest turn would fold its own outline, so the
   // generator narrows it here instead of the painter trimming single ribs.
-  const base = safeCorridorRadius(points, intendedBase);
+  // Discrete kinks keep their width: the miter is the shape, not a fold.
+  const base = recipe.clampWidth ? safeCorridorRadius(points, intendedBase) : intendedBase;
   const shape: RadiusShape = {
     taper: sampleRange(recipe.taper, random),
     skew: sampleRange(recipe.skew, random),
@@ -225,8 +265,7 @@ function corridorNodes(
   };
   // The recipe decides how many nodes its corridor carries: a ridge stays
   // legible with few, a ring needs enough to close smoothly (plan §11.5).
-  // Walks spread their nodes wider along the pieces they are made of.
-  const spacing = recipe.corridor === 'walk' ? WALK_NODE_SPACING : NODE_SPACING;
+  const spacing = sampleRange(recipe.spacing, random);
   const count = Math.min(
     recipe.nodes[1],
     Math.max(recipe.nodes[0], Math.round(polylineLength(points) / (base * spacing)))
@@ -235,7 +274,7 @@ function corridorNodes(
   const indices: number[] = [];
 
   for (let index = 0; index < count; index++) {
-    const at = corridor.closed ? index / count : index / (count - 1);
+    const at = nodeFraction(corridor.closed, index, count);
     // The node sits on the sampled corridor point, so the control-point gap
     // filter measures the same endpoints the edges later reference.
     const pointIndex = Math.min(points.length - 1, Math.round(at * (points.length - 1)));
@@ -256,7 +295,7 @@ function corridorNodes(
       id: `${id}-e${index + 1}`,
       from: nodes[from].id,
       to: nodes[to].id,
-      ...controlPoints(points, indices[from], indices[to]),
+      ...controlPoints(points, indices[from], indices[to], corridor.creases ?? []),
     });
   }
   return { nodes, edges };
@@ -316,11 +355,14 @@ function branchNodes(
   const count = Math.round(sampleRange(recipe.branches, random));
   const branchNodes: LandmassNode[] = [];
   const branchEdges: LandmassEdge[] = [];
-  if (count <= 0 || nodes.length < 3) {
+  if (count <= 0 || nodes.length < 2) {
     return { nodes: branchNodes, edges: branchEdges };
   }
   const total = polylineLength(nodes.map(node => node.position));
-  const availableParents = Array.from({ length: nodes.length - 2 }, (_, index) => index + 1);
+  // Interior nodes parent side arms; a two-node corridor has none, so the arm
+  // grows from its start instead and still sticks out sideways as an L.
+  const availableParents =
+    nodes.length >= 3 ? Array.from({ length: nodes.length - 2 }, (_, index) => index + 1) : [0];
 
   for (let branch = 0; branch < count && availableParents.length > 0; branch++) {
     const parentIndex = availableParents.splice(
@@ -333,15 +375,17 @@ function branchNodes(
       next.position.y - parent.position.y,
       next.position.x - parent.position.x
     );
-    const direction = baseDirection + (random.next() < 0.5 ? -1 : 1) * (0.7 + random.next() * 0.6);
+    const direction =
+      baseDirection + (random.next() < 0.5 ? -1 : 1) * sampleRange(recipe.branchAngle, random);
     const length = total * (0.3 + random.next() * 0.25);
     const radius = parent.radius * (0.6 + random.next() * 0.3);
     const taper = 0.35 + random.next() * 0.3;
     const turn = (random.next() - 0.5) * 1.2;
     const points = straightPath(parent.position, direction, turn, length);
+    const spacing = sampleRange(recipe.spacing, random);
     const nodeCount = Math.max(
       MIN_BRANCH_NODES,
-      Math.min(MAX_BRANCH_NODES, Math.round(length / (radius * NODE_SPACING)))
+      Math.min(MAX_BRANCH_NODES, Math.round(length / (radius * spacing)))
     );
     const indices: number[] = [];
 
@@ -395,42 +439,66 @@ function straightPath(
   return points;
 }
 
-/** Reduces the dense corridor between two nodes to a few control points. */
+/**
+ * Reduces the dense corridor between two nodes to a few control points.
+ * Creases — discrete joints the builder marked as load-bearing — always
+ * survive the reduction, so an even thinning never irons a kink flat.
+ */
 function controlPoints(
   points: readonly WorldPoint[],
   fromIndex: number,
-  toIndex: number
+  toIndex: number,
+  creases: readonly number[] = []
 ): { readonly controlPoints?: readonly WorldPoint[] } {
-  const between: WorldPoint[] = [];
+  const span: number[] = [];
   if (toIndex > fromIndex) {
     for (let index = fromIndex + 1; index < toIndex; index++) {
-      between.push(points[index]);
+      span.push(index);
     }
   } else {
     for (let index = fromIndex + 1; index < points.length; index++) {
-      between.push(points[index]);
+      span.push(index);
     }
     for (let index = 1; index < toIndex; index++) {
-      between.push(points[index]);
+      span.push(index);
     }
   }
   const fromPoint = points[fromIndex];
   const toPoint = points[toIndex];
-  const usable = between.filter(
-    point =>
-      distanceBetween(point, fromPoint) > CONTROL_ENDPOINT_GAP &&
-      distanceBetween(point, toPoint) > CONTROL_ENDPOINT_GAP
+  const forced = new Set(span.filter(index => creases.includes(index)));
+  const rest = span.filter(
+    index =>
+      !forced.has(index) &&
+      distanceBetween(points[index], fromPoint) > CONTROL_ENDPOINT_GAP &&
+      distanceBetween(points[index], toPoint) > CONTROL_ENDPOINT_GAP
   );
-  if (usable.length === 0) {
+  if (forced.size === 0 && rest.length === 0) {
     return {};
   }
 
-  const count = Math.min(MAX_CONTROL_POINTS, usable.length);
-  const kept: WorldPoint[] = [];
+  const count = Math.min(MAX_CONTROL_POINTS, rest.length);
+  const kept = new Set<number>(forced);
   for (let index = 1; index <= count; index++) {
-    kept.push(usable[Math.floor((usable.length * index) / (count + 1))]);
+    const picked = rest[Math.floor((rest.length * index) / (count + 1))];
+    if (picked !== undefined) {
+      kept.add(picked);
+    }
   }
-  return { controlPoints: kept };
+  return { controlPoints: span.filter(index => kept.has(index)).map(index => points[index]) };
+}
+
+/**
+ * Position of one node along its corridor. An open corridor with a single
+ * node keeps the middle, so a round island never divides by zero.
+ */
+function nodeFraction(closed: boolean, index: number, count: number): number {
+  if (closed) {
+    return index / count;
+  }
+  if (count <= 1) {
+    return 0.5;
+  }
+  return index / (count - 1);
 }
 
 /** Closed corridors wrap; the repeated first point is only for arc-length sampling. */

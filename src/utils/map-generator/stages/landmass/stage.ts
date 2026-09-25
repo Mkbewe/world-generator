@@ -1,5 +1,11 @@
 import { placeStructures } from './search/placement';
-import { isLandmassArchetype, LANDMASS_ARCHETYPES } from './shape/archetypes';
+import {
+  ARCHETYPE_RECIPES,
+  isLandmassArchetype,
+  isLandmassPoolArchetype,
+  LANDMASS_POOL,
+  poolRecipes,
+} from './shape/archetypes';
 import { buildStructure, scaleDraft } from './shape/corridor';
 import { planSizes } from './shape/size-plan';
 import {
@@ -7,10 +13,16 @@ import {
   MAX_LANDMASS_SIZE,
   MAX_LANDMASSES,
   MIN_LANDMASS_SIZE,
+  OCEAN_MARGIN_METERS,
 } from './defaults';
 import { structureExtent } from './influence';
 import { validateLayout, validatePlacement } from './layout-check';
-import { createMaskSampler } from './mask-sampler';
+import {
+  createMarginSampler,
+  createMaskSampler,
+  createShapeSampler,
+  edgeFrame,
+} from './mask-sampler';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { type MapStage } from '../../pipeline/stage';
@@ -79,15 +91,30 @@ export class LandmassLayoutStage implements MapStage<
     }
 
     const sizes = planSizes(
-      drafts.map(draft => ({ extent: structureExtent(draft) })),
+      drafts.map(draft => ({
+        extent: structureExtent(draft),
+        sizeFactor: ARCHETYPE_RECIPES[draft.archetype].size,
+        maxExtent: ARCHETYPE_RECIPES[draft.archetype].maxExtent,
+      })),
       config,
-      random
+      random,
+      context.config.world.dimensions
     );
     // The size plan lists the largest structures first, so they are placed first.
     const scaled = drafts.map((draft, index) => scaleDraft(draft, sizes.scales[index]));
     const ordered = sizes.order.map(index => scaled[index]);
     const insideWorld = createMaskSampler(worldMask, sampleWidth, sampleHeight);
-    const placement = placeStructures(ordered, insideWorld, config.shelf, random);
+    // Islands may reach past the margin, but the share below is measured
+    // against the eroded shape — so the heightmap can cut them with ocean
+    // to spare instead of at the world edge.
+    const margin = createMarginSampler(
+      context.config.world.shape,
+      context.config.world.dimensions,
+      OCEAN_MARGIN_METERS
+    );
+    const placement = placeStructures(ordered, insideWorld, config.shelf, random, margin, point =>
+      edgeFrame(context.config.world.shape, point)
+    );
     const layout: LandmassLayout = {
       structures: placement.structures,
       shelves: placement.shelves,
@@ -105,12 +132,14 @@ export class LandmassLayoutStage implements MapStage<
       throw new Error('Pipeline completed without all required map data.');
     }
     validateLayout(layout);
-    // The hard placement contract: nothing overlaps and nothing hangs outside.
-    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    // The hard placement contract: nothing overlaps and at most a quarter of
+    // the influence leaves the world. Measured against the analytic shape, not
+    // the raster: on coarse grids a cell is wider than the ocean margin, so
+    // the rasterized truth would disagree with the sampler placement used.
     const problems = validatePlacement(
       layout.structures,
-      createMaskSampler(worldMask, sampleWidth, sampleHeight),
-      0.5
+      createShapeSampler(config.world.shape),
+      0.75
     );
     if (problems.length > 0) {
       throw new Error(`Pipeline produced an invalid placement: ${problems[0]}`);
@@ -175,10 +204,14 @@ function pickArchetype(
   pool: readonly LandmassArchetype[] | undefined,
   random: SeededRandom
 ): LandmassArchetype {
-  if (!pool) {
-    return LANDMASS_ARCHETYPES[random.nextInteger(0, LANDMASS_ARCHETYPES.length - 1)];
+  const options = pool ?? LANDMASS_POOL;
+  const picked = options[random.nextInteger(0, options.length - 1)];
+  if (isLandmassPoolArchetype(picked)) {
+    const recipes = poolRecipes(picked);
+    return recipes[random.nextInteger(0, recipes.length - 1)];
   }
-  return pool[random.nextInteger(0, pool.length - 1)];
+  // A recipe stored explicitly (e.g. winding before the pool merge) still draws itself.
+  return picked;
 }
 
 function isNormalized(value: number): boolean {

@@ -1,5 +1,7 @@
 import type { PlaceableStructure } from './shape/draft';
+import { MAX_MARGIN_SHARE } from './defaults';
 import { type Bounds, structureBounds, structureSegments } from './influence';
+import type { WorldDimensions } from '../../../world-dimensions';
 import { containsWorld, type WorldShape } from '../../../world-shape';
 import { createWorldSpace, planarDistance } from '../../space';
 import type { WorldPoint } from '../../types';
@@ -38,6 +40,83 @@ export function createMaskSampler(
 /** Analytic sampler of a world shape; the mask above is generated from it. */
 export function createShapeSampler(shape: WorldShape): WorldSampler {
   return point => containsWorld(shape, 2 * point.x - 1, 2 * point.y - 1);
+}
+
+/**
+ * Local frame of the world edge at a normalized point: the gap to the edge
+ * in normalized units (negative outside) and the tangent direction along it.
+ * The disc tangent is perpendicular to the radius; the rectangle follows the
+ * nearer edge.
+ */
+export interface EdgeFrame {
+  readonly gap: number;
+  readonly tangent: number;
+}
+
+export function edgeFrame(shape: WorldShape, point: WorldPoint): EdgeFrame {
+  const x = 2 * point.x - 1;
+  const y = 2 * point.y - 1;
+  if (shape === 'rectangle') {
+    const gapX = 1 - Math.abs(x);
+    const gapY = 1 - Math.abs(y);
+    return gapX < gapY ? { gap: gapX / 2, tangent: Math.PI / 2 } : { gap: gapY / 2, tangent: 0 };
+  }
+  return { gap: (1 - Math.hypot(x, y)) / 2, tangent: Math.atan2(y, x) + Math.PI / 2 };
+}
+
+/**
+ * Ocean-margin erosion in normalized units: how far the island ground stays
+ * from the world edge on each axis. The single source of the erosion math —
+ * the renderer clips its preview through these insets, placement measures
+ * against the sampler below, so both agree on where the water starts.
+ */
+export interface MarginInsets {
+  readonly x: number;
+  readonly y: number;
+}
+
+export function marginInsets(dimensions: WorldDimensions, marginMeters: number): MarginInsets {
+  const side = Math.max(1, Math.min(dimensions.widthMeters, dimensions.heightMeters));
+  const capped = Math.min(Math.max(0, marginMeters), MAX_MARGIN_SHARE * side);
+  return {
+    x: capped / Math.max(1, dimensions.widthMeters),
+    y: capped / Math.max(1, dimensions.heightMeters),
+  };
+}
+
+/**
+ * Sampler of the shape eroded by an ocean margin in meters: a point counts as
+ * inside only with at least the margin of water to the world edge. The margin
+ * is capped at a share of the smaller side, so tiny worlds still place. The
+ * rectangle erodes exactly per axis; the disc erodes conservatively by the
+ * smaller side, so the physical gap holds in every direction.
+ */
+export function createMarginSampler(
+  shape: WorldShape,
+  dimensions: WorldDimensions,
+  marginMeters: number
+): WorldSampler {
+  const insets = marginInsets(dimensions, marginMeters);
+  if (shape === 'rectangle') {
+    return point => {
+      if (point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) {
+        return false;
+      }
+      return (
+        Math.abs(2 * point.x - 1) <= 1 - 2 * insets.x &&
+        Math.abs(2 * point.y - 1) <= 1 - 2 * insets.y
+      );
+    };
+  }
+  const radius = 1 - 2 * Math.max(insets.x, insets.y);
+  return point => {
+    if (point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) {
+      return false;
+    }
+    const dx = 2 * point.x - 1;
+    const dy = 2 * point.y - 1;
+    return dx * dx + dy * dy <= radius * radius;
+  };
 }
 
 /**

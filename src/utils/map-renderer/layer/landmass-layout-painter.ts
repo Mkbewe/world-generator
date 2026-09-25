@@ -1,5 +1,9 @@
 import type { MapSize } from './layer';
-import { interpolatedRadii } from '../../map-generator/stages/landmass';
+import {
+  interpolatedRadii,
+  marginInsets,
+  OCEAN_MARGIN_METERS,
+} from '../../map-generator/stages/landmass';
 import {
   type GeologicalStructure,
   type LandmassEdge,
@@ -10,7 +14,7 @@ import {
 import type { Color } from '../../map-layers';
 import type { WorldShape } from '../../world-shape';
 import type { MapProjection } from '../view/view-transform';
-import { traceWorldBoundary } from '../world-boundary-renderer';
+import { traceErodedWorldBoundary, traceWorldBoundary } from '../world-boundary-renderer';
 
 /** Calm ocean inside the world, so even a few thin lines still read as a map. */
 const OCEAN_COLOR = 'rgb(12, 30, 48)';
@@ -52,6 +56,34 @@ export interface LandmassScene {
   readonly size: MapSize;
   /** World shape; it clips the scene and becomes the ocean background. */
   readonly shape?: WorldShape;
+  /** Physical world size for the ocean-margin clip; absent on restored maps. */
+  readonly dimensionsMeters?: {
+    readonly widthMeters: number;
+    readonly heightMeters: number;
+  };
+}
+
+/** Ocean-margin clip in canvas pixels, when the scene knows the physical size. */
+function erodedClip(
+  scene: LandmassScene,
+  projection: MapProjection
+): { readonly x: number; readonly y: number } | undefined {
+  if (!scene.shape || !scene.dimensionsMeters) {
+    return undefined;
+  }
+  const insets = marginInsets(
+    {
+      widthMeters: scene.dimensionsMeters.widthMeters,
+      heightMeters: scene.dimensionsMeters.heightMeters,
+      sampleWidth: scene.size.width,
+      sampleHeight: scene.size.height,
+    },
+    OCEAN_MARGIN_METERS
+  );
+  return {
+    x: insets.x * Math.max(1, scene.size.width - 1) * projection.cellSize,
+    y: insets.y * Math.max(1, scene.size.height - 1) * projection.cellSize,
+  };
 }
 
 interface CanvasPoint {
@@ -112,9 +144,20 @@ export function paintLandmassLayout(
     context.clip();
   }
   paintOcean(context, projection, scene);
+  const eroded = scene.shape ? erodedClip(scene, projection) : undefined;
+  if (scene.shape && eroded) {
+    // Islands stop at the ocean margin; the ocean itself fills the world.
+    context.save();
+    context.beginPath();
+    traceErodedWorldBoundary(context, projection, scene.size, scene.shape, eroded);
+    context.clip();
+  }
   scene.layout.structures.forEach((structure, index) => {
     paintStructure(context, projection, scene.size, structure, structureColor(index));
   });
+  if (eroded) {
+    context.restore();
+  }
   if (scene.shape) {
     context.restore();
   }
@@ -417,6 +460,16 @@ function paintStructure(
   for (const chain of geometry.chains) {
     for (const run of chain.runs) {
       paintCorridor(context, run, color);
+    }
+  }
+  // A structure without edges is one disc: fill its influence circle, since no
+  // corridor run colours its body.
+  if (geometry.chains.length === 0) {
+    context.fillStyle = rgba(color, FILL_ALPHA);
+    for (const node of geometry.nodes) {
+      context.beginPath();
+      context.ellipse(node.point.x, node.point.y, node.radii.x, node.radii.y, 0, 0, TAU);
+      context.fill();
     }
   }
   context.strokeStyle = rgba(color, RAIL_ALPHA);

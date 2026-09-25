@@ -15,6 +15,11 @@ export interface SpatialMask {
 export interface MapMetadata {
   seed: string;
   shape: WorldShape;
+  /** Physical world size; lets vector layers clip to meter-based margins. */
+  dimensionsMeters?: {
+    readonly widthMeters: number;
+    readonly heightMeters: number;
+  };
   regionGeometry?: {
     seed: number;
     regions: readonly MacroRegionConfig[];

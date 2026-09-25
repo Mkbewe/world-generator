@@ -30,6 +30,7 @@ export class MapScene {
   private geometry?: SmoothGeometry;
   private shape?: WorldShape;
   private regionConfig?: MapMetadata['regionGeometry'];
+  private dimensionsMeters?: MapMetadata['dimensionsMeters'];
   private info: MapInfo = {};
   private readonly layers = new Map<MapBaseLayerId, MapLayer>();
   private readonly available = new Set<MapBaseLayerId>();
@@ -61,7 +62,10 @@ export class MapScene {
    * Begins a map. Layers from a previous run survive while the sample grid
    * keeps its size, so a selective run replaces only its dirty layers.
    */
-  start(size: MapSize, metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry'>): void {
+  start(
+    size: MapSize,
+    metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry' | 'dimensionsMeters'>
+  ): void {
     if (!this.matchesSize(size)) {
       this.reset();
     }
@@ -74,9 +78,12 @@ export class MapScene {
   }
 
   /** Updates the shape and region geometry without touching received layers. */
-  private setMetadata(metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry'>): void {
+  private setMetadata(
+    metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry' | 'dimensionsMeters'>
+  ): void {
     this.shape = metadata?.shape;
     this.regionConfig = metadata?.regionGeometry;
+    this.dimensionsMeters = metadata?.dimensionsMeters;
     this.rebuildGeometry();
   }
 
@@ -213,9 +220,25 @@ export class MapScene {
     const previous = this.layers.get(spec.id);
     const layer = this.cache.getOrCreate(
       spec.id,
-      [spec, value, size.width, size.height, clipMask, this.geometry?.shape],
+      [
+        spec,
+        value,
+        size.width,
+        size.height,
+        clipMask,
+        this.geometry?.shape,
+        this.dimensionsMeters?.widthMeters,
+        this.dimensionsMeters?.heightMeters,
+      ],
       () =>
-        factory.create({ id: spec.id, size, value, mask: clipMask, shape: this.geometry?.shape })
+        factory.create({
+          id: spec.id,
+          size,
+          value,
+          mask: clipMask,
+          shape: this.geometry?.shape,
+          dimensionsMeters: this.dimensionsMeters,
+        })
     );
     this.layers.set(spec.id, layer);
     // A refreshed layer becomes ready again once it is presented.
@@ -322,6 +345,7 @@ export class MapScene {
     this.geometry = undefined;
     this.shape = undefined;
     this.regionConfig = undefined;
+    this.dimensionsMeters = undefined;
     this.info = {};
     this.layers.clear();
     this.available.clear();

@@ -137,6 +137,8 @@ traktować każdą kombinację jako osobny typ mapy.
   ekranu zamiast po komórkach rastra, a geometrię dostarcza scena z konfiguracji.
 - Warstwa `Landmasses` jest wektorowa: ocean w granicach świata, oś szkieletu,
   jedna poprzeczka szerokości i kropka na węzeł, kolor rozróżnia struktury.
+  Korpus wypełnia wstęga między relingami, struktura bez krawędzi maluje koło
+  wpływu, a treść przycina margines oceanu, gdy scena zna metry świata.
   Układ struktur jedzie w `MapInfo` i jest zapisywany razem z mapą, więc warstwa
   działa też po odtworzeniu mapy. Odczyt pod kursorem zwraca id struktury, jej
   archetyp, liczbę węzłów, długość grzbietu i zakres szerokości.
@@ -436,26 +438,40 @@ interface LandmassLayout {
 
 - Archetypy to intencje kształtu: `round`, `irregular`, `elongated`, `winding`,
   `branched`, `lagoon`, `atoll`. Każdy jest przepisem z losowanymi zakresami
-  (długość, skręt, falowanie, promień, zwężenie końców, odgałęzienia) i własnym
-  zakresem liczby węzłów. `winding` losuje kilka odcinków o różnych długościach
-  i kątach, więc skręty nie powtarzają się między strukturami.
+  (długość, skręt, falowanie, promień, zmienność grubości, zwężenie końców,
+  odgałęzienia i ich kąt) i własnym zakresem liczby węzłów. Receptura wybiera
+  też buildera korytarza: `sine` (gładkie grzbiety), `walk` (węże), `angular`
+  (bryłowe łamańce irregular) albo `ring` (lagoonowe pierścienie). `round`
+  schodzi do jednego węzła, `lagoon` czyta mały (`size: 0,5`), a pula
+  formularza łączy `elongated` z `winding` i `lagoon` z `atoll`, więc pięć
+  intencji kryje siedem przepisów.
 - Z gęstego korytarza powstaje zredukowana łamana: węzły plus punkty kontrolne
-  (do 6 na krawędź). Ta sama łamana jest osią szkieletu, geometrią kolizji
-  i źródłem hit testingu — podgląd nie wygładza jej własnym splajnem.
+  (do 6 na krawędź oraz zachowane załamania `angular`, więc bryły nie gubią
+  narożników). Ta sama łamana jest osią szkieletu, geometrią kolizji
+  i źródłem hit testingu; podgląd rysuje ją wygładzonym splajnem
+  Catmulla-Roma, więc ostre załamania dostają ciasne zaokrąglenie.
 - Promień jest bezpieczny dla krzywizny: generator mierzy najciaśniejszy zakręt
   (na rzadkim próbkowaniu) i nie pozwala korytarzowi złożyć własnego obrysu.
-- Plan rozmiaru dobiera **typowy extent** (`size`) i rozrzut (`diversity`, wagi
-  log-normalne) z podłogą i sufitem (`MIN_EXTENT`/`MAX_EXTENT`). Dzięki temu
-  kompaktowa i cienka struktura mają porównywalny rozmiar, a nie tylko pole.
+  Dyskretne załamania `angular` trzymają pełną szerokość z przepisu
+  (`clampWidth: false`) — mitra jest kształtem, nie błędem.
+- Plan rozmiaru dobiera **typowy extent** ze skali `size` 0–1 (2–13% świata
+  odniesienia 2000 m, domyślnie 0,5) i rozrzut (`diversity`, wagi
+  log-normalne), z podłogą i sufitem (`MIN_EXTENT_METERS`/`MAX_EXTENT`).
+  Wyspy rosną ze światem pierwiastkowo (4× świat to 2× wyspy w metrach).
+  Intencja niesie mnożnik (`size`, np. lagoon 0,5) i własny sufit
+  (`maxExtent`, np. elongated 0,3). Dzięki temu kompaktowa i cienka struktura
+  mają porównywalny rozmiar, a nie tylko pole.
 - Placement startuje z równomiernej siatki kotwic nad światem (z losowym
   wychyłem, żeby kratka nie prześwitywała). Każda struktura staje na kotwicy
   najdalszej od już postawionych; gdy się nie mieści, próbuje kolejnych obrotów,
   potem się zmniejsza, a na końcu zostaje odrzucona. Część struktur celowo tworzy
   grupy o wspólnym szelfie (`LandmassLayout.shelves`), co jest fundamentem
   archipelagu (§4.3).
-- Część korytarza może wystawać poza świat — dziś do połowy szerokości wpływu;
-  resztę przycina maska świata. Dzięki temu struktury dochodzą do krawędzi
-  zamiast ściskać się w środku mapy.
+- Część korytarza może wystawać poza świat — co najmniej 75% wpływu musi leżeć
+  wewnątrz kształtu zerodowanego o margines oceanu (25 m, maks. 10% mniejszego
+  boku); kandydat, który wystaje bardziej, jest zmniejszany albo odrzucany.
+  Struktury przy krawędzi dostawiają się dłuższym bokiem do stycznej granicy.
+  Dzięki temu dochodzą do krawędzi zamiast ściskać się w środku mapy.
 - Etap nie skanuje komórek świata: maska jest wyłącznie próbkowana przez
   placement, więc koszt zależy od liczby struktur, nie od rozdzielczości.
 - Statystyki etapu: struktury, szelfy, węzły, krawędzie i liczba odrzuconych
@@ -863,7 +879,7 @@ a nasz podgląd pozostałby narzędziem deweloperskim. Na razie bez zadań.
 ## 9. Wydajność i pamięć — [częściowo]
 
 Techniczne podstawy, pomiary i pomysły (formaty danych, kopie, canvasy, koszty
-etapów) są w osobnym dokumencie: [generator-performance-notes.md](generator-performance-notes.md).
+etapów) zbierze osobny dokument z notatkami o wydajności — jeszcze nieutworzony.
 
 Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
 progresywne rysowanie podglądu, postęp raportowany z wnętrza etapów oraz

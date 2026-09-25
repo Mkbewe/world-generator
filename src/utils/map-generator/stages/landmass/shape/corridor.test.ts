@@ -2,7 +2,7 @@ import { LANDMASS_ARCHETYPES } from './archetypes';
 import { buildStructure, scaleDraft } from './corridor';
 import type { StructureDraft } from './draft';
 import { SeededRandom } from '../../../random/seeded-random';
-import type { LandmassArchetype, LandmassEdge, LandmassNode } from '../../../types';
+import type { LandmassArchetype, LandmassEdge, LandmassNode, WorldPoint } from '../../../types';
 import { boundsOf } from '../influence';
 import { validateLayout } from '../layout-check';
 
@@ -38,6 +38,19 @@ function totalDirectionChange(
   nodes: readonly LandmassNode[],
   edges: readonly LandmassEdge[]
 ): number {
+  return directionDeltas(nodes, edges).reduce((sum, delta) => sum + Math.abs(delta), 0);
+}
+
+/** Net direction change keeping the sign: hooks to one side accumulate. */
+function netDirectionChange(
+  nodes: readonly LandmassNode[],
+  edges: readonly LandmassEdge[]
+): number {
+  return directionDeltas(nodes, edges).reduce((sum, delta) => sum + delta, 0);
+}
+
+/** Signed turns between consecutive edges, wrapped to [-PI, PI]. */
+function directionDeltas(nodes: readonly LandmassNode[], edges: readonly LandmassEdge[]): number[] {
   const angles = edges.map(edge => {
     const from = nodes.find(node => node.id === edge.from);
     const to = nodes.find(node => node.id === edge.to);
@@ -45,12 +58,105 @@ function totalDirectionChange(
       ? Math.atan2(to.position.y - from.position.y, to.position.x - from.position.x)
       : 0;
   });
-  let total = 0;
+  const deltas: number[] = [];
   for (let index = 1; index < angles.length; index++) {
     const delta = angles[index] - angles[index - 1];
-    total += Math.abs(Math.atan2(Math.sin(delta), Math.cos(delta)));
+    deltas.push(Math.atan2(Math.sin(delta), Math.cos(delta)));
   }
-  return total;
+  return deltas;
+}
+
+/**
+ * Sharpest direction change of the main corridor: between consecutive samples
+ * along an edge (kinks inside an edge span) and between adjacent node chords
+ * at doubly-connected nodes (kinks coinciding with a node). Branch arms are
+ * not main corridor geometry, so they never count.
+ */
+function maxJointTurn(draft: StructureDraft): number {
+  const byId = new Map(draft.nodes.map(node => [node.id, node]));
+  const mains = draft.edges.filter(edge => !edge.id.includes('-b'));
+  const turn = (first: number, second: number): number => {
+    const delta = second - first;
+    return Math.abs(Math.atan2(Math.sin(delta), Math.cos(delta)));
+  };
+  const direction = (from: WorldPoint, to: WorldPoint): number =>
+    Math.atan2(to.y - from.y, to.x - from.x);
+  let sharpest = 0;
+  for (const edge of mains) {
+    const from = byId.get(edge.from);
+    const to = byId.get(edge.to);
+    if (!from || !to) {
+      continue;
+    }
+    const points = [from.position, ...(edge.controlPoints ?? []), to.position];
+    for (let index = 2; index < points.length; index++) {
+      sharpest = Math.max(
+        sharpest,
+        turn(
+          direction(points[index - 2], points[index - 1]),
+          direction(points[index - 1], points[index])
+        )
+      );
+    }
+  }
+  const incident = new Map<string, LandmassNode[]>();
+  for (const edge of mains) {
+    const from = byId.get(edge.from);
+    const to = byId.get(edge.to);
+    if (!from || !to) {
+      continue;
+    }
+    incident.set(edge.from, [...(incident.get(edge.from) ?? []), to]);
+    incident.set(edge.to, [...(incident.get(edge.to) ?? []), from]);
+  }
+  for (const [id, neighbours] of incident) {
+    const node = byId.get(id);
+    const [first, second] = neighbours;
+    if (!node || neighbours.length !== 2 || !first || !second) {
+      continue;
+    }
+    // A straight run leaves the two chords opposite; a kink closes them.
+    sharpest = Math.max(
+      sharpest,
+      Math.PI -
+        turn(direction(node.position, first.position), direction(node.position, second.position))
+    );
+  }
+  return sharpest;
+}
+
+/** Branch arms of a draft: the parent node and the first node of each arm. */
+function branchArms(draft: StructureDraft): { parent: LandmassNode; tip: LandmassNode }[] {
+  const byId = new Map(draft.nodes.map(node => [node.id, node]));
+  const arms = new Map<number, { parent: LandmassNode; tip: LandmassNode }>();
+  for (const edge of draft.edges) {
+    const match = /-b(\d+)e1$/.exec(edge.id);
+    const parent = byId.get(edge.from);
+    const tip = byId.get(edge.to);
+    if (match && parent && tip) {
+      arms.set(Number(match[1]), { parent, tip });
+    }
+  }
+  return [...arms.values()];
+}
+
+/** Deflection of the arm from the parent corridor, in radians. */
+function armDeflection(
+  mains: readonly LandmassNode[],
+  arm: { parent: LandmassNode; tip: LandmassNode }
+): number {
+  const parentIndex = mains.findIndex(node => node.id === arm.parent.id);
+  const neighbour = mains[Math.min(mains.length - 1, parentIndex + 1)] ?? arm.parent;
+  const along = Math.atan2(
+    neighbour.position.y - arm.parent.position.y,
+    neighbour.position.x - arm.parent.position.x
+  );
+  const outward = Math.atan2(
+    arm.tip.position.y - arm.parent.position.y,
+    arm.tip.position.x - arm.parent.position.x
+  );
+  const delta = outward - along;
+  return Math.abs(Math.atan2(Math.sin(delta), Math.cos(delta)));
 }
 
 /** Highest number of edges meeting in one node. */
@@ -66,8 +172,8 @@ describe('landmass topology', () => {
       for (const seed of SEEDS) {
         const draft = structure(archetype, seed);
 
-        expect(draft.nodes.length).toBeGreaterThanOrEqual(2);
-        expect(draft.edges.length).toBeGreaterThanOrEqual(1);
+        expect(draft.nodes.length).toBeGreaterThanOrEqual(1);
+        expect(draft.edges.length).toBeGreaterThanOrEqual(draft.nodes.length - 1);
         expect(() => validateLayout(layoutFor(draft))).not.toThrow();
       }
     }
@@ -90,8 +196,33 @@ describe('landmass topology', () => {
       const height = bounds.maxY - bounds.minY + 2 * widest;
 
       expect(Math.max(width, height) / Math.min(width, height)).toBeLessThan(3);
-      expect(round.nodes.length).toBeLessThanOrEqual(6);
-      expect(slenderness(structure('elongated', seed))).toBeGreaterThan(4);
+      expect(round.nodes.length).toBeLessThanOrEqual(3);
+      expect(slenderness(structure('elongated', seed))).toBeGreaterThan(2.5);
+    }
+  });
+
+  it('keeps round between one and three nodes', () => {
+    const counts = new Set<number>();
+    for (const seed of SEEDS) {
+      const round = structure('round', seed);
+
+      expect(round.nodes.length).toBeGreaterThanOrEqual(1);
+      expect(round.nodes.length).toBeLessThanOrEqual(3);
+      expect(round.edges.length).toBe(Math.max(0, round.nodes.length - 1));
+      expect(() => validateLayout(layoutFor(round))).not.toThrow();
+      counts.add(round.nodes.length);
+    }
+
+    expect(counts.has(1)).toBe(true);
+  });
+
+  it('creases the irregular intent into boxy joints, unlike round', () => {
+    // A surviving kink measures the full joint angle; a kink filtered next to
+    // a node still leaves two partial turns adding up to it, so every joint
+    // reads at least half the smallest joint angle (1.2 / 2).
+    for (const seed of SEEDS) {
+      expect(maxJointTurn(structure('irregular', seed))).toBeGreaterThan(0.5);
+      expect(maxJointTurn(structure('round', seed))).toBeLessThan(0.5);
     }
   });
 
@@ -163,6 +294,21 @@ describe('landmass topology', () => {
     }
   });
 
+  it('sticks one or two irregular branches out at a right angle', () => {
+    for (const seed of SEEDS) {
+      const draft = structure('irregular', seed);
+      const mains = draft.nodes.filter(node => /-n\d+$/.test(node.id));
+      const arms = branchArms(draft);
+
+      expect(arms.length).toBeGreaterThanOrEqual(1);
+      expect(arms.length).toBeLessThanOrEqual(2);
+      for (const arm of arms) {
+        expect(armDeflection(mains, arm)).toBeGreaterThan(Math.PI / 2 - 0.5);
+        expect(armDeflection(mains, arm)).toBeLessThan(Math.PI / 2 + 0.5);
+      }
+    }
+  });
+
   it('grows real branches for the branched intent', () => {
     for (const seed of SEEDS) {
       const branched = structure('branched', seed);
@@ -171,14 +317,52 @@ describe('landmass topology', () => {
     }
   });
 
-  it('bends the winding intent more than a straight ridge', () => {
+  it('bends every elongated visibly, varied, sometimes twice to one side', () => {
+    const totals: number[] = [];
+    let hooked = 0;
+    for (const seed of SEEDS) {
+      const draft = structure('elongated', seed);
+      const mains = draft.edges.filter(edge => !edge.id.includes('-b'));
+      totals.push(totalDirectionChange(draft.nodes, mains));
+      if (Math.abs(netDirectionChange(draft.nodes, mains)) > 2) {
+        hooked++;
+      }
+    }
+
+    expect(Math.min(...totals)).toBeGreaterThan(0.4);
+    expect(Math.max(...totals) - Math.min(...totals)).toBeGreaterThan(3);
+    expect(hooked).toBeGreaterThanOrEqual(10);
+  });
+
+  it('varies the segment thickness, most on elongated ridges', () => {
+    const spread = (archetype: LandmassArchetype): number[] => {
+      const ratios: number[] = [];
+      for (const seed of SEEDS) {
+        const draft = structure(archetype, seed);
+        const radii = draft.nodes.filter(node => /-n\d+$/.test(node.id)).map(node => node.radius);
+        ratios.push(Math.max(...radii) / Math.min(...radii));
+      }
+      return ratios;
+    };
+    const mean = (values: readonly number[]): number =>
+      values.reduce((sum, value) => sum + value, 0) / values.length;
+
+    const elongated = spread('elongated');
+    expect(Math.min(...elongated)).toBeGreaterThan(1.5);
+    expect(mean(elongated)).toBeGreaterThan(2.2);
+    for (const archetype of ['irregular', 'branched', 'lagoon'] as const) {
+      expect(mean(spread(archetype))).toBeGreaterThan(1.5);
+    }
+  });
+
+  it('bends the winding intent more than a compact one', () => {
     for (const seed of SEEDS) {
       const winding = structure('winding', seed);
-      const elongated = structure('elongated', seed);
+      const round = structure('round', seed);
 
       expect(totalDirectionChange(winding.nodes, winding.edges)).toBeGreaterThan(0.5);
       expect(totalDirectionChange(winding.nodes, winding.edges)).toBeGreaterThan(
-        totalDirectionChange(elongated.nodes, elongated.edges)
+        totalDirectionChange(round.nodes, round.edges)
       );
     }
   });

@@ -236,7 +236,7 @@ describe('MapGenerator', () => {
   it('hands out a read-only snapshot of the completed stage data', async () => {
     const config: MapConfig = {
       world: {
-        dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
+        dimensions: { widthMeters: 2000, heightMeters: 2000, sampleWidth: 16, sampleHeight: 16 },
         seed: 7,
         shape: 'disc',
       },

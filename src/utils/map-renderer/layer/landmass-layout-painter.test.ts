@@ -386,6 +386,28 @@ describe('landmass layout painter geometry', () => {
     expect(calls).toContain('bezierCurveTo');
   });
 
+  it('fills the disc of a structure without edges', () => {
+    const { calls, context } = recorder();
+    const single: LandmassLayout = {
+      structures: [
+        {
+          id: 'landmass-1',
+          archetype: 'round',
+          nodes: [node('n1', 0.5, 0.5, 0.05)],
+          edges: [],
+          shelfId: 'shelf-1',
+        },
+      ],
+      shelves: layout.shelves,
+    };
+
+    paintLandmassLayout(context, projection, { layout: single, size: { width: 11, height: 11 } });
+
+    expect(calls).toContain('ellipse');
+    expect(calls).toContain('fill');
+    expect(calls).toContain('arc');
+  });
+
   it('places one helper rib halfway between consecutive real nodes', () => {
     expect(extraRibIndexes(runWith(9, [0, 8], false))).toEqual([4]);
     expect(extraRibIndexes(runWith(3, [0, 2], false))).toEqual([1]);

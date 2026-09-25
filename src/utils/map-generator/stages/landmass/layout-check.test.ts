@@ -58,9 +58,13 @@ describe('validateLayout', () => {
     expect(() =>
       validateLayout(layout({ nodes: [node('n1', NaN, 0.1), node('n2', 0.2, 0.1)] }))
     ).toThrow('invalid coordinates');
-    expect(() => validateLayout(layout({ nodes: [node('n1', 0.1, 0.1)] }))).toThrow(
-      'at least two nodes'
-    );
+    expect(() => validateLayout(layout({ nodes: [], edges: [] }))).toThrow('at least one node');
+  });
+
+  it('accepts a single node without edges', () => {
+    expect(() =>
+      validateLayout(layout({ nodes: [node('n1', 0.1, 0.1)], edges: [] }))
+    ).not.toThrow();
   });
 
   it('rejects non-finite radii and control points', () => {
