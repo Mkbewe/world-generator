@@ -128,8 +128,7 @@ export interface LandmassLayout {
 export type ShelfConfig = Omit<ShelfDefinition, 'id'>;
 
 /** Shape intents the layout can give a structure. */
-export type LandmassArchetype =
-  'round' | 'irregular' | 'elongated' | 'winding' | 'branched' | 'lagoon' | 'atoll';
+export type LandmassArchetype = 'round' | 'irregular' | 'elongated' | 'branched' | 'lagoon';
 
 /** Controls the landmass layout stage. */
 export interface LandmassConfig {

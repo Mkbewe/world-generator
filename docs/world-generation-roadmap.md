@@ -436,15 +436,14 @@ interface LandmassLayout {
 }
 ```
 
-- Archetypy to intencje kształtu: `round`, `irregular`, `elongated`, `winding`,
-  `branched`, `lagoon`, `atoll`. Każdy jest przepisem z losowanymi zakresami
+- Archetypy to intencje kształtu: `round`, `irregular`, `elongated`,
+  `branched`, `lagoon`. Każdy jest przepisem z losowanymi zakresami
   (długość, skręt, falowanie, promień, zmienność grubości, zwężenie końców,
   odgałęzienia i ich kąt) i własnym zakresem liczby węzłów. Receptura wybiera
-  też buildera korytarza: `sine` (gładkie grzbiety), `walk` (węże), `angular`
-  (bryłowe łamańce irregular) albo `ring` (lagoonowe pierścienie). `round`
-  schodzi do jednego węzła, `lagoon` czyta mały (`size: 0,5`), a pula
-  formularza łączy `elongated` z `winding` i `lagoon` z `atoll`, więc pięć
-  intencji kryje siedem przepisów.
+  też buildera korytarza: `sine` (gładkie grzbiety i łuki) albo `angular`
+  (bryłowe łamańce irregular). `round` schodzi do jednego węzła, `lagoon`
+  czyta mały (`size: 0,5`) i domyka się w niemal pierścień w górnej części
+  zakresu skrętu, a `elongated` obejmuje od cienkich węży po grubsze haki.
 - Z gęstego korytarza powstaje zredukowana łamana: węzły plus punkty kontrolne
   (do 6 na krawędź oraz zachowane załamania `angular`, więc bryły nie gubią
   narożników). Ta sama łamana jest osią szkieletu, geometrią kolizji

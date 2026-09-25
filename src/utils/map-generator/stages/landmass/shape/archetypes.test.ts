@@ -10,7 +10,7 @@ describe('landmass archetypes', () => {
       );
 
       expect(ranges.every(range => range[0] <= range[1])).toBe(true);
-      expect(['sine', 'walk', 'angular', 'ring']).toContain(recipe.corridor);
+      expect(['sine', 'angular']).toContain(recipe.corridor);
       expect(recipe.length[0]).toBeGreaterThan(0);
       expect(recipe.radius[0]).toBeGreaterThan(0);
       expect(recipe.taper[0]).toBeGreaterThan(0);
@@ -25,8 +25,8 @@ describe('landmass archetypes', () => {
   });
 
   it('narrows unknown archetype names', () => {
-    expect(isLandmassArchetype('atoll')).toBe(true);
-    expect(isLandmassArchetype('l')).toBe(false);
+    expect(isLandmassArchetype('elongated')).toBe(true);
+    expect(isLandmassArchetype('unknown')).toBe(false);
     expect(isLandmassArchetype(42)).toBe(false);
   });
 });

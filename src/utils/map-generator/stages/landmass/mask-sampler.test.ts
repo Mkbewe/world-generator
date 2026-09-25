@@ -147,7 +147,7 @@ describe('insideWorldShare', () => {
     // Both nodes sit well inside the world, but the edge bends far outside.
     const bent: GeologicalStructure = {
       id: 'bent',
-      archetype: 'winding',
+      archetype: 'elongated',
       nodes: [
         { id: 'bent-n1', position: { x: 0.2, y: 0.5 }, radius: 0.02 },
         { id: 'bent-n2', position: { x: 0.8, y: 0.5 }, radius: 0.02 },

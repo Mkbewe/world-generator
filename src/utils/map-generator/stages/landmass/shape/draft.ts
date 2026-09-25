@@ -5,22 +5,19 @@ export type ArchetypeRange = readonly [min: number, max: number];
 
 /**
  * How a recipe turns its ranges into a corridor: `sine` integrates one total
- * turn with an oscillation, `walk` chains a few independent bends, `angular`
- * joins straight runs with discrete kinks, `ring` closes into a periodic
- * loop. The recipe selects the builder — never the archetype name — so a new
- * shape is a new recipe row, not an engine edit.
+ * turn with an oscillation, `angular` joins straight runs with discrete
+ * kinks. The recipe selects the builder — never the archetype name — so a
+ * new shape is a new recipe row, not an engine edit.
  */
-export type CorridorKind = 'sine' | 'walk' | 'angular' | 'ring';
+export type CorridorKind = 'sine' | 'angular';
 
 /**
  * Parameter ranges of one shape intent. The generator samples every range, so
  * two structures of the same archetype still differ in size, bend and detail.
  * Each builder reads the shared fields in its own way: `bends` counts sine
- * half-waves for `sine`/`ring` but pieces for `walk`/`angular`; `turn` is a
- * total change for `sine`, a per-piece angle for `walk` and a per-joint kink
- * for `angular`; `wobble` is an oscillation amplitude for `sine`/`ring` but
- * a straight-run chance for `walk`. The `ring` builder ignores `turn` and
- * the `angular` builder ignores `wobble`.
+ * half-waves for `sine` but pieces for `angular`; `turn` is a total change
+ * for `sine` and a per-joint kink for `angular`; `wobble` is an oscillation
+ * amplitude for `sine` that the `angular` builder ignores.
  */
 export interface ArchetypeRecipe {
   /** Corridor builder behind this recipe. */

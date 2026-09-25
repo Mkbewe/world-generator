@@ -12,7 +12,7 @@ const CORRIDOR_STEP = 0.02;
 const MIN_BRANCH_NODES = 2;
 const MAX_BRANCH_NODES = 5;
 
-/** Control points kept per edge; enough samples preserve winding corridors. */
+/** Control points kept per edge; enough samples preserve bent corridors. */
 const MAX_CONTROL_POINTS = 6;
 
 /** Samples closer than this to a node are the node, not control points. */
@@ -69,9 +69,7 @@ const CORRIDOR_BUILDERS: Record<
   (recipe: ArchetypeRecipe, random: SeededRandom) => Corridor
 > = {
   sine: buildSineCorridor,
-  walk: buildWalkCorridor,
   angular: buildAngularCorridor,
-  ring: buildRingCorridor,
 };
 
 /** Dense corridor of a structure, built by the strategy its recipe selects. */
@@ -82,7 +80,7 @@ function buildCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor 
 /**
  * Sine corridor: the direction integrates a total turn, an oscillation and a
  * random opening angle, so one recipe covers straight ridges, gentle curves
- * and S-bends. Open by construction; closed loops belong to `ring`.
+ * and S-bends. Open by construction.
  */
 function buildSineCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
   const length = sampleRange(recipe.length, random);
@@ -103,44 +101,6 @@ function buildSineCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corri
     x += Math.cos(direction) * step;
     y += Math.sin(direction) * step;
     points.push({ x, y });
-  }
-  return { points, closed: false };
-}
-
-/**
- * Walk corridor: a random walk of a few bends instead of one sine — every
- * piece has its own length and turn angle, and some pieces stay nearly straight
- * between the corners, so no two walks repeat the same way. Here `bends` is
- * the piece count, `turn` the per-piece angle and `wobble` the chance of a
- * straight run.
- */
-function buildWalkCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
-  const length = sampleRange(recipe.length, random);
-  const pieces = Math.max(2, Math.round(sampleRange(recipe.bends, random)));
-  const straightChance = Math.max(0, Math.min(0.5, sampleRange(recipe.wobble, random)));
-  const weights = Array.from({ length: pieces }, () => 0.5 + random.next());
-  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-  const points: WorldPoint[] = [{ x: 0, y: 0 }];
-  let x = 0;
-  let y = 0;
-  let direction = random.next() * Math.PI * 2;
-  let sign = random.next() < 0.5 ? -1 : 1;
-
-  for (let piece = 0; piece < pieces; piece++) {
-    const pieceLength = (length * weights[piece]) / totalWeight;
-    const straight = random.next() < straightChance;
-    const turn = straight ? (random.next() - 0.5) * 0.4 : sign * sampleRange(recipe.turn, random);
-    if (random.next() < 0.7) {
-      sign = -sign;
-    }
-    const steps = Math.max(4, Math.ceil(pieceLength / CORRIDOR_STEP));
-    const step = pieceLength / steps;
-    for (let index = 0; index < steps; index++) {
-      direction += turn / steps;
-      x += Math.cos(direction) * step;
-      y += Math.sin(direction) * step;
-      points.push({ x, y });
-    }
   }
   return { points, closed: false };
 }
@@ -179,44 +139,6 @@ function buildAngularCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Co
     }
   }
   return { points, closed: false, creases };
-}
-
-/**
- * Ring corridor: the recipe asks for a closed loop explicitly instead of a
- * turn range crossing a magic threshold. `turn` is not sampled here, so a
- * ring draws different random offsets than the sine path would.
- */
-function buildRingCorridor(recipe: ArchetypeRecipe, random: SeededRandom): Corridor {
-  const length = sampleRange(recipe.length, random);
-  const wobble = sampleRange(recipe.wobble, random);
-  const bends = sampleRange(recipe.bends, random);
-  const phase = random.next() * Math.PI * 2;
-  const direction0 = random.next() * Math.PI * 2;
-  return { points: closedRing(length, wobble, bends, phase, direction0), closed: true };
-}
-
-/**
- * Periodic ring: equal angles plus a radial wave that itself closes, so the
- * seam has the same position, tangent and width as the start.
- */
-function closedRing(
-  length: number,
-  wobble: number,
-  bends: number,
-  phase: number,
-  direction0: number
-): WorldPoint[] {
-  const radius = length / TAU;
-  const steps = Math.max(16, Math.ceil(length / CORRIDOR_STEP));
-  const waves = Math.max(1, Math.round(bends));
-  const points: WorldPoint[] = [];
-  for (let index = 0; index < steps; index++) {
-    const at = index / steps;
-    const angle = direction0 + TAU * at;
-    const local = radius * (1 + 0.45 * wobble * Math.sin(TAU * waves * at + phase));
-    points.push({ x: Math.cos(angle) * local, y: Math.sin(angle) * local });
-  }
-  return points;
 }
 
 interface RadiusShape {
@@ -264,7 +186,7 @@ function corridorNodes(
     closed: corridor.closed,
   };
   // The recipe decides how many nodes its corridor carries: a ridge stays
-  // legible with few, a ring needs enough to close smoothly (plan §11.5).
+  // legible with few, a wide arc needs enough to read smoothly.
   const spacing = sampleRange(recipe.spacing, random);
   const count = Math.min(
     recipe.nodes[1],
