@@ -220,7 +220,7 @@ describe('landmass layout painter geometry', () => {
   it('merges a chain of edges into one axis and one corridor', () => {
     const structure = {
       id: 'chain',
-      archetype: 'winding' as const,
+      archetype: 'elongated' as const,
       nodes: [node('a', 0.2, 0.5), node('b', 0.5, 0.5, 0.02), node('c', 0.8, 0.5, 0.02)],
       edges: [edge('e1', 'a', 'b'), edge('e2', 'b', 'c')],
       shelfId: 'shelf-1',
@@ -238,7 +238,7 @@ describe('landmass layout painter geometry', () => {
   it('keeps one continuous corridor at the authored width through a tight arc', () => {
     const wide = {
       id: 'arc',
-      archetype: 'winding' as const,
+      archetype: 'elongated' as const,
       nodes: [node('a', 0.2, 0.5, 0.2), node('b', 0.5, 0.5, 0.2), node('c', 0.5, 0.8, 0.2)],
       edges: [edge('e1', 'a', 'b'), edge('e2', 'b', 'c')],
       shelfId: 'shelf-1',
@@ -252,10 +252,10 @@ describe('landmass layout painter geometry', () => {
     expect(Math.hypot(innerRail.x - middle.x, innerRail.y - middle.y)).toBeCloseTo(20, 5);
   });
 
-  it('keeps a continuous helper ribbon when a winding axis folds over itself', () => {
+  it('keeps a continuous helper ribbon when a folded axis crosses itself', () => {
     const folded = {
       id: 'folded',
-      archetype: 'winding' as const,
+      archetype: 'elongated' as const,
       nodes: [
         node('a', 0.2, 0.2, 0.03),
         node('b', 0.8, 0.8, 0.03),
@@ -274,7 +274,7 @@ describe('landmass layout painter geometry', () => {
   it('closes a ring into one chain and repeats its first point', () => {
     const structure = {
       id: 'ring',
-      archetype: 'atoll' as const,
+      archetype: 'lagoon' as const,
       nodes: [
         node('a', 0.3, 0.3, 0.02),
         node('b', 0.7, 0.3, 0.02),
@@ -361,7 +361,7 @@ describe('landmass layout painter geometry', () => {
       structures: [
         {
           id: 'ring',
-          archetype: 'atoll',
+          archetype: 'lagoon',
           nodes: [
             node('a', 0.3, 0.3, 0.04),
             node('b', 0.7, 0.3, 0.04),

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { ArchetypePoolField } from './archetype-pool-field';
 import { LANDMASS_FORM_DEFAULTS, useLandmassFormStore } from '../../../../../stores';
-import { LANDMASS_POOL } from '../../../../../utils/map-generator/stages/landmass';
+import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass';
 import { DEFAULT_LANDMASS_CONFIG } from '../../../../../utils/map-generator/stages/landmass/defaults';
 
 function renderField() {
@@ -23,7 +23,7 @@ describe('ArchetypePoolField', () => {
   it('enables every archetype by default', () => {
     renderField();
 
-    expect(screen.getAllByRole('checkbox')).toHaveLength(LANDMASS_POOL.length);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(LANDMASS_ARCHETYPES.length);
     expect(screen.getByRole('checkbox', { name: 'Round' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Lagoon' })).toBeChecked();
   });

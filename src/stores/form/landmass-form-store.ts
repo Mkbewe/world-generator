@@ -1,4 +1,7 @@
-import { DEFAULT_LANDMASS_CONFIG, LANDMASS_POOL } from '../../utils/map-generator/stages/landmass';
+import {
+  DEFAULT_LANDMASS_CONFIG,
+  LANDMASS_ARCHETYPES,
+} from '../../utils/map-generator/stages/landmass';
 import type { LandmassArchetype, LandmassConfig } from '../../utils/map-generator/types';
 import { createStore } from '../create-store';
 
@@ -15,7 +18,7 @@ interface LandmassFormState {
 
 /** Archetypes enabled in the pool; an undefined pool means every archetype. */
 export function selectedArchetypes(landmasses: LandmassConfig): readonly LandmassArchetype[] {
-  return landmasses.archetypes ?? LANDMASS_POOL;
+  return landmasses.archetypes ?? LANDMASS_ARCHETYPES;
 }
 
 export const useLandmassFormStore = createStore<LandmassFormState>(set => ({
@@ -25,7 +28,7 @@ export const useLandmassFormStore = createStore<LandmassFormState>(set => ({
   setDiversity: diversity => set(state => ({ landmasses: { ...state.landmasses, diversity } })),
   setArchetypes: archetypes =>
     set(state => {
-      const selected = LANDMASS_POOL.filter(item => archetypes.includes(item));
+      const selected = LANDMASS_ARCHETYPES.filter(item => archetypes.includes(item));
       if (selected.length === 0) {
         // An empty pool would draw no structures at all, so the last intent stays.
         return state;
@@ -33,7 +36,7 @@ export const useLandmassFormStore = createStore<LandmassFormState>(set => ({
       return {
         landmasses: {
           ...state.landmasses,
-          archetypes: selected.length === LANDMASS_POOL.length ? undefined : [...selected],
+          archetypes: selected.length === LANDMASS_ARCHETYPES.length ? undefined : [...selected],
         },
       };
     }),

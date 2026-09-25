@@ -21,7 +21,7 @@ const GROUP_LIMIT = DEFAULT_LANDMASS_CONFIG.shelf.width + 0.1;
 /** Wide seed pool: the placement contract must hold for every world. */
 const SEEDS = Array.from({ length: 100 }, (_, index) => index + 1);
 
-const ARCHETYPES: readonly LandmassArchetype[] = ['elongated', 'branched', 'winding', 'round'];
+const ARCHETYPES: readonly LandmassArchetype[] = ['elongated', 'branched', 'irregular', 'round'];
 
 /** Disc world mask, generated from the same shape the stage uses. */
 function discSampler(size = 64) {

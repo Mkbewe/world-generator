@@ -1,12 +1,4 @@
-export {
-  ARCHETYPE_RECIPES,
-  isLandmassArchetype,
-  isLandmassPoolArchetype,
-  LANDMASS_ARCHETYPES,
-  LANDMASS_POOL,
-  poolRecipes,
-} from './shape/archetypes';
-export type { LandmassPoolArchetype } from './shape/archetypes';
+export { ARCHETYPE_RECIPES, isLandmassArchetype, LANDMASS_ARCHETYPES } from './shape/archetypes';
 export { LandmassLayoutStage } from './stage';
 export { isLandmassLayout, validateLayout, validatePlacement } from './layout-check';
 export { interpolatedRadii, structureSegments } from './influence';

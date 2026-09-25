@@ -3,7 +3,7 @@ import {
   selectedArchetypes,
   useLandmassFormStore,
 } from './landmass-form-store';
-import { LANDMASS_POOL } from '../../utils/map-generator/stages/landmass';
+import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass';
 import { DEFAULT_LANDMASS_CONFIG } from '../../utils/map-generator/stages/landmass/defaults';
 
 describe('useLandmassFormStore', () => {
@@ -15,7 +15,7 @@ describe('useLandmassFormStore', () => {
     const { landmasses } = useLandmassFormStore.getState();
 
     expect(landmasses).toEqual(DEFAULT_LANDMASS_CONFIG);
-    expect(selectedArchetypes(landmasses)).toEqual([...LANDMASS_POOL]);
+    expect(selectedArchetypes(landmasses)).toEqual([...LANDMASS_ARCHETYPES]);
   });
 
   it('updates the count, size and diversity the stage renders', () => {
@@ -33,13 +33,13 @@ describe('useLandmassFormStore', () => {
 
   it('narrows the archetype pool and drops it when everything is enabled', () => {
     const { setArchetypes } = useLandmassFormStore.getState();
-    setArchetypes(LANDMASS_POOL.filter(archetype => archetype !== 'round'));
+    setArchetypes(LANDMASS_ARCHETYPES.filter(archetype => archetype !== 'round'));
 
     expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(
-      LANDMASS_POOL.filter(archetype => archetype !== 'round')
+      LANDMASS_ARCHETYPES.filter(archetype => archetype !== 'round')
     );
 
-    setArchetypes([...LANDMASS_POOL]);
+    setArchetypes([...LANDMASS_ARCHETYPES]);
 
     expect(useLandmassFormStore.getState().landmasses.archetypes).toBeUndefined();
   });

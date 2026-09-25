@@ -1,11 +1,5 @@
 import { placeStructures } from './search/placement';
-import {
-  ARCHETYPE_RECIPES,
-  isLandmassArchetype,
-  isLandmassPoolArchetype,
-  LANDMASS_POOL,
-  poolRecipes,
-} from './shape/archetypes';
+import { ARCHETYPE_RECIPES, isLandmassArchetype, LANDMASS_ARCHETYPES } from './shape/archetypes';
 import { buildStructure, scaleDraft } from './shape/corridor';
 import { planSizes } from './shape/size-plan';
 import {
@@ -204,14 +198,8 @@ function pickArchetype(
   pool: readonly LandmassArchetype[] | undefined,
   random: SeededRandom
 ): LandmassArchetype {
-  const options = pool ?? LANDMASS_POOL;
-  const picked = options[random.nextInteger(0, options.length - 1)];
-  if (isLandmassPoolArchetype(picked)) {
-    const recipes = poolRecipes(picked);
-    return recipes[random.nextInteger(0, recipes.length - 1)];
-  }
-  // A recipe stored explicitly (e.g. winding before the pool merge) still draws itself.
-  return picked;
+  const options = pool ?? LANDMASS_ARCHETYPES;
+  return options[random.nextInteger(0, options.length - 1)];
 }
 
 function isNormalized(value: number): boolean {
