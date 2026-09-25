@@ -74,10 +74,12 @@ export interface StructureDraft {
   readonly archetype: LandmassArchetype;
   readonly nodes: readonly LandmassNode[];
   readonly edges: readonly LandmassEdge[];
+  readonly mainNodeCount?: number;
 }
 
 /** Geometry placement may move; the rest of a structure passes through. */
 export interface PlaceableStructure {
   readonly nodes: readonly LandmassNode[];
   readonly edges: readonly LandmassEdge[];
+  readonly mainNodeCount?: number;
 }

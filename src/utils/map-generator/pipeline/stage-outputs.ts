@@ -1,11 +1,16 @@
 import { isLandmassLayout } from '../stages/landmass';
+import { isStructureProfiles, isStructureRegions } from '../stages/structure-character';
 import type { MapState, StageData } from '../types';
 
 /** Raster keys the generator owns. The layer catalog may display them, not define them. */
 export const RASTER_OUTPUT_KEYS = ['worldMask', 'noiseMap', 'macroRegionIdMap'] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
-export const DOMAIN_OUTPUT_KEYS = ['landmassLayout'] as const;
+export const DOMAIN_OUTPUT_KEYS = [
+  'landmassLayout',
+  'structureProfiles',
+  'structureRegions',
+] as const;
 
 export type RasterOutputKey = (typeof RASTER_OUTPUT_KEYS)[number];
 export type DomainOutputKey = (typeof DOMAIN_OUTPUT_KEYS)[number];
@@ -13,6 +18,8 @@ export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
 
 const domainReaders = {
   landmassLayout: isLandmassLayout,
+  structureProfiles: isStructureProfiles,
+  structureRegions: isStructureRegions,
 } satisfies {
   [Key in DomainOutputKey]: (value: unknown) => value is NonNullable<MapState[Key]>;
 };
@@ -27,10 +34,20 @@ export function selectDomainOutputs(data: object): Partial<Pick<MapState, Domain
     }
     const value = record[key];
     if (domainReaders[key](value)) {
-      outputs[key] = value;
+      assignDomainOutput(outputs, key, value);
     }
   }
   return outputs;
+}
+
+/** Stores one guarded value under a key known only at runtime. */
+function assignDomainOutput<Key extends DomainOutputKey>(
+  outputs: Partial<Pick<MapState, DomainOutputKey>>,
+  key: Key,
+  value: unknown
+): void {
+  // The value was accepted by `domainReaders[key]` right before this call.
+  outputs[key] = value as NonNullable<MapState[Key]>;
 }
 
 /**

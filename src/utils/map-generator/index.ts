@@ -7,6 +7,8 @@ export { createWorldSpace, planarDistance, spaceOf } from './space';
 export type { SampleGrid, WorldSpace } from './space';
 export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region';
 export { isLandmassLayout } from './stages/landmass';
+export { DEFAULT_STRUCTURE_CHARACTER_CONFIG } from './stages/structure-character';
+export { isStructureProfiles, isStructureRegions } from './stages/structure-character';
 export { selectDirtyStageIds } from './pipeline/selective-regeneration';
 export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './pipeline/stage-definitions';
 export type { MapConfigKey, PipelineStageId, StageInfo } from './pipeline/stage-definitions';
@@ -54,5 +56,9 @@ export type {
   StageMetric,
   StageMetrics,
   StageStatistics,
+  StructureCharacterConfig,
+  StructureRegionDefinition,
+  StructureTerrainProfile,
+  TerrainProfile,
   WorldConfig,
 } from './types';

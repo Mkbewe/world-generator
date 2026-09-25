@@ -15,7 +15,13 @@ const request: PipelineWorkerGenerateRequest = {
     noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   },
   reuse: {
-    dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
+    dirtyStageIds: [
+      'world-shape',
+      'noise',
+      'macro-region',
+      'landmass-layout',
+      'structure-character',
+    ],
     cachedState: {},
   },
 };
@@ -62,6 +68,7 @@ describe('generation worker', () => {
         { id: 'noise', name: 'Noise generation' },
         { id: 'macro-region', name: 'Macro region generation' },
         { id: 'landmass-layout', name: 'Landmass layout generation' },
+        { id: 'structure-character', name: 'Structure character generation' },
       ],
     });
     expect(message?.type).toBe('result');
@@ -70,6 +77,7 @@ describe('generation worker', () => {
     }
     expect(message.result).not.toHaveProperty('layers');
     expect(message.result.statistics.map(stage => stage.status)).toEqual([
+      'completed',
       'completed',
       'completed',
       'completed',
@@ -100,9 +108,10 @@ describe('generation worker', () => {
       'skipped',
       'completed',
       'skipped',
+      'skipped',
     ]);
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
-      ['world-shape', 'noise', 'landmass-layout']
+      ['world-shape', 'noise', 'landmass-layout', 'structure-character']
     );
   });
 

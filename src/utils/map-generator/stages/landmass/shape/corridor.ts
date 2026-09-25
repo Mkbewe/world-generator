@@ -36,7 +36,7 @@ export function buildStructure(
   const nodes = [...main.nodes, ...branches.nodes];
   const edges = [...main.edges, ...branches.edges];
 
-  return { id, archetype, nodes, edges };
+  return { id, archetype, nodes, edges, mainNodeCount: main.nodes.length };
 }
 
 /**

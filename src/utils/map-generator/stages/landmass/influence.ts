@@ -1,6 +1,13 @@
 import type { PlaceableStructure } from './shape/draft';
 import { planarDistance } from '../../space';
-import type { WorldPoint } from '../../types';
+import type { LandmassNode, WorldPoint } from '../../types';
+
+/** Nodes of the main corridor, without branch arms. */
+export function mainChainNodes(structure: PlaceableStructure): readonly LandmassNode[] {
+  return structure.mainNodeCount !== undefined
+    ? structure.nodes.slice(0, structure.mainNodeCount)
+    : structure.nodes;
+}
 
 export interface Bounds {
   readonly minX: number;

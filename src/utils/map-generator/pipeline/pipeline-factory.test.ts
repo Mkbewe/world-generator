@@ -11,6 +11,7 @@ describe('createMapGenerator', () => {
       'noise',
       'macro-region',
       'landmass-layout',
+      'structure-character',
     ]);
 
     const config: MapConfig = {
@@ -29,6 +30,7 @@ describe('createMapGenerator', () => {
       'noise',
       'macro-region',
       'landmass-layout',
+      'structure-character',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
@@ -76,6 +78,18 @@ describe('createMapGenerator', () => {
         reads: ['worldMask'],
         writes: ['landmassLayout'],
         configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses'],
+      },
+      {
+        id: 'structure-character',
+        reads: ['landmassLayout'],
+        writes: ['structureProfiles', 'structureRegions'],
+        configKeys: [
+          'world.seed',
+          'world.shape',
+          'world.dimensions',
+          'landmasses',
+          'structureCharacter',
+        ],
       },
     ]);
   });

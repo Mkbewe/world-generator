@@ -23,6 +23,7 @@ describe('selectDirtyStageIds', () => {
       'noise',
       'macro-region',
       'landmass-layout',
+      'structure-character',
     ]);
   });
 
@@ -46,7 +47,7 @@ describe('selectDirtyStageIds', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
-        ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
+        ['world-shape', 'noise', 'macro-region', 'landmass-layout', 'structure-character'],
       ],
       [
         {
@@ -55,18 +56,50 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
+        ['world-shape', 'noise', 'macro-region', 'landmass-layout', 'structure-character'],
       ],
-      [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region', 'landmass-layout']],
+      [
+        { world: { ...config.world, seed: 18 } },
+        ['noise', 'macro-region', 'landmass-layout', 'structure-character'],
+      ],
       [{ noise: { ...config.noise, frequency: 5 } }, ['noise']],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
-      [{ landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } }, ['landmass-layout']],
+      [
+        { landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } },
+        ['landmass-layout', 'structure-character'],
+      ],
+      [
+        { structureCharacter: { profileVariation: 0.8, regionDensity: 0.2 } },
+        ['structure-character'],
+      ],
     ];
 
     for (const [patch, expected] of cases) {
       expect(selectDirtyStageIds(config, { ...config, ...patch })).toEqual(expected);
     }
+  });
+
+  it('keeps landmass layout clean when only structureCharacter changes', () => {
+    const next: MapConfig = {
+      ...config,
+      structureCharacter: { profileVariation: 0.9, regionDensity: 0.1 },
+    };
+    const dirty = selectDirtyStageIds(config, next);
+
+    expect(dirty).toContain('structure-character');
+    expect(dirty).not.toContain('landmass-layout');
+  });
+
+  it('dirties structure-character when landmasses change', () => {
+    const next: MapConfig = {
+      ...config,
+      landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 },
+    };
+    const dirty = selectDirtyStageIds(config, next);
+
+    expect(dirty).toContain('landmass-layout');
+    expect(dirty).toContain('structure-character');
   });
 
   it('follows the noise raster only under the noise-map border source', () => {
