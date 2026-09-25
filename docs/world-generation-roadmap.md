@@ -369,7 +369,7 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
 3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
 4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi. **[działa]**
-5. `IslandCharacterStage` — profile terenu struktur lądowych i ich regionów. **[planowane]**
+5. `StructureCharacterStage` — profile terenu struktur geologicznych i ich regionów. **[planowane]**
 6. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna. **[planowane]**
 7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
 8. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
@@ -387,8 +387,9 @@ wysokość, a dopiero poziom morza wyznacza faktyczny podział na wyspy.
 - `LandmassLayoutStage` odpowiada za kształt w dużej skali: szkielet (graf
   węzłów i krawędzi), intencję archetypu, szerokość wpływu i wspólne szelfy.
   Linia brzegowa, zatoki i półwyspy powstają później, z form i szumu.
-- `IslandCharacterStage` przypisuje profile terenu i regiony, np. góry na
-  zachodzie, równiny na wschodzie albo płaskowyż w centrum.
+- `StructureCharacterStage` przypisuje strukturom profile terenu i regiony, np.
+  góry na zachodzie, równiny na wschodzie albo płaskowyż w centrum. Na tym etapie
+  nie ma jeszcze wysp — powstają dopiero po przecięciu poziomem morza.
 - `HeightmapStage` płynnie łączy geometrię, profile regionalne i szum w jedną
   wysokość obejmującą również dno oceanu.
 - `LandOceanStage` stosuje poziom morza, wykrywa spójne wyspy i archipelagi oraz
@@ -400,7 +401,7 @@ Przykładowo długa wyspa ze słabo rozwiniętą linią brzegową wynika z wydł
 szkieletu i małej nieregularności. Wyspa w kształcie litery C może powstać
 z zakrzywionego szkieletu albo ujemnego kształtu wycinającego dużą zatokę.
 Informacja o górzystym zachodzie i równinnym wschodzie należy natomiast do
-regionalnych profili terenu, a nie do samej geometrii wyspy.
+regionalnych profili terenu, a nie do samej geometrii struktury.
 
 ### 4.2. Masy lądowe i kształty wysp — [działa]
 
@@ -453,8 +454,8 @@ interface LandmassLayout {
   (na rzadkim próbkowaniu) i nie pozwala korytarzowi złożyć własnego obrysu.
   Dyskretne załamania `angular` trzymają pełną szerokość z przepisu
   (`clampWidth: false`) — mitra jest kształtem, nie błędem.
-- Plan rozmiaru dobiera **typowy extent** ze skali `size` 0–1 (2–13% świata
-  odniesienia 2000 m, domyślnie 0,5) i rozrzut (`diversity`, wagi
+- Plan rozmiaru dobiera **typowy extent** ze skali `size` 0–1 (2,6–16,9%
+  świata odniesienia 2000 m, domyślnie 0,5) i rozrzut (`diversity`, wagi
   log-normalne), z podłogą i sufitem (`MIN_EXTENT_METERS`/`MAX_EXTENT`).
   Wyspy rosną ze światem pierwiastkowo (4× świat to 2× wyspy w metrach).
   Intencja niesie mnożnik (`size`, np. lagoon 0,5) i własny sufit
@@ -516,13 +517,16 @@ Przydatne warstwy danych:
 - `shelfIdMap` — przypisanie płytkich obszarów do wspólnej struktury geologicznej,
 - `islandIdMap` — wynikowy podział wynurzonych, spójnych obszarów na faktyczne wyspy.
 
-### 4.5. Charakter wysp — [planowane]
+### 4.5. Charakter struktur — [planowane]
 
-Charakter wyspy powinien być zestawem parametrów, a nie pojedynczą, wykluczającą
-etykietą.
+Charakter struktury powinien być zestawem parametrów, a nie pojedynczą,
+wykluczającą etykietą. Na tym etapie nie ma jeszcze wysp — są tylko struktury
+geologiczne z `LandmassLayoutStage`. Wyspy powstają dopiero po przecięciu
+poziomem morza (`LandOceanStage`), więc profil należy do struktury, a wyspy
+archipelagu dziedziczą go później.
 
 ```ts
-interface IslandTerrainProfile {
+interface TerrainProfile {
   elevation: number;
   roughness: number;
   mountainStrength: number;
@@ -532,40 +536,59 @@ interface IslandTerrainProfile {
   erosionStrength: number;
   coastalCliffStrength: number;
 }
+
+/** Profil struktury to ten zestaw plus tożsamość właściciela. */
+interface StructureTerrainProfile extends TerrainProfile {
+  structureId: string;
+}
 ```
 
 Przykładowe tendencje to teren płaski, pagórkowaty, górzysty, wulkaniczny, bogaty
-w jeziora, płaskowyże lub klifowe wybrzeża. Parametry mogą się łączyć, np. wyspa
-może być jednocześnie górzysta i mieć silne klify.
+w jeziora, płaskowyże lub klifowe wybrzeża. Parametry mogą się łączyć, np.
+struktura może być jednocześnie górzysta i mieć silne klify.
 
 Profil opisuje zamiar generatora, a nie gwarantowany rezultat. `HeightmapStage`,
 hydrologia i pozostałe etapy sprawdzają, gdzie dana cecha może faktycznie
 powstać.
 
-### 4.6. Regiony wewnątrz wyspy — [planowane]
+Etap produkuje wyłącznie definicje — `structureProfiles` i `structureRegions`, bez
+rastra i bez wysokości — więc nie zależy od liczby komórek świata. Ma własny
+wycinek konfiguracji (`structureCharacter`), żeby zmiana parametrów terenu nie
+unieważniała placementu landmassów (§2.8).
 
-Duża wyspa nie powinna mieć jednolitego charakteru. Może zostać podzielona na
-regiony, np. góry na zachodzie, równiny na wschodzie, płaskowyż w centrum
+### 4.6. Regiony wewnątrz struktury — [planowane]
+
+Duża struktura nie powinna mieć jednolitego charakteru. Może zostać podzielona
+na regiony, np. góry na zachodzie, równiny na wschodzie, płaskowyż w centrum
 i klifowe wybrzeże na północy.
 
 ```ts
-interface IslandRegionDefinition {
+interface StructureRegionDefinition {
   id: string;
-  islandId: string;
+  structureId: string;
   center: WorldPoint;
   influenceRadius: number;
-  profile: IslandTerrainProfile;
+  profile: TerrainProfile;
 }
 ```
 
 Wpływy regionów powinny płynnie się mieszać zamiast tworzyć ostre granice. Dla
 każdej komórki można obliczać wagi kilku najbliższych regionów i interpolować
-ich parametry. Małe wyspy mogą mieć jeden profil globalny, a liczba regionów
-dużej wyspy może zależeć od jej powierzchni.
+ich parametry. Małe struktury mogą mieć jeden profil globalny, a liczba regionów
+dużej struktury może zależeć od jej powierzchni.
+
+Charakter nie dostaje osobnej warstwy bazowej ani osobnej zakładki. Regiony
+pokazują się jako overlay na warstwie `Landmasses`: bloby wpływu na szkielecie
+struktury, kolor od dominującej tendencji (góry / pagórki / płaskowyż / równiny /
+jeziora / klify), a readout pod kursorem podaje wartości profilu i nazwę regionu.
+Prawdziwym obrazem charakteru jest heightmapa. Sekcja „Structure character" siedzi
+w zakładce `Landmasses`, więc geometria i intencja terenu to jeden formularz
+i jedna mapa.
 
 Przydatne warstwy danych:
 
-- `islandIdMap` — przypisanie komórki lądu do wyspy,
+- `structureProfiles` i `structureRegions` — definicje charakteru z tego etapu,
+- `islandIdMap` — przypisanie komórki lądu do faktycznej wyspy (poziom morza),
 - `regionInfluenceMap` — wpływ regionalnych profili terenu,
 - `heightmap` — rzeczywista wysokość,
 - `slopeMap` — nachylenie,
@@ -630,7 +653,7 @@ interface CellEnvironment {
 ```
 
 Przykładowo bagno wymaga płaskiego, wilgotnego i nisko położonego obszaru.
-Profil wyspy wpływa na teren, a rzeczywisty teren określa, które biomy są
+Profil struktury wpływa na teren, a rzeczywisty teren określa, które biomy są
 możliwe.
 
 ### 5.2. Klimat, wilgotność i niebezpieczeństwo — [planowane]
@@ -719,7 +742,7 @@ osobną implementacją. Presety działają na dwóch poziomach:
   rozkład `danger`; nie opisuje pojedynczych lądów,
 - preset geografii (poziom landmass) definiuje samą geografię: liczbę i układ
   struktur lądowych, szkielet, formy dodatnie i ujemne, szelf oraz profile terenu
-  (`LandmassLayoutStage`, `IslandCharacterStage`); można go łączyć z dowolnym
+  (`LandmassLayoutStage`, `StructureCharacterStage`); można go łączyć z dowolnym
   presetem świata, np. archipelag na `Earth-like` albo pojedynczy kontynent na
   `Mythic Moon`.
 

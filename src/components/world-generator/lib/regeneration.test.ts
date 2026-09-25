@@ -43,7 +43,13 @@ describe('SelectiveRegeneration', () => {
     const plan = regeneration.plan(config, {});
 
     expect(plan).toEqual({
-      dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'landmass-layout'],
+      dirtyStageIds: [
+        'world-shape',
+        'noise',
+        'macro-region',
+        'landmass-layout',
+        'structure-character',
+      ],
       cachedState: {},
     });
     expect(regeneration.reusedStageIds).toEqual([]);
@@ -89,6 +95,7 @@ describe('SelectiveRegeneration', () => {
       'noise',
       'macro-region',
       'landmass-layout',
+      'structure-character',
     ]);
   });
 });

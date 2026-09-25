@@ -193,7 +193,13 @@ describe('WorldGenerationSession', () => {
     const planned = () => runner.mock.lastCall?.[1]?.reuse.dirtyStageIds;
 
     await session.generate(config, vi.fn());
-    expect(planned()).toEqual(['world-shape', 'noise', 'macro-region', 'landmass-layout']);
+    expect(planned()).toEqual([
+      'world-shape',
+      'noise',
+      'macro-region',
+      'landmass-layout',
+      'structure-character',
+    ]);
 
     await session.generate(withRegions, vi.fn());
     expect(planned()).toEqual(['macro-region']);
@@ -269,6 +275,7 @@ describe('WorldGenerationSession', () => {
       'noise',
       'macro-region',
       'landmass-layout',
+      'structure-character',
     ]);
     expect(mapRepository.get()?.layers).not.toHaveProperty('landmassIdMap');
   });

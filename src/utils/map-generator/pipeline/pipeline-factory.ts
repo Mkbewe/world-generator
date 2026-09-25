@@ -6,6 +6,7 @@ import { createWorldSpace } from '../space';
 import { LandmassLayoutStage } from '../stages/landmass';
 import { MacroRegionStage } from '../stages/macro-region';
 import { NoiseStage } from '../stages/noise';
+import { StructureCharacterStage } from '../stages/structure-character';
 import { WorldShapeStage } from '../stages/world-shape';
 import type { MapConfig, MapState, StageData } from '../types';
 
@@ -18,6 +19,7 @@ const STAGE_FACTORIES: Readonly<
   noise: () => new NoiseStage(),
   'macro-region': () => new MacroRegionStage(),
   'landmass-layout': () => new LandmassLayoutStage(),
+  'structure-character': () => new StructureCharacterStage(),
 };
 
 export function createMapGenerator(): MapGenerator<MapConfig, MapState, PipelineStageId> {

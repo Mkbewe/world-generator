@@ -9,6 +9,7 @@ export const MAP_CONFIG_KEYS = [
   'macroRegions',
   'macroRegionDeformation',
   'landmasses',
+  'structureCharacter',
 ] as const;
 
 export type MapConfigKey = (typeof MAP_CONFIG_KEYS)[number];
@@ -78,6 +79,13 @@ export const LANDMASS_LAYOUT_STAGE = {
   configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses'],
 } as const satisfies DeclaredStage;
 
+/** The character reads the layout, so it inherits its shape and placement inputs. */
+export const STRUCTURE_CHARACTER_STAGE = {
+  id: 'structure-character',
+  name: 'Structure character generation',
+  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses', 'structureCharacter'],
+} as const satisfies DeclaredStage;
+
 /**
  * Presentation order of the canonical pipeline: settings tabs, preview layers
  * and the layer catalog follow this list. Execution order is derived from the
@@ -89,6 +97,7 @@ export const PIPELINE_STAGES = [
   NOISE_STAGE,
   MACRO_REGION_STAGE,
   LANDMASS_LAYOUT_STAGE,
+  STRUCTURE_CHARACTER_STAGE,
 ] as const;
 
 export type PipelineStageId = (typeof PIPELINE_STAGES)[number]['id'];

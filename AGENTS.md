@@ -11,6 +11,9 @@ See `README.md` and `docs/world-generation-roadmap.md` for architecture.
 - `pnpm test` — Vitest suite only
 - Commits follow Conventional Commits; pre-commit runs typecheck, lint-staged and tests
 - Commit subjects are at most 72 characters (enforced by commitlint)
+- when the user asks for a commit name, answer with one message only: the
+  Conventional Commits header and, when the change set is large, a body that
+  lists the changes as bullet points
 
 ## Components
 
