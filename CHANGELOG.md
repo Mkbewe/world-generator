@@ -1,5 +1,223 @@
 # Changelog
 
+## [0.10.0](https://github.com/Mkbewe/world-generator/compare/v0.9.0...v0.10.0) (2026-09-25)
+
+### Features
+
+* **[218](https://github.com/Mkbewe/world-generator/issues/218):** implement the landmass layout stage ([#361](https://github.com/Mkbewe/world-generator/issues/361)) ([62ee5cc](https://github.com/Mkbewe/world-generator/commit/62ee5cc746ae0ee127b7cfb86bf566874b434473))
+
+  - add the landmass model: spine, width profile, shapes and shared
+  shelves
+  - generate the layout from the seeded landmass stream
+  - group nearly touching structures into one shelf for archipelagos
+  - validate the layout and report the structures, shelves and coverage
+  - let pipeline tabs tolerate stages without a form yet
+* **[349](https://github.com/Mkbewe/world-generator/issues/349):** add a preview layer for the landmass layout ([#364](https://github.com/Mkbewe/world-generator/issues/364)) ([b0e6939](https://github.com/Mkbewe/world-generator/commit/b0e6939ccf065d0ea45a0d8a36c981e1507e8486))
+
+  - fill landmassIdMap from the shared landmassAt sampler
+  - add the Landmasses catalog layer with a discrete palette
+  - paint analytic borders through boundarySource at any zoom
+  - carry the layout in MapInfo so restored maps stay smooth
+  - keep overview transparency for layers with a skip value
+  - show structure labels in the cursor readout
+  - forbid nested ternaries and non-null assertions in ESLint
+* **[350](https://github.com/Mkbewe/world-generator/issues/350):** add the landmass settings form ([#371](https://github.com/Mkbewe/world-generator/issues/371)) ([ee04913](https://github.com/Mkbewe/world-generator/commit/ee04913453300bfd92438007bd71ea385ac2e44f))
+
+  - add the form store with the archetype pool and a select/clear action
+  - expose count (1-10), size and shape cards for the landmass stage
+  - wire landmasses into the settings tab and the generated config
+  - derive the tab and layer sync from the layer catalog
+  - refine the archetypes: v, irregular, bisector Y and the size rename
+* **[363](https://github.com/Mkbewe/world-generator/issues/363):** add island shape archetypes to the landmass layout ([#370](https://github.com/Mkbewe/world-generator/issues/370)) ([6f2e33b](https://github.com/Mkbewe/world-generator/commit/6f2e33b9bcd6f6f7373dc31855b165065fd7acbe))
+
+  - draw each structure from a seeded archetype recipe
+  - add round, oval, elongated, l/u/s/z and branching y/x/t outlines
+  - attach peninsulas and keep bays from cutting structures apart
+  - separate structures by comparing their sampled outlines
+  - drop the periodic outline wobble
+  - expose the archetype pool in the landmass config
+* **[368](https://github.com/Mkbewe/world-generator/issues/368):** measure landmass coverage from the id map ([#380](https://github.com/Mkbewe/world-generator/issues/380)) ([5b6ea81](https://github.com/Mkbewe/world-generator/commit/5b6ea812f96cca504d973ffda125a7f9303b981f))
+
+  - count occupied id map cells over world mask cells
+
+  - drop the analytic area estimate and report land coverage separately
+* **[369](https://github.com/Mkbewe/world-generator/issues/369):** recompute only the stages a config change affects ([#376](https://github.com/Mkbewe/world-generator/issues/376)) ([52b3762](https://github.com/Mkbewe/world-generator/commit/52b376286e69b780a96217344512253ad3908b2c))
+
+  - complete the config keys with the slices stages inherit from earlier
+  rasters
+  - filter the dirty stages instead of dirtying everything after the first
+  change
+  - update the plan, session and factory tests for the new behaviour
+* **[372](https://github.com/Mkbewe/world-generator/issues/372):** keep structures apart and spread over the world ([#374](https://github.com/Mkbewe/world-generator/issues/374)) ([02b9a48](https://github.com/Mkbewe/world-generator/commit/02b9a482716c4b0e1c62d79d3fe5e353b3e53089))
+
+  - require a clearance between structure outlines when placing
+  - pick the roomiest of several candidate starts per shrink step
+  - default to five structures at size 0.6
+* **[373](https://github.com/Mkbewe/world-generator/issues/373):** polish the landmass shape archetypes ([#385](https://github.com/Mkbewe/world-generator/issues/385)) ([062281c](https://github.com/Mkbewe/world-generator/commit/062281c37550e6158b331f15e2cedd81d983fe33))
+
+  - add the o atoll and c letter as arc spines and rebuild s from tangent
+  arcs
+  - sharpen l, u, v, y and t and give u a width skew
+  - place structures on a jittered anchor grid, rotating before shrinking
+  - let structures spill over the coast and block nesting in bays
+  - report landmass progress per placement attempt and raise the count
+  limit
+* **[388](https://github.com/Mkbewe/world-generator/issues/388):** describe the landmass form by intent and size diversity ([#405](https://github.com/Mkbewe/world-generator/issues/405)) ([0cac5b9](https://github.com/Mkbewe/world-generator/commit/0cac5b97258b9ae18be0d1f2174cbed4da66216f))
+
+  - drop the empty pool: the last shape intent always stays enabled
+  - rename the size slider to the typical size and explain the spread
+  - add a size diversity slider wired to the layout size plan
+  - keep the structure count and the multi-select shape pool
+* **[392](https://github.com/Mkbewe/world-generator/issues/392):** build the landmass graph model and topology generator ([#398](https://github.com/Mkbewe/world-generator/issues/398)) ([e18cedf](https://github.com/Mkbewe/world-generator/commit/e18cedf9f4cd76f0e05b8e704fc71ad9afa8c91b))
+
+  - replace the spine model with nodes, edges and structures
+  - generate round, irregular, elongated, winding, branched, lagoon and
+  atoll intents
+  - size the structures from a world-area influence budget with log-normal
+  weights
+  - place them on jittered anchors until real placement lands
+  - validate the layout invariants, serialise it with the snapshot and
+  cover it with property tests
+* **[395](https://github.com/Mkbewe/world-generator/issues/395):** size landmasses by extent and vary the winding bends ([#403](https://github.com/Mkbewe/world-generator/issues/403)) ([3cc183c](https://github.com/Mkbewe/world-generator/commit/3cc183c63e8ea1393d2b3c4fb74f77f82c63a9e7))
+
+  - plan the typical extent instead of the influence area
+  - give winding a random walk of bends with their own lengths and angles
+  - keep the archetype node ranges and clamp the corridor by its curvature
+  - place one helper rib halfway between consecutive node ribs
+* **[401](https://github.com/Mkbewe/world-generator/issues/401):** vary island shapes, scale sizes and hold the boundary ([#415](https://github.com/Mkbewe/world-generator/issues/415)) ([0b658d5](https://github.com/Mkbewe/world-generator/commit/0b658d58848f0db5075b4a98e197de3cd74c236c))
+
+  - placement keeps 75% of influence inside an eroded ocean margin (25 m)
+  with tangent-first rotation near the world edge
+  - round spans 1-3 nodes, incl. single-node support and its preview disc
+  - lagoon reads small (size 0.5) and narrow; thickness varies per
+  archetype
+  - irregular grows boxy angular corridors with 1-2 branches at ~90
+  degrees
+  - elongated curls into U-hooks and caps below the global longest side
+  - typical size is a 0-1 scale growing with the square root of the world
+* **[402](https://github.com/Mkbewe/world-generator/issues/402):** show the landmass type and metrics in the cursor readout ([#404](https://github.com/Mkbewe/world-generator/issues/404)) ([34c9832](https://github.com/Mkbewe/world-generator/commit/34c9832cdd41c40ffeed9c8421ddbfee68e25bae))
+
+  - name the hovered structure together with its archetype
+  - add segment count, spine length and width rows
+  - convert lengths to metres when the world dimensions are known
+  - keep one readout rhythm, like the position block
+
+### Bug Fixes
+
+* **[367](https://github.com/Mkbewe/world-generator/issues/367):** keep the full landmass geometry inside the world ([#377](https://github.com/Mkbewe/world-generator/issues/377)) ([025cd9e](https://github.com/Mkbewe/world-generator/commit/025cd9eb911b3ccbadc4cf41b96167a20cc1fa48))
+
+  - validate the whole outline when placing, spine widths and shapes
+  included
+  - scale the whole structure when a world is too small instead of its
+  spine
+  - fall back to the world centre at the largest shrink that fits
+* **[378](https://github.com/Mkbewe/world-generator/issues/378):** keep the real render costs for layers replayed from the cache ([#379](https://github.com/Mkbewe/world-generator/issues/379)) ([0f8ff93](https://github.com/Mkbewe/world-generator/commit/0f8ff93310147e3e649e35a4bc280c0823e632a2))
+
+  - fall back to the layer's last render statistics when a run reuses it
+
+  - mark reused rows in the rendering panel like the generation panel does
+* **[381](https://github.com/Mkbewe/world-generator/issues/381):** reuse cached layers when the preview reattaches ([#383](https://github.com/Mkbewe/world-generator/issues/383)) ([31b2472](https://github.com/Mkbewe/world-generator/commit/31b2472f122fe0c6030a81d88f6cb0d8d4079e37))
+
+  - keep the landmass layout out of the cache key of layers that do not
+  read it
+  - remember the committed frame target so a fresh presenter draws it as
+  is
+  - delay the preview placeholder, so restoring never flashes it
+  - cover the late layout, the restored frame and the placeholder with
+  tests
+
+### Chores
+
+* **[386](https://github.com/Mkbewe/world-generator/issues/386):** baseline the landmass layout cost and add the refactor plan ([#396](https://github.com/Mkbewe/world-generator/issues/396)) ([0e5620b](https://github.com/Mkbewe/world-generator/commit/0e5620b68482f69cc43ef63affd75a8419e36bd2))
+
+  - add the refactor plan document
+  - add a repeatable vitest bench for the layout build and the full stage
+  - record the generator and app baselines with reference panel
+  screenshots
+* **[389](https://github.com/Mkbewe/world-generator/issues/389):** integrate the new layout and run the quality gate ([#406](https://github.com/Mkbewe/world-generator/issues/406)) ([188b11e](https://github.com/Mkbewe/world-generator/commit/188b11e5379272cd6b33aede35ea82201bb75f9c))
+
+  - stop scanning the world mask in the layout stage
+  - remove the dead config, area estimate and unused exports
+  - record the bench and variety comparison against the baseline
+  - sync the roadmap, the performance notes and the baseline doc
+
+### Documentation
+
+* record the test observations as proposals ([#362](https://github.com/Mkbewe/world-generator/issues/362)) ([a8a00d6](https://github.com/Mkbewe/world-generator/commit/a8a00d653ff3292806c83977d43d89f60399688b)), references [#327](https://github.com/Mkbewe/world-generator/issues/327)
+
+  - note the misleading radial region shares and link #327
+  - propose a settings reset and region reordering
+  - propose disabling the preview walk while the tabs are linked
+
+### Code Refactoring
+
+* **[387](https://github.com/Mkbewe/world-generator/issues/387):** place landmasses with bounds and groups ([#399](https://github.com/Mkbewe/world-generator/issues/399)) ([76ede43](https://github.com/Mkbewe/world-generator/commit/76ede43621ffa488f52365ba86fa913660701034))
+
+  - accept a placement only without overlap and with most of its influence
+  inside the world
+  - measure the whole influence corridor, control points included, against
+  the world mask
+  - keep groups atomic: a member that cannot fit is dissolved into its own
+  shelf
+  - drop unplaceable structures and validate the placement as a hard
+  contract
+  - cover placement and grouping with wide-seed property tests
+* **[390](https://github.com/Mkbewe/world-generator/issues/390):** cut off the old landmass layout implementation ([#397](https://github.com/Mkbewe/world-generator/issues/397)) ([a3a7a09](https://github.com/Mkbewe/world-generator/commit/a3a7a099718b038f7d87050d1164fa3f70604b9f))
+* **[391](https://github.com/Mkbewe/world-generator/issues/391):** add vector layer infrastructure for the landmass layout ([#400](https://github.com/Mkbewe/world-generator/issues/400)) ([9ba1b59](https://github.com/Mkbewe/world-generator/commit/9ba1b5926feee9ff0dc4c96b67dfda860c0d3b7b))
+
+  - split LayerSpec into raster and vector variants
+  - add a LandmassLayoutVectorLayer with structure hits and element
+  statistics
+  - build vector layers through injectable factories, not scene branches
+  - fail at scene construction when a vector layer has no factory
+  - queue every layer an add unlocks and split layer statistics by kind
+  - report structure ids through a raster and vector inspection union
+* **generator:** group stage files into shape, search, editor ([#414](https://github.com/Mkbewe/world-generator/issues/414)) ([5e0483b](https://github.com/Mkbewe/world-generator/commit/5e0483b7492dbb312d7512f03e1f2f022df6ae45)), references [#413](https://github.com/Mkbewe/world-generator/issues/413)
+
+  - landmass/shape for draft building, landmass/search for the Placement
+  class, anchors and collision
+  - macro-region/editor for the form-side boundary model and presets
+  - pure moves via git mv plus import rewiring, no logic changes
+* **generator:** organize stages into folders with owned names ([#410](https://github.com/Mkbewe/world-generator/issues/410)) ([2b7bb49](https://github.com/Mkbewe/world-generator/commit/2b7bb49861175faef39e4a64a6b19b7b2cb46c2f)), references [#409](https://github.com/Mkbewe/world-generator/issues/409)
+
+  - per-stage folders with stage.ts and colocated tests
+  - rename modules after what they own (corridor, influence, transform,
+  shelves, mask-sampler, layout-check, draft, boundary-model, sampler)
+  - pipeline core into pipeline/; world-grid out of the module
+  - renderer, readout and factory import through area barrels
+  - pure moves via git mv, no logic changes
+* **generator:** typed stage outputs, space port, data graph ([#408](https://github.com/Mkbewe/world-generator/issues/408)) ([22d53ad](https://github.com/Mkbewe/world-generator/commit/22d53ad64e48e3ea0683720724afb4b5e9a7725a)), references [#407](https://github.com/Mkbewe/world-generator/issues/407)
+
+  Implements the map-generator architecture review follow-ups.
+
+  - declare typed stage inputs and outputs: MapStage gains TOutput,
+  PipelineStageId-narrowed events and a single write path; each declared
+  write must exist on the returned value
+  - add the shared spatial port (space.ts): one 0..1 frame, one cell
+  mapping and one distance; stages read coordinates through it
+  - separate the data graph from UI order: conditional config and state
+  edges plus a stable topological execution order in the factory;
+  PIPELINE_STAGES stays the presentation order
+  - measure the placement repair dead (300 runs, zero pushes and drops)
+  and remove it; narrow entryOf to StructureDraft and fail loudly on a
+  lost shelf instead of silent fallbacks
+  - give behavior to variants: recipe-selected corridor builders (sine,
+  walk, ring) and a RegionDisplacement object probed once per cell; region
+  geometry stays data until roadmap 6.4
+  - format landmass layout statistics as integers
+
+  Atoll outputs shift for the same seed (turn is no longer sampled); all
+  other archetypes and both deformation sources are unchanged.
+* **map-layers:** split catalog and palettes folders ([#412](https://github.com/Mkbewe/world-generator/issues/412)) ([1431d87](https://github.com/Mkbewe/world-generator/commit/1431d874226af86709ae52c6f33d467aaf617384)), references [#411](https://github.com/Mkbewe/world-generator/issues/411)
+
+  - catalog/ (catalog, layer-spec, types) and palettes/ folders; root
+  index re-exports unchanged, no external churn
+  - bind catalog entries to real generator outputs via BoundLayerSpec;
+  generic LayerSpec stays loose for test doubles
+  - no runtime type check in selectRasters: it would turn the renderer's
+  loud rejection into a silent empty save
+  - pure moves via git mv plus import rewiring, no logic changes
+
 ## [0.9.0](https://github.com/Mkbewe/world-generator/compare/v0.8.1...v0.9.0) (2026-09-22)
 
 ### Features
