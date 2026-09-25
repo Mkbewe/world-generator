@@ -31,12 +31,12 @@ export function LandmassForm() {
       />
       <SliderField
         label='Typical size'
-        description='How large a typical structure is drawn; the actual sizes vary around it.'
+        description='Typical island size from small to large; islands grow with the world, but only weakly.'
         value={landmasses.size}
         min={MIN_LANDMASS_SIZE}
         max={MAX_LANDMASS_SIZE}
         step={0.05}
-        format={value => value.toFixed(2)}
+        format={value => `${Math.round(value * 100)}%`}
         rangeLabels={['Small', 'Big']}
         onChange={setSize}
       />

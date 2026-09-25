@@ -7,7 +7,7 @@ import type { LandmassArchetype, MapConfig, MapState } from '../../types';
 
 const base: MapConfig = {
   world: {
-    dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 4, sampleHeight: 4 },
+    dimensions: { widthMeters: 2000, heightMeters: 2000, sampleWidth: 4, sampleHeight: 4 },
     seed: 17,
     shape: 'disc',
   },
@@ -36,8 +36,8 @@ describe('LandmassLayoutStage', () => {
     expect(layout?.shelves).toHaveLength(3);
     expect(layout && validateLayout(layout)).toBeUndefined();
     for (const structure of layout?.structures ?? []) {
-      expect(structure.nodes.length).toBeGreaterThanOrEqual(2);
-      expect(structure.edges.length).toBeGreaterThanOrEqual(1);
+      expect(structure.nodes.length).toBeGreaterThanOrEqual(1);
+      expect(structure.edges.length).toBeGreaterThanOrEqual(structure.nodes.length - 1);
       expect(layout?.shelves.some(shelf => shelf.id === structure.shelfId)).toBe(true);
     }
     expect(result.statistics[0].details).toMatchObject({ structures: 3, shelves: 3 });
@@ -89,7 +89,7 @@ describe('LandmassLayoutStage', () => {
     const cases: ReadonlyArray<Partial<MapConfig['landmasses']>> = [
       { count: 0 },
       { count: MAX_LANDMASSES + 1 },
-      { size: 0.1 },
+      { size: 2 },
       { diversity: 2 },
       { archetypes: ['spiral' as LandmassArchetype] },
       { shelf: { ...DEFAULT_LANDMASS_CONFIG.shelf, falloff: 2 } },

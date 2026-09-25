@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { ArchetypePoolField } from './archetype-pool-field';
 import { LANDMASS_FORM_DEFAULTS, useLandmassFormStore } from '../../../../../stores';
-import { LANDMASS_ARCHETYPES } from '../../../../../utils/map-generator/stages/landmass';
+import { LANDMASS_POOL } from '../../../../../utils/map-generator/stages/landmass';
 import { DEFAULT_LANDMASS_CONFIG } from '../../../../../utils/map-generator/stages/landmass/defaults';
 
 function renderField() {
@@ -23,9 +23,9 @@ describe('ArchetypePoolField', () => {
   it('enables every archetype by default', () => {
     renderField();
 
-    expect(screen.getAllByRole('checkbox')).toHaveLength(LANDMASS_ARCHETYPES.length);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(LANDMASS_POOL.length);
     expect(screen.getByRole('checkbox', { name: 'Round' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'Atoll' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Lagoon' })).toBeChecked();
   });
 
   it('restores the whole pool with one button', async () => {
@@ -49,10 +49,10 @@ describe('ArchetypePoolField', () => {
     const user = userEvent.setup();
     renderField();
 
-    await user.click(screen.getByRole('checkbox', { name: 'Winding' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Lagoon' }));
 
-    expect(screen.getByRole('checkbox', { name: 'Winding' })).not.toBeChecked();
-    expect(useLandmassFormStore.getState().landmasses.archetypes).not.toContain('winding');
+    expect(screen.getByRole('checkbox', { name: 'Lagoon' })).not.toBeChecked();
+    expect(useLandmassFormStore.getState().landmasses.archetypes).not.toContain('lagoon');
   });
 
   it('keeps the last intent enabled instead of emptying the pool', async () => {

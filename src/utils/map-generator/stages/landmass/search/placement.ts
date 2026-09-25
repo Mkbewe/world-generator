@@ -23,7 +23,7 @@ import {
   structureRadius,
   structureSegments,
 } from '../influence';
-import { insideWorldShare, type WorldSampler } from '../mask-sampler';
+import { type EdgeFrame, insideWorldShare, type WorldSampler } from '../mask-sampler';
 import type { StructureDraft } from '../shape/draft';
 import { buildUnits, createGroupShelves, planGroups } from '../shelves';
 import { rotateStructure, scaleStructure, translateStructure } from '../transform';
@@ -34,8 +34,8 @@ const PLACEMENT_SHRINKS = [1, 0.85, 0.7, 0.55, 0.42, 0.32, 0.24];
 /** Rotations tried per position. */
 const PLACEMENT_ROTATIONS = 6;
 
-/** Share of the influence corridor that must stay inside the world. */
-const INSIDE_SHARE = 0.5;
+/** Share of the influence corridor that must stay inside the ocean margin. */
+const INSIDE_SHARE = 0.75;
 
 /** Positions tried per shrink: first near the free anchor, then anywhere. */
 const POSITION_ATTEMPTS = 12;
@@ -65,15 +65,17 @@ interface PlacedDraft {
 /**
  * Places every structure of a world with a hard contract: a candidate is taken
  * only when it overlaps nothing and keeps most of its influence inside the
- * world. Groups are placed first and stay atomic — a member that cannot fit
- * next to its group is dissolved and gets its own shelf. Anything the world
+ * ocean margin. Groups are placed first and stay atomic — a member that cannot
+ * fit next to its group is dissolved and gets its own shelf. Anything the world
  * cannot take is dropped and reported, never left overlapping.
  */
 export function placeStructures(
   drafts: readonly StructureDraft[],
   insideWorld: WorldSampler,
   shelf: ShelfConfig,
-  random: SeededRandom
+  random: SeededRandom,
+  margin: WorldSampler = insideWorld,
+  edgeAt?: (point: WorldPoint) => EdgeFrame
 ): PlacementResult {
   const intended = planGroups(drafts.length, random);
   const anchors = anchorPoints(insideWorld, drafts.length, random);
@@ -82,6 +84,8 @@ export function placeStructures(
     drafts,
     intended,
     insideWorld,
+    margin,
+    edgeAt,
     random,
     shelf,
     anchors,
@@ -99,6 +103,8 @@ class Placement {
     private readonly drafts: readonly StructureDraft[],
     private readonly groups: readonly (readonly number[])[],
     private readonly insideWorld: WorldSampler,
+    private readonly margin: WorldSampler,
+    private readonly edgeAt: ((point: WorldPoint) => EdgeFrame) | undefined,
     private readonly random: SeededRandom,
     private readonly shelf: ShelfConfig,
     private readonly anchors: readonly WorldPoint[],
@@ -245,16 +251,17 @@ class Placement {
     position: WorldPoint,
     shrink: number
   ): PlacedEntry | undefined {
-    for (let step = 0; step < PLACEMENT_ROTATIONS; step++) {
-      const candidate = candidateAt(
-        draft,
-        centre,
-        position,
-        (step / PLACEMENT_ROTATIONS) * Math.PI * 2,
-        shrink
-      );
+    // Near the edge the long side goes along the boundary tangent first, so
+    // the wide part stays inside; the even sweep below stays as the fallback.
+    const aligned = this.alignedRotation(draft, position);
+    const rotations =
+      aligned === undefined
+        ? evenRotations()
+        : [aligned, ...evenRotations().filter(angle => angle !== aligned)];
+    for (const rotation of rotations) {
+      const candidate = candidateAt(draft, centre, position, rotation, shrink);
       const bounds = structureBounds(candidate);
-      if (insideWorldShare(candidate, this.insideWorld, bounds) < INSIDE_SHARE) {
+      if (insideWorldShare(candidate, this.margin, bounds) < INSIDE_SHARE) {
         continue;
       }
       const segments = structureSegments(candidate);
@@ -264,6 +271,18 @@ class Placement {
       return entryOf(candidate, bounds, segments);
     }
     return undefined;
+  }
+
+  /** Tangent-aligned rotation near the world edge, if the edge is known. */
+  private alignedRotation(draft: StructureDraft, position: WorldPoint): number | undefined {
+    if (!this.edgeAt) {
+      return undefined;
+    }
+    const frame = this.edgeAt(position);
+    if (frame.gap >= structureRadius(draft) + GROUP_GAP) {
+      return undefined;
+    }
+    return frame.tangent - structureDirection(draft);
   }
 
   /** Fits a group member next to the group, inside the shared shelf limit. */
@@ -297,7 +316,7 @@ class Placement {
         };
         const candidate = candidateAt(draft, centre, position, baseRotation + jitter * 0.4, shrink);
         const bounds = structureBounds(candidate);
-        if (insideWorldShare(candidate, this.insideWorld, bounds) < INSIDE_SHARE) {
+        if (insideWorldShare(candidate, this.margin, bounds) < INSIDE_SHARE) {
           continue;
         }
         const segments = structureSegments(candidate);
@@ -314,6 +333,14 @@ class Placement {
     }
     return undefined;
   }
+}
+
+/** Even rotation sweep tried for every candidate position. */
+function evenRotations(): number[] {
+  return Array.from(
+    { length: PLACEMENT_ROTATIONS },
+    (_, step) => (step / PLACEMENT_ROTATIONS) * Math.PI * 2
+  );
 }
 
 /** Rotates, scales and moves a draft so its centre sits on the position. */

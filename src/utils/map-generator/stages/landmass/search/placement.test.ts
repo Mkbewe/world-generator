@@ -13,7 +13,7 @@ import type { StructureDraft } from '../shape/draft';
 import { planSizes } from '../shape/size-plan';
 
 /** Share of the influence corridor that must stay inside the world. */
-const INSIDE_SHARE = 0.5;
+const INSIDE_SHARE = 0.75;
 
 /** Widest influence gap two members of one group may keep. */
 const GROUP_LIMIT = DEFAULT_LANDMASS_CONFIG.shelf.width + 0.1;
@@ -40,15 +40,20 @@ function discSampler(size = 64) {
 const disc = discSampler();
 
 /** Drafts sized by the size plan, exactly like the stage does. */
-function drafts(count: number, seed: number): StructureDraft[] {
+function drafts(
+  count: number,
+  seed: number,
+  sizeScale = DEFAULT_LANDMASS_CONFIG.size
+): StructureDraft[] {
   const random = new SeededRandom(seed);
   const units = Array.from({ length: count }, (_, index) =>
     buildStructure(`landmass-${index + 1}`, ARCHETYPES[index % ARCHETYPES.length], random)
   );
   const sizes = planSizes(
     units.map(draft => ({ extent: structureExtent(draft) })),
-    DEFAULT_LANDMASS_CONFIG,
-    random
+    { ...DEFAULT_LANDMASS_CONFIG, size: sizeScale },
+    random,
+    { widthMeters: 2000, heightMeters: 2000, sampleWidth: 64, sampleHeight: 64 }
   );
   const scaled = units.map((draft, index) => scaleDraft(draft, sizes.scales[index]));
   return sizes.order.map(index => scaled[index]);
@@ -133,7 +138,7 @@ describe('placeStructures', () => {
     const small = createMaskSampler(smallDiscMask(), 32, 32);
 
     for (const seed of [1, 2, 3, 4, 5]) {
-      const many = drafts(20, seed);
+      const many = drafts(20, seed, 1);
       const result = placeStructures(
         many,
         small,
@@ -156,7 +161,7 @@ describe('placeStructures', () => {
 });
 
 /** A world mask covering only the middle of the map. */
-function smallDiscMask(size = 32, radius = 0.1): Uint8Array {
+function smallDiscMask(size = 32, radius = 0.05): Uint8Array {
   const mask = new Uint8Array(size * size);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {

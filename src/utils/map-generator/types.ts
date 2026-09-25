@@ -135,7 +135,11 @@ export type LandmassArchetype =
 export interface LandmassConfig {
   /** Number of independently generated structures. */
   readonly count: number;
-  /** Typical scale of the structures; 1 is the largest influence budget. */
+  /**
+   * Typical island size on a small-to-large scale from 0 to 1. The stage
+   * converts it against the world dimensions, so islands grow with the world
+   * — but only weakly, never proportionally.
+   */
   readonly size: number;
   /** How strongly the structure sizes differ; 0 keeps them nearly equal. */
   readonly diversity: number;

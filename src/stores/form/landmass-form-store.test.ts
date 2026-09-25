@@ -3,7 +3,7 @@ import {
   selectedArchetypes,
   useLandmassFormStore,
 } from './landmass-form-store';
-import { LANDMASS_ARCHETYPES } from '../../utils/map-generator/stages/landmass';
+import { LANDMASS_POOL } from '../../utils/map-generator/stages/landmass';
 import { DEFAULT_LANDMASS_CONFIG } from '../../utils/map-generator/stages/landmass/defaults';
 
 describe('useLandmassFormStore', () => {
@@ -15,7 +15,7 @@ describe('useLandmassFormStore', () => {
     const { landmasses } = useLandmassFormStore.getState();
 
     expect(landmasses).toEqual(DEFAULT_LANDMASS_CONFIG);
-    expect(selectedArchetypes(landmasses)).toEqual([...LANDMASS_ARCHETYPES]);
+    expect(selectedArchetypes(landmasses)).toEqual([...LANDMASS_POOL]);
   });
 
   it('updates the count, size and diversity the stage renders', () => {
@@ -33,26 +33,26 @@ describe('useLandmassFormStore', () => {
 
   it('narrows the archetype pool and drops it when everything is enabled', () => {
     const { setArchetypes } = useLandmassFormStore.getState();
-    setArchetypes(LANDMASS_ARCHETYPES.filter(archetype => archetype !== 'round'));
+    setArchetypes(LANDMASS_POOL.filter(archetype => archetype !== 'round'));
 
     expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(
-      LANDMASS_ARCHETYPES.filter(archetype => archetype !== 'round')
+      LANDMASS_POOL.filter(archetype => archetype !== 'round')
     );
 
-    setArchetypes([...LANDMASS_ARCHETYPES]);
+    setArchetypes([...LANDMASS_POOL]);
 
     expect(useLandmassFormStore.getState().landmasses.archetypes).toBeUndefined();
   });
 
   it('keeps the pool in the archetype order and never empties it', () => {
     const { setArchetypes } = useLandmassFormStore.getState();
-    setArchetypes(['atoll', 'round']);
+    setArchetypes(['lagoon', 'round']);
 
-    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(['round', 'atoll']);
+    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(['round', 'lagoon']);
 
     setArchetypes([]);
 
     // A valid configuration always draws at least one structure.
-    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(['round', 'atoll']);
+    expect(useLandmassFormStore.getState().landmasses.archetypes).toEqual(['round', 'lagoon']);
   });
 });

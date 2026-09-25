@@ -36,8 +36,8 @@ function validateStructure(structure: GeologicalStructure, shelfIds: ReadonlySet
   if (!shelfIds.has(structure.shelfId)) {
     throw new Error(`Unknown shelf "${structure.shelfId}" for "${structure.id}".`);
   }
-  if (structure.nodes.length < 2) {
-    throw new Error(`Structure "${structure.id}" needs at least two nodes.`);
+  if (structure.nodes.length < 1) {
+    throw new Error(`Structure "${structure.id}" needs at least one node.`);
   }
 
   const nodeIds = new Set<string>();

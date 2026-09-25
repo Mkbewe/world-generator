@@ -128,6 +128,10 @@ export class WorldGenerationSession {
         seed: String(config.world.seed),
         shape: config.world.shape,
         regionGeometry,
+        dimensionsMeters: {
+          widthMeters: config.world.dimensions.widthMeters,
+          heightMeters: config.world.dimensions.heightMeters,
+        },
         info,
       };
       this.run = run;
@@ -214,7 +218,12 @@ export class WorldGenerationSession {
   }
 
   private startRenderer(renderer: MapRenderer, run: RunSnapshot): void {
-    renderer.start({ width: run.width, height: run.height }, run.shape, run.regionGeometry);
+    renderer.start(
+      { width: run.width, height: run.height },
+      run.shape,
+      run.regionGeometry,
+      run.dimensionsMeters
+    );
     renderer.setInfo(run.info ?? {});
   }
 

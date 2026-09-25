@@ -2,10 +2,13 @@ import { type LandmassScene, paintLandmassLayout } from './landmass-layout-paint
 import { type LayerRenderStatistics, MapLayer, type MapSize, type TileReporter } from './layer';
 import type { VectorLayerFactory } from './vector-layer-factory';
 import {
+  createMarginSampler,
   isLandmassLayout,
+  OCEAN_MARGIN_METERS,
   segmentsDistance,
   type StructureSegment,
   structureSegments,
+  type WorldSampler,
 } from '../../map-generator/stages/landmass';
 import type { LandmassLayout } from '../../map-generator/types';
 import type { WorldShape } from '../../world-shape';
@@ -22,6 +25,11 @@ export interface LandmassLayoutLayerOptions {
   readonly mask?: SpatialMask;
   /** World outline painted as the ocean background. */
   readonly shape?: WorldShape;
+  /** Physical world size for the ocean-margin clip; absent on restored maps. */
+  readonly dimensionsMeters?: {
+    readonly widthMeters: number;
+    readonly heightMeters: number;
+  };
 }
 
 /**
@@ -33,6 +41,7 @@ export class LandmassLayoutVectorLayer extends MapLayer {
   private readonly structures: readonly LayerStructure[];
   private readonly scene: LandmassScene;
   private readonly mask?: SpatialMask;
+  private readonly margin?: WorldSampler;
 
   constructor(
     id: MapBaseLayerId,
@@ -45,8 +54,26 @@ export class LandmassLayoutVectorLayer extends MapLayer {
       id: structure.id,
       segments: structureSegments(structure),
     }));
-    this.scene = { layout, size, shape: options.shape };
+    this.scene = {
+      layout,
+      size,
+      shape: options.shape,
+      dimensionsMeters: options.dimensionsMeters,
+    };
     this.mask = options.mask;
+    this.margin =
+      options.shape && options.dimensionsMeters
+        ? createMarginSampler(
+            options.shape,
+            {
+              widthMeters: options.dimensionsMeters.widthMeters,
+              heightMeters: options.dimensionsMeters.heightMeters,
+              sampleWidth: size.width,
+              sampleHeight: size.height,
+            },
+            OCEAN_MARGIN_METERS
+          )
+        : undefined;
   }
 
   /** Structure whose influence contains the cell, if any. */
@@ -58,6 +85,9 @@ export class LandmassLayoutVectorLayer extends MapLayer {
       x: x / Math.max(1, this.size.width - 1),
       y: y / Math.max(1, this.size.height - 1),
     };
+    if (this.margin && !this.margin(point)) {
+      return undefined;
+    }
     const probe: readonly StructureSegment[] = [
       { from: point, to: point, fromRadius: 0, toRadius: 0 },
     ];
@@ -114,10 +144,10 @@ export class LandmassLayoutVectorLayer extends MapLayer {
 export const landmassLayoutVectorLayerFactory: VectorLayerFactory = {
   id: 'landmass-layout',
   supports: isLandmassLayout,
-  create({ id, size, value, mask, shape }) {
+  create({ id, size, value, mask, shape, dimensionsMeters }) {
     if (!isLandmassLayout(value)) {
       throw new Error('Invalid landmass layout data.');
     }
-    return new LandmassLayoutVectorLayer(id, size, value, { mask, shape });
+    return new LandmassLayoutVectorLayer(id, size, value, { mask, shape, dimensionsMeters });
   },
 };

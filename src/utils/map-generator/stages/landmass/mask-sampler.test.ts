@@ -1,4 +1,11 @@
-import { createMaskSampler, createShapeSampler, insideWorldShare } from './mask-sampler';
+import {
+  createMarginSampler,
+  createMaskSampler,
+  createShapeSampler,
+  edgeFrame,
+  insideWorldShare,
+} from './mask-sampler';
+import type { WorldDimensions } from '../../../world-dimensions';
 import type { GeologicalStructure } from '../../types';
 
 const inside = createShapeSampler('disc');
@@ -51,6 +58,82 @@ describe('createShapeSampler', () => {
     expect(disc({ x: 1.05, y: 0.5 })).toBe(false);
     expect(createShapeSampler('rectangle')({ x: 0.99, y: 0.5 })).toBe(true);
     expect(createShapeSampler('rectangle')({ x: 1.05, y: 0.5 })).toBe(false);
+  });
+});
+
+describe('createMarginSampler', () => {
+  const dimensions: WorldDimensions = {
+    widthMeters: 1000,
+    heightMeters: 1000,
+    sampleWidth: 10,
+    sampleHeight: 10,
+  };
+
+  it('keeps the margin of ocean to the world edge', () => {
+    const margin = createMarginSampler('disc', dimensions, 50);
+
+    expect(margin({ x: 0.5, y: 0.5 })).toBe(true);
+    // 100 m from the edge: inside the 50 m margin.
+    expect(margin({ x: 0.9, y: 0.5 })).toBe(true);
+    // 10 m from the edge: water, not island ground.
+    expect(margin({ x: 0.99, y: 0.5 })).toBe(false);
+    expect(margin({ x: 1.05, y: 0.5 })).toBe(false);
+  });
+
+  it('erodes the rectangle exactly per axis', () => {
+    const margin = createMarginSampler(
+      'rectangle',
+      { widthMeters: 2000, heightMeters: 1000, sampleWidth: 20, sampleHeight: 10 },
+      100
+    );
+
+    // 100 m is 0.05 of the width but 0.1 of the height.
+    expect(margin({ x: 0.94, y: 0.5 })).toBe(true);
+    expect(margin({ x: 0.96, y: 0.5 })).toBe(false);
+    expect(margin({ x: 0.5, y: 0.89 })).toBe(true);
+    expect(margin({ x: 0.5, y: 0.91 })).toBe(false);
+  });
+
+  it('caps the margin on worlds smaller than the margin itself', () => {
+    const tiny: WorldDimensions = {
+      widthMeters: 2,
+      heightMeters: 2,
+      sampleWidth: 2,
+      sampleHeight: 2,
+    };
+
+    expect(createMarginSampler('disc', tiny, 5000)({ x: 0.5, y: 0.5 })).toBe(true);
+  });
+
+  it('matches the shape without a margin', () => {
+    const shape = createShapeSampler('disc');
+    const margin = createMarginSampler('disc', dimensions, 0);
+
+    for (const point of [
+      { x: 0.5, y: 0.5 },
+      { x: 0.9, y: 0.5 },
+      { x: 0.99, y: 0.5 },
+    ]) {
+      expect(margin(point)).toBe(shape(point));
+    }
+  });
+});
+
+describe('edgeFrame', () => {
+  it('runs tangent to the disc edge with a signed gap', () => {
+    const frame = edgeFrame('disc', { x: 0.75, y: 0.5 });
+
+    expect(frame.gap).toBeCloseTo(0.25, 10);
+    expect(frame.tangent).toBeCloseTo(Math.PI / 2, 10);
+    expect(edgeFrame('disc', { x: 1.05, y: 0.5 }).gap).toBeLessThan(0);
+  });
+
+  it('follows the nearer rectangle edge', () => {
+    const vertical = edgeFrame('rectangle', { x: 0.9, y: 0.5 });
+
+    expect(vertical.gap).toBeCloseTo(0.1, 10);
+    expect(vertical.tangent).toBeCloseTo(Math.PI / 2, 10);
+    expect(edgeFrame('rectangle', { x: 0.5, y: 0.9 }).tangent).toBeCloseTo(0, 10);
   });
 });
 

@@ -117,6 +117,21 @@ export function structureSegments(structure: PlaceableStructure): StructureSegme
   const byId = new Map(structure.nodes.map(node => [node.id, node]));
   const segments: StructureSegment[] = [];
 
+  if (structure.edges.length === 0) {
+    // A single node carries no edges, so its influence is one point segment —
+    // without it collisions and the inside share would see nothing at all.
+    const only = structure.nodes.length === 1 ? structure.nodes[0] : undefined;
+    if (only) {
+      segments.push({
+        from: only.position,
+        to: only.position,
+        fromRadius: only.radius,
+        toRadius: only.radius,
+      });
+    }
+    return segments;
+  }
+
   for (const edge of structure.edges) {
     const from = byId.get(edge.from);
     const to = byId.get(edge.to);

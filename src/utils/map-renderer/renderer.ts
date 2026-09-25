@@ -139,10 +139,15 @@ export class MapRenderer {
    * Begins a run. A scene that already holds the same map size keeps its layers,
    * view transform and selection; only the new layers are prepared.
    */
-  start(size: MapSize, shape: WorldShape, regionGeometry?: MapMetadata['regionGeometry']): void {
+  start(
+    size: MapSize,
+    shape: WorldShape,
+    regionGeometry?: MapMetadata['regionGeometry'],
+    dimensionsMeters?: MapMetadata['dimensionsMeters']
+  ): void {
     this.cancel();
     this.lifetime = new AbortController();
-    this.scene.start(size, { shape, regionGeometry });
+    this.scene.start(size, { shape, regionGeometry, dimensionsMeters });
     this.mapSize = size;
     this.error = undefined;
     this.metrics.start();
@@ -151,7 +156,7 @@ export class MapRenderer {
 
   /** Displays existing layer data without progressive drawing or generation statistics. */
   load(snapshot: MapSnapshotData): void {
-    this.start(snapshot, snapshot.shape, snapshot.regionGeometry);
+    this.start(snapshot, snapshot.shape, snapshot.regionGeometry, snapshot.dimensionsMeters);
     this.setInfo(snapshot.info ?? {});
     this.metrics.reset();
     const layers = this.scene.load(snapshot.layers);
