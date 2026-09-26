@@ -1,13 +1,15 @@
 import type { MapLayer, MapSize } from './layer';
 import type { LayerRegistry } from './layer-registry';
 import type { WorldShape } from '../../world-shape';
-import type { MapBaseLayerId, SpatialMask } from '../types';
+import type { MapBaseLayerId, MapInfo, SpatialMask } from '../types';
 
 /** Everything a factory needs to build the vector layer of one map. */
 export interface VectorLayerInput {
   readonly id: MapBaseLayerId;
   readonly size: MapSize;
   readonly value: unknown;
+  /** Map info, so a layer may read the extra sources its spec declares. */
+  readonly info: MapInfo;
   /** Spatial mask of the layer's clip source, e.g. the world shape. */
   readonly mask?: SpatialMask;
   /** World outline the layer may paint, e.g. an ocean background. */

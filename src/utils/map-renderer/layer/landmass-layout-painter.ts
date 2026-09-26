@@ -42,6 +42,8 @@ const MIN_SKELETON_PX = 1.8;
 const MIN_RAIL_PX = 0.6;
 const MIN_WIDTH_STROKE_PX = 0.9;
 const MIN_NODE_PX = 3;
+/** Floor of a proportional node dot, used only by views that ask for it. */
+const MIN_DOT_PX = 1;
 const HALO_EXTRA_PX = 2;
 const FILL_ALPHA = 0.07;
 const RAIL_ALPHA = 0.18;
@@ -153,7 +155,9 @@ export function paintLandmassLayout(
     context.clip();
   }
   scene.layout.structures.forEach((structure, index) => {
-    paintStructure(context, projection, scene.size, structure, structureColor(index));
+    paintStructureBody(context, projection, scene.size, structure, {
+      color: structureColor(index),
+    });
   });
   if (eroded) {
     context.restore();
@@ -434,23 +438,33 @@ function corridorRun(
   };
 }
 
+/** Body and skeleton colours of one structure rendering. */
+export interface StructurePaintStyle {
+  readonly color: Color;
+  /** Body fill alpha; the landmass plan is a light hint, the character view is solid. */
+  readonly fillAlpha?: number;
+  /** Whether the axis and node dots are drawn; a view may add them on top instead. */
+  readonly skeleton?: boolean;
+}
+
 /**
- * The drawing is a construction plan, not an outline: the axis carries the
- * structure, width strokes mark the local width at the nodes, and a valid
- * corridor stays a very light hint behind them.
+ * Draws one structure the same way as the landmass plan: a smooth corridor with
+ * rails, node width strokes and an axis with dots. Only the body fill alpha is
+ * configurable, so another view reuses the exact shape.
  */
-function paintStructure(
+export function paintStructureBody(
   context: CanvasRenderingContext2D,
   projection: MapProjection,
   size: MapSize,
   structure: GeologicalStructure,
-  color: Color
+  style: StructurePaintStyle
 ): void {
+  const color = style.color;
+  const fillAlpha = style.fillAlpha ?? FILL_ALPHA;
   const geometry = structureGeometry(structure, projection, size);
   const cellSize = projection.cellSize;
   const railWidth = Math.max(MIN_RAIL_PX, cellSize * RAIL_WEIGHT);
   const widthStroke = Math.max(MIN_WIDTH_STROKE_PX, cellSize * WIDTH_STROKE_WEIGHT);
-  const skeletonWidth = Math.max(MIN_SKELETON_PX, cellSize * SKELETON_WEIGHT);
   const nodeRadius = Math.max(MIN_NODE_PX, cellSize * NODE_WEIGHT);
 
   context.lineJoin = 'round';
@@ -459,13 +473,13 @@ function paintStructure(
   // Very light corridor and its rails; neither may compete with the axis.
   for (const chain of geometry.chains) {
     for (const run of chain.runs) {
-      paintCorridor(context, run, color);
+      paintCorridor(context, run, color, fillAlpha);
     }
   }
   // A structure without edges is one disc: fill its influence circle, since no
   // corridor run colours its body.
   if (geometry.chains.length === 0) {
-    context.fillStyle = rgba(color, FILL_ALPHA);
+    context.fillStyle = rgba(color, fillAlpha);
     for (const node of geometry.nodes) {
       context.beginPath();
       context.ellipse(node.point.x, node.point.y, node.radii.x, node.radii.y, 0, 0, TAU);
@@ -503,22 +517,135 @@ function paintStructure(
     context.stroke();
   }
 
-  // Axis above everything; the dark halo keeps the thin line readable.
-  context.strokeStyle = HALO_COLOR;
-  context.lineWidth = skeletonWidth + HALO_EXTRA_PX;
+  if (style.skeleton ?? true) {
+    paintAxis(
+      context,
+      geometry,
+      color,
+      Math.max(MIN_SKELETON_PX, cellSize * SKELETON_WEIGHT),
+      nodeRadius,
+      true,
+      'round',
+      false,
+      false
+    );
+  }
+}
+
+/** Skeleton drawing options; a view may thin or flatten the axis. */
+export interface SkeletonStyle {
+  readonly halo?: boolean;
+  readonly lineWidth?: number;
+  readonly nodeRadius?: number;
+  readonly lineCap?: CanvasLineCap;
+  /** Dots follow the local width instead of one fixed radius. */
+  readonly proportionalDots?: boolean;
+  /** Smooth the axis with the same spline as the body. */
+  readonly smooth?: boolean;
+}
+
+/**
+ * Axis and node dots of one structure, without its body. A view that recolours
+ * the body redraws this so the skeleton stays readable on top.
+ */
+export function paintStructureSkeleton(
+  context: CanvasRenderingContext2D,
+  projection: MapProjection,
+  size: MapSize,
+  structure: GeologicalStructure,
+  color: Color,
+  style: SkeletonStyle = {}
+): void {
+  const skeletonWidth =
+    style.lineWidth ?? Math.max(MIN_SKELETON_PX, projection.cellSize * SKELETON_WEIGHT);
+  const nodeRadius = style.nodeRadius ?? Math.max(MIN_NODE_PX, projection.cellSize * NODE_WEIGHT);
+  context.lineJoin = 'round';
+  context.lineCap = style.lineCap ?? 'round';
+  paintAxis(
+    context,
+    structureGeometry(structure, projection, size),
+    color,
+    skeletonWidth,
+    nodeRadius,
+    style.halo ?? true,
+    style.lineCap ?? 'round',
+    style.proportionalDots ?? false,
+    style.smooth ?? false
+  );
+}
+
+/**
+ * Fills only the body ribbon of one structure, without rails or axis. A view
+ * that tints a part of the body reuses it, so the shape stays identical.
+ */
+export function paintStructureCorridor(
+  context: CanvasRenderingContext2D,
+  projection: MapProjection,
+  size: MapSize,
+  structure: GeologicalStructure,
+  color: Color,
+  fillAlpha: number
+): void {
+  const geometry = structureGeometry(structure, projection, size);
+  context.fillStyle = rgba(color, fillAlpha);
+  let filled = false;
   for (const chain of geometry.chains) {
-    paintPolyline(context, chain.points);
+    for (const run of chain.runs) {
+      paintCorridor(context, run, color, fillAlpha);
+      filled = true;
+    }
+  }
+  if (filled) {
+    return;
+  }
+  for (const node of geometry.nodes) {
+    context.beginPath();
+    context.ellipse(node.point.x, node.point.y, node.radii.x, node.radii.y, 0, 0, TAU);
+    context.fill();
+  }
+}
+
+/** Axis line with its halo plus one dot per real node. */
+function paintAxis(
+  context: CanvasRenderingContext2D,
+  geometry: StructureGeometry,
+  color: Color,
+  skeletonWidth: number,
+  nodeRadius: number,
+  halo: boolean,
+  lineCap: CanvasLineCap,
+  proportionalDots: boolean,
+  smooth: boolean
+): void {
+  context.lineCap = lineCap;
+  context.lineJoin = 'round';
+  const trace = (points: readonly CanvasPoint[], closed: boolean): void => {
+    if (smooth) {
+      paintCurve(context, points, closed);
+    } else {
+      paintPolyline(context, points);
+    }
+  };
+  if (halo) {
+    context.strokeStyle = HALO_COLOR;
+    context.lineWidth = skeletonWidth + HALO_EXTRA_PX;
+    for (const chain of geometry.chains) {
+      trace(chain.points, chain.runs[0]?.closed ?? false);
+    }
   }
   context.strokeStyle = rgb(color);
   context.lineWidth = skeletonWidth;
   for (const chain of geometry.chains) {
-    paintPolyline(context, chain.points);
+    trace(chain.points, chain.runs[0]?.closed ?? false);
   }
 
   // Only real nodes become dots; control points just shape the axis.
   context.fillStyle = rgb(color);
   for (const node of geometry.nodes) {
-    paintDot(context, node.point, node.branch ? nodeRadius * BRANCH_SCALE : nodeRadius);
+    const base = proportionalDots
+      ? Math.max(MIN_DOT_PX, Math.min(nodeRadius, Math.min(node.radii.x, node.radii.y) * 0.35))
+      : nodeRadius;
+    paintDot(context, node.point, node.branch ? base * BRANCH_SCALE : base);
   }
 }
 
@@ -527,13 +654,18 @@ function paintStructure(
  * the ribs at the open tips (or the ring seam). No second geometry besides that
  * path — body is only colouring of the curve (docs/landmass-layout-body-preview.md).
  */
-function paintCorridor(context: CanvasRenderingContext2D, run: CorridorRun, color: Color): void {
+function paintCorridor(
+  context: CanvasRenderingContext2D,
+  run: CorridorRun,
+  color: Color,
+  fillAlpha: number
+): void {
   const left = run.closed ? uniqueLoop(run.left) : run.left;
   const right = run.closed ? uniqueLoop(run.right) : run.right;
   if (left.length < 2 || right.length < 2) {
     return;
   }
-  context.fillStyle = rgba(color, FILL_ALPHA);
+  context.fillStyle = rgba(color, fillAlpha);
   context.beginPath();
   if (run.closed) {
     traceSmoothPolyline(context, left, true);
@@ -562,12 +694,6 @@ function addEndCap(
   context.ellipse(point.x, point.y, radius.x, radius.y, 0, 0, TAU);
 }
 
-function paintPolyline(context: CanvasRenderingContext2D, points: readonly CanvasPoint[]): void {
-  context.beginPath();
-  tracePolyline(context, points);
-  context.stroke();
-}
-
 function paintCurve(
   context: CanvasRenderingContext2D,
   points: readonly CanvasPoint[],
@@ -578,6 +704,12 @@ function paintCurve(
   if (closed) {
     context.closePath();
   }
+  context.stroke();
+}
+
+function paintPolyline(context: CanvasRenderingContext2D, points: readonly CanvasPoint[]): void {
+  context.beginPath();
+  tracePolyline(context, points);
   context.stroke();
 }
 

@@ -1,16 +1,12 @@
 import { isLandmassLayout } from '../stages/landmass';
-import { isStructureProfiles, isStructureRegions } from '../stages/structure-character';
+import { isStructureZones } from '../stages/structure-character';
 import type { MapState, StageData } from '../types';
 
 /** Raster keys the generator owns. The layer catalog may display them, not define them. */
 export const RASTER_OUTPUT_KEYS = ['worldMask', 'noiseMap', 'macroRegionIdMap'] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
-export const DOMAIN_OUTPUT_KEYS = [
-  'landmassLayout',
-  'structureProfiles',
-  'structureRegions',
-] as const;
+export const DOMAIN_OUTPUT_KEYS = ['landmassLayout', 'structureZones'] as const;
 
 export type RasterOutputKey = (typeof RASTER_OUTPUT_KEYS)[number];
 export type DomainOutputKey = (typeof DOMAIN_OUTPUT_KEYS)[number];
@@ -18,8 +14,7 @@ export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
 
 const domainReaders = {
   landmassLayout: isLandmassLayout,
-  structureProfiles: isStructureProfiles,
-  structureRegions: isStructureRegions,
+  structureZones: isStructureZones,
 } satisfies {
   [Key in DomainOutputKey]: (value: unknown) => value is NonNullable<MapState[Key]>;
 };

@@ -3,6 +3,7 @@ export { CatalogLayer } from './catalog-layer';
 export { LayerRegistry, layerRegistry } from './layer-registry';
 export { MapLayer, isLayerHit } from './layer';
 export { LandmassLayoutVectorLayer } from './landmass-layout-vector-layer';
+export { StructureCharacterVectorLayer } from './structure-character-vector-layer';
 export { vectorLayerFactories } from './vector-layer-factories';
 export { validateVectorLayerFactories } from './vector-layer-factory';
 export { LayerQueue } from './layer-queue';

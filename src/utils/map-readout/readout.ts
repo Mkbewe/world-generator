@@ -1,5 +1,7 @@
+import { isStructureZones } from '../map-generator';
 import { isLandmassLayout, structureSegments } from '../map-generator/stages/landmass';
 import type { GeologicalStructure } from '../map-generator/types';
+import { characterStyle } from '../map-layers';
 import type { MapInfo, MapInspection } from '../map-renderer';
 import { cellOriginMeters, type WorldDimensions } from '../world-dimensions';
 
@@ -58,6 +60,11 @@ function inspectionItems(
   structure: GeologicalStructure | undefined
 ): readonly ReadoutItem[] {
   if (inspection?.kind === 'vector') {
+    const character =
+      inspection.layerId === 'structure-character' ? characterItems(inspection, info) : undefined;
+    if (character) {
+      return character;
+    }
     return [
       { id: 'name', label: 'Name', value: inspection.hit?.id ?? EMPTY },
       ...(structure ? [{ id: 'archetype', label: 'Archetype', value: structure.archetype }] : []),
@@ -123,6 +130,37 @@ function landmassStructure(
     return undefined;
   }
   return layout.structures.find(structure => structure.id === id);
+}
+
+/** Readout of a structure-character hit: the zone under the pointer. */
+function characterItems(
+  inspection: MapInspection,
+  info: MapInfo
+): readonly ReadoutItem[] | undefined {
+  if (inspection.kind !== 'vector' || !inspection.hit) {
+    return undefined;
+  }
+  const id = inspection.hit.id;
+  const zones = info.structureZones;
+  if (!isStructureZones(zones)) {
+    return undefined;
+  }
+  const zone = zones.find(candidate => candidate.id === id);
+  if (!zone) {
+    return undefined;
+  }
+  return [
+    { id: 'name', label: 'Name', value: zone.structureId },
+    { id: 'character', label: 'Character', value: characterStyle(zone.character).label },
+    { id: 'plateau', label: 'Plateau', value: percent(zone.values.plateauStrength) },
+    { id: 'lakes', label: 'Lakes', value: percent(zone.values.lakePotential) },
+    { id: 'erosion', label: 'Erosion', value: percent(zone.values.erosionStrength) },
+    { id: 'cliffs', label: 'Cliffs', value: percent(zone.values.coastalCliffStrength) },
+  ];
+}
+
+function percent(value: number): string {
+  return `${Math.min(100, Math.max(0, Math.round(value * 100)))}%`;
 }
 
 /** Measurements of the hovered structure, shown as extra readout rows. */

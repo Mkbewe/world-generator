@@ -82,7 +82,7 @@ describe('createMapGenerator', () => {
       {
         id: 'structure-character',
         reads: ['landmassLayout'],
-        writes: ['structureProfiles', 'structureRegions'],
+        writes: ['structureZones'],
         configKeys: [
           'world.seed',
           'world.shape',

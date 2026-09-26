@@ -7,6 +7,7 @@ import {
   LayerRegistry,
   layerRegistry,
   MapLayer,
+  StructureCharacterVectorLayer,
 } from '../layer';
 
 const BASE_CATALOG = [layerRegistry.get('world-shape'), layerRegistry.get('noise')];
@@ -27,6 +28,26 @@ const LAYOUT: LandmassLayout = {
   ],
   shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 }],
 };
+
+/** Domain data of the structure character layer. */
+const ZONES = [
+  {
+    id: 'landmass-1-zone-1',
+    structureId: 'landmass-1',
+    character: 'mountains',
+    geometry: { kind: 'whole' },
+    values: {
+      elevation: 0.5,
+      roughness: 0.5,
+      mountainStrength: 0.8,
+      hillStrength: 0.5,
+      plateauStrength: 0.3,
+      lakePotential: 0.2,
+      erosionStrength: 0.5,
+      coastalCliffStrength: 0.4,
+    },
+  },
+];
 
 function setup() {
   const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_CATALOG));
@@ -267,6 +288,26 @@ describe('MapScene', () => {
     scene.add('world-shape', new Uint8Array(16).fill(1));
 
     expect(scene.get('landmass-layout')).toBeInstanceOf(LandmassLayoutVectorLayer);
+  });
+
+  it('adds the structure character layer when its regions arrive', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+
+    scene.setInfo({ structureZones: ZONES });
+
+    expect(scene.get('structure-character')).toBeInstanceOf(StructureCharacterVectorLayer);
+  });
+
+  it('skips the structure character layer without regions', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+
+    scene.setInfo({ landmassLayout: LAYOUT });
+
+    expect(scene.get('structure-character')).toBeUndefined();
   });
 
   it('refuses a vector catalog without a factory', () => {

@@ -69,10 +69,7 @@ describe('selectDirtyStageIds', () => {
         { landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } },
         ['landmass-layout', 'structure-character'],
       ],
-      [
-        { structureCharacter: { profileVariation: 0.8, regionDensity: 0.2 } },
-        ['structure-character'],
-      ],
+      [{ structureCharacter: { characterVariation: 0.8 } }, ['structure-character']],
     ];
 
     for (const [patch, expected] of cases) {
@@ -83,7 +80,7 @@ describe('selectDirtyStageIds', () => {
   it('keeps landmass layout clean when only structureCharacter changes', () => {
     const next: MapConfig = {
       ...config,
-      structureCharacter: { profileVariation: 0.9, regionDensity: 0.1 },
+      structureCharacter: { characterVariation: 0.9 },
     };
     const dirty = selectDirtyStageIds(config, next);
 

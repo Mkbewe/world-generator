@@ -38,6 +38,16 @@ const CATALOG_ENTRIES = [
     kind: 'vector',
     source: 'landmassLayout',
     clipTo: 'world-shape',
+    group: { id: 'landmass', label: 'Landmasses' },
+  },
+  {
+    id: 'structure-character',
+    label: 'Character',
+    kind: 'vector',
+    source: 'structureZones',
+    clipTo: 'world-shape',
+    reads: ['landmassLayout'],
+    group: { id: 'landmass', label: 'Landmasses' },
   },
   {
     id: 'noise',

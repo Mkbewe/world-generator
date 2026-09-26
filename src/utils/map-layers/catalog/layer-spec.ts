@@ -33,6 +33,12 @@ interface LayerSpecBase<TId extends string = string> {
   readonly source: string;
   readonly clipTo?: TId;
   readonly group?: LayerGroupSpec;
+  /**
+   * Extra non-raster info sources a vector layer reads besides its own
+   * `source`, e.g. the layout behind the structure regions. They join the
+   * cache key so a change rebuilds the layer.
+   */
+  readonly reads?: readonly string[];
 }
 
 /** Declarative description of one renderable raster. */

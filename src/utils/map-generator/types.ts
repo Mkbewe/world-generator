@@ -150,13 +150,57 @@ export interface LandmassConfig {
 }
 
 /**
- * Eight terrain intent values, each 0..1, without identity. The heightmap
- * reads them as follows: `elevation` from deep ocean floor to peak,
- * `roughness` as micro-relief amplitude, `mountainStrength`, `hillStrength`
- * and `plateauStrength` as competing landform tendencies, `lakePotential`
- * as lake propensity where the terrain allows, `erosionStrength` as
- * smoothing and carving, `coastalCliffStrength` as steep coasts.
+ * The primary terrain intent of a character zone. Determines what kind of
+ * landform a zone represents; features (plateau, lakes, cliffs, erosion) are
+ * derived from this value, so incompatible combinations cannot occur.
  */
+export const TERRAIN_CHARACTERS = ['plains', 'hills', 'mountains'] as const;
+
+export type TerrainCharacter = (typeof TERRAIN_CHARACTERS)[number];
+
+/**
+ * Spatial extent of a character zone within its geological structure.
+ *
+ * - `whole`  — covers the entire structure; every structure has at least one.
+ * - `half`   — one directional half; `axis: 'along'` splits along the main
+ *              skeleton axis (preferred for elongated), `'x'`/`'y'` split
+ *              on the world axes.
+ * - `center` — inner core up to `radiusFraction` of the structure extent.
+ * - `edge`   — outer band of width `widthFraction` of the structure extent.
+ * - `point`  — a circular area anchored at `center` with `influenceRadius`.
+ */
+export type ZoneGeometry =
+  | { readonly kind: 'whole' }
+  | { readonly kind: 'half'; readonly axis: 'along' | 'x' | 'y'; readonly side: 'low' | 'high' }
+  | { readonly kind: 'center'; readonly radiusFraction: number }
+  | { readonly kind: 'edge'; readonly widthFraction: number }
+  | { readonly kind: 'point'; readonly center: WorldPoint; readonly influenceRadius: number };
+
+/**
+ * One terrain character zone belonging to a geological structure. The
+ * heightmap blends overlapping zones by proximity — the closest zone wins,
+ * and the `whole` zone fills every area not covered by a more specific one.
+ */
+export interface CharacterZone {
+  readonly id: string;
+  readonly structureId: string;
+  readonly character: TerrainCharacter;
+  readonly geometry: ZoneGeometry;
+  /** Concrete field values sampled within the character's ranges. */
+  readonly values: TerrainProfile;
+}
+
+/** Controls the structure character stage. */
+export interface StructureCharacterConfig {
+  /**
+   * How often a large structure splits into a second character zone; 0 keeps
+   * every structure single-character. Characters themselves are drawn uniformly
+   * from the archetype pool.
+   */
+  readonly characterVariation: number;
+}
+
+/** Eight terrain values, each 0..1, sampled for one zone. */
 export interface TerrainProfile {
   readonly elevation: number;
   readonly roughness: number;
@@ -168,15 +212,17 @@ export interface TerrainProfile {
   readonly coastalCliffStrength: number;
 }
 
-/** Terrain intent of one geological structure; the input for the heightmap. */
+/**
+ * @deprecated Replaced by {@link CharacterZone}. Will be removed when
+ * HeightmapStage is implemented.
+ */
 export interface StructureTerrainProfile extends TerrainProfile {
   readonly structureId: string;
 }
 
 /**
- * A regional override of a structure profile. The profile is a full value
- * set, not a delta: the heightmap blends overlapping regions by influence
- * weight, and the base structure profile applies outside every influence.
+ * @deprecated Replaced by {@link CharacterZone}. Will be removed when
+ * HeightmapStage is implemented.
  */
 export interface StructureRegionDefinition {
   readonly id: string;
@@ -184,14 +230,6 @@ export interface StructureRegionDefinition {
   readonly center: WorldPoint;
   readonly influenceRadius: number;
   readonly profile: TerrainProfile;
-}
-
-/** Controls the structure character stage. */
-export interface StructureCharacterConfig {
-  /** Spread of the per-structure profile around its archetype tendency; 0..1. */
-  readonly profileVariation: number;
-  /** Density of regional overrides on large structures; 0 grows none; 0..1. */
-  readonly regionDensity: number;
 }
 
 export interface MapConfig extends SeededWorldConfig {
@@ -217,8 +255,7 @@ export interface MapState {
   /** Produced by the landmass-layout stage. */
   landmassLayout?: LandmassLayout;
   /** Produced by the structure-character stage. */
-  structureProfiles?: readonly StructureTerrainProfile[];
-  structureRegions?: readonly StructureRegionDefinition[];
+  structureZones?: readonly CharacterZone[];
 }
 
 export type StageMetric = number | string;

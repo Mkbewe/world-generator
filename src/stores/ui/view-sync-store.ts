@@ -14,6 +14,14 @@ const SETTINGS_TABS: readonly SettingsTab[] = [
 /** Catalog layers that share their id with a pipeline stage. */
 const STAGE_LAYERS = new Set<string>(LAYER_CATALOG.map(layer => layer.id));
 
+/**
+ * Layers a settings tab does not own yet, mapped to the closest existing form.
+ * The structure character form arrives in #352.
+ */
+const LAYER_TAB_OVERRIDES: Partial<Record<MapBaseLayerId, SettingsTab>> = {
+  'structure-character': 'landmass-layout',
+};
+
 export interface ViewSyncValues {
   /** Active settings form tab; remembered across navigation. */
   settingsTab: SettingsTab;
@@ -47,5 +55,5 @@ export function layerForTab(tab: SettingsTab): MapBaseLayerId | undefined {
 
 /** Settings tab that owns a preview layer; layers without a stage tab are ignored. */
 export function tabForLayer(layer: MapBaseLayerId): SettingsTab | undefined {
-  return SETTINGS_TABS.find(tab => layerForTab(tab) === layer);
+  return LAYER_TAB_OVERRIDES[layer] ?? SETTINGS_TABS.find(tab => layerForTab(tab) === layer);
 }
