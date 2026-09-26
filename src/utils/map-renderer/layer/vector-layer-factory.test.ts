@@ -13,9 +13,20 @@ const landmassFactory: VectorLayerFactory = {
   },
 };
 
+const characterFactory: VectorLayerFactory = {
+  id: 'structure-character',
+  supports: () => true,
+  create: () => {
+    throw new Error('The validator never builds layers.');
+  },
+};
+
 describe('validateVectorLayerFactories', () => {
   it('accepts a catalog whose vector layers all have factories', () => {
-    const factories: VectorLayerFactoryRegistry = new Map([['landmass-layout', landmassFactory]]);
+    const factories: VectorLayerFactoryRegistry = new Map([
+      ['landmass-layout', landmassFactory],
+      ['structure-character', characterFactory],
+    ]);
 
     expect(() => validateVectorLayerFactories(layerRegistry, factories)).not.toThrow();
   });

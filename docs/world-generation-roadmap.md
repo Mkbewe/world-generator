@@ -519,77 +519,90 @@ Przydatne warstwy danych:
 
 ### 4.5. Charakter struktur — [planowane]
 
-Charakter struktury powinien być zestawem parametrów, a nie pojedynczą,
-wykluczającą etykietą. Na tym etapie nie ma jeszcze wysp — są tylko struktury
-geologiczne z `LandmassLayoutStage`. Wyspy powstają dopiero po przecięciu
-poziomem morza (`LandOceanStage`), więc profil należy do struktury, a wyspy
-archipelagu dziedziczą go później.
+Charakter struktury opisuje **zamiar** generatora, a nie gwarantowany wynik.
+`HeightmapStage`, `HydrologyStage` i pozostałe etapy weryfikują, gdzie dana
+cecha może faktycznie powstać. Na tym etapie nie ma jeszcze wysp — są tylko
+struktury geologiczne z `LandmassLayoutStage`.
+
+Zamiast zestawu 8 niezależnych floatów każda strefa terenu ma jeden wzajemnie
+wykluczający się **primary character**:
 
 ```ts
-interface TerrainProfile {
-  elevation: number;
-  roughness: number;
-  mountainStrength: number;
-  hillStrength: number;
-  plateauStrength: number;
-  lakePotential: number;
-  erosionStrength: number;
-  coastalCliffStrength: number;
-}
-
-/** Profil struktury to ten zestaw plus tożsamość właściciela. */
-interface StructureTerrainProfile extends TerrainProfile {
-  structureId: string;
-}
+type TerrainCharacter = 'plains' | 'hills' | 'mountains';
 ```
 
-Przykładowe tendencje to teren płaski, pagórkowaty, górzysty, wulkaniczny, bogaty
-w jeziora, płaskowyże lub klifowe wybrzeża. Parametry mogą się łączyć, np.
-struktura może być jednocześnie górzysta i mieć silne klify.
+Cechy (`plateauStrength`, `lakePotential`, `erosionStrength`,
+`coastalCliffStrength`) są pochodną primary character i losowane z zakresów
+właściwych dla danego charakteru. Płaskowyż jest cechą, nie charakterem; dzięki
+temu jezior nie ma w górach, a klifów brzegowych nie ma na nizinach — bez
+rozgałęzień w kodzie.
 
-Profil opisuje zamiar generatora, a nie gwarantowany rezultat. `HeightmapStage`,
-hydrologia i pozostałe etapy sprawdzają, gdzie dana cecha może faktycznie
-powstać.
+Każdy archetype ma pulę dozwolonych primary characters:
 
-Etap produkuje wyłącznie definicje — `structureProfiles` i `structureRegions`, bez
-rastra i bez wysokości — więc nie zależy od liczby komórek świata. Ma własny
-wycinek konfiguracji (`structureCharacter`), żeby zmiana parametrów terenu nie
-unieważniała placementu landmassów (§2.8).
+| Archetype | Dozwolone charaktery |
+|---|---|
+| `lagoon` | tylko `plains` — czysta, płaska nizina (atol) bez cech wtórnych |
+| `round` | wszystkie trzy |
+| `irregular` | wszystkie trzy |
+| `elongated` | `plains`, `hills` (bez gór) |
+| `branched` | wszystkie trzy |
 
-### 4.6. Regiony wewnątrz struktury — [planowane]
+Split jest bramkowany `characterVariation`: 0 zostawia każdą strukturę
+jednolitym charakterem, wyżej duże struktury dostają drugą strefę (`half` lub
+`center`).
 
-Duża struktura nie powinna mieć jednolitego charakteru. Może zostać podzielona
-na regiony, np. góry na zachodzie, równiny na wschodzie, płaskowyż w centrum
-i klifowe wybrzeże na północy.
+Etap produkuje wyłącznie definicje — bez rastra i bez wysokości — więc nie
+zależy od liczby komórek świata. Ma własny wycinek konfiguracji
+(`structureCharacter`), żeby zmiana parametrów terenu nie unieważniała
+placementu landmassów (§2.8).
+
+### 4.6. Strefy charakteru wewnątrz struktury — [planowane]
+
+Duża struktura nie powinna mieć jednolitego charakteru. Zamiast osobnego profilu
+bazowego i listy nadpisujących regionów, etap produkuje jedną listę równorzędnych
+**stref charakteru** (`CharacterZone`). Każda strefa niesie własny `TerrainCharacter`
+i geometrię określającą, która część struktury ją obejmuje.
 
 ```ts
-interface StructureRegionDefinition {
+interface CharacterZone {
   id: string;
   structureId: string;
-  center: WorldPoint;
-  influenceRadius: number;
-  profile: TerrainProfile;
+  character: TerrainCharacter;
+  geometry: ZoneGeometry;
 }
+
+type ZoneGeometry =
+  | { kind: 'whole' }
+  | { kind: 'half'; axis: 'along' | 'x' | 'y'; side: 'low' | 'high' }
+  | { kind: 'center'; radiusFraction: number }
+  | { kind: 'edge';   widthFraction: number }
+  | { kind: 'point';  center: WorldPoint; influenceRadius: number };
 ```
 
-Wpływy regionów powinny płynnie się mieszać zamiast tworzyć ostre granice. Dla
-każdej komórki można obliczać wagi kilku najbliższych regionów i interpolować
-ich parametry. Małe struktury mogą mieć jeden profil globalny, a liczba regionów
-dużej struktury może zależeć od jej powierzchni.
+Każda struktura ma co najmniej jedną strefę `whole` z wylosowanym primary
+character. Duże struktury mogą dostać drugą strefę (`half` lub `center`),
+co daje efekty takie jak "zachodnia połowa górzysta, wschodnia nizinna" albo
+"góry w centrum, łagodniejszy teren przy brzegach".
 
-Charakter nie dostaje osobnej warstwy bazowej ani osobnej zakładki. Regiony
-pokazują się jako overlay na warstwie `Landmasses`: bloby wpływu na szkielecie
-struktury, kolor od dominującej tendencji (góry / pagórki / płaskowyż / równiny /
-jeziora / klify), a readout pod kursorem podaje wartości profilu i nazwę regionu.
-Prawdziwym obrazem charakteru jest heightmapa. Sekcja „Structure character" siedzi
-w zakładce `Landmasses`, więc geometria i intencja terenu to jeden formularz
-i jedna mapa.
+Strefa `half` dla `elongated` dzieli strukturę **wzdłuż jej głównej osi**
+(`axis: 'along'`), a nie arbitralnie X/Y. `Round` i `irregular` losują `x` lub `y`.
+
+Heightmapa blenduje strefy wagą odległości — strefa bliższa danemu punktowi
+dominuje, a `whole` wypełnia obszary poza zasięgiem pozostałych stref.
+
+Charakter jest podwidokiem grupy `Landmasses` („Landmasses / Character\").
+Ciało struktury pokrywa kolor primary character, a odcinek korytarza przykryty
+dodatkową strefą dostaje jej kolor. Szkielet rysuje się na wierzchu. Readout
+pod kursorem podaje primary character strefy i jej geometry kind.
+
+Klucz domenowy w `MapState` to `structureZones`; dane płyną istniejącym
+kanałem `selectDomainOutputs` → `MapInfo` → warstwa podglądu — bez wpisu
+w `MAP_INFO_CATALOG`.
 
 Przydatne warstwy danych:
 
-- `structureProfiles` i `structureRegions` — definicje charakteru z tego etapu,
+- `structureZones` — definicje charakteru z tego etapu,
 - `islandIdMap` — przypisanie komórki lądu do faktycznej wyspy (poziom morza),
-- `regionInfluenceMap` — wpływ regionalnych profili terenu,
 - `heightmap` — rzeczywista wysokość,
 - `slopeMap` — nachylenie,
 - `waterMap` i `drainageMap` — hydrologia,

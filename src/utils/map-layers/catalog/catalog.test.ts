@@ -26,6 +26,17 @@ describe('LAYER_CATALOG', () => {
     expect(RASTER_CATALOG.map(layer => layer.id)).not.toContain('landmass-layout');
   });
 
+  it('groups the structure character under the landmass tab', () => {
+    const landmass = LAYER_CATALOG.find(layer => layer.id === 'landmass-layout');
+    const character = LAYER_CATALOG.find(layer => layer.id === 'structure-character');
+
+    expect(character?.kind).toBe('vector');
+    expect(character?.source).toBe('structureZones');
+    expect(character?.group).toEqual({ id: 'landmass', label: 'Landmasses' });
+    expect(landmass?.group?.id).toBe('landmass');
+    expect(RASTER_CATALOG.map(layer => layer.id)).not.toContain('structure-character');
+  });
+
   it('sources every raster layer from a generator raster output', () => {
     const outputs = new Set<string>([...RASTER_OUTPUT_KEYS]);
 

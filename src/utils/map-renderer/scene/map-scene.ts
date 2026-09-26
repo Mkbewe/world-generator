@@ -217,6 +217,7 @@ export class MapScene {
   ): MapLayer {
     const size = this.size;
     const clipMask = spec.clipTo ? this.rasterLayer(spec.clipTo) : undefined;
+    const reads = spec.reads ?? [];
     const previous = this.layers.get(spec.id);
     const layer = this.cache.getOrCreate(
       spec.id,
@@ -229,12 +230,14 @@ export class MapScene {
         this.geometry?.shape,
         this.dimensionsMeters?.widthMeters,
         this.dimensionsMeters?.heightMeters,
+        ...reads.map(source => this.info[source]),
       ],
       () =>
         factory.create({
           id: spec.id,
           size,
           value,
+          info: this.info,
           mask: clipMask,
           shape: this.geometry?.shape,
           dimensionsMeters: this.dimensionsMeters,

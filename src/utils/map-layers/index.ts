@@ -6,6 +6,8 @@ export {
 } from './catalog/catalog';
 export { compilePalette, regionColor, validatePalette } from './palettes/palettes';
 export type { PixelWriter } from './palettes/palettes';
+export { CHARACTER_STYLES, characterStyle } from './palettes/characters';
+export type { CharacterStyle } from './palettes/characters';
 export type {
   Color,
   DiscreteOverflow,

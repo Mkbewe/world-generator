@@ -7,6 +7,8 @@ describe('view sync store', () => {
     expect(layerForTab('landmass-layout')).toBe('landmass-layout');
     expect(tabForLayer('macro-region')).toBe('macro-region');
     expect(tabForLayer('landmass-layout')).toBe('landmass-layout');
+    // The character layer has no form yet, so it opens the landmass tab (#352).
+    expect(tabForLayer('structure-character')).toBe('landmass-layout');
   });
 
   it('starts unlinked on the general tab', () => {

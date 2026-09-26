@@ -8,7 +8,8 @@ export type { SampleGrid, WorldSpace } from './space';
 export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region';
 export { isLandmassLayout } from './stages/landmass';
 export { DEFAULT_STRUCTURE_CHARACTER_CONFIG } from './stages/structure-character';
-export { isStructureProfiles, isStructureRegions } from './stages/structure-character';
+export { isStructureZones } from './stages/structure-character';
+export { TERRAIN_CHARACTERS } from './types';
 export { selectDirtyStageIds } from './pipeline/selective-regeneration';
 export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './pipeline/stage-definitions';
 export type { MapConfigKey, PipelineStageId, StageInfo } from './pipeline/stage-definitions';
@@ -36,6 +37,7 @@ export type {
   RunGeneration,
 } from './worker';
 export type {
+  CharacterZone,
   GenerationEvent,
   GenerationOptions,
   GenerationResult,
@@ -57,8 +59,7 @@ export type {
   StageMetrics,
   StageStatistics,
   StructureCharacterConfig,
-  StructureRegionDefinition,
-  StructureTerrainProfile,
-  TerrainProfile,
+  TerrainCharacter,
+  ZoneGeometry,
   WorldConfig,
 } from './types';

@@ -140,6 +140,7 @@ describe('LandmassLayoutVectorLayer', () => {
       id: 'landmass-layout',
       size: { width: 4, height: 4 },
       value: layout,
+      info: {},
     });
     try {
       expect(layer).toBeInstanceOf(LandmassLayoutVectorLayer);
@@ -153,6 +154,7 @@ describe('LandmassLayoutVectorLayer', () => {
         id: 'landmass-layout',
         size: { width: 4, height: 4 },
         value: { structures: 'nope' },
+        info: {},
       })
     ).toThrow('Invalid landmass layout data');
   });

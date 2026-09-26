@@ -221,4 +221,69 @@ describe('readoutItems', () => {
     expect(items[1]).toMatchObject({ id: 'name', value: 'landmass-9' });
     expect(items).toHaveLength(2);
   });
+
+  it('shows the character zone under the pointer', () => {
+    const values = {
+      elevation: 0.5,
+      roughness: 0.5,
+      mountainStrength: 0.8,
+      hillStrength: 0.5,
+      plateauStrength: 0.3,
+      lakePotential: 0.2,
+      erosionStrength: 0.5,
+      coastalCliffStrength: 0.4,
+    };
+    const info = {
+      structureZones: [
+        {
+          id: 'large-zone-1',
+          structureId: 'large',
+          character: 'mountains',
+          geometry: { kind: 'whole' },
+          values,
+        },
+        {
+          id: 'large-zone-2',
+          structureId: 'large',
+          character: 'plains',
+          geometry: { kind: 'half', axis: 'x', side: 'low' },
+          values,
+        },
+      ],
+    };
+    const inspection = {
+      kind: 'vector',
+      layerId: 'structure-character',
+      label: 'Character',
+      hit: { id: 'large-zone-2' },
+    } as const;
+    const items = readoutItems(readout(inspection), info);
+
+    expect(items.map(item => item.id)).toEqual([
+      'position',
+      'name',
+      'character',
+      'plateau',
+      'lakes',
+      'erosion',
+      'cliffs',
+    ]);
+    expect(itemValue(readout(inspection), 'name', info)).toBe('large');
+    expect(itemValue(readout(inspection), 'character', info)).toBe('Plains');
+    expect(itemValue(readout(inspection), 'plateau', info)).toBe('30%');
+    expect(itemValue(readout(inspection), 'lakes', info)).toBe('20%');
+  });
+
+  it('falls back to the plain name for a character hit outside the zones', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'structure-character',
+      label: 'Character',
+      hit: { id: 'missing-zone' },
+    } as const;
+    const items = readoutItems(readout(inspection), { structureZones: [] });
+
+    expect(items[1]).toMatchObject({ id: 'name', value: 'missing-zone' });
+    expect(items).toHaveLength(2);
+  });
 });
