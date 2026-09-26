@@ -29,6 +29,7 @@ describe('LandmassForm', () => {
     expect(screen.getByLabelText('Typical size')).toBeInTheDocument();
     expect(screen.getByLabelText('Size diversity')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Round' })).toBeChecked();
+    expect(screen.getByLabelText('Character variety')).toBeInTheDocument();
     // The shelf and coastline roughness belong to the stages that consume them.
     expect(screen.queryByLabelText('Shelf width')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Coastline roughness')).not.toBeInTheDocument();

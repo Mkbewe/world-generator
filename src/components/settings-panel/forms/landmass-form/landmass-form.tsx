@@ -1,6 +1,7 @@
 import { Flex } from '@radix-ui/themes';
 
 import { ArchetypePoolField } from './archetype-pool-field';
+import { StructureCharacterSection } from './structure-character-section';
 import { useLandmassFormStore } from '../../../../stores';
 import {
   MAX_LANDMASS_DIVERSITY,
@@ -52,6 +53,7 @@ export function LandmassForm() {
         onChange={setDiversity}
       />
       <ArchetypePoolField />
+      <StructureCharacterSection />
     </Flex>
   );
 }

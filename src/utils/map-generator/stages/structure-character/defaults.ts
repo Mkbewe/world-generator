@@ -1,5 +1,9 @@
 import type { StructureCharacterConfig } from '../../types';
 
+/** Character variation (split likelihood) range. */
+export const MIN_CHARACTER_VARIATION = 0;
+export const MAX_CHARACTER_VARIATION = 1;
+
 /** Longest side (normalized) below which a structure keeps a single character. */
 export const ZONE_EXTENT_THRESHOLD = 0.02;
 

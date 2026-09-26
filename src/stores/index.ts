@@ -8,10 +8,12 @@ export {
   MACRO_REGION_FORM_DEFAULTS,
   NOISE_FORM_DEFAULTS,
   selectedArchetypes,
+  STRUCTURE_CHARACTER_FORM_DEFAULTS,
   useGeneralFormStore,
   useLandmassFormStore,
   useMacroRegionFormStore,
   useNoiseFormStore,
+  useStructureCharacterFormStore,
   useWorldShapeFormStore,
   WORLD_SHAPE_FORM_DEFAULTS,
 } from './form';
