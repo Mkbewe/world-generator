@@ -4,6 +4,7 @@ import type {
   MacroRegionDeformation,
   MapConfig,
   NoiseConfig,
+  StructureCharacterConfig,
 } from '../../../utils/map-generator';
 import { summarizeWorldGrid } from '../../../utils/world-grid';
 
@@ -16,6 +17,7 @@ export interface GenerationConfigInput {
   macroRegions: readonly MacroRegionConfig[];
   macroRegionDeformation: MacroRegionDeformation;
   landmasses: LandmassConfig;
+  structureCharacter: StructureCharacterConfig;
 }
 
 export type GenerationConfigResult = { config: MapConfig } | { error: string };
@@ -35,6 +37,7 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
       macroRegions: input.macroRegions,
       macroRegionDeformation: input.macroRegionDeformation,
       landmasses: input.landmasses,
+      structureCharacter: input.structureCharacter,
     },
   };
 }

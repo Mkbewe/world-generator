@@ -9,6 +9,7 @@ import {
   useMacroRegionFormStore,
   useMapConfigStore,
   useNoiseFormStore,
+  useStructureCharacterFormStore,
   useWorldShapeFormStore,
 } from '../../../stores';
 import type { MapRenderer } from '../../../utils/map-renderer';
@@ -43,6 +44,7 @@ export function useWorldGeneration(): WorldGeneration {
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
       landmasses: useLandmassFormStore.getState().landmasses,
+      structureCharacter: useStructureCharacterFormStore.getState().structureCharacter,
     });
     if ('error' in built) {
       setError(built.error);

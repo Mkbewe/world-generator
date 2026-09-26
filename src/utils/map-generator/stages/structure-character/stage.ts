@@ -1,5 +1,9 @@
 import { validateZones } from './character-check';
-import { DEFAULT_STRUCTURE_CHARACTER_CONFIG } from './defaults';
+import {
+  DEFAULT_STRUCTURE_CHARACTER_CONFIG,
+  MAX_CHARACTER_VARIATION,
+  MIN_CHARACTER_VARIATION,
+} from './defaults';
 import { buildZones } from './zones';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
@@ -83,10 +87,12 @@ export class StructureCharacterStage implements MapStage<
   private validateConfig(config: StructureCharacterConfig): void {
     if (
       !Number.isFinite(config.characterVariation) ||
-      config.characterVariation < 0 ||
-      config.characterVariation > 1
+      config.characterVariation < MIN_CHARACTER_VARIATION ||
+      config.characterVariation > MAX_CHARACTER_VARIATION
     ) {
-      throw new RangeError('Structure character variation must be within 0..1.');
+      throw new RangeError(
+        `Structure character variation must be between ${MIN_CHARACTER_VARIATION} and ${MAX_CHARACTER_VARIATION}.`
+      );
     }
   }
 }
