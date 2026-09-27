@@ -130,4 +130,33 @@ describe('SmoothLayerPainter', () => {
     ).toBe(true);
     expect(pixel(pixels, 0, 0)[3]).toBe(0);
   });
+
+  it('keeps negative ocean depths visible at the world edge across preview scales', () => {
+    const heights = new Float32Array(16).fill(-100);
+    const painter = new SmoothLayerPainter(
+      size,
+      heights,
+      { size, contains: () => true },
+      undefined,
+      compilePalette(layerRegistry.raster('heightmap').palette),
+      { shape: 'rectangle' },
+      'clipped'
+    );
+
+    for (const cellSize of [2, 4]) {
+      const width = size.width * cellSize;
+      const height = size.height * cellSize;
+      const scaled: RenderTarget = {
+        width,
+        height,
+        projection: { cellSize, left: 0, top: 0, width, height },
+      };
+      const pixels = new Uint8ClampedArray(width * height * 4).fill(255);
+
+      painter.paint(pixels, scaled, { x: 0, y: 0, width, height });
+
+      const offset = ((cellSize - 1) * width + cellSize - 1) * 4;
+      expect([...pixels.slice(offset, offset + 4)]).toEqual([12, 36, 64, 255]);
+    }
+  });
 });

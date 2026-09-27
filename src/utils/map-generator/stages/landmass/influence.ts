@@ -264,13 +264,13 @@ export interface StructureInfluence {
   readonly segments: readonly StructureSegment[];
 }
 
-/** Nearest structure to a point, with the distance to its axis and local radius. */
+/** Closest influence boundary to a point, with its axis distance and local radius. */
 export interface StructureProbe extends SegmentHit {
   readonly id: string;
 }
 
 /**
- * Nearest influence across structures. The bounds check skips whole structures
+ * Closest influence boundary across structures. The bounds check skips whole structures
  * before touching their segments, so a long list stays cheap in a raster loop.
  */
 export function nearestStructure(
@@ -289,7 +289,9 @@ export function nearestStructure(
     }
     for (const segment of entry.segments) {
       const hit = nearestOnSegment(segment, point);
-      if (!best || hit.distance < best.distance) {
+      // The shelf and coast follow the corridor boundary, not its axis. Choosing
+      // the nearest axis can switch abruptly between arms with different radii.
+      if (!best || hit.distance - hit.radius < best.distance - best.radius) {
         best = { id: entry.id, distance: hit.distance, radius: hit.radius, at: hit.at };
       }
     }

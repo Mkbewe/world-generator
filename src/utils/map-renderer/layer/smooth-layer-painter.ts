@@ -96,7 +96,7 @@ export class SmoothLayerPainter {
         if (!this.isBoundaryPixel(pixelX, pixelY, cellX, cellY, target)) {
           if (this.mode !== 'clipped') {
             const value = this.valueAt(cellX, cellY);
-            if (value >= 0) {
+            if (value !== undefined) {
               this.writePixel(pixels, offset, value);
             }
           }
@@ -119,7 +119,7 @@ export class SmoothLayerPainter {
               continue;
             }
             const value = this.sampledValue(normalizedX, normalizedY, mapX, mapY);
-            if (value < 0 || value === this.skipValue) {
+            if (value === undefined || value === this.skipValue) {
               continue;
             }
             this.writePixel(color, 0, value);
@@ -175,7 +175,10 @@ export class SmoothLayerPainter {
 
   private boundaryValueAt(x: number, y: number): number {
     const value = this.valueAt(x, y);
-    return value < 0 || this.boundaryAt ? value : 1;
+    if (value === undefined) {
+      return -1;
+    }
+    return this.boundaryAt ? value : 1;
   }
 
   /** Value blended at a boundary sample: analytic borders, the world fill or the nearest cell. */
@@ -184,29 +187,30 @@ export class SmoothLayerPainter {
     normalizedY: number,
     mapX: number,
     mapY: number
-  ): number {
+  ): number | undefined {
     if (this.boundaryAt) {
-      return this.boundaryAt(normalizedX, normalizedY);
+      const value = this.boundaryAt(normalizedX, normalizedY);
+      return value >= 0 ? value : undefined;
     }
     if (this.mode === 'world') {
-      return this.insideValue ?? -1;
+      return this.insideValue;
     }
     return this.nearestInsideValue(mapX, mapY);
   }
 
-  private nearestInsideValue(mapX: number, mapY: number): number {
+  private nearestInsideValue(mapX: number, mapY: number): number | undefined {
     const cellX = Math.floor(mapX);
     const cellY = Math.floor(mapY);
     const center = this.valueAt(cellX, cellY);
-    if (center >= 0) {
+    if (center !== undefined) {
       return center;
     }
-    let nearest = -1;
+    let nearest: number | undefined;
     let bestDistance = Infinity;
     for (let y = cellY - 1; y <= cellY + 1; y++) {
       for (let x = cellX - 1; x <= cellX + 1; x++) {
         const value = this.valueAt(x, y);
-        if (value < 0) {
+        if (value === undefined) {
           continue;
         }
         const distance = (x + 0.5 - mapX) ** 2 + (y + 0.5 - mapY) ** 2;
@@ -219,17 +223,18 @@ export class SmoothLayerPainter {
     return nearest;
   }
 
-  private valueAt(x: number, y: number): number {
+  /** Missing cells stay distinct from valid negative heights and depths. */
+  private valueAt(x: number, y: number): number | undefined {
     if (x < 0 || y < 0 || x >= this.size.width || y >= this.size.height) {
-      return -1;
+      return undefined;
     }
     if (this.mask && !this.mask.contains(x, y)) {
-      return -1;
+      return undefined;
     }
     const value = this.data[y * this.size.width + x];
     if (this.insideValue !== undefined && value !== this.insideValue) {
-      return -1;
+      return undefined;
     }
-    return value === this.skipValue ? -1 : value;
+    return value === this.skipValue ? undefined : value;
   }
 }

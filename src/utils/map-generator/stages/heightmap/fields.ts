@@ -33,9 +33,8 @@ export function oceanHeightMeters(depthMeters: number): number {
 
 /**
  * Depth below the sea datum inside the shelf band: `targetDepth` on the corridor
- * edge, falling to the open ocean at the outer edge. The curve stays just above
- * the ocean floor at the rim, so the shelf never blends into the deep ocean in
- * one line. Returns `undefined` on land or outside the band.
+ * edge, falling to the open ocean at the outer edge. Returns `undefined` on
+ * land or outside the band.
  */
 export function shelfDepthMeters(
   distance: number,
@@ -52,8 +51,7 @@ export function shelfDepthMeters(
     return undefined;
   }
   const eased = Math.pow(clamp01(across), 0.5 + (1 - clamp01(falloff)) * 3);
-  const deepest = OCEAN_DEPTH_METERS - Math.max(1, OCEAN_DEPTH_METERS * 0.05);
-  return targetDepth + (deepest - targetDepth) * eased;
+  return targetDepth + (OCEAN_DEPTH_METERS - targetDepth) * eased;
 }
 
 /**
