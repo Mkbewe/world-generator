@@ -45,4 +45,13 @@ describe('LAYER_CATALOG', () => {
       expect(outputs.has(spec.source)).toBe(true);
     }
   });
+
+  it('adds the heightmap as a clipped float raster with the hypsometric ramp', () => {
+    const heightmap = RASTER_CATALOG.find(layer => layer.id === 'heightmap');
+
+    expect(heightmap?.source).toBe('heightmap');
+    expect(heightmap?.dataType).toBe('float32');
+    expect(heightmap?.clipTo).toBe('world-shape');
+    expect(heightmap?.palette.kind).toBe('ramp');
+  });
 });

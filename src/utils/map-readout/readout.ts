@@ -111,6 +111,8 @@ function describeValue(inspection: MapInspection | undefined, info: MapInfo): st
       const label = labelAt(info, 'macroRegionLabels', inspection.value);
       return label ?? `Region ${inspection.value}`;
     }
+    case 'heightmap':
+      return formatHeightMeters(inspection.value);
     default:
       return inspection.value.toFixed(3);
   }
@@ -237,4 +239,9 @@ function worldDimensions(info: MapInfo): WorldDimensions | undefined {
 
 function formatMeters(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+/** Height under the cursor, in metres above or below the sea datum. */
+function formatHeightMeters(value: number): string {
+  return `${formatMeters(Math.round(value * 10) / 10)} m`;
 }

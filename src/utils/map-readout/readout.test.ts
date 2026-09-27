@@ -123,6 +123,21 @@ describe('readoutItems', () => {
     ).toBe('0.250');
   });
 
+  it('describes the heightmap value in metres', () => {
+    expect(
+      itemValue(
+        readout({ kind: 'raster', layerId: 'heightmap', label: 'Height', value: 388 }),
+        'value'
+      )
+    ).toBe('388 m');
+    expect(
+      itemValue(
+        readout({ kind: 'raster', layerId: 'heightmap', label: 'Height', value: -62.5 }),
+        'value'
+      )
+    ).toBe('-62.5 m');
+  });
+
   it('shows macro region labels captured with the generated map', () => {
     const inspection = {
       kind: 'raster',

@@ -1,3 +1,4 @@
+import { OCEAN_DEPTH_METERS } from '../../map-generator/stages/heightmap/defaults';
 import type { Color, DiscreteOverflow, PaletteSpec, RampStop } from '../catalog/layer-spec';
 
 export type PixelWriter = (pixels: Uint8ClampedArray, offset: number, value: number) => void;
@@ -12,6 +13,23 @@ export const REGION_COLORS = [
   [255, 112, 67],
   [0, 137, 123],
 ] as const satisfies readonly Color[];
+
+/**
+ * Hypsometric ramp for the heightmap, from the ocean floor through the coast to
+ * the peaks. Stops are in metres, so `catalog-layer` samples the raster directly
+ * without a second normalization. The deepest stop and the shelf water colour
+ * follow `OCEAN_DEPTH_METERS`, so the ramp stays aligned with the stage.
+ */
+export const HEIGHTMAP_STOPS = [
+  { at: -OCEAN_DEPTH_METERS, color: [12, 36, 64] },
+  { at: -OCEAN_DEPTH_METERS * 0.6, color: [30, 78, 120] },
+  { at: -1, color: [78, 140, 178] },
+  { at: 0, color: [214, 204, 158] },
+  { at: 80, color: [104, 156, 84] },
+  { at: 300, color: [196, 172, 92] },
+  { at: 600, color: [150, 116, 88] },
+  { at: 1200, color: [238, 238, 238] },
+] as const satisfies readonly RampStop[];
 
 const UNKNOWN_COLOR = [120, 120, 120] as const satisfies Color;
 

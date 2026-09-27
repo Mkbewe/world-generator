@@ -2,7 +2,7 @@ import type { LayerSpec } from './layer-spec';
 import type { LayerDataRecord, MapRasters } from './types';
 import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
 import type { DomainOutputKey, RasterOutputKey } from '../../map-generator/pipeline/stage-outputs';
-import { REGION_COLORS } from '../palettes/palettes';
+import { HEIGHTMAP_STOPS, REGION_COLORS } from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
   PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)
@@ -48,6 +48,15 @@ const CATALOG_ENTRIES = [
     clipTo: 'world-shape',
     reads: ['landmassLayout'],
     group: { id: 'landmass', label: 'Landmasses' },
+  },
+  {
+    id: 'heightmap',
+    label: 'Heightmap',
+    kind: 'raster',
+    source: 'heightmap',
+    dataType: 'float32',
+    clipTo: 'world-shape',
+    palette: { kind: 'ramp', stops: HEIGHTMAP_STOPS },
   },
   {
     id: 'noise',

@@ -1,4 +1,5 @@
-import { compilePalette, regionColor, validatePalette } from './palettes';
+import { compilePalette, HEIGHTMAP_STOPS, regionColor, validatePalette } from './palettes';
+import { OCEAN_DEPTH_METERS } from '../../map-generator/stages/heightmap';
 import type { PaletteSpec } from '../catalog/layer-spec';
 
 function color(palette: PaletteSpec, value: number): number[] {
@@ -82,6 +83,26 @@ describe('palette compiler', () => {
     expect(color({ kind: 'discrete', colors, overflow: 'cycle', offset: -1 }, 0)).toEqual([
       120, 120, 120, 255,
     ]);
+  });
+
+  it('keeps the hypsometric ramp ordered and valid', () => {
+    expect(() => validatePalette({ kind: 'ramp', stops: HEIGHTMAP_STOPS })).not.toThrow();
+    const stops = [...HEIGHTMAP_STOPS];
+    expect(stops[0].at).toBeLessThan(0);
+    expect(stops[stops.length - 1].at).toBeGreaterThan(0);
+    for (let index = 1; index < stops.length; index++) {
+      expect(stops[index].at).toBeGreaterThan(stops[index - 1].at);
+    }
+  });
+
+  it('separates the ocean floor from the shelf water', () => {
+    const palette = { kind: 'ramp', stops: HEIGHTMAP_STOPS } as const satisfies PaletteSpec;
+
+    expect(color(palette, -OCEAN_DEPTH_METERS)).not.toEqual(
+      color(palette, -OCEAN_DEPTH_METERS * 0.6)
+    );
+    expect(color(palette, -1)).not.toEqual(color(palette, 0));
+    expect(color(palette, 0)[3]).toBe(255);
   });
 
   it('rejects invalid colors, stops and empty discrete palettes', () => {
