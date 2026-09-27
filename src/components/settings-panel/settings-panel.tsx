@@ -1,4 +1,5 @@
 import {
+  FrameIcon,
   GearIcon,
   GlobeIcon,
   LayersIcon,
@@ -9,6 +10,7 @@ import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
   GeneralForm,
+  HeightmapForm,
   LandmassForm,
   MacroRegionForm,
   NoiseForm,
@@ -81,6 +83,11 @@ export function SettingsPanel({
       label: 'Landmasses',
       icon: <SewingPinIcon />,
       content: <LandmassForm />,
+    },
+    heightmap: {
+      label: 'Heightmap',
+      icon: <FrameIcon />,
+      content: <HeightmapForm />,
     },
   };
   const tabs: readonly VerticalTabItem[] = [

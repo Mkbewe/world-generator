@@ -1,4 +1,5 @@
 export { GENERAL_FORM_DEFAULTS, DEFAULT_SEED, useGeneralFormStore } from './general-form-store';
+export { HEIGHTMAP_FORM_DEFAULTS, useHeightmapFormStore } from './heightmap-form-store';
 export {
   LANDMASS_FORM_DEFAULTS,
   selectedArchetypes,

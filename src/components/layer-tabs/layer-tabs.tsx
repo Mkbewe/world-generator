@@ -16,6 +16,7 @@ const LAYER_ICONS: Partial<Record<MapBaseLayerId, ReactNode>> = {
   'macro-region': <LayersIcon />,
   'landmass-layout': <SewingPinIcon />,
   noise: <MixerHorizontalIcon />,
+  heightmap: <FrameIcon />,
 };
 
 /** Group tabs use a group id, so their icons live apart from the layer icons. */

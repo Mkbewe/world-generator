@@ -1,4 +1,5 @@
 import type {
+  HeightmapConfig,
   LandmassConfig,
   MacroRegionConfig,
   MacroRegionDeformation,
@@ -18,6 +19,7 @@ export interface GenerationConfigInput {
   macroRegionDeformation: MacroRegionDeformation;
   landmasses: LandmassConfig;
   structureCharacter: StructureCharacterConfig;
+  heightmap: HeightmapConfig;
 }
 
 export type GenerationConfigResult = { config: MapConfig } | { error: string };
@@ -38,6 +40,7 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
       macroRegionDeformation: input.macroRegionDeformation,
       landmasses: input.landmasses,
       structureCharacter: input.structureCharacter,
+      heightmap: input.heightmap,
     },
   };
 }

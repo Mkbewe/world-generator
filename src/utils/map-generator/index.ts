@@ -42,6 +42,7 @@ export type {
   GenerationOptions,
   GenerationResult,
   GeologicalStructure,
+  HeightmapConfig,
   LandmassConfig,
   LandmassEdge,
   LandmassLayout,
