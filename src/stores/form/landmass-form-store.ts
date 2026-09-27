@@ -14,6 +14,8 @@ interface LandmassFormState {
   setDiversity: (diversity: number) => void;
   /** Narrows the pool; a valid configuration always keeps one intent enabled. */
   setArchetypes: (archetypes: readonly LandmassArchetype[]) => void;
+  /** Konsumowane przez heightmapę; własność zostaje w konfiguracji landmassów. */
+  setShelf: (shelf: Partial<LandmassConfig['shelf']>) => void;
 }
 
 /** Archetypes enabled in the pool; an undefined pool means every archetype. */
@@ -40,4 +42,8 @@ export const useLandmassFormStore = createStore<LandmassFormState>(set => ({
         },
       };
     }),
+  setShelf: shelf =>
+    set(state => ({
+      landmasses: { ...state.landmasses, shelf: { ...state.landmasses.shelf, ...shelf } },
+    })),
 }));

@@ -5,6 +5,7 @@ import {
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
+  useHeightmapFormStore,
   useLandmassFormStore,
   useMacroRegionFormStore,
   useMapConfigStore,
@@ -45,6 +46,7 @@ export function useWorldGeneration(): WorldGeneration {
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
       landmasses: useLandmassFormStore.getState().landmasses,
       structureCharacter: useStructureCharacterFormStore.getState().structureCharacter,
+      heightmap: useHeightmapFormStore.getState().heightmap,
     });
     if ('error' in built) {
       setError(built.error);
