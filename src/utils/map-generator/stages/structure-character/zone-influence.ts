@@ -6,6 +6,7 @@ import type {
   ZoneGeometry,
 } from '../../types';
 import {
+  nearestOnSegment,
   type StructurePath,
   structurePaths,
   type StructureSegment,
@@ -28,6 +29,15 @@ export interface ZoneSampler {
   dominant(zones: readonly CharacterZone[], point: WorldPoint): CharacterZone | undefined;
   profile(zones: readonly CharacterZone[], point: WorldPoint): TerrainProfile | undefined;
   slice(geometry: Extract<ZoneGeometry, { pathId: string }>): ZonePathSlice;
+}
+
+/**
+ * Whether a zone geometry puts its land on the outer band: a low axis with
+ * higher edges. The zone model owns this decision, so consumers never branch on
+ * the variant name themselves.
+ */
+export function isInvertedGeometry(geometry: ZoneGeometry): boolean {
+  return geometry.kind === 'rim';
 }
 
 const PROFILE_FIELDS: readonly (keyof TerrainProfile)[] = [
@@ -142,25 +152,6 @@ function nearestOnSegments(segments: readonly StructureSegment[], point: WorldPo
     }
   }
   return best;
-}
-
-function nearestOnSegment(
-  segment: StructureSegment,
-  point: WorldPoint
-): AxisHit & { readonly at: number } {
-  const dx = segment.to.x - segment.from.x;
-  const dy = segment.to.y - segment.from.y;
-  const squared = dx * dx + dy * dy;
-  const at =
-    squared > 0
-      ? clamp01(((point.x - segment.from.x) * dx + (point.y - segment.from.y) * dy) / squared)
-      : 0;
-  return {
-    distance: Math.hypot(point.x - segment.from.x - dx * at, point.y - segment.from.y - dy * at),
-    radius: segment.fromRadius + (segment.toRadius - segment.fromRadius) * at,
-    fraction: 0,
-    at,
-  };
 }
 
 function fromDepth(depth: number, radius: number): ZoneInfluence {
