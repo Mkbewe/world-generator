@@ -185,8 +185,8 @@ export class LandmassLayoutStage implements MapStage<
     if (!isNormalized(config.shelf.irregularity)) {
       throw new RangeError('Landmass shelf irregularity must be within 0..1.');
     }
-    if (!isNormalized(config.shelf.targetDepth)) {
-      throw new RangeError('Landmass shelf target depth must be within 0..1.');
+    if (!Number.isFinite(config.shelf.targetDepth) || config.shelf.targetDepth <= 0) {
+      throw new RangeError('Landmass shelf target depth must be positive metres.');
     }
     if (!(config.shelf.width > 0 && config.shelf.width <= 0.5)) {
       throw new RangeError('Landmass shelf width must be within 0..0.5.');

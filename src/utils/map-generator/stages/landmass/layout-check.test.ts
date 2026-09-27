@@ -2,7 +2,7 @@ import { isLandmassLayout, validateLayout, validatePlacement } from './layout-ch
 import { createShapeSampler } from './mask-sampler';
 import type { GeologicalStructure, LandmassLayout, LandmassNode } from '../../types';
 
-const shelf = { id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 };
+const shelf = { id: 'shelf-1', width: 0.07, targetDepth: 60, falloff: 0.5, irregularity: 0.35 };
 
 function node(id: string, x: number, y: number, radius = 0.05): LandmassNode {
   return { id, position: { x, y }, radius };

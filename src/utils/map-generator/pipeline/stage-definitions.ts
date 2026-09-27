@@ -87,6 +87,25 @@ export const STRUCTURE_CHARACTER_STAGE = {
 } as const satisfies DeclaredStage;
 
 /**
+ * The heightmap reads the mask, the shared noise, the layout and the zones, so
+ * it inherits their configuration. It stays out of `PIPELINE_STAGES` and the
+ * factory until it produces a real height and shelf, so the list never names a
+ * stage without an executor (see `docs/heightmap-implementation-plan.md`).
+ */
+export const HEIGHTMAP_STAGE = {
+  id: 'heightmap',
+  name: 'Heightmap generation',
+  configKeys: [
+    'world.seed',
+    'world.shape',
+    'world.dimensions',
+    'noise',
+    'landmasses',
+    'structureCharacter',
+  ],
+} as const satisfies DeclaredStage;
+
+/**
  * Presentation order of the canonical pipeline: settings tabs, preview layers
  * and the layer catalog follow this list. Execution order is derived from the
  * stages' declared reads/writes (see pipeline-factory), so moving an entry
