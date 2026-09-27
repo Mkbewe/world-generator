@@ -18,7 +18,7 @@ const LANDMASSES = {
   count: 3,
   size: 0.5,
   diversity: 0.3,
-  shelf: { width: 0.05, targetDepth: 0.3, falloff: 0.5, irregularity: 0.3 },
+  shelf: { width: 0.05, targetDepth: 60, falloff: 0.5, irregularity: 0.3 },
 };
 
 function config(character: Partial<StructureCharacterConfig> = {}): MapConfig {

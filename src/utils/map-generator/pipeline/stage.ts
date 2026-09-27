@@ -71,13 +71,29 @@ export function resolveReads<TConfig extends SeededWorldConfig, TState extends o
 }
 
 /** Throws when a stage output is missing or has the wrong type and size. */
-export function assertStageOutput(value: unknown, kind: 'uint8' | 'float32', cells: number): void {
-  const valid =
-    kind === 'uint8'
-      ? value instanceof Uint8Array && value.length === cells
-      : value instanceof Float32Array && value.length === cells;
+export function assertStageOutput(
+  value: unknown,
+  kind: 'uint8' | 'float32' | 'int16',
+  cells: number
+): void {
+  const valid = matchesStageOutput(value, kind, cells);
 
   if (!valid) {
     throw new Error('Pipeline completed without all required map data.');
+  }
+}
+
+function matchesStageOutput(
+  value: unknown,
+  kind: 'uint8' | 'float32' | 'int16',
+  cells: number
+): boolean {
+  switch (kind) {
+    case 'uint8':
+      return value instanceof Uint8Array && value.length === cells;
+    case 'int16':
+      return value instanceof Int16Array && value.length === cells;
+    default:
+      return value instanceof Float32Array && value.length === cells;
   }
 }

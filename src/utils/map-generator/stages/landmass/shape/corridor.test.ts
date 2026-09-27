@@ -16,7 +16,7 @@ function structure(archetype: LandmassArchetype, seed: number): StructureDraft {
 function layoutFor(draft: StructureDraft) {
   return {
     structures: [{ ...draft, shelfId: 'shelf-1' }],
-    shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 0.35, falloff: 0.5, irregularity: 0.35 }],
+    shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 60, falloff: 0.5, irregularity: 0.35 }],
   };
 }
 

@@ -22,6 +22,22 @@ export interface NoiseConfig {
   lacunarity: number;
 }
 
+/**
+ * Controls the heightmap stage. The stage stores land positive and sea floor
+ * negative, with `0` as the sea datum. The map is read top-down, so the ocean is
+ * a single flat floor at `-OCEAN_DEPTH_METERS` and is not configurable; the
+ * shared shelf shape lives in `LandmassConfig.shelf`.
+ */
+export interface HeightmapConfig {
+  /** Terrain relief: 0 is flat, 1 is very mountainous; scales land amplitude. */
+  readonly relief: number;
+  /**
+   * Size of terrain forms; widens the domain warp of the shared noise rather
+   * than adding octaves.
+   */
+  readonly featureScale: number;
+}
+
 export interface MacroRegionPoint {
   /** Normalized world coordinate in the 0..1 range. */
   readonly x: number;
@@ -102,7 +118,7 @@ export interface ShelfDefinition {
   readonly id: string;
   /** Width of the shelf band in normalized units. */
   readonly width: number;
-  /** Height of the shelf's outer edge; the deep ocean floor lies below it. */
+  /** Depth of the shelf's inner edge, in metres below the sea datum. */
   readonly targetDepth: number;
   /** How quickly the shelf falls towards the deep ocean; 0..1. */
   readonly falloff: number;
@@ -257,6 +273,7 @@ export interface MapConfig extends SeededWorldConfig {
   macroRegionDeformation?: MacroRegionDeformation;
   landmasses?: LandmassConfig;
   structureCharacter?: StructureCharacterConfig;
+  heightmap?: HeightmapConfig;
 }
 
 /**
@@ -274,6 +291,13 @@ export interface MapState {
   landmassLayout?: LandmassLayout;
   /** Produced by the structure-character stage. */
   structureZones?: readonly CharacterZone[];
+  /**
+   * Produced by the heightmap stage. Land height and sea-floor depth in metres
+   * relative to the sea datum (`0`); cells outside the world mask are `0`.
+   */
+  heightmap?: Float32Array;
+  /** Produced by the heightmap stage. Shelf index per cell, `-1` outside any shelf. */
+  shelfIndexMap?: Int16Array;
 }
 
 export type StageMetric = number | string;
@@ -293,7 +317,6 @@ export interface StageStatistics<TId extends string = string> {
 }
 
 export type StageData = Record<string, unknown>;
-
 /**
  * A state input a stage reads only while the config selects it — the data
  * twin of `ConditionalConfigKey`. The pipeline asserts the resolved set at
