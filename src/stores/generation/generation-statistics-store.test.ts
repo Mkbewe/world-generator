@@ -7,7 +7,7 @@ import type { StageStatistics } from '../../utils/map-generator';
 function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'noise',
-    stageName: 'Noise generation',
+    stageName: 'Noise',
     status: 'completed',
     startedAt: 0,
     finishedAt: 20.4,

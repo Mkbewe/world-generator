@@ -20,14 +20,14 @@ describe('GenerationProgress', () => {
       stages: [
         {
           id: 'world-shape',
-          name: 'World shape generation',
+          name: 'World shape',
           status: 'completed',
           percentage: 100,
           durationMs: 120,
         },
         {
           id: 'noise',
-          name: 'Noise generation',
+          name: 'Noise',
           status: 'completed',
           percentage: 100,
           durationMs: 340,
@@ -35,8 +35,8 @@ describe('GenerationProgress', () => {
       ],
     });
 
-    expect(screen.getByText('World shape generation')).toBeInTheDocument();
-    expect(screen.getByText('Noise generation')).toBeInTheDocument();
+    expect(screen.getByText('World shape')).toBeInTheDocument();
+    expect(screen.getByText('Noise')).toBeInTheDocument();
     expect(screen.getByText('120 ms')).toBeInTheDocument();
     expect(screen.getByText('340 ms')).toBeInTheDocument();
   });

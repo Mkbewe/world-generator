@@ -233,17 +233,17 @@ describe('WorldGenerator', () => {
       stages: [
         {
           id: 'world-shape',
-          name: 'World shape generation',
+          name: 'World shape',
           status: 'completed',
           percentage: 100,
         },
-        { id: 'noise', name: 'Noise generation', status: 'completed', percentage: 100 },
+        { id: 'noise', name: 'Noise', status: 'completed', percentage: 100 },
       ],
     });
     runGenerationMock.mockImplementation((_config, options) => {
       options?.onStages?.([
-        { id: 'world-shape', name: 'World shape generation' },
-        { id: 'noise', name: 'Noise generation' },
+        { id: 'world-shape', name: 'World shape' },
+        { id: 'noise', name: 'Noise' },
       ]);
       return pendingRun(options);
     });
@@ -260,8 +260,8 @@ describe('WorldGenerator', () => {
       status: 'running',
       startedAt: expect.any(Number),
       stages: [
-        { id: 'world-shape', name: 'World shape generation', status: 'pending', percentage: 0 },
-        { id: 'noise', name: 'Noise generation', status: 'pending', percentage: 0 },
+        { id: 'world-shape', name: 'World shape', status: 'pending', percentage: 0 },
+        { id: 'noise', name: 'Noise', status: 'pending', percentage: 0 },
       ],
     });
     expect(screen.getByText('Generating')).toBeInTheDocument();
@@ -274,14 +274,14 @@ describe('WorldGenerator', () => {
       stages: [
         {
           id: 'world-shape',
-          name: 'World shape generation',
+          name: 'World shape',
           status: 'completed',
           percentage: 100,
           durationMs: 1,
         },
         {
           id: 'noise',
-          name: 'Noise generation',
+          name: 'Noise',
           status: 'completed',
           percentage: 100,
           durationMs: 2,

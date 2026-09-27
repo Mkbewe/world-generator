@@ -3,7 +3,13 @@ import { isStructureZones } from '../stages/structure-character';
 import type { MapState, StageData } from '../types';
 
 /** Raster keys the generator owns. The layer catalog may display them, not define them. */
-export const RASTER_OUTPUT_KEYS = ['worldMask', 'noiseMap', 'macroRegionIdMap'] as const;
+export const RASTER_OUTPUT_KEYS = [
+  'worldMask',
+  'noiseMap',
+  'macroRegionIdMap',
+  'heightmap',
+  'shelfIndexMap',
+] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
 export const DOMAIN_OUTPUT_KEYS = ['landmassLayout', 'structureZones'] as const;

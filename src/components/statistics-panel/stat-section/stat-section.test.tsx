@@ -6,7 +6,7 @@ import type { StatisticsSection } from '../types';
 
 const section: StatisticsSection = {
   key: 'noise',
-  title: 'Noise generation',
+  title: 'Noise',
   trailing: '20.0 ms',
   metrics: [
     { label: 'Mean', value: '0.500', description: 'Average noise value.' },
@@ -22,7 +22,7 @@ describe('StatSection', () => {
       </Theme>
     );
 
-    expect(screen.getByText('Noise generation')).toBeInTheDocument();
+    expect(screen.getByText('Noise')).toBeInTheDocument();
     expect(screen.getByText('20.0 ms')).toBeInTheDocument();
     expect(screen.getByText('Mean')).toBeInTheDocument();
     expect(screen.getByText('0.500')).toBeInTheDocument();

@@ -3,6 +3,7 @@ import { type MapStage, resolveReads } from './stage';
 import { MAP_CONFIG_KEYS, PIPELINE_STAGES, type PipelineStageId } from './stage-definitions';
 import { validateDimensions } from '../../world-dimensions';
 import { createWorldSpace } from '../space';
+import { HeightmapStage } from '../stages/heightmap';
 import { LandmassLayoutStage } from '../stages/landmass';
 import { MacroRegionStage } from '../stages/macro-region';
 import { NoiseStage } from '../stages/noise';
@@ -20,6 +21,7 @@ const STAGE_FACTORIES: Readonly<
   'macro-region': () => new MacroRegionStage(),
   'landmass-layout': () => new LandmassLayoutStage(),
   'structure-character': () => new StructureCharacterStage(),
+  heightmap: () => new HeightmapStage(),
 };
 
 export function createMapGenerator(): MapGenerator<MapConfig, MapState, PipelineStageId> {

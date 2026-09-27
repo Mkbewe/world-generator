@@ -1,4 +1,5 @@
 import { selectDirtyStageIds } from './selective-regeneration';
+import { PIPELINE_STAGES } from './stage-definitions';
 import { DEFAULT_LANDMASS_CONFIG } from '../stages/landmass';
 import { createRadialLayout } from '../stages/macro-region';
 import type { MapConfig } from '../types';
@@ -18,13 +19,7 @@ const config: MapConfig = {
 
 describe('selectDirtyStageIds', () => {
   it('marks every stage dirty on the first run', () => {
-    expect(selectDirtyStageIds(undefined, config)).toEqual([
-      'world-shape',
-      'noise',
-      'macro-region',
-      'landmass-layout',
-      'structure-character',
-    ]);
+    expect(selectDirtyStageIds(undefined, config)).toEqual(PIPELINE_STAGES.map(stage => stage.id));
   });
 
   it('keeps every stage clean for an unchanged configuration', () => {
@@ -47,7 +42,14 @@ describe('selectDirtyStageIds', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
-        ['world-shape', 'noise', 'macro-region', 'landmass-layout', 'structure-character'],
+        [
+          'world-shape',
+          'noise',
+          'macro-region',
+          'landmass-layout',
+          'structure-character',
+          'heightmap',
+        ],
       ],
       [
         {
@@ -56,23 +58,31 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'noise', 'macro-region', 'landmass-layout', 'structure-character'],
+        [
+          'world-shape',
+          'noise',
+          'macro-region',
+          'landmass-layout',
+          'structure-character',
+          'heightmap',
+        ],
       ],
       [
         { world: { ...config.world, seed: 18 } },
-        ['noise', 'macro-region', 'landmass-layout', 'structure-character'],
+        ['noise', 'macro-region', 'landmass-layout', 'structure-character', 'heightmap'],
       ],
-      [{ noise: { ...config.noise, frequency: 5 } }, ['noise']],
+      [{ noise: { ...config.noise, frequency: 5 } }, ['noise', 'heightmap']],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
       [
         { landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } },
-        ['landmass-layout', 'structure-character'],
+        ['landmass-layout', 'structure-character', 'heightmap'],
       ],
       [
         { structureCharacter: { characterVariation: 0.8, terrainBias: 0.5 } },
-        ['structure-character'],
+        ['structure-character', 'heightmap'],
       ],
+      [{ heightmap: { relief: 0.9, featureScale: 0.5 } }, ['heightmap']],
     ];
 
     for (const [patch, expected] of cases) {
@@ -112,8 +122,16 @@ describe('selectDirtyStageIds', () => {
       noise: { ...noiseMap.noise, frequency: 5 },
     };
 
-    expect(selectDirtyStageIds(noiseMap, changedNoise)).toEqual(['noise', 'macro-region']);
-    expect(selectDirtyStageIds(changedNoise, noiseMap)).toEqual(['noise', 'macro-region']);
+    expect(selectDirtyStageIds(noiseMap, changedNoise)).toEqual([
+      'noise',
+      'macro-region',
+      'heightmap',
+    ]);
+    expect(selectDirtyStageIds(changedNoise, noiseMap)).toEqual([
+      'noise',
+      'macro-region',
+      'heightmap',
+    ]);
   });
 
   it('leaves the landmass layout out of changes it does not read', () => {

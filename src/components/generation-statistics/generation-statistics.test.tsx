@@ -1,4 +1,4 @@
-﻿import { Theme } from '@radix-ui/themes';
+import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { GenerationStatisticsPanel } from './generation-statistics';
@@ -8,7 +8,7 @@ import type { StageStatistics } from '../../utils/map-generator';
 function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'world-shape',
-    stageName: 'World shape generation',
+    stageName: 'World shape',
     status: 'completed',
     startedAt: 0,
     finishedAt: 12.5,
@@ -52,12 +52,12 @@ describe('GenerationStatisticsPanel', () => {
       statistics: [
         createStage({
           stageId: 'world-shape',
-          stageName: 'World shape generation',
+          stageName: 'World shape',
           status: 'skipped',
           durationMs: 1200,
           details: { bytes: 1024 },
         }),
-        createStage({ stageId: 'macro-region', stageName: 'Macro region generation' }),
+        createStage({ stageId: 'macro-region', stageName: 'Macro region' }),
       ],
       totalDurationMs: 12.5,
     });
@@ -66,10 +66,7 @@ describe('GenerationStatisticsPanel', () => {
     expect(screen.getByText('Data')).toBeInTheDocument();
     expect(screen.getAllByText('1.0 KB')).toHaveLength(2);
     expect(screen.getByText('1.21 s')).toBeInTheDocument();
-    expect(screen.getByTitle('World shape generation: 1.20 s')).not.toHaveAttribute(
-      'data-muted',
-      'true'
-    );
+    expect(screen.getByTitle('World shape: 1.20 s')).not.toHaveAttribute('data-muted', 'true');
   });
 
   it('marks a reused stage without any recorded duration', () => {
@@ -84,14 +81,14 @@ describe('GenerationStatisticsPanel', () => {
   it('renders stage names and durations', () => {
     renderPanel({
       statistics: [
-        createStage({ stageId: 'world-shape', stageName: 'World shape generation' }),
-        createStage({ stageId: 'noise', stageName: 'Noise generation', durationMs: 20.4 }),
+        createStage({ stageId: 'world-shape', stageName: 'World shape' }),
+        createStage({ stageId: 'noise', stageName: 'Noise', durationMs: 20.4 }),
       ],
       totalDurationMs: 40,
     });
 
-    expect(screen.getByText('World shape generation')).toBeInTheDocument();
-    expect(screen.getByText('Noise generation')).toBeInTheDocument();
+    expect(screen.getByText('World shape')).toBeInTheDocument();
+    expect(screen.getByText('Noise')).toBeInTheDocument();
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();
     expect(screen.getByText('20.4 ms')).toBeInTheDocument();
   });
@@ -115,7 +112,7 @@ describe('GenerationStatisticsPanel', () => {
       statistics: [
         createStage({
           stageId: 'macro-region',
-          stageName: 'Macro region generation',
+          stageName: 'Macro region',
           details: {
             regions: 4,
             overlays: 0,
@@ -144,7 +141,7 @@ describe('GenerationStatisticsPanel', () => {
       statistics: [
         createStage({
           stageId: 'landmass-layout',
-          stageName: 'Landmass layout generation',
+          stageName: 'Landmass layout',
           details: {
             structures: 10,
             shelves: 8,

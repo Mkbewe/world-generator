@@ -12,6 +12,7 @@ describe('createMapGenerator', () => {
       'macro-region',
       'landmass-layout',
       'structure-character',
+      'heightmap',
     ]);
 
     const config: MapConfig = {
@@ -31,10 +32,13 @@ describe('createMapGenerator', () => {
       'macro-region',
       'landmass-layout',
       'structure-character',
+      'heightmap',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
     expect(result.context.state.noiseMap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.heightmap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.shelfIndexMap).toBeInstanceOf(Int16Array);
     expect(result.context.state.landmassLayout?.structures.length).toBeGreaterThan(0);
   });
 
@@ -89,6 +93,20 @@ describe('createMapGenerator', () => {
           'world.dimensions',
           'landmasses',
           'structureCharacter',
+        ],
+      },
+      {
+        id: 'heightmap',
+        reads: ['worldMask', 'noiseMap', 'landmassLayout', 'structureZones'],
+        writes: ['heightmap', 'shelfIndexMap'],
+        configKeys: [
+          'world.seed',
+          'world.shape',
+          'world.dimensions',
+          'noise',
+          'landmasses',
+          'structureCharacter',
+          'heightmap',
         ],
       },
     ]);

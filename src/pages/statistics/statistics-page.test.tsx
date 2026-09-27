@@ -13,7 +13,7 @@ import type { StageStatistics } from '../../utils/map-generator';
 function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'noise',
-    stageName: 'Noise generation',
+    stageName: 'Noise',
     status: 'completed',
     startedAt: 0,
     finishedAt: 20.4,
@@ -57,7 +57,7 @@ describe('StatisticsPage', () => {
         statistics: [
           createStage({
             stageId: 'world-shape',
-            stageName: 'World shape generation',
+            stageName: 'World shape',
             durationMs: 12.5,
           }),
           createStage(),
@@ -82,8 +82,8 @@ describe('StatisticsPage', () => {
     expect(screen.getByText('123456')).toBeInTheDocument();
     expect(screen.getByText('10 × 10 m')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Generation' })).toBeInTheDocument();
-    expect(screen.getByText('World shape generation')).toBeInTheDocument();
-    expect(screen.getByText('Noise generation')).toBeInTheDocument();
+    expect(screen.getByText('World shape')).toBeInTheDocument();
+    expect(screen.getByText('Noise')).toBeInTheDocument();
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();
     expect(screen.getAllByText('40.0 ms')).toHaveLength(2);
     expect(screen.queryByText('No statistics yet')).not.toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { OCEAN_DEPTH_METERS } from './defaults';
 import type { CharacterZone, TerrainProfile, WorldPoint, ZoneGeometry } from '../../types';
 import { isInvertedGeometry } from '../structure-character';
 
@@ -28,6 +29,31 @@ export function landAmplitudeMeters(worldSizeMeters: number, relief: number): nu
 /** Sea-floor height of the open ocean, in metres below the sea datum. */
 export function oceanHeightMeters(depthMeters: number): number {
   return -depthMeters;
+}
+
+/**
+ * Depth below the sea datum inside the shelf band: `targetDepth` on the corridor
+ * edge, falling to the open ocean at the outer edge. The curve stays just above
+ * the ocean floor at the rim, so the shelf never blends into the deep ocean in
+ * one line. Returns `undefined` on land or outside the band.
+ */
+export function shelfDepthMeters(
+  distance: number,
+  radius: number,
+  width: number,
+  targetDepth: number,
+  falloff: number
+): number | undefined {
+  if (distance <= radius) {
+    return undefined;
+  }
+  const across = (distance - radius) / width;
+  if (across >= 1) {
+    return undefined;
+  }
+  const eased = Math.pow(clamp01(across), 0.5 + (1 - clamp01(falloff)) * 3);
+  const deepest = OCEAN_DEPTH_METERS - Math.max(1, OCEAN_DEPTH_METERS * 0.05);
+  return targetDepth + (deepest - targetDepth) * eased;
 }
 
 /**
