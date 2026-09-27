@@ -4,7 +4,7 @@ export {
   RASTER_CATALOG,
   selectRasters,
 } from './catalog/catalog';
-export { compilePalette, regionColor, validatePalette } from './palettes/palettes';
+export { compilePalette, HEIGHTMAP_STOPS, regionColor, validatePalette } from './palettes/palettes';
 export type { PixelWriter } from './palettes/palettes';
 export { CHARACTER_STYLES, characterStyle } from './palettes/characters';
 export type { CharacterStyle } from './palettes/characters';
