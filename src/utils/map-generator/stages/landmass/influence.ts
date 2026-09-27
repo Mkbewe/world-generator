@@ -230,6 +230,73 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+/** Closest point on one segment, with the influence radius interpolated there. */
+export interface SegmentHit {
+  readonly distance: number;
+  readonly radius: number;
+  /** Position along the segment, 0..1. */
+  readonly at: number;
+}
+
+/** Single shared point-to-segment projection: the one distance implementation. */
+export function nearestOnSegment(segment: StructureSegment, point: WorldPoint): SegmentHit {
+  const dx = segment.to.x - segment.from.x;
+  const dy = segment.to.y - segment.from.y;
+  const squared = dx * dx + dy * dy;
+  const at =
+    squared > 0
+      ? clamp01(((point.x - segment.from.x) * dx + (point.y - segment.from.y) * dy) / squared)
+      : 0;
+  return {
+    distance: distanceBetween(point, {
+      x: segment.from.x + dx * at,
+      y: segment.from.y + dy * at,
+    }),
+    radius: segment.fromRadius + (segment.toRadius - segment.fromRadius) * at,
+    at,
+  };
+}
+
+/** One structure's precomputed influence, ready for point queries. */
+export interface StructureInfluence {
+  readonly id: string;
+  readonly bounds: Bounds;
+  readonly segments: readonly StructureSegment[];
+}
+
+/** Nearest structure to a point, with the distance to its axis and local radius. */
+export interface StructureProbe extends SegmentHit {
+  readonly id: string;
+}
+
+/**
+ * Nearest influence across structures. The bounds check skips whole structures
+ * before touching their segments, so a long list stays cheap in a raster loop.
+ */
+export function nearestStructure(
+  entries: readonly StructureInfluence[],
+  point: WorldPoint
+): StructureProbe | undefined {
+  let best: StructureProbe | undefined;
+  for (const entry of entries) {
+    if (
+      point.x < entry.bounds.minX ||
+      point.x > entry.bounds.maxX ||
+      point.y < entry.bounds.minY ||
+      point.y > entry.bounds.maxY
+    ) {
+      continue;
+    }
+    for (const segment of entry.segments) {
+      const hit = nearestOnSegment(segment, point);
+      if (!best || hit.distance < best.distance) {
+        best = { id: entry.id, distance: hit.distance, radius: hit.radius, at: hit.at };
+      }
+    }
+  }
+  return best;
+}
+
 /**
  * Point and travel direction at a fraction of the polyline length. The fraction
  * is clamped, so both ends are reachable.

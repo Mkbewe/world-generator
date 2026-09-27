@@ -235,8 +235,11 @@ export function nearestStructure(entries, point): StructureHit | undefined
 - funkcja zwraca `undefined`, gdy punkt leży poza wszystkimi korytarzami —
   a wtedy liczy się tylko szelf i ocean,
 - bez alokacji na komórkę: rekordy struktur powstają raz (przebieg A), zapytanie
-  czyta je i zwraca prymitywy. `zone-influence.ts` i `insideWorldShare` mają
-  przejść na to samo zapytanie, żeby nie trzymać drugiego liczenia.
+  czyta je i zwraca prymitywy. `zone-influence.ts` przeszedł na wspólne
+  `nearestOnSegment`, żeby nie trzymać drugiej projekcji punkt–odcinek.
+  `insideWorldShare` **zostaje** na własnych próbkach wzdłuż segmentu: mierzy
+  pokrycie korridoru normalnymi, a nie najbliższy punkt, więc to inne zapytanie
+  (korekta wcześniejszej zapowiedzi migracji).
 
 ### Przekrój: wysokość z profilu strefy, nie z odległości
 
@@ -378,11 +381,11 @@ Zadania 4 i 5 można robić równolegle po 3.
 
 ### Zadanie 2 — ląd (szczegóły)
 
-- `influence.ts`: wspólne `nearestStructure` (distance, radius, id, along);
-  `zone-influence.ts` i `insideWorldShare` przechodzą na nie, żeby nie było
-  drugiego liczenia punkt–korytarz,
-- `fields.ts`: `crossSection(t, profile, dominant)`, `noiseAt(warpedPoint,
-  featureScale, relief, worldSize)`,
+- `influence.ts`: wspólne `nearestOnSegment` i `nearestStructure` (distance,
+  radius, id); `zone-influence.ts` przechodzi na wspólny nearest, a
+  `insideWorldShare` zostaje na własnych próbkach wzdłuż segmentu (inne zapytanie),
+- `fields.ts`: `crossSection(t, profile, inverted)` z `isInvertedGeometry`
+  po stronie stref, `noiseAt(warpedPoint, featureScale)`,
 - `stage.ts`: pętla, rekordy struktur (segments + bounds + sampler + shelf index),
   prefiltr po bounds,
 - testy przekroju (wymagane, nie „na końcu"):
