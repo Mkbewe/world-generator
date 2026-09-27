@@ -369,7 +369,7 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
 3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
 4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi. **[działa]**
-5. `StructureCharacterStage` — profile terenu struktur geologicznych i ich regionów. **[planowane]**
+5. `StructureCharacterStage` — strefy charakteru struktur geologicznych. **[działa]**
 6. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna. **[planowane]**
 7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
 8. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
@@ -517,7 +517,7 @@ Przydatne warstwy danych:
 - `shelfIdMap` — przypisanie płytkich obszarów do wspólnej struktury geologicznej,
 - `islandIdMap` — wynikowy podział wynurzonych, spójnych obszarów na faktyczne wyspy.
 
-### 4.5. Charakter struktur — [planowane]
+### 4.5. Charakter struktur — [częściowo]
 
 Charakter struktury opisuje **zamiar** generatora, a nie gwarantowany wynik.
 `HeightmapStage`, `HydrologyStage` i pozostałe etapy weryfikują, gdzie dana
@@ -547,16 +547,24 @@ Każdy archetype ma pulę dozwolonych primary characters:
 | `elongated` | `plains`, `hills` (bez gór) |
 | `branched` | wszystkie trzy |
 
-Split jest bramkowany `characterVariation`: 0 zostawia każdą strukturę
-jednolitym charakterem, wyżej duże struktury dostają drugą strefę (`half` lub
-`center`).
+Generator najpierw losuje ważony układ terenu z puli archetypu: wyższy grzbiet,
+wyższe obrzeża, lokalny pas wybrzeża albo zmianę wzdłuż szkieletu. Następnie
+losuje charaktery i fragmenty ścieżek. `characterVariation: 0` zostawia każdą
+strukturę jednolitą; powyżej zera liczba stref zależy także od rozpiętości,
+użytecznej długości i szerokości korytarzy oraz liczby ramion. Atol pozostaje
+nizinny. Dodatkowe strefy to `chain`, `spine`, `rim` lub `point`.
+
+Osobny suwak `terrainBias` (0 = niziny, 0.5 = równowaga, 1 = góry) przechyla
+losowanie charakterów w obrębie tego, co dopuszcza pula: niziny tracą wagę na
+rzecz gór wraz ze wzrostem wartości, a `hills` pozostają neutralne. Nie łamie to
+reguł archetypu — `lagoon` nadal jest nizinny, a `elongated` nie dostaje gór.
 
 Etap produkuje wyłącznie definicje — bez rastra i bez wysokości — więc nie
 zależy od liczby komórek świata. Ma własny wycinek konfiguracji
 (`structureCharacter`), żeby zmiana parametrów terenu nie unieważniała
 placementu landmassów (§2.8).
 
-### 4.6. Strefy charakteru wewnątrz struktury — [planowane]
+### 4.6. Strefy charakteru wewnątrz struktury — [częściowo]
 
 Duża struktura nie powinna mieć jednolitego charakteru. Zamiast osobnego profilu
 bazowego i listy nadpisujących regionów, etap produkuje jedną listę równorzędnych
@@ -573,27 +581,47 @@ interface CharacterZone {
 
 type ZoneGeometry =
   | { kind: 'whole' }
-  | { kind: 'half'; axis: 'along' | 'x' | 'y'; side: 'low' | 'high' }
-  | { kind: 'center'; radiusFraction: number }
-  | { kind: 'edge';   widthFraction: number }
-  | { kind: 'point';  center: WorldPoint; influenceRadius: number };
+  | { kind: 'chain'; pathId: string; from: number; to: number }
+  | { kind: 'spine'; pathId: string; from: number; to: number; share: number }
+  | { kind: 'rim'; pathId: string; from: number; to: number; share: number }
+  | { kind: 'point'; center: WorldPoint; influenceRadius: number };
 ```
 
 Każda struktura ma co najmniej jedną strefę `whole` z wylosowanym primary
-character. Duże struktury mogą dostać drugą strefę (`half` lub `center`),
-co daje efekty takie jak "zachodnia połowa górzysta, wschodnia nizinna" albo
-"góry w centrum, łagodniejszy teren przy brzegach".
+character. Duże struktury mogą dostać jedną lub dwie dodatkowe strefy — szansa
+rośnie z rozmiarem (`extent`) i liczbą węzłów, a trzecia strefa wymaga dużej,
+rozgałęzionej struktury. Daje to efekty takie jak "pierwsza połowa grzbietu
+górzysta, druga nizinna" (`chain`), "góry wzdłuż osi szkieletu, łagodniejszy
+teren przy brzegach" (`spine`/`rim`) albo "lokalny masyw na jednym z węzłów"
+(`point`).
 
-Strefa `half` dla `elongated` dzieli strukturę **wzdłuż jej głównej osi**
-(`axis: 'along'`), a nie arbitralnie X/Y. `Round` i `irregular` losują `x` lub `y`.
+Strefy nakładają się w kolejności listy: `whole` leży na spodzie, a każda
+następna nadpisuje obszar, który pokrywa. Tak samo maluje je renderer i tak samo
+czyta hit-test (od końca listy), więc kolor i odczyt zostają spójne.
 
-Heightmapa blenduje strefy wagą odległości — strefa bliższa danemu punktowi
-dominuje, a `whole` wypełnia obszary poza zasięgiem pozostałych stref.
+Geometria podąża za **szkieletem struktury**, nie za płaskimi figurami w
+przestrzeni świata. `pathId` wybiera ciągłą ścieżkę: `main` albo ramię
+`branch:<id krawędzi>`. `from`/`to` określają fragment jej długości, także dla
+`spine` i `rim`; `share` to szerokość pasa względem lokalnego promienia.
+Pozwala to przerwać pas przy brzegu i wznowić go dalej bez sztucznego
+łączenia ramion. Dla stref nakładających się ostatnia na liście jest widoczna
+w podglądzie i wybierana przez hit-test. Struktura bez krawędzi nie dostaje
+stref wymagających ścieżki. Szczegółowy plan dalszych zmian opisuje
+`structure-character-plan-2026-09-27.md`.
+
+`createZoneSampler` w generatorze jest wspólnym portem przestrzennym stref.
+Zwraca twarde pokrycie, strefę dominującą (ostatnia pokrywająca punkt wygrywa)
+i płynną wagę względem odległości od granicy. `whole` daje profil bazowy.
+Przyszły `HeightmapStage` pobierze z tego portu profil po kolejnym blendowaniu
+wartości dodatkowych stref; podgląd i hit-test pokazują charakter dominujący.
 
 Charakter jest podwidokiem grupy `Landmasses` („Landmasses / Character\").
 Ciało struktury pokrywa kolor primary character, a odcinek korytarza przykryty
 dodatkową strefą dostaje jej kolor. Szkielet rysuje się na wierzchu. Readout
 pod kursorem podaje primary character strefy i jej geometry kind.
+
+Kolory są przypisane do charakteru, nie do położenia: niziny zielone, pagórki
+żółto-pomarańczowe, góry brązowe — także gdy wyższy charakter leży na obrzeżach.
 
 Klucz domenowy w `MapState` to `structureZones`; dane płyną istniejącym
 kanałem `selectDomainOutputs` → `MapInfo` → warstwa podglądu — bez wpisu

@@ -246,7 +246,7 @@ describe('readoutItems', () => {
           id: 'large-zone-2',
           structureId: 'large',
           character: 'plains',
-          geometry: { kind: 'half', axis: 'x', side: 'low' },
+          geometry: { kind: 'chain', pathId: 'main', from: 0, to: 0.5 },
           values,
         },
       ],

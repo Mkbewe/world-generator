@@ -2,6 +2,7 @@ export { ARCHETYPE_RECIPES, isLandmassArchetype, LANDMASS_ARCHETYPES } from './s
 export { LandmassLayoutStage } from './stage';
 export { isLandmassLayout, validateLayout, validatePlacement } from './layout-check';
 export { interpolatedRadii, mainChainNodes, structureExtent, structureSegments } from './influence';
+export { structurePaths, type StructurePath } from './structure-paths';
 export type { Bounds, StructureSegment } from './influence';
 export { segmentsDistance } from './search/collision';
 export { createMarginSampler, marginInsets } from './mask-sampler';

@@ -64,6 +64,25 @@ describe('StructureCharacterStage', () => {
     expect(() => validateZones(structureZones, landmassLayout, base.world.shape)).not.toThrow();
   });
 
+  it('produces character zones on generated medium and large structures', async () => {
+    let splitStructures = 0;
+    for (let seed = 1; seed <= 8; seed++) {
+      const source = {
+        ...config(),
+        world: { ...base.world, seed },
+        landmasses: { ...LANDMASSES, count: 6, size: 0.7 },
+      };
+      const result = await generate(source);
+      const splitIds = new Set(
+        result.context.state.structureZones
+          ?.filter(zone => zone.geometry.kind !== 'whole')
+          .map(zone => zone.structureId)
+      );
+      splitStructures += splitIds.size;
+    }
+    expect(splitStructures).toBeGreaterThan(24);
+  });
+
   it('is deterministic per seed', async () => {
     const first = await generate();
     const second = await generate();
@@ -104,6 +123,8 @@ describe('StructureCharacterStage', () => {
     const cases: Array<Partial<StructureCharacterConfig>> = [
       { characterVariation: -0.1 },
       { characterVariation: 1.1 },
+      { terrainBias: -0.1 },
+      { terrainBias: 1.1 },
     ];
 
     for (const overrides of cases) {

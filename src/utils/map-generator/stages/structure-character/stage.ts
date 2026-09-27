@@ -2,7 +2,9 @@ import { validateZones } from './character-check';
 import {
   DEFAULT_STRUCTURE_CHARACTER_CONFIG,
   MAX_CHARACTER_VARIATION,
+  MAX_TERRAIN_BIAS,
   MIN_CHARACTER_VARIATION,
+  MIN_TERRAIN_BIAS,
 } from './defaults';
 import { buildZones } from './zones';
 import { GenerationCancelledError } from '../../errors';
@@ -20,7 +22,7 @@ import type {
 
 /**
  * Assigns terrain character zones to the geological structures: one `whole`
- * zone per structure and an optional second zone on a large one. It produces
+ * zone per structure and up to two additional zones on a large one. It produces
  * definitions only — no raster and no heights — so the stage is independent of
  * the world cell count.
  */
@@ -92,6 +94,15 @@ export class StructureCharacterStage implements MapStage<
     ) {
       throw new RangeError(
         `Structure character variation must be between ${MIN_CHARACTER_VARIATION} and ${MAX_CHARACTER_VARIATION}.`
+      );
+    }
+    if (
+      !Number.isFinite(config.terrainBias) ||
+      config.terrainBias < MIN_TERRAIN_BIAS ||
+      config.terrainBias > MAX_TERRAIN_BIAS
+    ) {
+      throw new RangeError(
+        `Structure terrain bias must be between ${MIN_TERRAIN_BIAS} and ${MAX_TERRAIN_BIAS}.`
       );
     }
   }
