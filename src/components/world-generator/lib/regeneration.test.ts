@@ -5,6 +5,7 @@ import {
   type StageInfo,
   type StageStatistics,
 } from '../../../utils/map-generator';
+import { PIPELINE_STAGES } from '../../../utils/map-generator/pipeline/stage-definitions';
 
 const config: MapConfig = {
   world: {
@@ -16,9 +17,9 @@ const config: MapConfig = {
 };
 
 const stages: readonly StageInfo[] = [
-  { id: 'world-shape', name: 'World shape generation' },
-  { id: 'noise', name: 'Noise generation' },
-  { id: 'macro-region', name: 'Macro region generation' },
+  { id: 'world-shape', name: 'World shape' },
+  { id: 'noise', name: 'Noise' },
+  { id: 'macro-region', name: 'Macro region' },
 ];
 
 function stageStatistics(
@@ -43,13 +44,7 @@ describe('SelectiveRegeneration', () => {
     const plan = regeneration.plan(config, {});
 
     expect(plan).toEqual({
-      dirtyStageIds: [
-        'world-shape',
-        'noise',
-        'macro-region',
-        'landmass-layout',
-        'structure-character',
-      ],
+      dirtyStageIds: PIPELINE_STAGES.map(stage => stage.id),
       cachedState: {},
     });
     expect(regeneration.reusedStageIds).toEqual([]);
@@ -90,12 +85,8 @@ describe('SelectiveRegeneration', () => {
     regeneration.reset();
 
     expect(regeneration.announcedStages).toEqual([]);
-    expect(regeneration.plan(config, {}).dirtyStageIds).toEqual([
-      'world-shape',
-      'noise',
-      'macro-region',
-      'landmass-layout',
-      'structure-character',
-    ]);
+    expect(regeneration.plan(config, {}).dirtyStageIds).toEqual(
+      PIPELINE_STAGES.map(stage => stage.id)
+    );
   });
 });

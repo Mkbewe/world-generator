@@ -8,6 +8,7 @@ import {
   type StageInfo,
   type StageStatistics,
 } from '../../../utils/map-generator';
+import { PIPELINE_STAGES } from '../../../utils/map-generator/pipeline/stage-definitions';
 import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region/defaults';
 import type { MapRasters } from '../../../utils/map-layers';
 import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
@@ -24,8 +25,8 @@ const config: MapConfig = {
 };
 
 const stages: readonly StageInfo[] = [
-  { id: 'world-shape', name: 'World shape generation' },
-  { id: 'noise', name: 'Noise generation' },
+  { id: 'world-shape', name: 'World shape' },
+  { id: 'noise', name: 'Noise' },
 ];
 
 function completed(stageId: string, data: Record<string, unknown>): GenerationEvent {
@@ -193,13 +194,7 @@ describe('WorldGenerationSession', () => {
     const planned = () => runner.mock.lastCall?.[1]?.reuse.dirtyStageIds;
 
     await session.generate(config, vi.fn());
-    expect(planned()).toEqual([
-      'world-shape',
-      'noise',
-      'macro-region',
-      'landmass-layout',
-      'structure-character',
-    ]);
+    expect(planned()).toEqual(PIPELINE_STAGES.map(stage => stage.id));
 
     await session.generate(withRegions, vi.fn());
     expect(planned()).toEqual(['macro-region']);
@@ -270,13 +265,9 @@ describe('WorldGenerationSession', () => {
 
     await session.generate(config, vi.fn());
 
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual([
-      'world-shape',
-      'noise',
-      'macro-region',
-      'landmass-layout',
-      'structure-character',
-    ]);
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(
+      PIPELINE_STAGES.map(stage => stage.id)
+    );
     expect(mapRepository.get()?.layers).not.toHaveProperty('landmassIdMap');
   });
 
@@ -410,8 +401,8 @@ describe('WorldGenerationSession', () => {
     const run = session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, onProgress);
 
     expect(onProgress.mock.calls[0][0].stages).toEqual([
-      { id: 'world-shape', name: 'World shape generation', status: 'skipped', percentage: 0 },
-      { id: 'noise', name: 'Noise generation', status: 'skipped', percentage: 0 },
+      { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0 },
+      { id: 'noise', name: 'Noise', status: 'skipped', percentage: 0 },
     ]);
 
     finish({ statistics: [], totalDurationMs: 1 });
@@ -511,7 +502,7 @@ describe('WorldGenerationSession', () => {
 
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(changed, vi.fn());
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['noise']);
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['noise', 'heightmap']);
   });
 
   it('rejects missing stage data without saving an incomplete map', async () => {

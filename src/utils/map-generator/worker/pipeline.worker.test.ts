@@ -21,6 +21,7 @@ const request: PipelineWorkerGenerateRequest = {
       'macro-region',
       'landmass-layout',
       'structure-character',
+      'heightmap',
     ],
     cachedState: {},
   },
@@ -64,11 +65,12 @@ describe('generation worker', () => {
     expect(messages[0]).toEqual({
       type: 'stages',
       stages: [
-        { id: 'world-shape', name: 'World shape generation' },
-        { id: 'noise', name: 'Noise generation' },
-        { id: 'macro-region', name: 'Macro region generation' },
-        { id: 'landmass-layout', name: 'Landmass layout generation' },
-        { id: 'structure-character', name: 'Structure character generation' },
+        { id: 'world-shape', name: 'World shape' },
+        { id: 'noise', name: 'Noise' },
+        { id: 'macro-region', name: 'Macro region' },
+        { id: 'landmass-layout', name: 'Landmass layout' },
+        { id: 'structure-character', name: 'Structure character' },
+        { id: 'heightmap', name: 'Heightmap' },
       ],
     });
     expect(message?.type).toBe('result');
@@ -77,6 +79,7 @@ describe('generation worker', () => {
     }
     expect(message.result).not.toHaveProperty('layers');
     expect(message.result.statistics.map(stage => stage.status)).toEqual([
+      'completed',
       'completed',
       'completed',
       'completed',
@@ -92,6 +95,7 @@ describe('generation worker', () => {
       worldMask: full.context.state.worldMask,
       noiseMap: full.context.state.noiseMap,
       landmassLayout: full.context.state.landmassLayout,
+      structureZones: full.context.state.structureZones,
     };
 
     const message = await generate({
@@ -109,9 +113,10 @@ describe('generation worker', () => {
       'completed',
       'skipped',
       'skipped',
+      'skipped',
     ]);
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
-      ['world-shape', 'noise', 'landmass-layout', 'structure-character']
+      ['world-shape', 'noise', 'landmass-layout', 'structure-character', 'heightmap']
     );
   });
 

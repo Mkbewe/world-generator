@@ -1,14 +1,15 @@
-import { buildHeightmap } from './build';
+import { buildHeightmap, OUTSIDE_SHELF } from './build';
 import { OCEAN_DEPTH_METERS } from './defaults';
 import { createWorldSpace } from '../../space';
 import type {
   CharacterZone,
   GeologicalStructure,
   HeightmapConfig,
+  LandmassLayout,
   TerrainProfile,
 } from '../../types';
 
-const SPACE = createWorldSpace({ sampleWidth: 21, sampleHeight: 21 });
+const SPACE = createWorldSpace({ sampleWidth: 61, sampleHeight: 61 });
 const CONFIG: HeightmapConfig = { relief: 0.5, featureScale: 0.5 };
 
 const VALUES: TerrainProfile = {
@@ -33,6 +34,11 @@ const STRUCTURE: GeologicalStructure = {
   shelfId: 'shelf-1',
 };
 
+const LAYOUT: LandmassLayout = {
+  structures: [STRUCTURE],
+  shelves: [{ id: 'shelf-1', width: 0.15, targetDepth: 60, falloff: 0.5, irregularity: 0.35 }],
+};
+
 const ZONES: CharacterZone[] = [
   {
     id: 's1-zone-1',
@@ -43,115 +49,154 @@ const ZONES: CharacterZone[] = [
   },
 ];
 
+const MASK = new Uint8Array(61 * 61).fill(1);
+
 function noiseMap(): Float32Array {
-  return new Float32Array(21 * 21).fill(0.5);
+  return new Float32Array(61 * 61).fill(0.5);
 }
 
-function build(overrides: Partial<HeightmapConfig> = {}): Float32Array {
+function build(overrides: Partial<HeightmapConfig> = {}) {
   return buildHeightmap({
-    structures: [STRUCTURE],
+    layout: LAYOUT,
     zones: ZONES,
     noiseMap: noiseMap(),
+    worldMask: MASK,
     config: { ...CONFIG, ...overrides },
     worldSizeMeters: 2000,
     space: SPACE,
   });
 }
 
-function at(field: Float32Array, x: number, y: number): number {
+function at(field: Float32Array | Int16Array, x: number, y: number): number {
   return field[y * SPACE.sampleWidth + x];
 }
 
 describe('buildHeightmap', () => {
   it('raises land along the axis and keeps all values finite', () => {
-    const field = build();
+    const { heightmap } = build();
 
-    expect(at(field, 10, 10)).toBeGreaterThan(0);
-    expect(field.every(value => Number.isFinite(value))).toBe(true);
+    expect(at(heightmap, 30, 30)).toBeGreaterThan(0);
+    expect(heightmap.every(value => Number.isFinite(value))).toBe(true);
   });
 
-  it('fills everything outside the structure width with the ocean floor', () => {
-    const field = build();
+  it('fills everything beyond the shelf with the ocean floor', () => {
+    const { heightmap } = build();
 
-    expect(at(field, 0, 0)).toBe(-OCEAN_DEPTH_METERS);
-    expect(at(field, 20, 20)).toBe(-OCEAN_DEPTH_METERS);
+    expect(at(heightmap, 0, 0)).toBe(-OCEAN_DEPTH_METERS);
+    expect(at(heightmap, 60, 60)).toBe(-OCEAN_DEPTH_METERS);
+  });
+
+  it('lifts the sea floor through the shelf band', () => {
+    const { heightmap, shelfIndexMap } = build();
+    const shelfDepths: number[] = [];
+    for (let index = 0; index < shelfIndexMap.length; index++) {
+      if (shelfIndexMap[index] !== OUTSIDE_SHELF) {
+        shelfDepths.push(heightmap[index]);
+      }
+    }
+
+    // The shelf is shallow water, so every shelf cell sits above the open ocean.
+    expect(shelfDepths.length).toBeGreaterThan(0);
+    const deepest = Math.min(...shelfDepths);
+    expect(deepest).toBeGreaterThan(-OCEAN_DEPTH_METERS);
+    expect(deepest).toBeLessThan(0);
+  });
+
+  it('leaves cells outside the world at the datum and outside any shelf', () => {
+    const mask = new Uint8Array(61 * 61).fill(1);
+    mask[30 * 61 + 30] = 0;
+    const { heightmap, shelfIndexMap } = buildHeightmap({
+      layout: LAYOUT,
+      zones: ZONES,
+      noiseMap: noiseMap(),
+      worldMask: mask,
+      config: CONFIG,
+      worldSizeMeters: 2000,
+      space: SPACE,
+    });
+
+    expect(at(heightmap, 30, 30)).toBe(0);
+    expect(at(shelfIndexMap, 30, 30)).toBe(OUTSIDE_SHELF);
   });
 
   it('reaches the sea datum at the coast rather than a step', () => {
-    const field = build();
-    const axis = at(field, 10, 10);
-    let edge = axis;
-    for (let y = 10; y >= 0; y--) {
-      if (at(field, 10, y) === -OCEAN_DEPTH_METERS) {
-        break;
-      }
-      edge = at(field, 10, y);
-    }
+    const { heightmap } = build();
+    const axis = at(heightmap, 30, 30);
+    const edge = at(heightmap, 30, 24);
 
-    expect(edge).toBeGreaterThan(0);
+    expect(edge).toBeCloseTo(0, 6);
     expect(edge).toBeLessThan(axis);
+    expect(at(heightmap, 30, 23)).toBeLessThan(0);
   });
 
   it('raises the peaks with relief', () => {
     const low = build({ relief: 0 });
     const high = build({ relief: 1 });
 
-    expect(at(high, 10, 10)).toBeGreaterThan(at(low, 10, 10));
+    expect(at(high.heightmap, 30, 30)).toBeGreaterThan(at(low.heightmap, 30, 30));
   });
 
   it('is deterministic for the same input', () => {
-    expect(build()).toEqual(build());
+    expect(build().heightmap).toEqual(build().heightmap);
   });
 
   it('leaves the ocean floor where a structure carries no zones', () => {
-    const field = buildHeightmap({
-      structures: [STRUCTURE],
+    const { heightmap } = buildHeightmap({
+      layout: LAYOUT,
       zones: [],
       noiseMap: noiseMap(),
+      worldMask: MASK,
       config: CONFIG,
       worldSizeMeters: 2000,
       space: SPACE,
     });
 
-    expect(at(field, 10, 10)).toBe(-OCEAN_DEPTH_METERS);
+    expect(at(heightmap, 30, 30)).toBe(-OCEAN_DEPTH_METERS);
   });
 
   it('keeps the higher ground where two structures overlap', () => {
-    const other: GeologicalStructure = {
+    const tall: GeologicalStructure = {
+      ...STRUCTURE,
+      nodes: [
+        { id: 's1-n1', position: { x: 0.1, y: 0.5 }, radius: 0.1 },
+        { id: 's1-n2', position: { x: 0.3, y: 0.5 }, radius: 0.1 },
+      ],
+      edges: [{ id: 's1-e1', from: 's1-n1', to: 's1-n2' }],
+    };
+    const flat: GeologicalStructure = {
       ...STRUCTURE,
       id: 's2',
       nodes: [
-        { id: 's2-n1', position: { x: 0.4, y: 0.5 }, radius: 0.1 },
-        { id: 's2-n2', position: { x: 0.6, y: 0.5 }, radius: 0.1 },
+        { id: 's2-n1', position: { x: 0.25, y: 0.5 }, radius: 0.1 },
+        { id: 's2-n2', position: { x: 0.45, y: 0.5 }, radius: 0.1 },
       ],
       edges: [{ id: 's2-e1', from: 's2-n1', to: 's2-n2' }],
     };
-    const flat: CharacterZone = {
+    const flatZone: CharacterZone = {
       id: 's2-zone-1',
       structureId: 's2',
       character: 'plains',
       geometry: { kind: 'whole' },
       values: { ...VALUES, elevation: 0, mountainStrength: 0, hillStrength: 0 },
     };
-    const overlapping = buildHeightmap({
-      structures: [STRUCTURE, other],
-      zones: [...ZONES, flat],
+    const layout: LandmassLayout = {
+      structures: [tall, flat],
+      shelves: LAYOUT.shelves,
+    };
+    const field = buildHeightmap({
+      layout,
+      zones: [{ ...ZONES[0], structureId: 's1' }, flatZone],
       noiseMap: noiseMap(),
-      config: CONFIG,
-      worldSizeMeters: 2000,
-      space: SPACE,
-    });
-    const tallOnly = buildHeightmap({
-      structures: [STRUCTURE],
-      zones: ZONES,
-      noiseMap: noiseMap(),
+      worldMask: MASK,
       config: CONFIG,
       worldSizeMeters: 2000,
       space: SPACE,
     });
 
-    // A flat structure on top must not lower the mountainous one underneath.
-    expect(at(overlapping, 10, 10)).toBeGreaterThan(0);
-    expect(at(overlapping, 10, 10)).toBe(at(tallOnly, 10, 10));
+    // Both structures reach the seam at x = 0.35; the mountainous one sits there
+    // too, so its ground must win instead of the later, flat structure.
+    const seam = at(field.heightmap, 21, 30);
+    expect(at(field.heightmap, 15, 30)).toBeGreaterThan(seam);
+    expect(seam).toBeGreaterThan(0);
   });
 });

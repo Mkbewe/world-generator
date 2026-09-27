@@ -10,6 +10,7 @@ export const MAP_CONFIG_KEYS = [
   'macroRegionDeformation',
   'landmasses',
   'structureCharacter',
+  'heightmap',
 ] as const;
 
 export type MapConfigKey = (typeof MAP_CONFIG_KEYS)[number];
@@ -35,14 +36,14 @@ export interface ConditionalConfigKey {
 
 export const WORLD_SHAPE_STAGE = {
   id: 'world-shape',
-  name: 'World shape generation',
+  name: 'World shape',
   configKeys: ['world.dimensions', 'world.shape'],
 } as const satisfies DeclaredStage;
 
 /** The noise skips cells outside the mask, so it depends on the world shape. */
 export const NOISE_STAGE = {
   id: 'noise',
-  name: 'Noise generation',
+  name: 'Noise',
   configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'noise'],
 } as const satisfies DeclaredStage;
 
@@ -54,7 +55,7 @@ export function usesNoiseMapForRegions(config: Readonly<MapConfig>): boolean {
 /** Regions read the mask and sample the noise raster for the `noise-map` source. */
 export const MACRO_REGION_STAGE = {
   id: 'macro-region',
-  name: 'Macro region generation',
+  name: 'Macro region',
   configKeys: [
     'world.seed',
     'world.shape',
@@ -75,26 +76,25 @@ export const MACRO_REGION_STAGE = {
 
 export const LANDMASS_LAYOUT_STAGE = {
   id: 'landmass-layout',
-  name: 'Landmass layout generation',
+  name: 'Landmass layout',
   configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses'],
 } as const satisfies DeclaredStage;
 
 /** The character reads the layout, so it inherits its shape and placement inputs. */
 export const STRUCTURE_CHARACTER_STAGE = {
   id: 'structure-character',
-  name: 'Structure character generation',
+  name: 'Structure character',
   configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses', 'structureCharacter'],
 } as const satisfies DeclaredStage;
 
 /**
  * The heightmap reads the mask, the shared noise, the layout and the zones, so
- * it inherits their configuration. It stays out of `PIPELINE_STAGES` and the
- * factory until it produces a real height and shelf, so the list never names a
- * stage without an executor (see `docs/heightmap-implementation-plan.md`).
+ * it inherits their configuration. It also reads its own slice, so changing the
+ * relief or the feature scale schedules the stage again.
  */
 export const HEIGHTMAP_STAGE = {
   id: 'heightmap',
-  name: 'Heightmap generation',
+  name: 'Heightmap',
   configKeys: [
     'world.seed',
     'world.shape',
@@ -102,6 +102,7 @@ export const HEIGHTMAP_STAGE = {
     'noise',
     'landmasses',
     'structureCharacter',
+    'heightmap',
   ],
 } as const satisfies DeclaredStage;
 
@@ -117,6 +118,7 @@ export const PIPELINE_STAGES = [
   MACRO_REGION_STAGE,
   LANDMASS_LAYOUT_STAGE,
   STRUCTURE_CHARACTER_STAGE,
+  HEIGHTMAP_STAGE,
 ] as const;
 
 export type PipelineStageId = (typeof PIPELINE_STAGES)[number]['id'];
