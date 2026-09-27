@@ -13,4 +13,18 @@ describe('character styles', () => {
   it('keeps a style for every known character', () => {
     expect(Object.keys(CHARACTER_STYLES).sort()).toEqual([...TERRAIN_CHARACTERS].sort());
   });
+
+  it('keeps plains green, hills ochre and mountains brown', () => {
+    const [plainsR, plainsG, plainsB] = CHARACTER_STYLES.plains.color;
+    expect(plainsG).toBeGreaterThan(plainsR);
+    expect(plainsG).toBeGreaterThan(plainsB);
+
+    const [hillsR, hillsG, hillsB] = CHARACTER_STYLES.hills.color;
+    expect(hillsR).toBeGreaterThan(hillsB);
+    expect(hillsG).toBeGreaterThan(hillsB);
+
+    const [mountainsR, mountainsG, mountainsB] = CHARACTER_STYLES.mountains.color;
+    expect(mountainsR).toBeGreaterThan(mountainsG);
+    expect(mountainsG).toBeGreaterThan(mountainsB);
+  });
 });

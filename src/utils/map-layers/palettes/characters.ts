@@ -8,8 +8,8 @@ export interface CharacterStyle {
 
 /** Colour and label of every primary terrain character. */
 export const CHARACTER_STYLES: Readonly<Record<TerrainCharacter, CharacterStyle>> = {
-  plains: { label: 'Plains', color: [204, 204, 145] },
-  hills: { label: 'Hills', color: [124, 168, 96] },
+  plains: { label: 'Plains', color: [110, 168, 92] },
+  hills: { label: 'Hills', color: [214, 178, 88] },
   mountains: { label: 'Mountains', color: [146, 116, 90] },
 };
 

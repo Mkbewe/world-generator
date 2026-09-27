@@ -7,6 +7,7 @@ import {
   type TerrainProfile,
   type ZoneGeometry,
 } from '../../types';
+import { structurePaths } from '../landmass';
 
 /** Whether unknown data is a primary terrain character. */
 export function isTerrainCharacter(value: unknown): value is TerrainCharacter {
@@ -21,12 +22,11 @@ export function isZoneGeometry(value: unknown): value is ZoneGeometry {
   switch (value.kind) {
     case 'whole':
       return true;
-    case 'half':
-      return isHalfAxis(value.axis) && (value.side === 'low' || value.side === 'high');
-    case 'center':
-      return isNormalized(value.radiusFraction);
-    case 'edge':
-      return isNormalized(value.widthFraction);
+    case 'chain':
+      return isPathRange(value);
+    case 'spine':
+    case 'rim':
+      return isPathRange(value) && isNormalized(value.share) && value.share > 0;
     case 'point':
       return isPoint(value.center) && isNormalized(value.influenceRadius);
     default:
@@ -83,6 +83,16 @@ export function validateZones(
   shape: WorldShape
 ): void {
   const structureIds = new Set(layout.structures.map(structure => structure.id));
+  const pathsByStructure = new Map(
+    layout.structures.map(structure => [
+      structure.id,
+      new Set(
+        structurePaths(structure)
+          .filter(path => path.length > 0)
+          .map(path => path.id)
+      ),
+    ])
+  );
   const wholeByStructure = new Map<string, number>();
   const zoneIds = new Set<string>();
 
@@ -105,6 +115,13 @@ export function validateZones(
     if (zone.geometry.kind === 'point' && !insideShape(shape, zone.geometry.center)) {
       throw new Error(`Zone "${zone.id}" is anchored outside the world.`);
     }
+    if (
+      zone.geometry.kind !== 'whole' &&
+      zone.geometry.kind !== 'point' &&
+      !pathsByStructure.get(zone.structureId)?.has(zone.geometry.pathId)
+    ) {
+      throw new Error(`Zone "${zone.id}" references an unknown structure path.`);
+    }
   }
 
   for (const id of structureIds) {
@@ -114,15 +131,21 @@ export function validateZones(
   }
 }
 
+function isPathRange(value: Record<string, unknown>): boolean {
+  return (
+    typeof value.pathId === 'string' &&
+    value.pathId.length > 0 &&
+    isNormalized(value.from) &&
+    isNormalized(value.to) &&
+    value.from < value.to
+  );
+}
+
 function insideShape(
   shape: WorldShape,
   point: { readonly x: number; readonly y: number }
 ): boolean {
   return containsWorld(shape, 2 * point.x - 1, 2 * point.y - 1);
-}
-
-function isHalfAxis(value: unknown): value is 'along' | 'x' | 'y' {
-  return value === 'along' || value === 'x' || value === 'y';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

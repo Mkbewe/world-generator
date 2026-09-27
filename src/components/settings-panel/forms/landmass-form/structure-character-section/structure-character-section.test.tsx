@@ -45,4 +45,29 @@ describe('StructureCharacterSection', () => {
       useStructureCharacterFormStore.getState().structureCharacter.characterVariation
     ).toBeCloseTo(DEFAULT_STRUCTURE_CHARACTER_CONFIG.characterVariation + 0.05, 10);
   });
+
+  it('shows the terrain bias slider', () => {
+    renderSection();
+
+    expect(screen.getByLabelText('Terrain bias')).toBeInTheDocument();
+  });
+
+  it('commits terrain bias changes to the form store', async () => {
+    const user = userEvent.setup();
+    renderSection();
+
+    const slider = within(screen.getByLabelText('Terrain bias')).getByRole('slider');
+    expect(slider).toHaveAttribute(
+      'aria-valuenow',
+      String(DEFAULT_STRUCTURE_CHARACTER_CONFIG.terrainBias)
+    );
+
+    slider.focus();
+    await user.keyboard('{ArrowRight}');
+
+    expect(useStructureCharacterFormStore.getState().structureCharacter.terrainBias).toBeCloseTo(
+      DEFAULT_STRUCTURE_CHARACTER_CONFIG.terrainBias + 0.05,
+      10
+    );
+  });
 });

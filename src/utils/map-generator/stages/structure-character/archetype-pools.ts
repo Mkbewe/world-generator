@@ -1,99 +1,121 @@
 import { type CharacterRanges, LAGOON_RANGES } from './character-ranges';
 import type { LandmassArchetype, TerrainCharacter } from '../../types';
 
-/** How a large structure may be split into a second character zone. */
-export type ZoneSplit = 'none' | 'half' | 'center' | 'edge' | 'point';
+export type ZoneSplit = 'chain' | 'spine' | 'rim' | 'point';
 
-export interface SplitWeight {
+/** One planned part of a whole-structure terrain arrangement. */
+export interface ZoneIntent {
   readonly split: ZoneSplit;
-  readonly weight: number;
+  readonly characters: readonly TerrainCharacter[];
+  /** A second separated stretch retains the first stretch's character. */
+  readonly repeatPrevious?: boolean;
 }
 
-/**
- * Behaviour of one archetype as data: the characters it may draw, the split
- * weights, and every rule that used to be an archetype `if` — its own value
- * ranges, a fixed split axis and the preferred second characters.
- */
+/** Layout is chosen before characters or positions, so terrain has one intent. */
+export interface TerrainLayout {
+  readonly id: string;
+  readonly weight: number;
+  readonly base: readonly TerrainCharacter[];
+  readonly zones: readonly ZoneIntent[];
+}
+
 export interface ArchetypePool {
   readonly characters: readonly TerrainCharacter[];
-  readonly splits: readonly SplitWeight[];
-  /** Value ranges override; `lagoon` keeps the flat, feature-free plains. */
+  readonly layouts: readonly TerrainLayout[];
   readonly ranges?: CharacterRanges;
-  /** Fixed split axis; absent means the structure picks x or y itself. */
-  readonly splitAxis?: 'along' | 'x' | 'y';
-  /** Preferred second characters for a `center` split, then the rest. */
-  readonly centerSecondary?: readonly TerrainCharacter[];
-  /** Preferred second characters for a `half` split, then the rest. */
-  readonly halfSecondary?: readonly TerrainCharacter[];
 }
 
-const ALL_SECONDARY: readonly TerrainCharacter[] = ['mountains', 'hills', 'plains'];
+const ALL: readonly TerrainCharacter[] = ['plains', 'hills', 'mountains'];
+const LOW: readonly TerrainCharacter[] = ['plains', 'hills'];
+const HIGH: readonly TerrainCharacter[] = ['hills', 'mountains'];
+
+const FLAT: TerrainLayout = { id: 'flat', weight: 0.08, base: ALL, zones: [] };
+const RIDGE: TerrainLayout = {
+  id: 'ridge',
+  weight: 0.3,
+  base: LOW,
+  zones: [
+    { split: 'spine', characters: HIGH },
+    { split: 'chain', characters: ALL },
+  ],
+};
+const BASIN: TerrainLayout = {
+  id: 'basin',
+  weight: 0.22,
+  base: ['plains'],
+  zones: [
+    { split: 'rim', characters: HIGH },
+    { split: 'rim', characters: HIGH, repeatPrevious: true },
+  ],
+};
+const COAST: TerrainLayout = {
+  id: 'coast',
+  weight: 0.18,
+  base: HIGH,
+  zones: [
+    { split: 'rim', characters: ['plains'] },
+    { split: 'rim', characters: ['plains'], repeatPrevious: true },
+  ],
+};
+const SEGMENTS: TerrainLayout = {
+  id: 'segments',
+  weight: 0.22,
+  base: ALL,
+  zones: [
+    { split: 'chain', characters: ALL },
+    { split: 'point', characters: HIGH },
+  ],
+};
 
 export const ARCHETYPE_POOLS: Readonly<Record<LandmassArchetype, ArchetypePool>> = {
   lagoon: {
     characters: ['plains'],
-    splits: [{ split: 'none', weight: 1 }],
+    layouts: [{ id: 'flat', weight: 1, base: ['plains'], zones: [] }],
     ranges: LAGOON_RANGES,
   },
   round: {
-    characters: ['plains', 'hills', 'mountains'],
-    splits: [
-      { split: 'half', weight: 0.5 },
-      { split: 'center', weight: 0.5 },
-    ],
-    centerSecondary: ['mountains', 'hills'],
-    halfSecondary: ['plains', 'hills'],
+    characters: ALL,
+    layouts: [FLAT, RIDGE, BASIN, SEGMENTS],
   },
   irregular: {
-    characters: ['plains', 'hills', 'mountains'],
-    splits: [
-      { split: 'half', weight: 0.45 },
-      { split: 'center', weight: 0.3 },
-      { split: 'edge', weight: 0.15 },
-      { split: 'point', weight: 0.1 },
-    ],
-    centerSecondary: ['mountains', 'hills'],
-    halfSecondary: ['plains', 'hills'],
+    characters: ALL,
+    layouts: [FLAT, RIDGE, BASIN, COAST, SEGMENTS],
   },
   elongated: {
-    characters: ['plains', 'hills'],
-    splits: [
-      { split: 'half', weight: 0.8 },
-      { split: 'center', weight: 0.2 },
+    characters: LOW,
+    layouts: [
+      { id: 'flat', weight: 0.08, base: LOW, zones: [] },
+      {
+        id: 'ridge',
+        weight: 0.35,
+        base: ['plains'],
+        zones: [
+          { split: 'spine', characters: ['hills'] },
+          { split: 'chain', characters: LOW },
+        ],
+      },
+      {
+        id: 'basin',
+        weight: 0.22,
+        base: ['plains'],
+        zones: [
+          { split: 'rim', characters: ['hills'] },
+          { split: 'rim', characters: ['hills'], repeatPrevious: true },
+        ],
+      },
+      {
+        id: 'segments',
+        weight: 0.35,
+        base: LOW,
+        zones: [
+          { split: 'chain', characters: LOW },
+          { split: 'chain', characters: LOW, repeatPrevious: true },
+        ],
+      },
     ],
-    splitAxis: 'along',
-    centerSecondary: ['hills', 'plains'],
-    halfSecondary: ['plains', 'hills'],
   },
   branched: {
-    characters: ['plains', 'hills', 'mountains'],
-    splits: [
-      { split: 'half', weight: 0.4 },
-      { split: 'center', weight: 0.3 },
-      { split: 'edge', weight: 0.15 },
-      { split: 'point', weight: 0.15 },
-    ],
-    centerSecondary: ['mountains', 'hills'],
-    halfSecondary: ['plains', 'hills'],
+    characters: ALL,
+    layouts: [FLAT, RIDGE, BASIN, COAST, SEGMENTS],
   },
 };
-
-/** Pool of allowed second characters with the archetype's preference first. */
-export function secondaryChoices(
-  pool: ArchetypePool,
-  primary: TerrainCharacter,
-  split: ZoneSplit
-): readonly TerrainCharacter[] {
-  const options = pool.characters.filter(character => character !== primary);
-  if (options.length === 0) {
-    return [];
-  }
-  let preferred: readonly TerrainCharacter[] | undefined;
-  if (split === 'center') {
-    preferred = pool.centerSecondary;
-  } else if (split === 'half') {
-    preferred = pool.halfSecondary;
-  }
-  const ordered = (preferred ?? ALL_SECONDARY).filter(character => options.includes(character));
-  return ordered.length > 0 ? ordered : options;
-}

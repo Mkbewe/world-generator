@@ -34,11 +34,18 @@ const WHOLE: CharacterZone = {
   geometry: { kind: 'whole' },
   values: VALUES,
 };
-const HALF: CharacterZone = {
+const CHAIN: CharacterZone = {
   id: 'large-zone-2',
   structureId: 'large',
   character: 'plains',
-  geometry: { kind: 'half', axis: 'x', side: 'low' },
+  geometry: { kind: 'chain', pathId: 'main', from: 0, to: 0.5 },
+  values: VALUES,
+};
+const POINT: CharacterZone = {
+  id: 'large-zone-3',
+  structureId: 'large',
+  character: 'hills',
+  geometry: { kind: 'point', center: { x: 0.4, y: 0.5 }, influenceRadius: 0.2 },
   values: VALUES,
 };
 
@@ -62,11 +69,26 @@ describe('StructureCharacterVectorLayer', () => {
     const layer = new StructureCharacterVectorLayer(
       'structure-character',
       { width: 11, height: 11 },
-      [WHOLE, HALF],
+      [WHOLE, CHAIN],
       { layout: LAYOUT }
     );
     try {
       expect(layer.sample(4, 5)).toEqual({ id: 'large-zone-2', label: 'Plains' });
+      expect(layer.sample(7, 5)).toEqual({ id: 'large-zone-1', label: 'Mountains' });
+    } finally {
+      layer.dispose();
+    }
+  });
+
+  it('lets the later split zone win over the earlier one', () => {
+    const layer = new StructureCharacterVectorLayer(
+      'structure-character',
+      { width: 11, height: 11 },
+      [WHOLE, CHAIN, POINT],
+      { layout: LAYOUT }
+    );
+    try {
+      expect(layer.sample(4, 5)).toEqual({ id: 'large-zone-3', label: 'Hills' });
       expect(layer.sample(7, 5)).toEqual({ id: 'large-zone-1', label: 'Mountains' });
     } finally {
       layer.dispose();

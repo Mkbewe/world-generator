@@ -159,27 +159,38 @@ export const TERRAIN_CHARACTERS = ['plains', 'hills', 'mountains'] as const;
 export type TerrainCharacter = (typeof TERRAIN_CHARACTERS)[number];
 
 /**
- * Spatial extent of a character zone within its geological structure.
+ * Spatial extent of a character zone within its geological structure. Geometry
+ * follows the structure skeleton, never a flat shape in world space.
  *
  * - `whole`  — covers the entire structure; every structure has at least one.
- * - `half`   — one directional half; `axis: 'along'` splits along the main
- *              skeleton axis (preferred for elongated), `'x'`/`'y'` split
- *              on the world axes.
- * - `center` — inner core up to `radiusFraction` of the structure extent.
- * - `edge`   — outer band of width `widthFraction` of the structure extent.
+ * - `chain`  — a stretch of one continuous path, as fractions of its length.
+ * - `spine`  — its core band, `share` of the local corridor radius.
+ * - `rim`    — its outer band, the outer `share` of the local corridor radius.
  * - `point`  — a circular area anchored at `center` with `influenceRadius`.
  */
 export type ZoneGeometry =
   | { readonly kind: 'whole' }
-  | { readonly kind: 'half'; readonly axis: 'along' | 'x' | 'y'; readonly side: 'low' | 'high' }
-  | { readonly kind: 'center'; readonly radiusFraction: number }
-  | { readonly kind: 'edge'; readonly widthFraction: number }
+  | { readonly kind: 'chain'; readonly pathId: string; readonly from: number; readonly to: number }
+  | {
+      readonly kind: 'spine';
+      readonly pathId: string;
+      readonly from: number;
+      readonly to: number;
+      readonly share: number;
+    }
+  | {
+      readonly kind: 'rim';
+      readonly pathId: string;
+      readonly from: number;
+      readonly to: number;
+      readonly share: number;
+    }
   | { readonly kind: 'point'; readonly center: WorldPoint; readonly influenceRadius: number };
 
 /**
- * One terrain character zone belonging to a geological structure. The
- * heightmap blends overlapping zones by proximity — the closest zone wins,
- * and the `whole` zone fills every area not covered by a more specific one.
+ * One terrain character zone belonging to a geological structure. Later zones
+ * dominate where their footprints overlap. The domain zone sampler blends
+ * their field values across boundaries; `whole` supplies the base profile.
  */
 export interface CharacterZone {
   readonly id: string;
@@ -193,11 +204,18 @@ export interface CharacterZone {
 /** Controls the structure character stage. */
 export interface StructureCharacterConfig {
   /**
-   * How often a large structure splits into a second character zone; 0 keeps
-   * every structure single-character. Characters themselves are drawn uniformly
-   * from the archetype pool.
+   * Controls character variation; 0 keeps every structure single-character.
+   * The number of zones also responds to extent, usable skeleton length,
+   * corridor width and branch count. A layout is selected before characters.
    */
   readonly characterVariation: number;
+  /**
+   * Leans character draws across the whole world: 0 favours flat `plains`,
+   * 1 favours `mountains`, 0.5 keeps every allowed character equally likely.
+   * It only reweights the characters an archetype allows, so `lagoon` (plains
+   * only) and `elongated` (no mountains) stay within their own rules.
+   */
+  readonly terrainBias: number;
 }
 
 /** Eight terrain values, each 0..1, sampled for one zone. */

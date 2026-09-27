@@ -6,6 +6,7 @@ import {
 import type { MapSize } from './layer';
 import { clipZone } from './zone-geometry';
 import { marginInsets, OCEAN_MARGIN_METERS } from '../../map-generator/stages/landmass';
+import { createZoneSampler } from '../../map-generator/stages/structure-character/zone-influence';
 import type { CharacterZone, GeologicalStructure, LandmassLayout } from '../../map-generator/types';
 import { characterStyle, type Color } from '../../map-layers';
 import type { WorldShape } from '../../world-shape';
@@ -133,12 +134,13 @@ function paintSplits(
   structure: GeologicalStructure,
   zones: readonly CharacterZone[]
 ): void {
+  const sampler = createZoneSampler(structure);
   for (const zone of zones) {
     if (zone.geometry.kind === 'whole') {
       continue;
     }
     context.save();
-    clipZone(context, projection, scene.size, structure, zone.geometry);
+    clipZone(context, projection, scene.size, structure, zone.geometry, sampler);
     paintStructureCorridor(
       context,
       projection,

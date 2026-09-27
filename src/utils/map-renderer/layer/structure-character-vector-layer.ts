@@ -4,7 +4,6 @@ import {
   type StructureCharacterScene,
 } from './structure-character-painter';
 import type { VectorLayerFactory } from './vector-layer-factory';
-import { containsZone } from './zone-geometry';
 import { isLandmassLayout, isStructureZones } from '../../map-generator';
 import {
   createMarginSampler,
@@ -14,6 +13,10 @@ import {
   structureSegments,
   type WorldSampler,
 } from '../../map-generator/stages/landmass';
+import {
+  createZoneSampler,
+  type ZoneSampler,
+} from '../../map-generator/stages/structure-character/zone-influence';
 import type { CharacterZone, GeologicalStructure, LandmassLayout } from '../../map-generator/types';
 import { characterStyle } from '../../map-layers';
 import type { WorldShape } from '../../world-shape';
@@ -25,6 +28,7 @@ interface ZoneEntry {
   readonly zones: readonly CharacterZone[];
   readonly whole?: CharacterZone;
   readonly segments: readonly StructureSegment[];
+  readonly sampler: ZoneSampler;
 }
 
 export interface StructureCharacterLayerOptions {
@@ -98,7 +102,7 @@ export class StructureCharacterVectorLayer extends MapLayer {
     if (!entry) {
       return undefined;
     }
-    const zone = this.zoneAt(entry, point) ?? entry.whole;
+    const zone = entry.sampler.dominant(entry.zones, point) ?? entry.whole;
     return zone ? { id: zone.id, label: characterStyle(zone.character).label } : undefined;
   }
 
@@ -117,15 +121,6 @@ export class StructureCharacterVectorLayer extends MapLayer {
       }
     }
     return hit;
-  }
-
-  private zoneAt(
-    entry: ZoneEntry,
-    point: { readonly x: number; readonly y: number }
-  ): CharacterZone | undefined {
-    return entry.zones.find(
-      zone => zone.geometry.kind !== 'whole' && containsZone(entry.structure, zone.geometry, point)
-    );
   }
 
   /** Draws the whole scene at once; the geometry is far smaller than a raster. */
@@ -184,6 +179,7 @@ function buildEntries(
       zones: structureZones,
       whole: structureZones.find(zone => zone.geometry.kind === 'whole'),
       segments: structureSegments(structure),
+      sampler: createZoneSampler(structure),
     };
   });
 }
