@@ -1,3 +1,4 @@
+import { createHeightmapNoiseBands } from './bands';
 import { buildHeightmap, OUTSIDE_SHELF } from './build';
 import { DEFAULT_HEIGHTMAP_CONFIG, MAX_RELIEF, MIN_RELIEF } from './defaults';
 import { isHeightmapConfig } from './heightmap-check';
@@ -32,12 +33,7 @@ export class HeightmapStage implements MapStage<
   readonly id: PipelineStageId = HEIGHTMAP_STAGE.id;
   readonly name = HEIGHTMAP_STAGE.name;
   readonly configKeys = HEIGHTMAP_STAGE.configKeys;
-  readonly reads: readonly (keyof MapState)[] = [
-    'worldMask',
-    'noiseMap',
-    'landmassLayout',
-    'structureZones',
-  ];
+  readonly reads: readonly (keyof MapState)[] = ['worldMask', 'landmassLayout', 'structureZones'];
   readonly writes = ['heightmap', 'shelfIndexMap'] as const;
   readonly progressStep = 0.1;
 
@@ -48,7 +44,6 @@ export class HeightmapStage implements MapStage<
   ): Promise<{ heightmap: Float32Array; shelfIndexMap: Int16Array }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const worldMask = context.state.worldMask;
-    const noiseMap = context.state.noiseMap;
     const layout = context.state.landmassLayout;
     const zones = context.state.structureZones;
 
@@ -56,9 +51,6 @@ export class HeightmapStage implements MapStage<
     this.validateConfig(config, layout, zones);
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
       throw new Error('A valid world mask must be generated before the heightmap.');
-    }
-    if (!noiseMap || noiseMap.length !== sampleWidth * sampleHeight) {
-      throw new Error('A valid noise map must be generated before the heightmap.');
     }
     if (!layout || !zones) {
       throw new Error(
@@ -70,10 +62,11 @@ export class HeightmapStage implements MapStage<
     }
 
     report(0.02);
+    const bands = createHeightmapNoiseBands(context.random, context.config.world.dimensions);
     const { heightmap, shelfIndexMap } = buildHeightmap({
       layout,
       zones,
-      noiseMap,
+      bands,
       worldMask,
       config,
       worldSizeMeters: Math.max(
@@ -99,7 +92,6 @@ export class HeightmapStage implements MapStage<
     const shelfIndexMap = state.shelfIndexMap;
     if (
       !state.worldMask ||
-      !state.noiseMap ||
       !heightmap ||
       !shelfIndexMap ||
       !isLandmassLayout(state.landmassLayout) ||

@@ -52,6 +52,17 @@ describe('NoiseStage', () => {
     expect(second).not.toEqual(first);
   });
 
+  it('keeps the octave stack bit-identical after the shared-port refactor', async () => {
+    const noiseMap = await generateNoise(createConfig(5, 5, 123));
+
+    expect([...noiseMap]).toEqual([
+      0, 0, 0.3800373077392578, 0, 0, 0, 0.6206035017967224, 0.5463598370552063,
+      0.48759669065475464, 0, 0.6012592911720276, 0.5816707015037537, 0.5359729528427124,
+      0.6076130867004395, 0.42818084359169006, 0, 0.6677523851394653, 0.6716776490211487,
+      0.3991422653198242, 0, 0, 0, 0.5892536044120789, 0, 0,
+    ]);
+  });
+
   it('samples the same world coordinates consistently at different resolutions', async () => {
     const lowResolution = await generateNoise(createConfig(3, 3));
     const highResolution = await generateNoise(createConfig(5, 5));

@@ -502,7 +502,7 @@ describe('WorldGenerationSession', () => {
 
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(changed, vi.fn());
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['noise', 'heightmap']);
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['noise']);
   });
 
   it('rejects missing stage data without saving an incomplete map', async () => {

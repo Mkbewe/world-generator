@@ -71,7 +71,7 @@ describe('selectDirtyStageIds', () => {
         { world: { ...config.world, seed: 18 } },
         ['noise', 'macro-region', 'landmass-layout', 'structure-character', 'heightmap'],
       ],
-      [{ noise: { ...config.noise, frequency: 5 } }, ['noise', 'heightmap']],
+      [{ noise: { ...config.noise, frequency: 5 } }, ['noise']],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
       [
@@ -122,16 +122,8 @@ describe('selectDirtyStageIds', () => {
       noise: { ...noiseMap.noise, frequency: 5 },
     };
 
-    expect(selectDirtyStageIds(noiseMap, changedNoise)).toEqual([
-      'noise',
-      'macro-region',
-      'heightmap',
-    ]);
-    expect(selectDirtyStageIds(changedNoise, noiseMap)).toEqual([
-      'noise',
-      'macro-region',
-      'heightmap',
-    ]);
+    expect(selectDirtyStageIds(noiseMap, changedNoise)).toEqual(['noise', 'macro-region']);
+    expect(selectDirtyStageIds(changedNoise, noiseMap)).toEqual(['noise', 'macro-region']);
   });
 
   it('leaves the landmass layout out of changes it does not read', () => {

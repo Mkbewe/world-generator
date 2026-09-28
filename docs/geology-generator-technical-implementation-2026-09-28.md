@@ -325,3 +325,28 @@ Kontrakt jest w kodzie (`src/utils/map-generator/stages/geology/`); poniżej dec
   (usunięcie w GEO-05B).
 - **liczba obszarów:** limit 20 mieści się w `Int16` (indeks proweniencji
   `-1..19`), więc diagnostyczna mapa nie wymaga szerszego typu.
+
+## 9. Rozstrzygnięcia GEO-02 (2026-09-28)
+
+Port szumu jest w `src/utils/map-generator/random/noise.ts`; decyzje domykające zakres:
+
+- **silnik:** zostaje `simplex-noise` (już zależność, typy, deterministyczny,
+  ciągły); `fastnoise-lite` z `libraries-audit.md` odrzucony — brak typów,
+  brak potwierdzonej okresowości i zmiana wyników dla seeda bez potrzeby pola.
+- **jednostki:** port próbkuje w punktach świata; `wavelengthMeters` jest
+  izotropowa w metrach niezależnie od kształtu świata, a `fractalNoise2D`
+  pracuje w cyklach na jednostkę domeny (dla pasma jeden cykl na długość fali).
+- **ciągłość i skala:** próbki interpolowane w punkcie, nie w komórce; surowe
+  pasmo nie zależy od rozdzielczości rastra, a tłumienie poniżej skali próbki
+  należy do pola (GEO-04).
+- **pasma heightmapy:** `HEIGHTMAP_BANDS` to large 3000 m / medium 700 m /
+  fine 150 m z własnymi strumieniami `heightmap.large|medium|fine`,
+  niezależne od `NoiseConfig`. Pola tymczasowe: `amplitudeShare` i pasmo
+  `large` konsumuje nowe pole w GEO-04.
+- **proceduralnie vs bufory:** `bands.bench.ts` mierzy ~12,6 mln próbek
+  w ~0,71 s przy 2048² (~17 mln/s), więc referencyjna siatka nie potrzebuje
+  rastrów per pasmo; bufory rozważyć dopiero dla siatek znacznie większych
+  (GEO-09).
+- **regresja wartości:** `noiseMap` pozostaje bit-identyczny po refaktorze
+  `NoiseStage` na port; test złotych wartości w `stages/noise/stage.test.ts`
+  pilnuje tej granicy przy przyszłej wymianie silnika.

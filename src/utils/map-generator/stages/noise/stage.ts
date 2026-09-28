@@ -1,9 +1,8 @@
-import { createNoise2D } from 'simplex-noise';
-
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { assertStageOutput, type MapStage } from '../../pipeline/stage';
 import { NOISE_STAGE, type PipelineStageId } from '../../pipeline/stage-definitions';
+import { createSeededNoise2D, fractalNoise2D, validateFractalNoiseSpec } from '../../random';
 import { spaceOf } from '../../space';
 import type { MapConfig, MapState, StageMetrics, StageProgressReporter } from '../../types';
 
@@ -26,7 +25,6 @@ export class NoiseStage implements MapStage<
     report: StageProgressReporter
   ): Promise<{ noiseMap: Float32Array }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
-    const { frequency, octaves, persistence, lacunarity } = context.config.noise;
     const worldMask = context.state.worldMask;
 
     this.validateConfig(context.config);
@@ -35,8 +33,10 @@ export class NoiseStage implements MapStage<
       throw new Error('A valid world mask must be generated before noise.');
     }
 
-    const random = context.random.create(this.id);
-    const noise2D = createNoise2D(() => random.next());
+    const sampler = fractalNoise2D(
+      createSeededNoise2D(context.random, this.id),
+      context.config.noise
+    );
     const noiseMap = new Float32Array(sampleWidth * sampleHeight);
     const space = spaceOf(context);
 
@@ -53,20 +53,7 @@ export class NoiseStage implements MapStage<
         }
 
         const world = space.cellToNormalized(x, y);
-        let amplitude = 1;
-        let octaveFrequency = frequency;
-        let noiseValue = 0;
-        let amplitudeSum = 0;
-
-        for (let octave = 0; octave < octaves; octave++) {
-          noiseValue += noise2D(world.x * octaveFrequency, world.y * octaveFrequency) * amplitude;
-          amplitudeSum += amplitude;
-          amplitude *= persistence;
-          octaveFrequency *= lacunarity;
-        }
-
-        const normalizedNoise = noiseValue / amplitudeSum;
-        noiseMap[index] = (normalizedNoise + 1) / 2;
+        noiseMap[index] = (sampler(world.x, world.y) + 1) / 2;
       }
 
       report((y + 1) / sampleHeight);
@@ -131,27 +118,9 @@ export class NoiseStage implements MapStage<
   }
 
   private validateConfig(config: MapConfig): void {
-    const { seed } = config.world;
-    const { frequency, octaves, persistence, lacunarity } = config.noise;
-
-    if (!Number.isFinite(seed)) {
+    if (!Number.isFinite(config.world.seed)) {
       throw new RangeError('World seed must be a finite number.');
     }
-
-    if (!Number.isFinite(frequency) || frequency <= 0) {
-      throw new RangeError('Noise frequency must be greater than zero.');
-    }
-
-    if (!Number.isInteger(octaves) || octaves <= 0) {
-      throw new RangeError('Noise octaves must be a positive integer.');
-    }
-
-    if (!Number.isFinite(persistence) || persistence <= 0) {
-      throw new RangeError('Noise persistence must be greater than zero.');
-    }
-
-    if (!Number.isFinite(lacunarity) || lacunarity <= 0) {
-      throw new RangeError('Noise lacunarity must be greater than zero.');
-    }
+    validateFractalNoiseSpec(config.noise);
   }
 }

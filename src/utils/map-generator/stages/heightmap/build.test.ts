@@ -1,3 +1,4 @@
+import type { HeightmapNoiseBands } from './bands';
 import { buildHeightmap, OUTSIDE_SHELF } from './build';
 import { OCEAN_DEPTH_METERS } from './defaults';
 import { createWorldSpace } from '../../space';
@@ -51,15 +52,18 @@ const ZONES: CharacterZone[] = [
 
 const MASK = new Uint8Array(61 * 61).fill(1);
 
-function noiseMap(): Float32Array {
-  return new Float32Array(61 * 61).fill(0.5);
-}
+/** Flat bands keep the field deterministic while these tests pin the shape. */
+const BANDS: HeightmapNoiseBands = {
+  large: () => 0.5,
+  medium: () => 0.5,
+  fine: () => 0.5,
+};
 
 function build(overrides: Partial<HeightmapConfig> = {}) {
   return buildHeightmap({
     layout: LAYOUT,
     zones: ZONES,
-    noiseMap: noiseMap(),
+    bands: BANDS,
     worldMask: MASK,
     config: { ...CONFIG, ...overrides },
     worldSizeMeters: 2000,
@@ -89,7 +93,7 @@ function overlapField(structures: GeologicalStructure[], shelves: LandmassLayout
       id: `${structure.id}-zone-1`,
       structureId: structure.id,
     })),
-    noiseMap: noiseMap(),
+    bands: BANDS,
     worldMask: MASK,
     config: CONFIG,
     worldSizeMeters: 2000,
@@ -134,7 +138,7 @@ describe('buildHeightmap', () => {
     const { heightmap, shelfIndexMap } = buildHeightmap({
       layout: LAYOUT,
       zones: ZONES,
-      noiseMap: noiseMap(),
+      bands: BANDS,
       worldMask: mask,
       config: CONFIG,
       worldSizeMeters: 2000,
@@ -170,7 +174,7 @@ describe('buildHeightmap', () => {
     const { heightmap } = buildHeightmap({
       layout: LAYOUT,
       zones: [],
-      noiseMap: noiseMap(),
+      bands: BANDS,
       worldMask: MASK,
       config: CONFIG,
       worldSizeMeters: 2000,
@@ -212,7 +216,7 @@ describe('buildHeightmap', () => {
     const field = buildHeightmap({
       layout,
       zones: [{ ...ZONES[0], structureId: 's1' }, flatZone],
-      noiseMap: noiseMap(),
+      bands: BANDS,
       worldMask: MASK,
       config: CONFIG,
       worldSizeMeters: 2000,
