@@ -4,11 +4,13 @@ import {
   GlobeIcon,
   LayersIcon,
   MixerHorizontalIcon,
+  SewingPinIcon,
 } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
   GeneralForm,
+  GeologyForm,
   HeightmapForm,
   MacroRegionForm,
   NoiseForm,
@@ -76,6 +78,11 @@ export function SettingsPanel({
       label: 'Macro regions',
       icon: <LayersIcon />,
       content: <MacroRegionForm />,
+    },
+    geology: {
+      label: 'Geology',
+      icon: <SewingPinIcon />,
+      content: <GeologyForm />,
     },
     heightmap: {
       label: 'Heightmap',

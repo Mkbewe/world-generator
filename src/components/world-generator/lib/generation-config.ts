@@ -1,11 +1,10 @@
 import type {
+  GeologyConfig,
   HeightmapConfig,
-  LandmassConfig,
   MacroRegionConfig,
   MacroRegionDeformation,
   MapConfig,
   NoiseConfig,
-  StructureCharacterConfig,
 } from '../../../utils/map-generator';
 import { summarizeWorldGrid } from '../../../utils/world-grid';
 
@@ -17,8 +16,7 @@ export interface GenerationConfigInput {
   noise: NoiseConfig;
   macroRegions: readonly MacroRegionConfig[];
   macroRegionDeformation: MacroRegionDeformation;
-  landmasses: LandmassConfig;
-  structureCharacter: StructureCharacterConfig;
+  geology: GeologyConfig;
   heightmap: HeightmapConfig;
 }
 
@@ -38,8 +36,7 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
       noise: input.noise,
       macroRegions: input.macroRegions,
       macroRegionDeformation: input.macroRegionDeformation,
-      landmasses: input.landmasses,
-      structureCharacter: input.structureCharacter,
+      geology: input.geology,
       heightmap: input.heightmap,
     },
   };

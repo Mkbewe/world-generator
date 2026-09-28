@@ -1,6 +1,7 @@
 export { createStore, type StoreCreator } from './create-store';
 export {
   GENERAL_FORM_DEFAULTS,
+  GEOLOGY_FORM_DEFAULTS,
   DEFAULT_NOISE,
   DEFAULT_SEED,
   DEFAULT_WORLD_SIZE,
@@ -11,6 +12,7 @@ export {
   selectedArchetypes,
   STRUCTURE_CHARACTER_FORM_DEFAULTS,
   useGeneralFormStore,
+  useGeologyFormStore,
   useHeightmapFormStore,
   useLandmassFormStore,
   useMacroRegionFormStore,

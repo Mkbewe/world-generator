@@ -38,6 +38,9 @@ export class LayerRegistry<TId extends string = MapBaseLayerId> {
     const groups = new Map<string, { label: string; children: LayerLeafNode<TId>[] }>();
     const tree: LayerTreeNode<TId>[] = [];
     for (const spec of catalog) {
+      if (spec.hidden) {
+        continue;
+      }
       const leaf = { id: spec.id, label: spec.label };
       if (!spec.group) {
         tree.push(leaf);
