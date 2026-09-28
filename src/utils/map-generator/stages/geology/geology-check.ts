@@ -9,8 +9,8 @@ import {
   MIN_SHELF_WIDTH_METERS,
   MIN_UPLIFT_SCALE_METERS,
 } from './defaults';
+import { isTerrainCharacter, isTerrainProfile } from '../../terrain-profile';
 import type { GeologicalAreaConfig, GeologyConfig, GeologyPlan } from '../../types';
-import { isTerrainCharacter, isZoneValues } from '../structure-character';
 
 /** Whether unknown data is a geology configuration within its domain limits. */
 export function isGeologyConfig(value: unknown): value is GeologyConfig {
@@ -22,8 +22,13 @@ export function isGeologyConfig(value: unknown): value is GeologyConfig {
   }
 }
 
-/** Throws when a geology configuration breaks a range or an id invariant. */
-export function validateGeologyConfig(config: unknown): void {
+/**
+ * Throws when a geology configuration breaks a range or an id invariant.
+ *
+ * Temporary during the geology cutover: the `unknown` input lets callers
+ * validate untrusted data without a cast.
+ */
+export function validateGeologyConfig(config: unknown): asserts config is GeologyConfig {
   if (!isRecord(config) || !Array.isArray(config.areas)) {
     throw new Error('A geology configuration needs an area list.');
   }
@@ -99,7 +104,7 @@ function validatePlanArea(area: unknown): string {
     throw new Error(`Plan area "${area.id}" has an invalid centre.`);
   }
   validateAreaNumbers(area, area.id);
-  if (!isZoneValues(area.profile)) {
+  if (!isTerrainProfile(area.profile)) {
     throw new Error(`Plan area "${area.id}" has an invalid profile.`);
   }
   return area.id;

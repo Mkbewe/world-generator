@@ -3,11 +3,10 @@ import { type MapStage, resolveReads } from './stage';
 import { MAP_CONFIG_KEYS, PIPELINE_STAGES, type PipelineStageId } from './stage-definitions';
 import { validateDimensions } from '../../world-dimensions';
 import { createWorldSpace } from '../space';
+import { GeologyStage } from '../stages/geology';
 import { HeightmapStage } from '../stages/heightmap';
-import { LandmassLayoutStage } from '../stages/landmass';
 import { MacroRegionStage } from '../stages/macro-region';
 import { NoiseStage } from '../stages/noise';
-import { StructureCharacterStage } from '../stages/structure-character';
 import { WorldShapeStage } from '../stages/world-shape';
 import type { MapConfig, MapState, StageData } from '../types';
 
@@ -19,8 +18,7 @@ const STAGE_FACTORIES: Readonly<
   'world-shape': () => new WorldShapeStage(),
   noise: () => new NoiseStage(),
   'macro-region': () => new MacroRegionStage(),
-  'landmass-layout': () => new LandmassLayoutStage(),
-  'structure-character': () => new StructureCharacterStage(),
+  geology: () => new GeologyStage(),
   heightmap: () => new HeightmapStage(),
 };
 

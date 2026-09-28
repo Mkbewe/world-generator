@@ -87,6 +87,23 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'number',
     description: 'Geological structures placed in the world.',
   },
+  areas: {
+    label: 'Areas',
+    kind: 'number',
+    description: 'Geological areas resolved in the plan.',
+  },
+  meanExtent: {
+    label: 'Mean extent',
+    kind: 'number',
+    precision: 3,
+    description: 'Mean area influence radius as a share of the world.',
+  },
+  landShare: {
+    label: 'Land share',
+    kind: 'number',
+    precision: 3,
+    description: 'Share of world cells above the sea datum.',
+  },
   shelves: {
     label: 'Shelves',
     kind: 'number',

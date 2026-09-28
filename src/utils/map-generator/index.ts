@@ -16,6 +16,13 @@ export {
   isGeologyPlan,
 } from './stages/geology';
 export { TERRAIN_CHARACTERS } from './types';
+export {
+  CHARACTER_RANGES,
+  isTerrainCharacter,
+  isTerrainProfile,
+  sampleRange,
+} from './terrain-profile';
+export type { CharacterRanges, FieldRange } from './terrain-profile';
 export { selectDirtyStageIds } from './pipeline/selective-regeneration';
 export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './pipeline/stage-definitions';
 export type { MapConfigKey, PipelineStageId, StageInfo } from './pipeline/stage-definitions';

@@ -1,3 +1,4 @@
+import { isGeologyPlan } from '../stages/geology';
 import { isLandmassLayout } from '../stages/landmass';
 import { isStructureZones } from '../stages/structure-character';
 import type { MapState, StageData } from '../types';
@@ -11,14 +12,19 @@ export const RASTER_OUTPUT_KEYS = [
   'shelfIndexMap',
 ] as const;
 
-/** Domain keys produced by stages and restored with the rasters on a later run. */
-export const DOMAIN_OUTPUT_KEYS = ['landmassLayout', 'structureZones'] as const;
+/**
+ * Domain keys produced by stages and restored with the rasters on a later run.
+ * The corridor keys stay readable during the migration so existing consumers
+ * still compile; only `geologyPlan` is produced by the current pipeline.
+ */
+export const DOMAIN_OUTPUT_KEYS = ['geologyPlan', 'landmassLayout', 'structureZones'] as const;
 
 export type RasterOutputKey = (typeof RASTER_OUTPUT_KEYS)[number];
 export type DomainOutputKey = (typeof DOMAIN_OUTPUT_KEYS)[number];
 export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
 
 const domainReaders = {
+  geologyPlan: isGeologyPlan,
   landmassLayout: isLandmassLayout,
   structureZones: isStructureZones,
 } satisfies {

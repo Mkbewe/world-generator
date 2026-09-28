@@ -4,11 +4,11 @@ describe('view sync store', () => {
   it('maps stage tabs and preview layers both ways', () => {
     expect(layerForTab('noise')).toBe('noise');
     expect(layerForTab('general')).toBeUndefined();
-    expect(layerForTab('landmass-layout')).toBe('landmass-layout');
+    expect(layerForTab('heightmap')).toBe('heightmap');
     expect(tabForLayer('macro-region')).toBe('macro-region');
-    expect(tabForLayer('landmass-layout')).toBe('landmass-layout');
-    // The character layer has no form yet, so it opens the landmass tab (#352).
-    expect(tabForLayer('structure-character')).toBe('landmass-layout');
+    // The corridor layers have no form any more, so they map to no tab.
+    expect(tabForLayer('landmass-layout')).toBeUndefined();
+    expect(tabForLayer('structure-character')).toBeUndefined();
   });
 
   it('starts unlinked on the general tab', () => {

@@ -20,7 +20,7 @@ import {
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { type MapStage } from '../../pipeline/stage';
-import { LANDMASS_LAYOUT_STAGE, type PipelineStageId } from '../../pipeline/stage-definitions';
+import { LANDMASS_LAYOUT_STAGE } from '../../pipeline/stage-definitions';
 import type { SeededRandom } from '../../random/seeded-random';
 import type {
   LandmassArchetype,
@@ -45,10 +45,10 @@ const BUILD_PROGRESS = 0.6;
 export class LandmassLayoutStage implements MapStage<
   MapConfig,
   MapState,
-  PipelineStageId,
+  string,
   { landmassLayout: LandmassLayout; dropped: number }
 > {
-  readonly id: PipelineStageId = LANDMASS_LAYOUT_STAGE.id;
+  readonly id = LANDMASS_LAYOUT_STAGE.id;
   readonly name = LANDMASS_LAYOUT_STAGE.name;
   readonly configKeys = LANDMASS_LAYOUT_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask'];
@@ -56,7 +56,7 @@ export class LandmassLayoutStage implements MapStage<
   readonly progressStep = 0.05;
 
   async execute(
-    context: MapContext<MapConfig, MapState, PipelineStageId>,
+    context: MapContext<MapConfig, MapState, string>,
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ landmassLayout: LandmassLayout; dropped: number }> {
@@ -141,7 +141,7 @@ export class LandmassLayoutStage implements MapStage<
   }
 
   summarize(
-    _context: MapContext<MapConfig, MapState, PipelineStageId>,
+    _context: MapContext<MapConfig, MapState, string>,
     data: { landmassLayout: LandmassLayout; dropped: number }
   ): StageMetrics | undefined {
     const layout = data.landmassLayout;

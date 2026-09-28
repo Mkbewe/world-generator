@@ -4,7 +4,7 @@ import { RASTER_OUTPUT_KEYS } from '../../map-generator/pipeline/stage-outputs';
 
 describe('LAYER_CATALOG', () => {
   it('orders stage layers by the pipeline stage order', () => {
-    const rank = new Map(PIPELINE_STAGES.map((stage, index) => [stage.id, index]));
+    const rank = new Map<string, number>(PIPELINE_STAGES.map((stage, index) => [stage.id, index]));
     const ranks = LAYER_CATALOG.map(layer => rank.get(layer.id)).filter(
       (value): value is number => value !== undefined
     );
