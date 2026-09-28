@@ -2,6 +2,7 @@ export { LayerCache, layerCache } from './layer-cache';
 export { CatalogLayer } from './catalog-layer';
 export { LayerRegistry, layerRegistry } from './layer-registry';
 export { MapLayer, isLayerHit } from './layer';
+export { GeologyPlanVectorLayer } from './geology-plan-vector-layer';
 export { LandmassLayoutVectorLayer } from './landmass-layout-vector-layer';
 export { StructureCharacterVectorLayer } from './structure-character-vector-layer';
 export { vectorLayerFactories } from './vector-layer-factories';

@@ -28,6 +28,8 @@ interface SettingsPanelProps {
   onSeedChange: (seed: string) => void;
   isGenerating: boolean;
   onGenerate: () => void;
+  /** Latest generation error, so the Geology form can mark failed entries. */
+  generationError?: string;
   shape: WorldShape;
   sizeMeters: WorldSize;
   metersPerSample: number;
@@ -43,6 +45,7 @@ export function SettingsPanel({
   onSeedChange,
   isGenerating,
   onGenerate,
+  generationError,
   shape,
   sizeMeters,
   metersPerSample,
@@ -82,7 +85,7 @@ export function SettingsPanel({
     geology: {
       label: 'Geology',
       icon: <SewingPinIcon />,
-      content: <GeologyForm />,
+      content: <GeologyForm error={generationError} />,
     },
     heightmap: {
       label: 'Heightmap',

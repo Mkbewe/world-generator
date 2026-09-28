@@ -8,6 +8,7 @@ describe('catalog-derived types', () => {
       | 'macro-region'
       | 'landmass-layout'
       | 'structure-character'
+      | 'geology'
       | 'heightmap'
     >();
     expectTypeOf<MapRasters['worldMask']>().toEqualTypeOf<Uint8Array | undefined>();

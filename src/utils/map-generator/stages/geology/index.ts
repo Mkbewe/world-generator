@@ -2,13 +2,19 @@ export {
   DEFAULT_GEOLOGICAL_AREA,
   DEFAULT_GEOLOGICAL_AREA_VALUES,
   DEFAULT_GEOLOGY_CONFIG,
+  GEOGRAPHY_PRESETS,
   GEOLOGICAL_AREA_PRESETS,
   createGeologicalArea,
   normalizeDirection,
 } from './presets';
-export type { GeologicalAreaPreset, GeologicalAreaPresetId } from './presets';
+export type { GeologicalAreaPreset, GeologicalAreaPresetId, GeographyPresetId } from './presets';
 export { GeologyStage } from './stage';
-export { GeologyPlacementError, buildGeologyPlan, compareAreaIds } from './plan';
+export {
+  GeologyPlacementError,
+  buildGeologyPlan,
+  compareAreaIds,
+  placementProblemAreaIds,
+} from './plan';
 export {
   isGeologicalAreaConfig,
   isGeologyConfig,

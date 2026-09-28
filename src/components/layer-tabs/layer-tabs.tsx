@@ -14,6 +14,7 @@ import styles from './layer-tabs.module.scss';
 const LAYER_ICONS: Partial<Record<MapBaseLayerId, ReactNode>> = {
   'world-shape': <GlobeIcon />,
   'macro-region': <LayersIcon />,
+  geology: <SewingPinIcon />,
   'landmass-layout': <SewingPinIcon />,
   noise: <MixerHorizontalIcon />,
   heightmap: <FrameIcon />,

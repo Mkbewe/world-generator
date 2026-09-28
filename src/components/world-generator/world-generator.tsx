@@ -35,6 +35,7 @@ export function WorldGenerator() {
             onSeedChange={setSeed}
             isGenerating={isGenerating}
             onGenerate={generate}
+            generationError={error}
             shape={shape}
             sizeMeters={sizeMeters}
             metersPerSample={metersPerSample}

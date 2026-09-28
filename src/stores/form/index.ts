@@ -1,5 +1,6 @@
 export { GENERAL_FORM_DEFAULTS, DEFAULT_SEED, useGeneralFormStore } from './general-form-store';
 export { GEOLOGY_FORM_DEFAULTS, useGeologyFormStore } from './geology-form-store';
+export type { GeologicalAreaPatch } from './geology-form-store';
 export { HEIGHTMAP_FORM_DEFAULTS, useHeightmapFormStore } from './heightmap-form-store';
 export {
   LANDMASS_FORM_DEFAULTS,

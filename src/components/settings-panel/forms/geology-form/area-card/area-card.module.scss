@@ -1,0 +1,10 @@
+.areaSwatch {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-1);
+}
+
+.areaName {
+  flex-grow: 1;
+}
