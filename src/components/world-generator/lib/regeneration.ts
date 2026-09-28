@@ -24,7 +24,11 @@ export class SelectiveRegeneration {
     return this.stages;
   }
 
-  /** Stages of the announced list that this run reuses instead of running. */
+  /**
+   * Stages this run expects to reuse, for the optimistic progress state shown
+   * before the worker reports. The worker has the final say: it also reruns a
+   * clean stage whose declared writes are missing from the cache.
+   */
   get reusedStageIds(): readonly PipelineStageId[] {
     const dirty = new Set(this.dirty);
     return this.stages.filter(stage => !dirty.has(stage.id)).map(stage => stage.id);

@@ -1,7 +1,11 @@
 import type { LayerSpec } from './layer-spec';
 import type { LayerDataRecord, MapRasters } from './types';
 import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
-import type { DomainOutputKey, RasterOutputKey } from '../../map-generator/pipeline/stage-outputs';
+import {
+  type DomainOutputKey,
+  RASTER_OUTPUT_KEYS,
+  type RasterOutputKey,
+} from '../../map-generator/pipeline/stage-outputs';
 import { HEIGHTMAP_STOPS, REGION_COLORS } from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
@@ -99,13 +103,16 @@ export const RASTER_CATALOG = LAYER_CATALOG.filter(
   (spec): spec is Extract<CatalogEntry, { kind: 'raster' }> => spec.kind === 'raster'
 );
 
+const PERSISTENT_RASTER_SOURCES = new Set<string>(RASTER_OUTPUT_KEYS);
+
 /**
- * Whether every raster key belongs to the current catalog. Snapshots saved in an
- * older format fail this check, so callers can drop them instead of re-saving
- * stale rasters.
+ * Whether every raster key belongs to the current persistent output set. Keys
+ * outside it fail this check, so callers drop the snapshot instead of
+ * re-saving stale rasters. Preview visibility plays no role here: a raster
+ * without a catalog layer is still a current output.
  */
-export function hasCurrentRasterSources(data: LayerDataRecord): boolean {
-  return Object.keys(data).every(key => RASTER_CATALOG.some(spec => spec.source === key));
+export function hasCurrentRasterOutputs(data: LayerDataRecord): boolean {
+  return Object.keys(data).every(key => PERSISTENT_RASTER_SOURCES.has(key));
 }
 
 /** Selects only catalog-owned raster sources at the dynamic data boundary. */

@@ -65,7 +65,11 @@ describe('runGeneration', () => {
       config,
       reuse,
     });
-    FakeWorker.latest.emitMessage({ type: 'stages', stages: [{ id: 'noise', name: 'Noise' }] });
+    FakeWorker.latest.emitMessage({
+      type: 'stages',
+      stages: [{ id: 'noise', name: 'Noise' }],
+      skippedStageIds: [],
+    });
     FakeWorker.latest.emitMessage({
       type: 'stage-started',
       stageId: 'noise',
@@ -79,7 +83,7 @@ describe('runGeneration', () => {
     });
 
     await expect(promise).resolves.toEqual({ statistics: [], totalDurationMs: 5 });
-    expect(onStages).toHaveBeenCalledWith([{ id: 'noise', name: 'Noise' }]);
+    expect(onStages).toHaveBeenCalledWith([{ id: 'noise', name: 'Noise' }], []);
     expect(onEvent).toHaveBeenCalledOnce();
     expect(FakeWorker.latest.terminate).toHaveBeenCalledOnce();
   });

@@ -23,6 +23,72 @@ export type RasterOutputKey = (typeof RASTER_OUTPUT_KEYS)[number];
 export type DomainOutputKey = (typeof DOMAIN_OUTPUT_KEYS)[number];
 export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
 
+/**
+ * Constructor per persistent raster key. Same vocabulary as `assertStageOutput`
+ * in `./stage`: a stage changing its output type must update both, pinned by
+ * the cross-check test over a real run.
+ */
+export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32' | 'int16'> = {
+  worldMask: 'uint8',
+  noiseMap: 'float32',
+  macroRegionIdMap: 'uint8',
+  heightmap: 'float32',
+  provenanceMap: 'int16',
+};
+
+const rasterConstructors = {
+  uint8: Uint8Array,
+  float32: Float32Array,
+  int16: Int16Array,
+} as const;
+
+/** Whether a state key names one of the persistent raster outputs. */
+export function isRasterOutputKey(value: string): value is RasterOutputKey {
+  return (RASTER_OUTPUT_KEYS as readonly string[]).includes(value);
+}
+
+/** Whether a value satisfies the constructor declared for a raster output. */
+export function isPersistentRasterValue(key: RasterOutputKey, value: unknown): boolean {
+  return value instanceof rasterConstructors[PERSISTENT_RASTER_TYPES[key]];
+}
+
+/**
+ * Persistent generator rasters in unknown data. Unlike the preview catalog
+ * selector, this keeps every output the next stage needs — even with no
+ * preview layer for it. Returns a new record over the shared buffers (no
+ * copies); checks constructors only, lengths belong to stage `validate`.
+ * Unknown keys are dropped, a declared key with a wrong constructor fails
+ * loudly: a stage that breaks its output type must not disappear silently.
+ */
+export function selectPersistentRasters(data: object): Partial<Pick<MapState, RasterOutputKey>> {
+  const record = asRecord(data);
+  const outputs: Partial<Pick<MapState, RasterOutputKey>> = {};
+  for (const key of RASTER_OUTPUT_KEYS) {
+    if (!Object.hasOwn(record, key)) {
+      continue;
+    }
+    const value = record[key];
+    if (value === undefined) {
+      continue;
+    }
+    if (!isPersistentRasterValue(key, value)) {
+      throw new Error(`Stage output "${key}" has an invalid type.`);
+    }
+    assignRasterOutput(outputs, key, value);
+  }
+  return outputs;
+}
+
+/** Stores one guarded raster under a key known only at runtime. */
+function assignRasterOutput<Key extends RasterOutputKey>(
+  outputs: Partial<Pick<MapState, RasterOutputKey>>,
+  key: Key,
+  value: unknown
+): void {
+  // The value was accepted by the `PERSISTENT_RASTER_TYPES` guard above.
+  outputs[key] = value as NonNullable<MapState[Key]>;
+}
+
 const domainReaders = {
   geologyPlan: isGeologyPlan,
   landmassLayout: isLandmassLayout,
