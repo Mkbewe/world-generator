@@ -312,7 +312,7 @@ describe('MapScene', () => {
 
   it('refuses a vector catalog without a factory', () => {
     expect(() => new MapScene(new LayerCache(), layerRegistry, new Map())).toThrow(
-      'Missing vector layer factory: landmass-layout'
+      'Missing vector layer factory: geology'
     );
   });
 

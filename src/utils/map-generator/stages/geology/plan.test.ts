@@ -1,4 +1,9 @@
-import { buildGeologyPlan, compareAreaIds, GeologyPlacementError } from './plan';
+import {
+  buildGeologyPlan,
+  compareAreaIds,
+  GeologyPlacementError,
+  placementProblemAreaIds,
+} from './plan';
 import { createGeologicalArea } from './presets';
 import { RandomFactory } from '../../random';
 import type { GeologicalAreaConfig, GeologyConfig } from '../../types';
@@ -111,6 +116,18 @@ describe('buildGeologyPlan', () => {
 
     expect(plan.areas[0].relief).toBe('mountains');
     expect(plan.areas[0].profile.mountainStrength).toBeGreaterThan(0.5);
+  });
+});
+
+describe('placementProblemAreaIds', () => {
+  it('names the areas a placement failure mentions', () => {
+    const error = new GeologyPlacementError([
+      { areaId: 'area-2', reason: 'no spot' },
+      { areaId: 'area-5', reason: 'no spot' },
+    ]);
+
+    expect(placementProblemAreaIds(error.message)).toEqual(['area-2', 'area-5']);
+    expect(placementProblemAreaIds('Pipeline failed.')).toEqual([]);
   });
 });
 

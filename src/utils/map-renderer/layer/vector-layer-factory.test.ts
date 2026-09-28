@@ -5,6 +5,14 @@ import {
   type VectorLayerFactoryRegistry,
 } from './vector-layer-factory';
 
+const geologyFactory: VectorLayerFactory = {
+  id: 'geology',
+  supports: () => true,
+  create: () => {
+    throw new Error('The validator never builds layers.');
+  },
+};
+
 const landmassFactory: VectorLayerFactory = {
   id: 'landmass-layout',
   supports: () => true,
@@ -24,6 +32,7 @@ const characterFactory: VectorLayerFactory = {
 describe('validateVectorLayerFactories', () => {
   it('accepts a catalog whose vector layers all have factories', () => {
     const factories: VectorLayerFactoryRegistry = new Map([
+      ['geology', geologyFactory],
       ['landmass-layout', landmassFactory],
       ['structure-character', characterFactory],
     ]);
@@ -33,12 +42,13 @@ describe('validateVectorLayerFactories', () => {
 
   it('rejects a vector layer without a factory', () => {
     expect(() => validateVectorLayerFactories(layerRegistry, new Map())).toThrow(
-      'Missing vector layer factory: landmass-layout'
+      'Missing vector layer factory: geology'
     );
   });
 
   it('rejects a factory registered under another layer ID', () => {
     const factories: VectorLayerFactoryRegistry = new Map([
+      ['geology', geologyFactory],
       ['landmass-layout', { ...landmassFactory, id: 'noise' }],
     ]);
 

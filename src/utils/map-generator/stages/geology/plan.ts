@@ -30,13 +30,14 @@ const POINT_ATTEMPTS = 64;
 /** Raised when areas cannot be placed; one problem per offending entry. */
 export class GeologyPlacementError extends Error {
   constructor(readonly problems: readonly GeologyPlacementProblem[]) {
-    super(
-      problems
-        .map(problem => `Area "${problem.areaId}" could not be placed: ${problem.reason}`)
-        .join(' ')
-    );
+    super(problems.map(placementProblemText).join(' '));
     this.name = 'GeologyPlacementError';
   }
+}
+
+/** Wording of one placement problem; `placementProblemAreaIds` parses it back. */
+function placementProblemText(problem: GeologyPlacementProblem): string {
+  return `Area "${problem.areaId}" could not be placed: ${problem.reason}`;
 }
 
 /**
@@ -87,6 +88,16 @@ export function buildGeologyPlan(
     throw new GeologyPlacementError(problems);
   }
   return { areas };
+}
+
+/**
+ * Area ids named in a placement failure message; empty for unrelated errors.
+ * The UI marks the offending cards with this, so the wording above stays the
+ * single source of the message format.
+ */
+export function placementProblemAreaIds(message: string): readonly string[] {
+  const pattern = /Area "([^"]+)" could not be placed/g;
+  return [...message.matchAll(pattern)].map(match => match[1]);
 }
 
 /** Plain code-unit order; the same comparator the plan validation enforces. */

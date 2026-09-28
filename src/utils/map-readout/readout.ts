@@ -1,4 +1,4 @@
-import { isStructureZones } from '../map-generator';
+import { isGeologyPlan, isStructureZones } from '../map-generator';
 import { isLandmassLayout, structureSegments } from '../map-generator/stages/landmass';
 import type { GeologicalStructure } from '../map-generator/types';
 import { characterStyle } from '../map-layers';
@@ -60,6 +60,9 @@ function inspectionItems(
   structure: GeologicalStructure | undefined
 ): readonly ReadoutItem[] {
   if (inspection?.kind === 'vector') {
+    if (inspection.layerId === 'geology') {
+      return geologyItems(inspection, info) ?? [];
+    }
     const character =
       inspection.layerId === 'structure-character' ? characterItems(inspection, info) : undefined;
     if (character) {
@@ -132,6 +135,30 @@ function landmassStructure(
     return undefined;
   }
   return layout.structures.find(structure => structure.id === id);
+}
+
+/** Readout of a geology plan hit: the influence area under the pointer. */
+function geologyItems(
+  inspection: MapInspection,
+  info: MapInfo
+): readonly ReadoutItem[] | undefined {
+  if (inspection.kind !== 'vector' || !inspection.hit) {
+    return undefined;
+  }
+  const plan: unknown = info.geologyPlan;
+  if (!isGeologyPlan(plan)) {
+    return undefined;
+  }
+  const area = plan.areas.find(candidate => candidate.id === inspection.hit?.id);
+  if (!area) {
+    return undefined;
+  }
+  return [
+    { id: 'name', label: 'Name', value: area.id },
+    { id: 'relief', label: 'Relief', value: characterStyle(area.relief).label },
+    { id: 'extent', label: 'Extent', value: percent(area.extent) },
+    { id: 'seabed', label: 'Seabed', value: `${Math.round(area.seabedOffsetMeters)} m` },
+  ];
 }
 
 /** Readout of a structure-character hit: the zone under the pointer. */

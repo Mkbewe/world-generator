@@ -58,6 +58,13 @@ const CATALOG_ENTRIES = [
     group: { id: 'landmass', label: 'Landmasses' },
   },
   {
+    id: 'geology',
+    label: 'Geology',
+    kind: 'vector',
+    source: 'geologyPlan',
+    clipTo: 'world-shape',
+  },
+  {
     id: 'heightmap',
     label: 'Heightmap',
     kind: 'raster',

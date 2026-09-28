@@ -91,6 +91,35 @@ export function createGeologicalArea(
   };
 }
 
+/**
+ * Named geography presets: whole area lists, never a separate algorithm. The
+ * world preset only picks one of these when a new configuration is created;
+ * applying one replaces the list and clears the edited mark.
+ */
+export type GeographyPresetId = 'archipelago' | 'volcanic-chain' | 'atoll-ring';
+
+export const GEOGRAPHY_PRESETS: Readonly<Record<GeographyPresetId, GeologyConfig>> = {
+  archipelago: {
+    areas: [
+      createGeologicalArea('area-1', 'shallow-archipelago'),
+      createGeologicalArea('area-2', 'shallow-archipelago'),
+    ],
+  },
+  'volcanic-chain': {
+    areas: [
+      createGeologicalArea('area-1', 'volcanic'),
+      createGeologicalArea('area-2', 'shallow-archipelago'),
+      createGeologicalArea('area-3', 'volcanic'),
+    ],
+  },
+  'atoll-ring': {
+    areas: [
+      createGeologicalArea('area-1', 'atoll'),
+      createGeologicalArea('area-2', 'shallow-archipelago'),
+    ],
+  },
+};
+
 /** The entry a fresh configuration starts from. */
 export const DEFAULT_GEOLOGICAL_AREA: GeologicalAreaConfig = {
   id: 'area-1',

@@ -1,63 +1,94 @@
-import { Button, Flex, Text } from '@radix-ui/themes';
+import { Button, Card, Flex, RadioCards, Text } from '@radix-ui/themes';
 
-import { GEOLOGY_FORM_DEFAULTS, useGeologyFormStore } from '../../../../stores';
+import { AreaCard } from './area-card';
+import { useGeologyFormStore } from '../../../../stores';
 import {
-  MAX_AREA_EXTENT,
+  GEOGRAPHY_PRESETS,
+  type GeographyPresetId,
+  type GeologicalAreaPresetId,
   MAX_GEOLOGICAL_AREAS,
-  MIN_AREA_EXTENT,
-} from '../../../../utils/map-generator/stages/geology/defaults';
-import type { GeologicalAreaPresetId } from '../../../../utils/map-generator/stages/geology/presets';
-import { SliderField } from '../../../slider-field';
+  placementProblemAreaIds,
+} from '../../../../utils/map-generator/stages/geology';
 
-const ADD_PRESETS: readonly { id: GeologicalAreaPresetId; label: string }[] = [
+const PRESET_LABELS: Record<GeographyPresetId, string> = {
+  archipelago: 'Archipelago',
+  'volcanic-chain': 'Volcanic chain',
+  'atoll-ring': 'Atoll ring',
+};
+
+const PRESETS: readonly { readonly id: GeographyPresetId; readonly label: string }[] = (
+  Object.keys(GEOGRAPHY_PRESETS) as readonly GeographyPresetId[]
+).map(id => ({ id, label: PRESET_LABELS[id] }));
+
+const ADD_PRESETS: readonly { readonly id: GeologicalAreaPresetId; readonly label: string }[] = [
   { id: 'shallow-archipelago', label: 'Shallow' },
   { id: 'volcanic', label: 'Volcanic' },
   { id: 'atoll', label: 'Atoll' },
 ];
 
+interface GeologyFormProps {
+  /** Latest generation error; placement failures mark the offending cards. */
+  readonly error?: string;
+}
+
 /**
- * Minimal Geology editor for the cutover: the area list with one size
- * control per entry. Full editing and presets arrive in GEO-06B; the form
- * never draws geometry, it only owns the `GeologyConfig` value.
+ * Full Geology editor: a geography preset fills the editable area list. The
+ * list is the configuration; it never promises a number of islands.
  */
-export function GeologyForm() {
+export function GeologyForm({ error }: GeologyFormProps) {
   const areas = useGeologyFormStore(state => state.geology.areas);
+  const preset = useGeologyFormStore(state => state.preset);
+  const edited = useGeologyFormStore(state => state.edited);
   const addArea = useGeologyFormStore(state => state.addArea);
+  const duplicateArea = useGeologyFormStore(state => state.duplicateArea);
   const removeArea = useGeologyFormStore(state => state.removeArea);
-  const setAreaExtent = useGeologyFormStore(state => state.setAreaExtent);
+  const updateArea = useGeologyFormStore(state => state.updateArea);
+  const applyPreset = useGeologyFormStore(state => state.applyPreset);
+  const problems = new Set(error ? placementProblemAreaIds(error) : []);
   const atLimit = areas.length >= MAX_GEOLOGICAL_AREAS;
 
   return (
     <Flex direction='column' gap='4'>
       <Text size='1' color='gray'>
-        One area can grow zero, one or many islands; several areas can share one island.
+        A preset fills the area list; one area can grow zero, one or many islands, and several areas
+        can share one island.
       </Text>
+      <Flex direction='column' gap='2'>
+        <Text size='2' weight='bold' color='gray'>
+          Presets
+        </Text>
+        <RadioCards.Root
+          columns='2'
+          gap='2'
+          size='1'
+          value={preset ?? ''}
+          onValueChange={value => applyPreset(value as GeographyPresetId)}
+        >
+          {PRESETS.map(item => (
+            <RadioCards.Item key={item.id} value={item.id}>
+              <Text size='2' weight='bold'>
+                {item.label}
+              </Text>
+            </RadioCards.Item>
+          ))}
+        </RadioCards.Root>
+        <Text size='1' color='gray'>
+          {edited
+            ? 'The list was edited by hand - choose a preset to start over.'
+            : 'Choose a starting point, then adjust any area below.'}
+        </Text>
+      </Flex>
       {areas.map(area => (
-        <Flex key={area.id} direction='column' gap='2'>
-          <Flex justify='between' align='center'>
-            <Text size='2' weight='bold'>
-              {area.id} ({area.relief})
-            </Text>
-            <Button
-              size='1'
-              variant='soft'
-              onClick={() => removeArea(area.id)}
-              aria-label={`Remove ${area.id}`}
-            >
-              Remove
-            </Button>
-          </Flex>
-          <SliderField
-            label={`Extent of ${area.id}`}
-            description='Influence radius as a share of the world; the field fades out before its edge.'
-            value={area.extent}
-            min={MIN_AREA_EXTENT}
-            max={MAX_AREA_EXTENT}
-            step={0.01}
-            format={value => `${Math.round(value * 100)}%`}
-            onChange={value => setAreaExtent(area.id, value)}
+        <Card key={area.id} variant='surface'>
+          <AreaCard
+            area={area}
+            problem={problems.has(area.id)}
+            canDuplicate={!atLimit}
+            onChange={patch => updateArea(area.id, patch)}
+            onDuplicate={() => duplicateArea(area.id)}
+            onRemove={() => removeArea(area.id)}
           />
-        </Flex>
+        </Card>
       ))}
       {areas.length === 0 ? (
         <Text size='2' color='gray'>
@@ -65,21 +96,21 @@ export function GeologyForm() {
         </Text>
       ) : undefined}
       <Flex gap='2' wrap='wrap'>
-        {ADD_PRESETS.map(preset => (
+        {ADD_PRESETS.map(item => (
           <Button
-            key={preset.id}
+            key={item.id}
             size='1'
             variant='soft'
             disabled={atLimit}
-            onClick={() => addArea(preset.id)}
+            onClick={() => addArea(item.id)}
           >
-            Add {preset.label}
+            Add {item.label}
           </Button>
         ))}
       </Flex>
       <Text size='1' color='gray'>
-        {GEOLOGY_FORM_DEFAULTS.geology.areas.length} area by default. Full editing and the plan
-        preview arrive later; placement errors name the offending entry after generation.
+        At most {MAX_GEOLOGICAL_AREAS} areas. Placement errors mark the offending entries after
+        generation.
       </Text>
     </Flex>
   );

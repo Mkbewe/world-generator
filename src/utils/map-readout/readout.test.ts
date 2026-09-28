@@ -237,6 +237,53 @@ describe('readoutItems', () => {
     expect(items).toHaveLength(2);
   });
 
+  it('shows the geology area under the pointer', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'geology',
+      label: 'Geology',
+      hit: { id: 'area-2' },
+    } as const;
+    const profile = {
+      elevation: 0.5,
+      roughness: 0.5,
+      mountainStrength: 0.8,
+      hillStrength: 0.2,
+      plateauStrength: 0.1,
+      lakePotential: 0.1,
+      erosionStrength: 0.4,
+      coastalCliffStrength: 0.2,
+    };
+    const info = {
+      geologyPlan: {
+        areas: [
+          {
+            id: 'area-2',
+            centre: { x: 0.5, y: 0.5 },
+            extent: 0.25,
+            elongation: 0.3,
+            direction: 0,
+            upliftDensity: 0.5,
+            upliftScaleMeters: 600,
+            fragmentation: 0.4,
+            seabedOffsetMeters: -120,
+            shelfWidthMeters: 0,
+            rimStrength: 0,
+            relief: 'mountains',
+            profile,
+          },
+        ],
+      },
+    };
+
+    expect(itemValue(readout(inspection), 'name', info)).toBe('area-2');
+    expect(itemValue(readout(inspection), 'extent', info)).toBe('25%');
+    expect(itemValue(readout(inspection), 'seabed', info)).toBe('-120 m');
+    expect(
+      readoutItems(readout({ ...inspection, hit: { id: 'area-9' } }), info).map(item => item.id)
+    ).toEqual(['position']);
+  });
+
   it('shows the character zone under the pointer', () => {
     const values = {
       elevation: 0.5,

@@ -124,6 +124,7 @@ describe('MapRenderer', () => {
       'world-shape',
       'noise',
       'macro-region',
+      'geology',
       'heightmap',
       // The deprecated corridor layers have no pipeline stage, so the catalog
       // sorts them after the canonical stages until GEO-06 removes them.
@@ -266,6 +267,7 @@ describe('MapRenderer', () => {
     expect(preview.state.displayedLayer).toBe('noise');
     expect(preview.state.layers.map(layer => layer.available)).toEqual([
       true,
+      false,
       false,
       false,
       false,

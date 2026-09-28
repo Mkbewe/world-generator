@@ -2,6 +2,7 @@ import { isGeologyConfig } from './geology-check';
 import {
   createGeologicalArea,
   DEFAULT_GEOLOGICAL_AREA,
+  GEOGRAPHY_PRESETS,
   GEOLOGICAL_AREA_PRESETS,
   normalizeDirection,
 } from './presets';
@@ -55,5 +56,23 @@ describe('geological area presets', () => {
   it('keeps the per-field default entry valid', () => {
     expect(DEFAULT_GEOLOGICAL_AREA.direction).toBe(0);
     expect(isGeologyConfig({ areas: [DEFAULT_GEOLOGICAL_AREA] })).toBe(true);
+  });
+
+  it('fills every geography preset with a valid, unique area list', () => {
+    for (const preset of Object.values(GEOGRAPHY_PRESETS)) {
+      expect(isGeologyConfig(preset)).toBe(true);
+      const ids = preset.areas.map(area => area.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(preset.areas.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('gives each geography preset its own mix of area characters', () => {
+    const reliefs = Object.values(GEOGRAPHY_PRESETS).map(preset =>
+      preset.areas.map(area => area.relief)
+    );
+
+    expect(reliefs[0]).not.toEqual(reliefs[1]);
+    expect(reliefs[1]).not.toEqual(reliefs[2]);
   });
 });

@@ -11,6 +11,7 @@ export {
   NOISE_FORM_DEFAULTS,
   selectedArchetypes,
   STRUCTURE_CHARACTER_FORM_DEFAULTS,
+  type GeologicalAreaPatch,
   useGeneralFormStore,
   useGeologyFormStore,
   useHeightmapFormStore,
