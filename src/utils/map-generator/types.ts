@@ -27,6 +27,11 @@ export interface NoiseConfig {
  * negative, with `0` as the sea datum. The map is read top-down, so the ocean is
  * a single flat floor at `-OCEAN_DEPTH_METERS` and is not configurable; the
  * shared shelf shape lives in `LandmassConfig.shelf`.
+ *
+ * Geology rebuild (GEO-01A decision, removal in GEO-05B): the global ocean base
+ * and the noise bands become field parameters, and the area
+ * `seabedOffsetMeters` is an offset from that base. `relief` stays the global
+ * amplitude lean; `featureScale` is replaced by the explicit bands.
  */
 export interface HeightmapConfig {
   /** Terrain relief: 0 is flat, 1 is very mountainous; scales land amplitude. */
@@ -34,6 +39,9 @@ export interface HeightmapConfig {
   /**
    * Size of terrain forms; widens the domain warp of the shared noise rather
    * than adding octaves.
+   *
+   * @deprecated Replaced by the explicit noise bands of the geology field;
+   * removed together with the old heightmap field in GEO-05B.
    */
   readonly featureScale: number;
 }
@@ -122,6 +130,10 @@ export interface ShelfDefinition {
   readonly targetDepth: number;
   /** How quickly the shelf falls towards the deep ocean; 0..1. */
   readonly falloff: number;
+  /**
+   * @deprecated Dead parameter; the shelf shape is replaced by the geology
+   * area seabed fields and the field noise (GEO-03/GEO-05B).
+   */
   readonly irregularity: number;
 }
 
@@ -264,6 +276,100 @@ export interface StructureRegionDefinition {
   readonly center: WorldPoint;
   readonly influenceRadius: number;
   readonly profile: TerrainProfile;
+}
+
+/**
+ * How an area gets its place in the world: `automatic` draws a spot from the
+ * seed, `fixed` pins the centre the user picked (in normalized 0..1 units).
+ * An impossible automatic placement is reported per entry and blocks
+ * generation; entries are never shrunk or dropped silently.
+ */
+export type GeologicalAreaPlacement =
+  { readonly kind: 'automatic' } | { readonly kind: 'fixed'; readonly position: WorldPoint };
+
+/**
+ * Why one automatic area could not be placed. Reported instead of shrinking or
+ * dropping the entry; generation stops and the form shows the reason at the
+ * offending id.
+ */
+export interface GeologyPlacementProblem {
+  readonly areaId: string;
+  readonly reason: string;
+}
+
+/**
+ * One geological area: a plan of possibilities, never an island outline. The
+ * fields carry behaviour as profile data, so consumers never branch on a
+ * variant name. Lengths are either a normalized world share or explicit metres.
+ *
+ * Placement and profile draw from named streams derived from the area id, so
+ * adding or reordering other entries never rerolls this one. Noise is sampled
+ * at world points: moving an area keeps its id and parameters but changes the
+ * local detail it lands on.
+ */
+export interface GeologicalAreaConfig {
+  /** Stable id; per-area seed streams and provenance derive from it. */
+  readonly id: string;
+  readonly placement: GeologicalAreaPlacement;
+  /** Influence radius in normalized world units; the area fades out before it. */
+  readonly extent: number;
+  /** 0 is a round influence, 1 a long thin band; the shape of the area, not of a land. */
+  readonly elongation: number;
+  /** Heading of the long axis in radians, normalized to [0, 2π). */
+  readonly direction: number;
+  /** Expected share of the extent that carries uplifts, 0..1. */
+  readonly upliftDensity: number;
+  /** Typical wavelength of uplifts in metres; controls form size, not island count. */
+  readonly upliftScaleMeters: number;
+  /** How strongly broad forms break the area apart, 0..1. */
+  readonly fragmentation: number;
+  /** Local seabed offset from the global ocean base, in metres; negative deepens. */
+  readonly seabedOffsetMeters: number;
+  /** Width of the shallow apron around the area, in metres; 0 leaves no shelf. */
+  readonly shelfWidthMeters: number;
+  /** Radial tendency of a shallow rim with a lower centre (atoll), 0..1. */
+  readonly rimStrength: number;
+  /** Dominant relief of the area; the profile sampler derives concrete values from it. */
+  readonly relief: TerrainCharacter;
+}
+
+/**
+ * The geology intent: the user's area list. The global ocean base and the
+ * heightmap bands live in `HeightmapConfig`, so area seabed fields are offsets
+ * from it. The list order carries no priority: neither height nor provenance
+ * may resolve by index.
+ */
+export interface GeologyConfig {
+  readonly areas: readonly GeologicalAreaConfig[];
+}
+
+/** One area resolved by the geology stage for a seed. */
+export interface GeologicalAreaPlan {
+  readonly id: string;
+  readonly centre: WorldPoint;
+  readonly extent: number;
+  readonly elongation: number;
+  readonly direction: number;
+  readonly upliftDensity: number;
+  readonly upliftScaleMeters: number;
+  readonly fragmentation: number;
+  readonly seabedOffsetMeters: number;
+  readonly shelfWidthMeters: number;
+  readonly rimStrength: number;
+  readonly relief: TerrainCharacter;
+  /** Concrete profile values sampled for this area. */
+  readonly profile: TerrainProfile;
+}
+
+/**
+ * Resolved areas for one seed, ordered by id. The diagnostic provenance index
+ * is the position in `areas`, mapped by `createProvenanceIndex`; a cell outside
+ * every area keeps `PROVENANCE_OUTSIDE`, so the label stays stable when the
+ * config list order changes. Island ids are a separate result of
+ * `LandOceanStage`, never derived from this plan.
+ */
+export interface GeologyPlan {
+  readonly areas: readonly GeologicalAreaPlan[];
 }
 
 export interface MapConfig extends SeededWorldConfig {
