@@ -350,3 +350,27 @@ Port szumu jest w `src/utils/map-generator/random/noise.ts`; decyzje domykające
 - **regresja wartości:** `noiseMap` pozostaje bit-identyczny po refaktorze
   `NoiseStage` na port; test złotych wartości w `stages/noise/stage.test.ts`
   pilnuje tej granicy przy przyszłej wymianie silnika.
+
+## 10. Rozstrzygnięcia GEO-05B (2026-09-28)
+
+Kontrakt i UI po zadaniu #442:
+
+- **`HeightmapConfig`:** zostaje sam `relief` (globalny lean amplitudy);
+  `featureScale` usunięty razem z martwą kontrolką.
+- **kontrolki szelfu:** sekcja „Shelf” zniknęła z formularza heightmapy;
+  `targetDepth`/`falloff`/`irregularity` zostają wyłącznie w deprecated
+  `LandmassConfig` i znikną z korytarzem (GEO-06).
+- **`shelfWidthMeters` obszaru:** rozciąga wygaszanie wpływu poza krawędź
+  obszaru (metry przeliczone na udział świata) i tworzy płytki apron;
+  `0` zachowuje dawną krawędź dokładnie przy `extent`.
+- **`upliftScaleMeters`:** przesuwa miks pasm `large`/`medium` (duża skala →
+  `large`, mała → `medium`); to przybliżenie rozmiaru form, nie długość fali.
+- **`fragmentation`:** liniowy gain kontrastu szerokich pasm — podnosi szczyty
+  i pogłębia doliny, więc jeden obszar dzieli się na więcej wyniesień.
+- **profil:** heightmapa czyta `elevation`, `roughness`, `mountainStrength`
+  i `hillStrength`; `plateauStrength`, `lakePotential`, `erosionStrength`
+  i `coastalCliffStrength` zostają na etapy hydrologii i erozji.
+- **`OCEAN_DEPTH_METERS`** zostaje stałym datumem oceanu i stopem palety;
+  `relief` zostaje globalnym parametrem heightmapy.
+- **statystyki:** `landShare` liczone względem datum `0`; podłączenie do
+  rzeczywistego poziomu morza czeka na etap poziomu morza.

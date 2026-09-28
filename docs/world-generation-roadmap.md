@@ -77,23 +77,17 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
 ### 2.2. Ustawienia — [działa]
 
 - Formularze: general (seed), world shape (kształt, rozmiar i detal), noise,
-  macro regions oraz landmasses; kolejność zakładek wynika z `PIPELINE_STAGES`.
+  macro regions i heightmap; kolejność zakładek wynika z `PIPELINE_STAGES`.
 - Formularz makroregionów ma na górze przełącznik „Border noise" (własny szum
   albo `noiseMap`), a pod nim presety, układ bazowy, ustawienia granic i sekcje
   regionów.
-- Formularz landmassów pokazuje tylko to, czym steruje ten etap: liczbę
-  struktur (1–20, domyślnie 10), typowy rozmiar (`Typical size`: small do big),
-  zróżnicowanie rozmiarów (`Size diversity`: equal do varied) i pulę archetypów
-  kształtu — karty wyboru (`CheckboxCards`) z przyciskiem „Select all".
-  Zaznaczenie wszystkich archetypów zapisuje `archetypes: undefined`, czyli
-  całą pulę; ostatniej intencji nie da się odznaczyć, więc układ zawsze rysuje
-  co najmniej jedną strukturę.
-- Ten formularz opisuje stan obecny. Docelowa zakładka „Geologia” będzie
-  edytować listę obszarów geologicznych i presety geografii; jej wpisy nie
-  odpowiadają liczbie wynikowych wysp.
-- W obecnym kodzie parametry szelfu należą do `LandmassConfig`, a kontrolki
-  są w formularzu heightmapy. Po przebudowie parametry i kontrolki
-  płytkiego dna będą należeć do odpowiednich obszarów w „Geologii”.
+- Formularz heightmapy ma dziś jeden suwak „Relief” (globalny lean amplitudy).
+  Rozmiary form, szelf i baza dna są parametrami obszarów geologicznych;
+  zakładka „Geologia” dojdzie osobno, a jej wpisy nie odpowiadają liczbie
+  wynikowych wysp.
+- Stary formularz landmassów i parametry szelfu z `LandmassConfig` są
+  deprecated i znikną razem z korytarzem (GEO-06); żadna zakładka ich już nie
+  pokazuje.
 - Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
   widoku.
 - Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.

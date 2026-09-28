@@ -149,7 +149,7 @@ describe('buildHeightField', () => {
   it('crosses land, shallow water and the open ocean continuously', () => {
     const flat: HeightmapNoiseBands = { large: () => 0.5, medium: () => 0.5, fine: () => 0.5 };
     const { heightmap } = buildHeightField({
-      plan: { areas: [area()] },
+      plan: { areas: [area({ shelfWidthMeters: 0 })] },
       bands: flat,
       worldMask: new Uint8Array(SIDE * SIDE).fill(1),
       dimensions: DIMENSIONS,
@@ -305,6 +305,122 @@ describe('buildHeightField', () => {
     const fine = fineFootprint(64, 2000);
 
     expect(coarse).toBeLessThan(fine);
+  });
+
+  it('keeps the historical edge with no shelf and lifts it with one', () => {
+    // Cell (51, 32) sits past the 0.24 extent but inside the 800 m apron.
+    const bare = build([area({ shelfWidthMeters: 0 })]);
+    const shelved = build([area({ shelfWidthMeters: 800 })]);
+
+    expect(at(bare.heightmap, 51, 32)).toBe(-OCEAN_DEPTH_METERS);
+    expect(at(shelved.heightmap, 51, 32)).toBeGreaterThan(-OCEAN_DEPTH_METERS);
+    expect([...shelved.heightmap].every(Number.isFinite)).toBe(true);
+  });
+
+  it('leans small uplifts to medium forms and large ones to broad forms', () => {
+    const wavy: HeightmapNoiseBands = {
+      large: point => Math.sin(point.x * Math.PI * 4),
+      medium: point => Math.sin(point.x * Math.PI * 20),
+      fine: () => 0,
+    };
+    const field = (upliftScaleMeters: number) =>
+      buildHeightField({
+        plan: {
+          areas: [
+            area({
+              profile: { ...PROFILE, elevation: 1 },
+              seabedOffsetMeters: -150,
+              upliftDensity: 1,
+              upliftScaleMeters,
+            }),
+          ],
+        },
+        bands: wavy,
+        worldMask: new Uint8Array(SIDE * SIDE).fill(1),
+        dimensions: DIMENSIONS,
+        space: SPACE,
+        relief: 1,
+      }).heightmap;
+    const uplifts = (heightmap: Float32Array) => {
+      let count = 0;
+      let onLand = false;
+      for (let x = 0; x < SIDE; x++) {
+        const land = at(heightmap, x, 32) > 0;
+        if (land && !onLand) {
+          count++;
+        }
+        onLand = land;
+      }
+      return count;
+    };
+
+    // The small scale leans to the faster medium band, so it splits the same
+    // area into more separate uplifts than the broad band does.
+    expect(uplifts(field(100))).toBeGreaterThan(uplifts(field(4000)));
+  });
+
+  it('spreads the broad range wider with fragmentation', () => {
+    const singing: HeightmapNoiseBands = {
+      large: point => Math.sin(point.x * Math.PI * 12),
+      medium: () => 0,
+      fine: () => 0,
+    };
+    const field = (fragmentation: number) =>
+      buildHeightField({
+        plan: {
+          areas: [
+            area({
+              profile: { ...PROFILE, elevation: 1 },
+              seabedOffsetMeters: 0,
+              upliftDensity: 1,
+              fragmentation,
+            }),
+          ],
+        },
+        bands: singing,
+        worldMask: new Uint8Array(SIDE * SIDE).fill(1),
+        dimensions: DIMENSIONS,
+        space: SPACE,
+        relief: 1,
+      }).heightmap;
+
+    const calm = field(0);
+    const broken = field(1);
+    // Both fields share the same support, so the ocean floor outside it must
+    // not decide the comparison; compare the covered cells instead.
+    const covered = calm
+      .map((value, index) => (value > -OCEAN_DEPTH_METERS ? index : -1))
+      .filter(index => index >= 0);
+    const coveredMin = (values: Float32Array) => Math.min(...covered.map(index => values[index]));
+
+    expect(covered.length).toBeGreaterThan(0);
+    expect(Math.max(...broken)).toBeGreaterThan(Math.max(...calm));
+    expect(coveredMin(broken)).toBeLessThan(coveredMin(calm));
+  });
+
+  it('carries more detail on rough profiles than on smooth ones', () => {
+    const fineWave: HeightmapNoiseBands = {
+      large: () => 0.5,
+      medium: () => 0.5,
+      fine: point => Math.sin(point.x * Math.PI * 80),
+    };
+    const variation = (roughness: number) => {
+      const { heightmap } = buildHeightField({
+        plan: { areas: [area({ profile: { ...PROFILE, roughness } })] },
+        bands: fineWave,
+        worldMask: new Uint8Array(SIDE * SIDE).fill(1),
+        dimensions: DIMENSIONS,
+        space: SPACE,
+        relief: 1,
+      });
+      let total = 0;
+      for (let x = 1; x < SIDE; x++) {
+        total += Math.abs(at(heightmap, x, 32) - at(heightmap, x - 1, 32));
+      }
+      return total / (SIDE - 1);
+    };
+
+    expect(variation(1)).toBeGreaterThan(variation(0));
   });
 });
 

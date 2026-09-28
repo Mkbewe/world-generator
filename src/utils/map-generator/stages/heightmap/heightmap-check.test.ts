@@ -8,7 +8,7 @@ describe('isHeightmapConfig', () => {
 
   it('rejects out-of-range and malformed values', () => {
     expect(isHeightmapConfig({ ...DEFAULT_HEIGHTMAP_CONFIG, relief: 1.2 })).toBe(false);
-    expect(isHeightmapConfig({ ...DEFAULT_HEIGHTMAP_CONFIG, featureScale: -0.1 })).toBe(false);
+    expect(isHeightmapConfig({})).toBe(false);
     expect(isHeightmapConfig(undefined)).toBe(false);
   });
 });

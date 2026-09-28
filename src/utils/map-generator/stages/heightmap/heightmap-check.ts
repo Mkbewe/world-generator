@@ -6,7 +6,7 @@ export function isHeightmapConfig(value: unknown): value is HeightmapConfig {
     return false;
   }
   const config = value as Record<string, unknown>;
-  return isNormalized(config.relief) && isNormalized(config.featureScale);
+  return isNormalized(config.relief);
 }
 
 function isNormalized(value: unknown): value is number {

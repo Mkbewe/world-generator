@@ -40,9 +40,7 @@ export class HeightmapStage implements MapStage<
 
     const config = context.config.heightmap ?? DEFAULT_HEIGHTMAP_CONFIG;
     if (!isHeightmapConfig(config)) {
-      throw new RangeError(
-        `Heightmap relief and feature scale must be between ${MIN_RELIEF} and ${MAX_RELIEF}.`
-      );
+      throw new RangeError(`Heightmap relief must be between ${MIN_RELIEF} and ${MAX_RELIEF}.`);
     }
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
       throw new Error('A valid world mask must be generated before the heightmap.');
