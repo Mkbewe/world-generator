@@ -11,7 +11,6 @@ export const OCEAN_DEPTH_METERS = 100;
 /** Global heightmap values; local seabed, shelf and relief live in the geology plan. */
 export const DEFAULT_HEIGHTMAP_CONFIG: HeightmapConfig = {
   relief: 0.5,
-  featureScale: 0.5,
 };
 
 /** Names of the heightmap's own noise bands. */

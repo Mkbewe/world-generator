@@ -24,26 +24,15 @@ export interface NoiseConfig {
 
 /**
  * Controls the heightmap stage. The stage stores land positive and sea floor
- * negative, with `0` as the sea datum. The map is read top-down, so the ocean is
- * a single flat floor at `-OCEAN_DEPTH_METERS` and is not configurable; the
- * shared shelf shape lives in `LandmassConfig.shelf`.
- *
- * Geology rebuild (GEO-01A decision, removal in GEO-05B): the global ocean base
- * and the noise bands become field parameters, and the area
- * `seabedOffsetMeters` is an offset from that base. `relief` stays the global
- * amplitude lean; `featureScale` is replaced by the explicit bands.
+ * negative, with `0` as the sea datum; the open ocean floor is the constant
+ * `OCEAN_DEPTH_METERS` and is not configurable. The noise bands are constants
+ * of the stage. Local seabed, shelf and form sizes live per geological area:
+ * `seabedOffsetMeters` is an offset from the global ocean floor and `relief`
+ * stays the global amplitude lean over every area.
  */
 export interface HeightmapConfig {
   /** Terrain relief: 0 is flat, 1 is very mountainous; scales land amplitude. */
   readonly relief: number;
-  /**
-   * Size of terrain forms; widens the domain warp of the shared noise rather
-   * than adding octaves.
-   *
-   * @deprecated Replaced by the explicit noise bands of the geology field;
-   * removed together with the old heightmap field in GEO-05B.
-   */
-  readonly featureScale: number;
 }
 
 export interface MacroRegionPoint {
@@ -256,7 +245,11 @@ export interface StructureCharacterConfig {
   readonly terrainBias: number;
 }
 
-/** Eight terrain values, each 0..1, sampled for one zone. */
+/**
+ * Eight terrain values, each 0..1, sampled for one zone. The heightfield reads
+ * elevation, roughness, mountainStrength and hillStrength; plateau, lake,
+ * erosion and cliff strengths stay for the later hydrology and erosion stages.
+ */
 export interface TerrainProfile {
   readonly elevation: number;
   readonly roughness: number;
@@ -332,13 +325,24 @@ export interface GeologicalAreaConfig {
   readonly direction: number;
   /** Expected share of the extent that carries uplifts, 0..1. */
   readonly upliftDensity: number;
-  /** Typical wavelength of uplifts in metres; controls form size, not island count. */
+  /**
+   * Approximate size of the uplifts in metres; larger values lean the broad
+   * noise mix towards the large band, smaller ones towards the medium band.
+   * It shifts the mix, it is not a literal wavelength of the field.
+   */
   readonly upliftScaleMeters: number;
-  /** How strongly broad forms break the area apart, 0..1. */
+  /**
+   * Linear contrast gain of the broad forms, 0..1: higher values lift the
+   * highs and deepen the lows, so one area breaks into more separate uplifts.
+   */
   readonly fragmentation: number;
   /** Local seabed offset from the global ocean base, in metres; negative deepens. */
   readonly seabedOffsetMeters: number;
-  /** Width of the shallow apron around the area, in metres; 0 leaves no shelf. */
+  /**
+   * Stretches the influence fade past the area edge, in metres (a share of the
+   * world side); the apron is shallower than the open ocean. 0 keeps the edge
+   * exactly at the area extent.
+   */
   readonly shelfWidthMeters: number;
   /** Radial tendency of a shallow rim with a lower centre (atoll), 0..1. */
   readonly rimStrength: number;
@@ -364,9 +368,12 @@ export interface GeologicalAreaPlan {
   readonly elongation: number;
   readonly direction: number;
   readonly upliftDensity: number;
+  /** See `GeologicalAreaConfig.upliftScaleMeters`; the field reads the mix lean. */
   readonly upliftScaleMeters: number;
+  /** See `GeologicalAreaConfig.fragmentation`; the field reads the contrast gain. */
   readonly fragmentation: number;
   readonly seabedOffsetMeters: number;
+  /** See `GeologicalAreaConfig.shelfWidthMeters`; the field reads the fade stretch. */
   readonly shelfWidthMeters: number;
   readonly rimStrength: number;
   readonly relief: TerrainCharacter;

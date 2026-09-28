@@ -63,7 +63,7 @@ describe('selectDirtyStageIds', () => {
         { geology: { areas: [createGeologicalArea('area-2', 'volcanic')] } },
         ['geology', 'heightmap'],
       ],
-      [{ heightmap: { relief: 0.9, featureScale: 0.5 } }, ['heightmap']],
+      [{ heightmap: { relief: 0.9 } }, ['heightmap']],
     ];
 
     for (const [patch, expected] of cases) {
