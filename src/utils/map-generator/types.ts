@@ -400,8 +400,8 @@ export interface MapConfig extends SeededWorldConfig {
   landmasses?: LandmassConfig;
   structureCharacter?: StructureCharacterConfig;
   /**
-   * The geology area list; absent falls back to `DEFAULT_GEOLOGY_CONFIG` until
-   * the form always provides it.
+   * The geology area list from the Geology form; programmatic configs may omit
+   * it and the stage falls back to `DEFAULT_GEOLOGY_CONFIG`.
    */
   geology?: GeologyConfig;
   heightmap?: HeightmapConfig;

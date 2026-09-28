@@ -19,6 +19,7 @@ import {
 } from '../../stores';
 import type * as WorldGenerationPipeline from '../../utils/map-generator';
 import type { GenerationEvent, MapConfig, StageInfo } from '../../utils/map-generator';
+import { GeologyPlacementError } from '../../utils/map-generator/stages/geology/plan';
 import { MapRenderer, mapRepository } from '../../utils/map-renderer';
 import { HeaderActionsProvider, useHeaderActions } from '../header';
 
@@ -177,6 +178,24 @@ describe('WorldGenerator', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Pipeline completed without all required map data.'
     );
+  });
+
+  it('shows the offending area when the geology placement fails', async () => {
+    const user = userEvent.setup();
+
+    runGenerationMock.mockRejectedValue(
+      new GeologyPlacementError([{ areaId: 'area-2', reason: 'no valid spot' }])
+    );
+
+    render(
+      <Theme>
+        <WorldGenerator />
+      </Theme>
+    );
+
+    await user.click(screen.getByTestId('generate-map-button'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Area "area-2"');
   });
 
   it('reports when canvas context is unavailable', async () => {

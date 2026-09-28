@@ -11,6 +11,11 @@ describe('view sync store', () => {
     expect(tabForLayer('structure-character')).toBeUndefined();
   });
 
+  it('has no preview layer for the geology tab until the plan layer lands', () => {
+    // GEO-06B adds the geology plan layer; until then the linked mode is a no-op.
+    expect(layerForTab('geology')).toBeUndefined();
+  });
+
   it('starts unlinked on the general tab', () => {
     expect(VIEW_SYNC_DEFAULTS).toEqual({ settingsTab: 'general', linked: false });
     expect(useViewSyncStore.getState().linked).toBe(false);

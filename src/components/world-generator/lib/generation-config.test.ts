@@ -1,10 +1,9 @@
 import { buildGenerationConfig, type GenerationConfigInput } from './generation-config';
 import {
   DEFAULT_NOISE,
+  GEOLOGY_FORM_DEFAULTS,
   HEIGHTMAP_FORM_DEFAULTS,
-  LANDMASS_FORM_DEFAULTS,
   MACRO_REGION_FORM_DEFAULTS,
-  STRUCTURE_CHARACTER_FORM_DEFAULTS,
 } from '../../../stores';
 
 function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfigInput {
@@ -16,8 +15,7 @@ function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfig
     noise: DEFAULT_NOISE,
     macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
     macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
-    landmasses: LANDMASS_FORM_DEFAULTS.landmasses,
-    structureCharacter: STRUCTURE_CHARACTER_FORM_DEFAULTS.structureCharacter,
+    geology: GEOLOGY_FORM_DEFAULTS.geology,
     heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
     ...overrides,
   };
@@ -43,8 +41,7 @@ describe('buildGenerationConfig', () => {
         noise: DEFAULT_NOISE,
         macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
         macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
-        landmasses: LANDMASS_FORM_DEFAULTS.landmasses,
-        structureCharacter: STRUCTURE_CHARACTER_FORM_DEFAULTS.structureCharacter,
+        geology: GEOLOGY_FORM_DEFAULTS.geology,
         heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
       },
     });

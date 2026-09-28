@@ -121,4 +121,21 @@ describe('LayerRegistry', () => {
     expect(registry.order).toEqual(['world-shape', 'landmass-layout']);
     expect(() => registry.raster('landmass-layout')).toThrow('not a raster');
   });
+
+  it('keeps hidden layers out of the tree but addressable', () => {
+    const registry = new LayerRegistry([
+      world,
+      {
+        id: 'legacy',
+        label: 'Legacy',
+        kind: 'vector',
+        source: 'legacyData',
+        hidden: true,
+      },
+    ]);
+
+    expect(registry.tree.map(node => node.id)).toEqual(['world-shape']);
+    expect(registry.get('legacy').kind).toBe('vector');
+    expect(registry.order).toEqual(['world-shape', 'legacy']);
+  });
 });

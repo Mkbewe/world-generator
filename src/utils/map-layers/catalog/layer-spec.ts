@@ -34,6 +34,11 @@ interface LayerSpecBase<TId extends string = string> {
   readonly clipTo?: TId;
   readonly group?: LayerGroupSpec;
   /**
+   * Keeps the entry out of the preview navigation; readers and factories still
+   * see it, e.g. the deprecated corridor layers until GEO-06 removes them.
+   */
+  readonly hidden?: boolean;
+  /**
    * Extra non-raster info sources a vector layer reads besides its own
    * `source`, e.g. the layout behind the structure regions. They join the
    * cache key so a change rebuilds the layer.

@@ -39,6 +39,14 @@ describe('LAYER_CATALOG', () => {
     expect(RASTER_CATALOG.map(layer => layer.id)).not.toContain('structure-character');
   });
 
+  it('hides the legacy corridor layers from the preview navigation', () => {
+    const hidden = LAYER_CATALOG.filter(layer => 'hidden' in layer && layer.hidden).map(
+      layer => layer.id
+    );
+
+    expect(hidden).toEqual(['landmass-layout', 'structure-character']);
+  });
+
   it('sources every raster layer from a generator raster output', () => {
     const outputs = new Set<string>([...RASTER_OUTPUT_KEYS]);
 

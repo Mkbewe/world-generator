@@ -5,12 +5,11 @@ import {
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
+  useGeologyFormStore,
   useHeightmapFormStore,
-  useLandmassFormStore,
   useMacroRegionFormStore,
   useMapConfigStore,
   useNoiseFormStore,
-  useStructureCharacterFormStore,
   useWorldShapeFormStore,
 } from '../../../stores';
 import type { MapRenderer } from '../../../utils/map-renderer';
@@ -44,8 +43,7 @@ export function useWorldGeneration(): WorldGeneration {
       noise: useNoiseFormStore.getState().noise,
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
-      landmasses: useLandmassFormStore.getState().landmasses,
-      structureCharacter: useStructureCharacterFormStore.getState().structureCharacter,
+      geology: useGeologyFormStore.getState().geology,
       heightmap: useHeightmapFormStore.getState().heightmap,
     });
     if ('error' in built) {
