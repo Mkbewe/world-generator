@@ -23,7 +23,7 @@ historyczny. Nie przenosić ich algorytmu korytarzy pod nową nazwę.
    szelfu i ID wyspy oznaczają różne rzeczy. Nie wyprowadzać wysp z liczby
    wpisów w formularzu ani z liczby szelfów.
 
-### Kontrakt do uzgodnienia w GEO-01A przed pisaniem rasteryzacji
+### Kontrakt rozstrzygnięty w GEO-01A przed pisaniem rasteryzacji
 
 - `GeologyConfig` i `GeologicalAreaConfig`: stabilne ID; pozycja automatyczna
   albo jawna; zasięg i kierunek; gęstość oraz skala wyniesień; rozczłonkowanie;
@@ -294,3 +294,34 @@ testów ani `check:all`.
   progi metryk do GEO-01B. GEO-01A musi zapisać kontrakt i mały przykład
   liczbowy przed wejściem w GEO-04.
   Implementujący nie powinien wybierać ich przypadkiem podczas pisania UI.
+
+## 8. Rozstrzygnięcia GEO-01A (2026-09-28)
+
+Kontrakt jest w kodzie (`src/utils/map-generator/stages/geology/`); poniżej decyzje domykające punkty z §1:
+
+- **operator łączenia:** osobna unia kwadratowa dla wyniesień i obniżeń
+  (`mergeContributions`); przemienny, jeden wkład bez zmian, `n` równych daje
+  `sqrt(n)` pojedynczej wartości. Przykład liczbowy: `2 × 100 m → 141,421 m`,
+  `3 × 100 m → 173,205 m`, `+100 m` i `-60 m → 40 m`; testy w `merge.test.ts`.
+- **pochodzenie:** `dominantAreaId` zwraca ID najsilniejszego wkładu (remis
+  łamie najmniejsze ID), a `createProvenanceIndex` mapuje je na indeks
+  zapisywany w diagnostycznej mapie; poza obszarami `PROVENANCE_OUTSIDE = -1`.
+  Kolejność listy nie wpływa na wysokość ani etykietę.
+- **strumienie losowości:** placement i profil losują z nazwanych strumieni
+  wyprowadzonych z ID obszaru (`geology.area.<id>.placement` i `.profile`);
+  dodanie albo przestawienie innego wpisu nie przelosowuje obszaru.
+- **szum:** próbkowany w punktach świata, więc przesunięcie obszaru zachowuje
+  ID i parametry, ale zmienia lokalny detal, na który trafia.
+- **poza `worldMask`:** raster może trzymać skończoną wartość techniczną
+  (np. `0`), ale każdy odczyt, statystyka, paleta i klasyfikacja najpierw
+  sprawdza maskę; poza maską nie ma lądu ani oceanu.
+- **placement:** niemożliwy układ automatyczny to błąd przypisany do wpisu
+  (`GeologyPlacementProblem`) i blokuje generację; zakaz cichego zmniejszania
+  i pomijania.
+- **`HeightmapConfig`:** globalna baza oceanu zostaje parametrem pola, a
+  `seabedOffsetMeters` obszaru jest od niej offsetem; `featureScale` i szelfowe
+  `irregularity` oznaczono `@deprecated`, `targetDepth`/`falloff` przechodzą
+  do kontraktu pola, `OCEAN_DEPTH_METERS` zostaje datumem oceanu i palety
+  (usunięcie w GEO-05B).
+- **liczba obszarów:** limit 20 mieści się w `Int16` (indeks proweniencji
+  `-1..19`), więc diagnostyczna mapa nie wymaga szerszego typu.

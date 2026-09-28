@@ -9,6 +9,12 @@ export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro
 export { isLandmassLayout } from './stages/landmass';
 export { DEFAULT_STRUCTURE_CHARACTER_CONFIG } from './stages/structure-character';
 export { isStructureZones } from './stages/structure-character';
+export {
+  DEFAULT_GEOLOGY_CONFIG,
+  GEOLOGICAL_AREA_PRESETS,
+  isGeologyConfig,
+  isGeologyPlan,
+} from './stages/geology';
 export { TERRAIN_CHARACTERS } from './types';
 export { selectDirtyStageIds } from './pipeline/selective-regeneration';
 export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './pipeline/stage-definitions';
@@ -41,7 +47,13 @@ export type {
   GenerationEvent,
   GenerationOptions,
   GenerationResult,
+  GeologicalAreaConfig,
+  GeologicalAreaPlan,
+  GeologicalAreaPlacement,
   GeologicalStructure,
+  GeologyConfig,
+  GeologyPlacementProblem,
+  GeologyPlan,
   HeightmapConfig,
   LandmassConfig,
   LandmassEdge,
