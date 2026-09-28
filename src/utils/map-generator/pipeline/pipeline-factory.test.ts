@@ -3,17 +3,14 @@ import { DOMAIN_OUTPUT_KEYS, RASTER_OUTPUT_KEYS } from './stage-outputs';
 import type { MapConfig, MapState } from '../types';
 
 describe('createMapGenerator', () => {
-  // Skipped during the geology cutover; the heightmap still reads the corridor
-  // contract, so the full run and its declarations return with #440.
-  it.skip('creates the current world-generation stages in order', async () => {
+  it('creates the current world-generation stages in order', async () => {
     const pipeline = createMapGenerator();
 
     expect(pipeline.stages.map(stage => stage.id)).toEqual([
       'world-shape',
       'noise',
       'macro-region',
-      'landmass-layout',
-      'structure-character',
+      'geology',
       'heightmap',
     ]);
 
@@ -32,19 +29,18 @@ describe('createMapGenerator', () => {
       'world-shape',
       'noise',
       'macro-region',
-      'landmass-layout',
-      'structure-character',
+      'geology',
       'heightmap',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
     expect(result.context.state.noiseMap).toBeInstanceOf(Float32Array);
     expect(result.context.state.heightmap).toBeInstanceOf(Float32Array);
-    expect(result.context.state.shelfIndexMap).toBeInstanceOf(Int16Array);
-    expect(result.context.state.landmassLayout?.structures.length).toBeGreaterThan(0);
+    expect(result.context.state.provenanceMap).toBeInstanceOf(Int16Array);
+    expect(result.context.state.geologyPlan?.areas.length).toBeGreaterThan(0);
   });
 
-  it.skip('declares the configuration inputs of every stage', () => {
+  it('declares the configuration inputs of every stage', () => {
     const pipeline = createMapGenerator();
 
     expect(
@@ -80,35 +76,16 @@ describe('createMapGenerator', () => {
         ],
       },
       {
-        id: 'landmass-layout',
-        reads: ['worldMask'],
-        writes: ['landmassLayout'],
-        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses'],
-      },
-      {
-        id: 'structure-character',
-        reads: ['landmassLayout'],
-        writes: ['structureZones'],
-        configKeys: [
-          'world.seed',
-          'world.shape',
-          'world.dimensions',
-          'landmasses',
-          'structureCharacter',
-        ],
+        id: 'geology',
+        reads: [],
+        writes: ['geologyPlan'],
+        configKeys: ['world.seed', 'world.shape', 'geology'],
       },
       {
         id: 'heightmap',
-        reads: ['worldMask', 'landmassLayout', 'structureZones'],
-        writes: ['heightmap', 'shelfIndexMap'],
-        configKeys: [
-          'world.seed',
-          'world.shape',
-          'world.dimensions',
-          'landmasses',
-          'structureCharacter',
-          'heightmap',
-        ],
+        reads: ['worldMask', 'geologyPlan'],
+        writes: ['heightmap', 'provenanceMap'],
+        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
       },
     ]);
   });

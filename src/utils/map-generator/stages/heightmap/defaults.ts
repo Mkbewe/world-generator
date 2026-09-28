@@ -8,7 +8,7 @@ export const MAX_RELIEF = 1;
 /** Flat, fixed sea floor: the map is read top-down, so how deep the ocean is does not matter. */
 export const OCEAN_DEPTH_METERS = 100;
 
-/** Heightmap across worlds; the shared shelf shape stays in the landmass config. */
+/** Global heightmap values; local seabed, shelf and relief live in the geology plan. */
 export const DEFAULT_HEIGHTMAP_CONFIG: HeightmapConfig = {
   relief: 0.5,
   featureScale: 0.5,
@@ -17,15 +17,10 @@ export const DEFAULT_HEIGHTMAP_CONFIG: HeightmapConfig = {
 /** Names of the heightmap's own noise bands. */
 export type HeightmapBandName = 'large' | 'medium' | 'fine';
 
-/** One band: physical wavelength, octaves and the share of the field amplitude. */
+/** One band: physical wavelength, octaves and the fractal shape of its stack. */
 export interface HeightmapBand extends WorldNoiseBandSpec {
   /** Wavelength of the base wave in metres. */
   readonly wavelengthMeters: number;
-  /**
-   * Share of the field amplitude this band may add, 0..1. The transitional
-   * field keeps the global amplitude; the new field consumes it in GEO-04.
-   */
-  readonly amplitudeShare: number;
   readonly octaves: number;
   readonly persistence: number;
   readonly lacunarity: number;
@@ -33,27 +28,24 @@ export interface HeightmapBand extends WorldNoiseBandSpec {
 
 /**
  * The heightmap's own bands, independent of the Noise stage raster and config.
- * The current transitional field warps with `medium` and jitters the coast with
- * `fine`; `large` is the relief band the new field consumes in GEO-04.
+ * `large` groups the forms, `medium` splits land from water and `fine` carries
+ * the detail the field gates below the sample scale.
  */
 export const HEIGHTMAP_BANDS: Readonly<Record<HeightmapBandName, HeightmapBand>> = {
   large: {
     wavelengthMeters: 3000,
-    amplitudeShare: 0.5,
     octaves: 2,
     persistence: 0.5,
     lacunarity: 2,
   },
   medium: {
     wavelengthMeters: 700,
-    amplitudeShare: 0.3,
     octaves: 3,
     persistence: 0.5,
     lacunarity: 2,
   },
   fine: {
     wavelengthMeters: 150,
-    amplitudeShare: 0.12,
     octaves: 2,
     persistence: 0.5,
     lacunarity: 2,

@@ -55,22 +55,14 @@ describe('SettingsPanel', () => {
     expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generate Map');
   });
 
-  // Skipped during the geology cutover; the Geology tab returns with #444.
-  it.skip('orders the stage tabs by the pipeline order', () => {
+  it('orders the stage tabs by the pipeline order', () => {
     renderPanel();
 
     const tabs = within(screen.getByRole('tablist', { name: 'Generation settings' }))
       .getAllByRole('tab')
       .map(tab => tab.getAttribute('aria-label'));
 
-    expect(tabs).toEqual([
-      'General',
-      'World shape',
-      'Noise',
-      'Macro regions',
-      'Landmasses',
-      'Heightmap',
-    ]);
+    expect(tabs).toEqual(['General', 'World shape', 'Noise', 'Macro regions', 'Heightmap']);
   });
 
   it('shows the normal label with a loader and disables the action while generating', () => {

@@ -3,7 +3,7 @@ import type { WorldDimensions } from '../../../world-dimensions';
 import { createWorldNoiseBand, type RandomFactory } from '../../random';
 import type { WorldPoint } from '../../types';
 
-/** The heightmap's own noise in the 0..1 range the current field expects. */
+/** The heightmap's own noise in the -1..1 range the port returns. */
 export interface HeightmapNoiseBands {
   readonly large: (point: WorldPoint) => number;
   readonly medium: (point: WorldPoint) => number;
@@ -22,19 +22,18 @@ export function createHeightmapNoiseBands(
   dimensions: WorldDimensions
 ): HeightmapNoiseBands {
   return {
-    large: unitBand(random, 'heightmap.large', dimensions, HEIGHTMAP_BANDS.large),
-    medium: unitBand(random, 'heightmap.medium', dimensions, HEIGHTMAP_BANDS.medium),
-    fine: unitBand(random, 'heightmap.fine', dimensions, HEIGHTMAP_BANDS.fine),
+    large: signedBand(random, 'heightmap.large', dimensions, HEIGHTMAP_BANDS.large),
+    medium: signedBand(random, 'heightmap.medium', dimensions, HEIGHTMAP_BANDS.medium),
+    fine: signedBand(random, 'heightmap.fine', dimensions, HEIGHTMAP_BANDS.fine),
   };
 }
 
-/** The port returns -1..1; the transitional field still reads 0..1 noise. */
-function unitBand(
+/** One band straight from the port, in its native -1..1 range. */
+function signedBand(
   random: RandomFactory,
   namespace: string,
   dimensions: WorldDimensions,
   band: HeightmapBand
 ): (point: WorldPoint) => number {
-  const reader = createWorldNoiseBand(random, namespace, dimensions, band);
-  return point => (reader(point) + 1) / 2;
+  return createWorldNoiseBand(random, namespace, dimensions, band);
 }

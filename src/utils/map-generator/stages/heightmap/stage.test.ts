@@ -1,9 +1,8 @@
 import { DEFAULT_HEIGHTMAP_CONFIG } from './defaults';
 import { HeightmapStage } from './stage';
 import { MapGenerator } from '../../pipeline/pipeline';
-import type { HeightmapConfig, LandmassLayout, MapConfig, MapState } from '../../types';
-import { LandmassLayoutStage } from '../landmass';
-import { StructureCharacterStage } from '../structure-character';
+import type { HeightmapConfig, MapConfig, MapState } from '../../types';
+import { createGeologicalArea, GeologyStage } from '../geology';
 
 const base: MapConfig = {
   world: {
@@ -12,20 +11,17 @@ const base: MapConfig = {
     shape: 'disc',
   },
   noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
-};
-
-const LANDMASSES = {
-  count: 3,
-  size: 0.5,
-  diversity: 0.3,
-  shelf: { width: 0.05, targetDepth: 60, falloff: 0.5, irregularity: 0.3 },
+  geology: {
+    areas: [
+      createGeologicalArea('area-1', 'shallow-archipelago'),
+      createGeologicalArea('area-2', 'atoll'),
+    ],
+  },
 };
 
 function config(heightmap: Partial<HeightmapConfig> = {}): MapConfig {
   return {
     ...base,
-    landmasses: LANDMASSES,
-    structureCharacter: { characterVariation: 0.5, terrainBias: 0.5 },
     heightmap: { ...DEFAULT_HEIGHTMAP_CONFIG, ...heightmap },
   };
 }
@@ -33,31 +29,28 @@ function config(heightmap: Partial<HeightmapConfig> = {}): MapConfig {
 const WORLD_MASK = new Uint8Array(32 * 32).fill(1);
 
 async function generate(source: MapConfig = config()) {
-  return new MapGenerator<MapConfig, MapState>([
-    new LandmassLayoutStage(),
-    new StructureCharacterStage(),
-    new HeightmapStage(),
-  ]).generate(source, { worldMask: WORLD_MASK });
+  return new MapGenerator<MapConfig, MapState>([new GeologyStage(), new HeightmapStage()]).generate(
+    source,
+    { worldMask: WORLD_MASK }
+  );
 }
 
-const EMPTY_LAYOUT: LandmassLayout = { structures: [], shelves: [] };
-
 describe('HeightmapStage', () => {
-  it('produces a heightmap and a shelf index for the generated layout', async () => {
+  it('produces a heightmap and a provenance map for the plan', async () => {
     const result = await generate();
-    const { heightmap, shelfIndexMap, worldMask } = result.context.state;
+    const { heightmap, provenanceMap, worldMask } = result.context.state;
 
     expect(heightmap).toBeInstanceOf(Float32Array);
-    expect(shelfIndexMap).toBeInstanceOf(Int16Array);
+    expect(provenanceMap).toBeInstanceOf(Int16Array);
     expect(heightmap).toHaveLength(WORLD_MASK.length);
-    expect(heightmap?.every(value => Number.isFinite(value))).toBe(true);
+    expect(provenanceMap).toHaveLength(WORLD_MASK.length);
+    expect([...(heightmap ?? [])].every(Number.isFinite)).toBe(true);
     expect(worldMask).toBeInstanceOf(Uint8Array);
   });
 
   it('keeps the land above and the ocean below the sea datum', async () => {
     const result = await generate();
-    const heightmap = result.context.state.heightmap ?? new Float32Array();
-    const values = [...heightmap];
+    const values = [...(result.context.state.heightmap ?? [])];
 
     expect(Math.max(...values)).toBeGreaterThan(0);
     expect(Math.min(...values)).toBeLessThanOrEqual(0);
@@ -68,32 +61,17 @@ describe('HeightmapStage', () => {
     const second = await generate();
 
     expect(second.context.state.heightmap).toEqual(first.context.state.heightmap);
-    expect(second.context.state.shelfIndexMap).toEqual(first.context.state.shelfIndexMap);
+    expect(second.context.state.provenanceMap).toEqual(first.context.state.provenanceMap);
   });
 
-  it('reports height statistics', async () => {
+  it('reports height statistics with the area count', async () => {
     const result = await generate();
     const stats = result.statistics.find(candidate => candidate.stageId === 'heightmap');
 
     expect(stats?.details?.max).toBeGreaterThan(0);
     expect(typeof stats?.details?.mean).toBe('number');
     expect(typeof stats?.details?.landShare).toBe('number');
-  });
-
-  it('produces an empty heightmap for an empty layout', async () => {
-    const result = await new MapGenerator<MapConfig, MapState>([new HeightmapStage()]).generate(
-      {
-        ...config(),
-        structureCharacter: { characterVariation: 0.5, terrainBias: 0.5 },
-      },
-      {
-        worldMask: WORLD_MASK,
-        landmassLayout: EMPTY_LAYOUT,
-        structureZones: [],
-      }
-    );
-
-    expect(result.context.state.heightmap).toBeInstanceOf(Float32Array);
+    expect(stats?.details?.areas).toBe(2);
   });
 
   it('rejects invalid configuration', async () => {
@@ -102,11 +80,11 @@ describe('HeightmapStage', () => {
     });
   });
 
-  it('requires a landmass layout', async () => {
+  it('requires a geology plan', async () => {
     const pipeline = new MapGenerator<MapConfig, MapState>([new HeightmapStage()]);
 
     await expect(pipeline.generate(config(), { worldMask: WORLD_MASK })).rejects.toMatchObject({
-      cause: { message: expect.stringContaining('landmassLayout') },
+      cause: { message: expect.stringContaining('geologyPlan') },
     });
   });
 });
