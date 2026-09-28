@@ -9,7 +9,7 @@ export const RASTER_OUTPUT_KEYS = [
   'noiseMap',
   'macroRegionIdMap',
   'heightmap',
-  'shelfIndexMap',
+  'provenanceMap',
 ] as const;
 
 /**

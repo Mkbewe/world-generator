@@ -1,61 +1,54 @@
 import { createHeightmapNoiseBands } from './bands';
-import { buildHeightmap, OUTSIDE_SHELF } from './build';
 import { DEFAULT_HEIGHTMAP_CONFIG, MAX_RELIEF, MIN_RELIEF } from './defaults';
+import { buildHeightField } from './field';
 import { isHeightmapConfig } from './heightmap-check';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { assertStageOutput, type MapStage } from '../../pipeline/stage';
 import { HEIGHTMAP_STAGE, type PipelineStageId } from '../../pipeline/stage-definitions';
 import { spaceOf } from '../../space';
-import type {
-  CharacterZone,
-  HeightmapConfig,
-  LandmassLayout,
-  MapConfig,
-  MapState,
-  StageMetrics,
-  StageProgressReporter,
-} from '../../types';
-import { isLandmassLayout } from '../landmass';
-import { isStructureZones } from '../structure-character';
+import type { MapConfig, MapState, StageMetrics, StageProgressReporter } from '../../types';
+import { isGeologyPlan } from '../geology';
 
 /**
- * Turns the landmass layout and its character zones into one continuous height:
- * land above the sea datum, a shelf band below it and the flat ocean floor. The
- * land and water split, islands and bathymetry labels belong to a later stage.
+ * Turns the geology plan into one continuous heightfield: an area's seabed
+ * offset, its uplift potential and its local relief merge into one value per
+ * cell, with the diagnostic provenance beside it. The land and water split,
+ * islands and bathymetry labels belong to a later stage.
  */
 export class HeightmapStage implements MapStage<
   MapConfig,
   MapState,
   PipelineStageId,
-  { heightmap: Float32Array; shelfIndexMap: Int16Array }
+  { heightmap: Float32Array; provenanceMap: Int16Array }
 > {
   readonly id: PipelineStageId = HEIGHTMAP_STAGE.id;
   readonly name = HEIGHTMAP_STAGE.name;
   readonly configKeys = HEIGHTMAP_STAGE.configKeys;
-  readonly reads: readonly (keyof MapState)[] = ['worldMask', 'landmassLayout', 'structureZones'];
-  readonly writes = ['heightmap', 'shelfIndexMap'] as const;
+  readonly reads: readonly (keyof MapState)[] = ['worldMask', 'geologyPlan'];
+  readonly writes = ['heightmap', 'provenanceMap'] as const;
   readonly progressStep = 0.1;
 
   async execute(
     context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ heightmap: Float32Array; shelfIndexMap: Int16Array }> {
+  ): Promise<{ heightmap: Float32Array; provenanceMap: Int16Array }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const worldMask = context.state.worldMask;
-    const layout = context.state.landmassLayout;
-    const zones = context.state.structureZones;
+    const plan = context.state.geologyPlan;
 
     const config = context.config.heightmap ?? DEFAULT_HEIGHTMAP_CONFIG;
-    this.validateConfig(config, layout, zones);
+    if (!isHeightmapConfig(config)) {
+      throw new RangeError(
+        `Heightmap relief and feature scale must be between ${MIN_RELIEF} and ${MAX_RELIEF}.`
+      );
+    }
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
       throw new Error('A valid world mask must be generated before the heightmap.');
     }
-    if (!layout || !zones) {
-      throw new Error(
-        'A landmass layout and structure zones must be generated before the heightmap.'
-      );
+    if (!plan || !isGeologyPlan(plan)) {
+      throw new Error('A geology plan must be generated before the heightmap.');
     }
     if (signal.aborted) {
       throw new GenerationCancelledError();
@@ -63,17 +56,13 @@ export class HeightmapStage implements MapStage<
 
     report(0.02);
     const bands = createHeightmapNoiseBands(context.random, context.config.world.dimensions);
-    const { heightmap, shelfIndexMap } = buildHeightmap({
-      layout,
-      zones,
+    const { heightmap, provenanceMap } = buildHeightField({
+      plan,
       bands,
       worldMask,
-      config,
-      worldSizeMeters: Math.max(
-        context.config.world.dimensions.widthMeters,
-        context.config.world.dimensions.heightMeters
-      ),
+      dimensions: context.config.world.dimensions,
       space: spaceOf(context),
+      relief: config.relief,
       signal,
       report: progress => report(0.02 + progress * 0.97),
     });
@@ -82,25 +71,19 @@ export class HeightmapStage implements MapStage<
       throw new GenerationCancelledError();
     }
     report(1);
-    return { heightmap, shelfIndexMap };
+    return { heightmap, provenanceMap };
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
     const { sampleWidth, sampleHeight } = config.world.dimensions;
     const cells = sampleWidth * sampleHeight;
     const heightmap = state.heightmap;
-    const shelfIndexMap = state.shelfIndexMap;
-    if (
-      !state.worldMask ||
-      !heightmap ||
-      !shelfIndexMap ||
-      !isLandmassLayout(state.landmassLayout) ||
-      !isStructureZones(state.structureZones)
-    ) {
+    const provenanceMap = state.provenanceMap;
+    if (!state.worldMask || !heightmap || !provenanceMap || !isGeologyPlan(state.geologyPlan)) {
       throw new Error('Pipeline completed without all required map data.');
     }
     assertStageOutput(heightmap, 'float32', cells);
-    assertStageOutput(shelfIndexMap, 'int16', cells);
+    assertStageOutput(provenanceMap, 'int16', cells);
     for (const value of heightmap) {
       if (!Number.isFinite(value)) {
         throw new Error('Heightmap contains a non-finite height.');
@@ -110,9 +93,9 @@ export class HeightmapStage implements MapStage<
 
   summarize(
     context: MapContext<MapConfig, MapState, PipelineStageId>,
-    data: { heightmap: Float32Array; shelfIndexMap: Int16Array }
+    data: { heightmap: Float32Array; provenanceMap: Int16Array }
   ): StageMetrics | undefined {
-    const { heightmap, shelfIndexMap } = data;
+    const { heightmap, provenanceMap } = data;
     const worldMask = context.state.worldMask;
     let min = Infinity;
     let max = -Infinity;
@@ -141,38 +124,15 @@ export class HeightmapStage implements MapStage<
 
     const mean = sum / samples;
     const variance = Math.max(0, sumSquares / samples - mean * mean);
-    const shelves = new Set<number>();
-    for (const value of shelfIndexMap) {
-      if (value !== OUTSIDE_SHELF) {
-        shelves.add(value);
-      }
-    }
+    const areas = context.state.geologyPlan?.areas.length ?? 0;
     return {
       min,
       max,
       mean,
       stdDev: Math.sqrt(variance),
       landShare: land / samples,
-      shelves: shelves.size,
-      bytes: heightmap.byteLength + shelfIndexMap.byteLength,
+      areas,
+      bytes: heightmap.byteLength + provenanceMap.byteLength,
     };
-  }
-
-  private validateConfig(
-    config: HeightmapConfig,
-    layout: LandmassLayout | undefined,
-    zones: readonly CharacterZone[] | undefined
-  ): void {
-    if (!isHeightmapConfig(config)) {
-      throw new RangeError(
-        `Heightmap relief and feature scale must be between ${MIN_RELIEF} and ${MAX_RELIEF}.`
-      );
-    }
-    if (!isLandmassLayout(layout)) {
-      throw new Error('A landmass layout must be generated before the heightmap.');
-    }
-    if (!isStructureZones(zones)) {
-      throw new Error('Structure zones must be generated before the heightmap.');
-    }
   }
 }

@@ -96,21 +96,14 @@ export const STRUCTURE_CHARACTER_STAGE = {
 } as const satisfies DeclaredStage;
 
 /**
- * The heightmap reads the mask, the layout and the zones, so it inherits their
- * configuration, plus its own slice with the relief and feature scale. It no
- * longer reads the shared noise: every stage owns its own bands and stream.
+ * The heightmap reads the mask and the geology plan, so it inherits their
+ * configuration, plus its own slice with the relief and feature scale. It does
+ * not read the shared noise: every stage owns its own bands and stream.
  */
 export const HEIGHTMAP_STAGE = {
   id: 'heightmap',
   name: 'Heightmap',
-  configKeys: [
-    'world.seed',
-    'world.shape',
-    'world.dimensions',
-    'landmasses',
-    'structureCharacter',
-    'heightmap',
-  ],
+  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
 } as const satisfies DeclaredStage;
 
 /**

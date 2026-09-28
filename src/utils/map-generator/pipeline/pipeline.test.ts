@@ -233,8 +233,7 @@ describe('MapGenerator', () => {
     expect(events).toEqual(['stage-started:heightmap', 'stage-failed:heightmap']);
   });
 
-  // Skipped during the geology cutover; the full factory run returns with #440.
-  it.skip('hands out a read-only snapshot of the completed stage data', async () => {
+  it('hands out a read-only snapshot of the completed stage data', async () => {
     const config: MapConfig = {
       world: {
         dimensions: { widthMeters: 2000, heightMeters: 2000, sampleWidth: 16, sampleHeight: 16 },

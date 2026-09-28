@@ -1,6 +1,6 @@
 import { selectDirtyStageIds } from './selective-regeneration';
 import { PIPELINE_STAGES } from './stage-definitions';
-import { DEFAULT_LANDMASS_CONFIG } from '../stages/landmass';
+import { createGeologicalArea } from '../stages/geology';
 import { createRadialLayout } from '../stages/macro-region';
 import type { MapConfig } from '../types';
 
@@ -15,6 +15,7 @@ const config: MapConfig = {
   noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   macroRegions: createRadialLayout(2),
   macroRegionDeformation: deformation,
+  geology: { areas: [createGeologicalArea('area-1', 'shallow-archipelago')] },
 };
 
 describe('selectDirtyStageIds', () => {
@@ -33,24 +34,17 @@ describe('selectDirtyStageIds', () => {
       noise: { ...config.noise },
       macroRegions: createRadialLayout(2).map(region => ({ ...region })),
       macroRegionDeformation: { ...deformation },
+      geology: { areas: (config.geology?.areas ?? []).map(area => ({ ...area })) },
     };
 
     expect(selectDirtyStageIds(config, copy)).toEqual([]);
   });
 
-  // Skipped during the geology cutover; the corridor cases return with the integration.
-  it.skip('rebuilds only the stages whose configuration slice changed', () => {
+  it('rebuilds only the stages whose configuration slice changed', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
-        [
-          'world-shape',
-          'noise',
-          'macro-region',
-          'landmass-layout',
-          'structure-character',
-          'heightmap',
-        ],
+        ['world-shape', 'noise', 'macro-region', 'geology', 'heightmap'],
       ],
       [
         {
@@ -59,29 +53,15 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        [
-          'world-shape',
-          'noise',
-          'macro-region',
-          'landmass-layout',
-          'structure-character',
-          'heightmap',
-        ],
+        ['world-shape', 'noise', 'macro-region', 'heightmap'],
       ],
-      [
-        { world: { ...config.world, seed: 18 } },
-        ['noise', 'macro-region', 'landmass-layout', 'structure-character', 'heightmap'],
-      ],
+      [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region', 'geology', 'heightmap']],
       [{ noise: { ...config.noise, frequency: 5 } }, ['noise']],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
       [
-        { landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 } },
-        ['landmass-layout', 'structure-character', 'heightmap'],
-      ],
-      [
-        { structureCharacter: { characterVariation: 0.8, terrainBias: 0.5 } },
-        ['structure-character', 'heightmap'],
+        { geology: { areas: [createGeologicalArea('area-2', 'volcanic')] } },
+        ['geology', 'heightmap'],
       ],
       [{ heightmap: { relief: 0.9, featureScale: 0.5 } }, ['heightmap']],
     ];
@@ -91,26 +71,9 @@ describe('selectDirtyStageIds', () => {
     }
   });
 
-  it.skip('keeps landmass layout clean when only structureCharacter changes', () => {
-    const next: MapConfig = {
-      ...config,
-      structureCharacter: { characterVariation: 0.9, terrainBias: 0.5 },
-    };
-    const dirty = selectDirtyStageIds(config, next);
-
-    expect(dirty).toContain('structure-character');
-    expect(dirty).not.toContain('landmass-layout');
-  });
-
-  it.skip('dirties structure-character when landmasses change', () => {
-    const next: MapConfig = {
-      ...config,
-      landmasses: { ...DEFAULT_LANDMASS_CONFIG, count: 3 },
-    };
-    const dirty = selectDirtyStageIds(config, next);
-
-    expect(dirty).toContain('landmass-layout');
-    expect(dirty).toContain('structure-character');
+  it('ignores the removed corridor configuration slices', () => {
+    expect(selectDirtyStageIds(config, { ...config, landmasses: undefined })).toEqual([]);
+    expect(selectDirtyStageIds(config, { ...config, structureCharacter: undefined })).toEqual([]);
   });
 
   it('follows the noise raster only under the noise-map border source', () => {
@@ -127,15 +90,15 @@ describe('selectDirtyStageIds', () => {
     expect(selectDirtyStageIds(changedNoise, noiseMap)).toEqual(['noise', 'macro-region']);
   });
 
-  it('leaves the landmass layout out of changes it does not read', () => {
+  it('leaves the geology stage out of changes it does not read', () => {
     const regions = selectDirtyStageIds(config, { ...config, macroRegions: createRadialLayout(3) });
     const noise = selectDirtyStageIds(config, {
       ...config,
       noise: { ...config.noise, octaves: 6 },
     });
 
-    expect(regions).not.toContain('landmass-layout');
-    expect(noise).not.toContain('landmass-layout');
+    expect(regions).not.toContain('geology');
+    expect(noise).not.toContain('geology');
   });
 
   it('treats a removed optional slice as a change', () => {

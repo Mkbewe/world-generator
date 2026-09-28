@@ -52,9 +52,7 @@ describe('generation worker', () => {
     return messages.at(-1);
   }
 
-  // Skipped during the geology cutover; the heightmap still reads the corridor
-  // contract, so the full worker run returns with #440.
-  it.skip('announces its stages and returns generation statistics once the map data is complete', async () => {
+  it('announces its stages and returns generation statistics once the map data is complete', async () => {
     const message = await generate();
 
     expect(messages[0]).toEqual({
@@ -63,8 +61,7 @@ describe('generation worker', () => {
         { id: 'world-shape', name: 'World shape' },
         { id: 'noise', name: 'Noise' },
         { id: 'macro-region', name: 'Macro region' },
-        { id: 'landmass-layout', name: 'Landmass layout' },
-        { id: 'structure-character', name: 'Structure character' },
+        { id: 'geology', name: 'Geology' },
         { id: 'heightmap', name: 'Heightmap' },
       ],
     });
@@ -79,18 +76,16 @@ describe('generation worker', () => {
       'completed',
       'completed',
       'completed',
-      'completed',
     ]);
   });
 
-  it.skip('reuses cached rasters and reports the clean stages as skipped', async () => {
+  it('reuses cached rasters and reports the clean stages as skipped', async () => {
     const { createMapGenerator } = await import('../pipeline/pipeline-factory');
     const full = await createMapGenerator().generate(request.config, {});
     const cachedState = {
       worldMask: full.context.state.worldMask,
       noiseMap: full.context.state.noiseMap,
-      landmassLayout: full.context.state.landmassLayout,
-      structureZones: full.context.state.structureZones,
+      geologyPlan: full.context.state.geologyPlan,
     };
 
     const message = await generate({
@@ -108,10 +103,9 @@ describe('generation worker', () => {
       'completed',
       'skipped',
       'skipped',
-      'skipped',
     ]);
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
-      ['world-shape', 'noise', 'landmass-layout', 'structure-character', 'heightmap']
+      ['world-shape', 'noise', 'geology', 'heightmap']
     );
   });
 

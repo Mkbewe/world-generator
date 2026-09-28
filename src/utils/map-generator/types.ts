@@ -425,7 +425,12 @@ export interface MapState {
    * relative to the sea datum (`0`); cells outside the world mask are `0`.
    */
   heightmap?: Float32Array;
-  /** Produced by the heightmap stage. Shelf index per cell, `-1` outside any shelf. */
+  /**
+   * Produced by the heightmap stage. Diagnostic provenance index per cell, the
+   * position in `GeologyPlan.areas`; `PROVENANCE_OUTSIDE` outside every area.
+   */
+  provenanceMap?: Int16Array;
+  /** @deprecated Shelf index from the corridor model; replaced by `provenanceMap`. */
   shelfIndexMap?: Int16Array;
 }
 

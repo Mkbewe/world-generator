@@ -97,8 +97,7 @@ describe('MapRenderer', () => {
     vi.useRealTimers();
   });
 
-  // Skipped during the geology cutover; the layer order returns with the integration.
-  it.skip('prepares and presents layers in arrival order', async () => {
+  it('prepares and presents layers in arrival order', async () => {
     const { preview, onChange } = setup();
     const world = deferred();
     const noise = deferred();
@@ -125,9 +124,11 @@ describe('MapRenderer', () => {
       'world-shape',
       'noise',
       'macro-region',
+      'heightmap',
+      // The deprecated corridor layers have no pipeline stage, so the catalog
+      // sorts them after the canonical stages until GEO-06 removes them.
       'landmass-layout',
       'structure-character',
-      'heightmap',
     ]);
   });
 
