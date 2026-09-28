@@ -4,14 +4,12 @@ import {
   GlobeIcon,
   LayersIcon,
   MixerHorizontalIcon,
-  SewingPinIcon,
 } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
   GeneralForm,
   HeightmapForm,
-  LandmassForm,
   MacroRegionForm,
   NoiseForm,
   type WorldShape,
@@ -78,11 +76,6 @@ export function SettingsPanel({
       label: 'Macro regions',
       icon: <LayersIcon />,
       content: <MacroRegionForm />,
-    },
-    'landmass-layout': {
-      label: 'Landmasses',
-      icon: <SewingPinIcon />,
-      content: <LandmassForm />,
     },
     heightmap: {
       label: 'Heightmap',

@@ -149,6 +149,10 @@ export interface GeologicalStructure {
 }
 
 /** Every geological structure plus the shared shelves they reference. */
+/**
+ * @deprecated Replaced by {@link GeologyPlan}; kept until the corridor
+ * implementation is removed (GEO-06).
+ */
 export interface LandmassLayout {
   readonly structures: readonly GeologicalStructure[];
   readonly shelves: readonly ShelfDefinition[];
@@ -160,7 +164,10 @@ export type ShelfConfig = Omit<ShelfDefinition, 'id'>;
 /** Shape intents the layout can give a structure. */
 export type LandmassArchetype = 'round' | 'irregular' | 'elongated' | 'branched' | 'lagoon';
 
-/** Controls the landmass layout stage. */
+/**
+ * @deprecated Replaced by {@link GeologyConfig}; kept until the corridor
+ * implementation is removed (GEO-06).
+ */
 export interface LandmassConfig {
   /** Number of independently generated structures. */
   readonly count: number;
@@ -229,7 +236,10 @@ export interface CharacterZone {
   readonly values: TerrainProfile;
 }
 
-/** Controls the structure character stage. */
+/**
+ * @deprecated The relief lives in the geology area profiles; kept until the
+ * corridor implementation is removed (GEO-06).
+ */
 export interface StructureCharacterConfig {
   /**
    * Controls character variation; 0 keeps every structure single-character.
@@ -303,7 +313,10 @@ export interface GeologyPlacementProblem {
  * variant name. Lengths are either a normalized world share or explicit metres.
  *
  * Placement and profile draw from named streams derived from the area id, so
- * adding or reordering other entries never rerolls this one. Noise is sampled
+ * this entry keeps its own candidate draws however other entries are added or
+ * reordered, and changing relief never moves it. Automatic placement still
+ * spreads against neighbours in id order, so an entry added before this one
+ * may shift its pick among its own candidates. Noise is sampled
  * at world points: moving an area keeps its id and parameters but changes the
  * local detail it lands on.
  */
@@ -379,6 +392,11 @@ export interface MapConfig extends SeededWorldConfig {
   macroRegionDeformation?: MacroRegionDeformation;
   landmasses?: LandmassConfig;
   structureCharacter?: StructureCharacterConfig;
+  /**
+   * The geology area list; absent falls back to `DEFAULT_GEOLOGY_CONFIG` until
+   * the form always provides it.
+   */
+  geology?: GeologyConfig;
   heightmap?: HeightmapConfig;
 }
 
@@ -393,10 +411,15 @@ export interface MapState {
   noiseMap?: Float32Array;
   /** Produced by the macro-region stage. */
   macroRegionIdMap?: Uint8Array;
-  /** Produced by the landmass-layout stage. */
+  /** @deprecated Produced by the landmass-layout stage; replaced by `geologyPlan`. */
   landmassLayout?: LandmassLayout;
-  /** Produced by the structure-character stage. */
+  /** @deprecated Produced by the structure-character stage; replaced by `geologyPlan`. */
   structureZones?: readonly CharacterZone[];
+  /**
+   * Produced by the geology stage. Resolved areas with their profiles; the
+   * actual heights and islands belong to `HeightmapStage` and `LandOceanStage`.
+   */
+  geologyPlan?: GeologyPlan;
   /**
    * Produced by the heightmap stage. Land height and sea-floor depth in metres
    * relative to the sea datum (`0`); cells outside the world mask are `0`.

@@ -10,6 +10,7 @@ export const MAP_CONFIG_KEYS = [
   'macroRegionDeformation',
   'landmasses',
   'structureCharacter',
+  'geology',
   'heightmap',
 ] as const;
 
@@ -74,13 +75,20 @@ export const MACRO_REGION_STAGE = {
   conditionalReads: [{ key: 'noiseMap', when: usesNoiseMapForRegions }],
 } as const satisfies DeclaredStage;
 
+/**
+ * @deprecated Replaced by {@link GEOLOGY_STAGE}; kept until the corridor
+ * implementation is removed (GEO-06).
+ */
 export const LANDMASS_LAYOUT_STAGE = {
   id: 'landmass-layout',
   name: 'Landmass layout',
   configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses'],
 } as const satisfies DeclaredStage;
 
-/** The character reads the layout, so it inherits its shape and placement inputs. */
+/**
+ * @deprecated Replaced by {@link GEOLOGY_STAGE}; kept until the corridor
+ * implementation is removed (GEO-06).
+ */
 export const STRUCTURE_CHARACTER_STAGE = {
   id: 'structure-character',
   name: 'Structure character',
@@ -106,6 +114,17 @@ export const HEIGHTMAP_STAGE = {
 } as const satisfies DeclaredStage;
 
 /**
+ * The geology stage replaces the landmass layout and the structure character
+ * stages. The plan carries no raster and works in normalized shares, so the
+ * sample resolution never invalidates it — only seed, shape and the areas do.
+ */
+export const GEOLOGY_STAGE = {
+  id: 'geology',
+  name: 'Geology',
+  configKeys: ['world.seed', 'world.shape', 'geology'],
+} as const satisfies DeclaredStage;
+
+/**
  * Presentation order of the canonical pipeline: settings tabs, preview layers
  * and the layer catalog follow this list. Execution order is derived from the
  * stages' declared reads/writes (see pipeline-factory), so moving an entry
@@ -115,8 +134,7 @@ export const PIPELINE_STAGES = [
   WORLD_SHAPE_STAGE,
   NOISE_STAGE,
   MACRO_REGION_STAGE,
-  LANDMASS_LAYOUT_STAGE,
-  STRUCTURE_CHARACTER_STAGE,
+  GEOLOGY_STAGE,
   HEIGHTMAP_STAGE,
 ] as const;
 

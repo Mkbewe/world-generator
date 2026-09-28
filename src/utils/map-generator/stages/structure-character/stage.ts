@@ -10,7 +10,7 @@ import { buildZones } from './zones';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { type MapStage } from '../../pipeline/stage';
-import { type PipelineStageId, STRUCTURE_CHARACTER_STAGE } from '../../pipeline/stage-definitions';
+import { STRUCTURE_CHARACTER_STAGE } from '../../pipeline/stage-definitions';
 import type {
   CharacterZone,
   MapConfig,
@@ -29,10 +29,10 @@ import type {
 export class StructureCharacterStage implements MapStage<
   MapConfig,
   MapState,
-  PipelineStageId,
+  string,
   { structureZones: CharacterZone[] }
 > {
-  readonly id: PipelineStageId = STRUCTURE_CHARACTER_STAGE.id;
+  readonly id = STRUCTURE_CHARACTER_STAGE.id;
   readonly name = STRUCTURE_CHARACTER_STAGE.name;
   readonly configKeys = STRUCTURE_CHARACTER_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['landmassLayout'];
@@ -40,7 +40,7 @@ export class StructureCharacterStage implements MapStage<
   readonly progressStep = 0.1;
 
   async execute(
-    context: MapContext<MapConfig, MapState, PipelineStageId>,
+    context: MapContext<MapConfig, MapState, string>,
     signal: AbortSignal,
     report: StageProgressReporter
   ): Promise<{ structureZones: CharacterZone[] }> {
@@ -77,7 +77,7 @@ export class StructureCharacterStage implements MapStage<
   }
 
   summarize(
-    _context: MapContext<MapConfig, MapState, PipelineStageId>,
+    _context: MapContext<MapConfig, MapState, string>,
     data: { structureZones: CharacterZone[] }
   ): StageMetrics | undefined {
     return {

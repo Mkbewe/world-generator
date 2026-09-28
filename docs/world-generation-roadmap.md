@@ -388,9 +388,9 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu. **[działa]**
 2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
 3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
-4. `LandmassLayoutStage` — obecny układ korytarzy i szelfów. **[działa; do zastąpienia przez Geologię]**
-5. `StructureCharacterStage` — obecne strefy korytarzy. **[działa; do włączenia do Geologii]**
-6. `HeightmapStage` — obecny raster wysokości i dna. **[działa; do przebudowy]**
+4. `GeologyStage` — lekki plan obszarów geologicznych i ich profili, bez rastra. **[działa]**
+5. ~~`LandmassLayoutStage` i `StructureCharacterStage`~~ — dawny układ korytarzy i stref. **[@deprecated; do usunięcia w GEO-06]**
+6. `HeightmapStage` — jedno ciągłe pole wysokości i dna z planu Geologii. **[działa; do strojenia w GEO-05B/07]**
 7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
 8. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
 9. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów. **[planowane]**

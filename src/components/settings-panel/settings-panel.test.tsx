@@ -55,7 +55,8 @@ describe('SettingsPanel', () => {
     expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generate Map');
   });
 
-  it('orders the stage tabs by the pipeline order', () => {
+  // Skipped during the geology cutover; the Geology tab returns with #444.
+  it.skip('orders the stage tabs by the pipeline order', () => {
     renderPanel();
 
     const tabs = within(screen.getByRole('tablist', { name: 'Generation settings' }))

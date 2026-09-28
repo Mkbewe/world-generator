@@ -1,18 +1,14 @@
 import { containsWorld, type WorldShape } from '../../../world-shape';
+import { isTerrainCharacter, isTerrainProfile } from '../../terrain-profile';
 import {
   type CharacterZone,
   type LandmassLayout,
-  TERRAIN_CHARACTERS,
-  type TerrainCharacter,
   type TerrainProfile,
   type ZoneGeometry,
 } from '../../types';
 import { structurePaths } from '../landmass';
 
-/** Whether unknown data is a primary terrain character. */
-export function isTerrainCharacter(value: unknown): value is TerrainCharacter {
-  return typeof value === 'string' && (TERRAIN_CHARACTERS as readonly string[]).includes(value);
-}
+export { isTerrainCharacter };
 
 /** Whether unknown data is a zone geometry of a known kind. */
 export function isZoneGeometry(value: unknown): value is ZoneGeometry {
@@ -48,25 +44,13 @@ export function isCharacterZone(value: unknown): value is CharacterZone {
   );
 }
 
-/** Whether unknown data is a zone value set with normalized values. */
+/**
+ * Whether unknown data is a zone value set with normalized values.
+ * @deprecated Use `isTerrainProfile` from `../../terrain-profile` instead.
+ */
 export function isZoneValues(value: unknown): value is TerrainProfile {
-  if (!isRecord(value)) {
-    return false;
-  }
-  return VALUE_FIELDS.every(field => isNormalized(value[field]));
+  return isTerrainProfile(value);
 }
-
-/** The eight fields every zone value set must carry, in a fixed order. */
-const VALUE_FIELDS = [
-  'elevation',
-  'roughness',
-  'mountainStrength',
-  'hillStrength',
-  'plateauStrength',
-  'lakePotential',
-  'erosionStrength',
-  'coastalCliffStrength',
-] as const;
 
 /** Whether unknown data is the zone list of the character stage. */
 export function isStructureZones(value: unknown): value is readonly CharacterZone[] {

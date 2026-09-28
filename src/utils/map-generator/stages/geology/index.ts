@@ -7,6 +7,8 @@ export {
   normalizeDirection,
 } from './presets';
 export type { GeologicalAreaPreset, GeologicalAreaPresetId } from './presets';
+export { GeologyStage } from './stage';
+export { GeologyPlacementError, buildGeologyPlan, compareAreaIds } from './plan';
 export {
   isGeologicalAreaConfig,
   isGeologyConfig,
@@ -14,7 +16,7 @@ export {
   validateGeologyConfig,
   validateGeologyPlan,
 } from './geology-check';
-export { dominantAreaId, mergeContributions } from './merge';
+export { dominantAreaId, mergeContributions, unionHeight } from './merge';
 export type { FieldContribution } from './merge';
 export { createProvenanceIndex } from './provenance';
 export {
