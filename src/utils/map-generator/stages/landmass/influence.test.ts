@@ -1,5 +1,5 @@
 import type { PlaceableStructure } from './shape/draft';
-import { mainChainNodes } from './influence';
+import { mainChainNodes, nearestStructure, type StructureInfluence } from './influence';
 
 function structure(mainNodeCount?: number): PlaceableStructure {
   return {
@@ -20,5 +20,37 @@ describe('mainChainNodes', () => {
 
   it('falls back to every node when the count is unknown', () => {
     expect(mainChainNodes(structure())).toHaveLength(3);
+  });
+});
+
+describe('nearestStructure', () => {
+  it('follows the closest influence boundary when nearby arms have different radii', () => {
+    const influence: StructureInfluence = {
+      id: 'branched',
+      bounds: { minX: 0, maxX: 1, minY: 0, maxY: 1 },
+      segments: [
+        {
+          from: { x: 0.4, y: 0.5 },
+          to: { x: 0.4, y: 0.5 },
+          fromRadius: 0.03,
+          toRadius: 0.03,
+        },
+        {
+          from: { x: 0.6, y: 0.5 },
+          to: { x: 0.6, y: 0.5 },
+          fromRadius: 0.11,
+          toRadius: 0.11,
+        },
+      ],
+    };
+
+    const left = nearestStructure([influence], { x: 0.499, y: 0.5 });
+    const right = nearestStructure([influence], { x: 0.501, y: 0.5 });
+
+    expect(left?.radius).toBe(0.11);
+    expect(right?.radius).toBe(0.11);
+    expect(
+      left && right && Math.abs(left.distance - left.radius - (right.distance - right.radius))
+    ).toBeLessThan(0.003);
   });
 });

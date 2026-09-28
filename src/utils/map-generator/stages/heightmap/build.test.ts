@@ -71,6 +71,32 @@ function at(field: Float32Array | Int16Array, x: number, y: number): number {
   return field[y * SPACE.sampleWidth + x];
 }
 
+function overlapStructure(id: string, x: number, shelfId: string): GeologicalStructure {
+  return {
+    id,
+    archetype: 'round',
+    nodes: [{ id: `${id}-n1`, position: { x, y: 0.5 }, radius: 0.05 }],
+    edges: [],
+    shelfId,
+  };
+}
+
+function overlapField(structures: GeologicalStructure[], shelves: LandmassLayout['shelves']) {
+  return buildHeightmap({
+    layout: { structures, shelves },
+    zones: structures.map(structure => ({
+      ...ZONES[0],
+      id: `${structure.id}-zone-1`,
+      structureId: structure.id,
+    })),
+    noiseMap: noiseMap(),
+    worldMask: MASK,
+    config: CONFIG,
+    worldSizeMeters: 2000,
+    space: SPACE,
+  });
+}
+
 describe('buildHeightmap', () => {
   it('raises land along the axis and keeps all values finite', () => {
     const { heightmap } = build();
@@ -198,5 +224,38 @@ describe('buildHeightmap', () => {
     const seam = at(field.heightmap, 21, 30);
     expect(at(field.heightmap, 15, 30)).toBeGreaterThan(seam);
     expect(seam).toBeGreaterThan(0);
+  });
+
+  it('joins overlapping shelves independently of structure order', () => {
+    const left = overlapStructure('left', 0.35, 'shelf-1');
+    const right = overlapStructure('right', 0.65, 'shelf-1');
+    const shelves = [{ ...LAYOUT.shelves[0], width: 0.2 }];
+
+    const forward = overlapField([left, right], shelves);
+    const reverse = overlapField([right, left], shelves);
+
+    expect(forward.heightmap).toEqual(reverse.heightmap);
+    expect(forward.shelfIndexMap).toEqual(reverse.shelfIndexMap);
+    expect(at(forward.shelfIndexMap, 32, 30)).toBe(0);
+    const single = overlapField([left], shelves);
+    expect(at(forward.heightmap, 30, 30)).toBeGreaterThan(at(single.heightmap, 30, 30));
+    // The shared field has no dark trough or sharp crease at the meeting line.
+    expect(Math.abs(at(forward.heightmap, 29, 30) - at(forward.heightmap, 30, 30))).toBeLessThan(1);
+  });
+
+  it('assigns an overlap to the shallower of two distinct shelves', () => {
+    const left = overlapStructure('left', 0.35, 'shelf-1');
+    const right = overlapStructure('right', 0.65, 'shelf-2');
+    const shelves = [
+      { ...LAYOUT.shelves[0], width: 0.2 },
+      { ...LAYOUT.shelves[0], id: 'shelf-2', width: 0.2, targetDepth: 30 },
+    ];
+
+    const forward = overlapField([left, right], shelves);
+    const reverse = overlapField([right, left], shelves);
+
+    expect(forward.heightmap).toEqual(reverse.heightmap);
+    expect(forward.shelfIndexMap).toEqual(reverse.shelfIndexMap);
+    expect(at(forward.shelfIndexMap, 32, 30)).toBe(1);
   });
 });

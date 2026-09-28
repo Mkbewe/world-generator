@@ -5,6 +5,7 @@ import {
   MAX_LAND_AMPLITUDE_METERS,
   MIN_LAND_AMPLITUDE_METERS,
   oceanHeightMeters,
+  shelfDepthMeters,
 } from './fields';
 import type { TerrainProfile } from '../../types';
 
@@ -62,5 +63,14 @@ describe('landAmplitudeMeters', () => {
 describe('oceanHeightMeters', () => {
   it('is the flat sea floor below the datum', () => {
     expect(oceanHeightMeters(OCEAN_DEPTH_METERS)).toBe(-OCEAN_DEPTH_METERS);
+  });
+});
+
+describe('shelfDepthMeters', () => {
+  it('meets the deep-ocean floor continuously at the outer shelf edge', () => {
+    const depth = shelfDepthMeters(0.2499999, 0.1, 0.15, 60, 0.5);
+
+    expect(depth).toBeCloseTo(OCEAN_DEPTH_METERS, 2);
+    expect(shelfDepthMeters(0.25, 0.1, 0.15, 60, 0.5)).toBeUndefined();
   });
 });

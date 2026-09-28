@@ -49,12 +49,7 @@ export interface HeightmapField {
   readonly shelfIndexMap: Int16Array;
 }
 
-/**
- * Builds the heightfield per cell, in metres: land that tapers to the sea datum
- * at the coast, a shelf band that falls to the open ocean, and the flat ocean
- * floor everywhere else. Cells outside the world mask stay at the datum and
- * outside every shelf. The map is read top-down.
- */
+/** Builds land and one smoothly combined seabed field in metres. */
 export function buildHeightmap(input: HeightmapFieldInput): HeightmapField {
   const { layout, zones, noiseMap, worldMask, config, worldSizeMeters, space, signal, report } =
     input;
@@ -75,12 +70,9 @@ export function buildHeightmap(input: HeightmapFieldInput): HeightmapField {
     const structureZones = zonesByStructure.get(structure.id);
     const entry = shelvesById.get(structure.shelfId);
     if (structureZones && structureZones.length > 0 && entry) {
-      fillStructure(
+      fillLand(
         heightmap,
-        shelfIndexMap,
         structure,
-        entry.shelf,
-        entry.index,
         structureZones,
         noiseAt,
         amplitude,
@@ -91,20 +83,28 @@ export function buildHeightmap(input: HeightmapFieldInput): HeightmapField {
       );
     }
     done++;
-    report?.(done / Math.max(1, layout.structures.length));
+    report?.(done / Math.max(1, layout.structures.length) / 2);
   }
 
+  fillShelves(
+    heightmap,
+    shelfIndexMap,
+    layout,
+    shelvesById,
+    zonesByStructure,
+    worldMask,
+    space,
+    signal,
+    report
+  );
   clearOutsideWorld(heightmap, shelfIndexMap, worldMask);
   return { heightmap, shelfIndexMap };
 }
 
-/** Runs one structure's cells only, bounded by its influence box plus its shelf. */
-function fillStructure(
+/** Raises land inside a structure's corridor. */
+function fillLand(
   heightmap: Float32Array,
-  shelfIndexMap: Int16Array,
   structure: GeologicalStructure,
-  shelf: ShelfDefinition,
-  shelfIndex: number,
   zones: readonly CharacterZone[],
   noiseAt: (point: WorldPoint) => number,
   amplitude: number,
@@ -116,18 +116,12 @@ function fillStructure(
   const bounds = structureBounds(structure);
   const influence: StructureInfluence = {
     id: structure.id,
-    // The shelf reaches past the structure bounds, so the query box grows by it.
-    bounds: {
-      minX: bounds.minX - shelf.width,
-      maxX: bounds.maxX + shelf.width,
-      minY: bounds.minY - shelf.width,
-      maxY: bounds.maxY + shelf.width,
-    },
+    bounds,
     segments: structureSegments(structure),
   };
   const sampler = createZoneSampler(structure);
-  const from = space.normalizedToCell(bounds.minX - shelf.width, bounds.minY - shelf.width);
-  const to = space.normalizedToCell(bounds.maxX + shelf.width, bounds.maxY + shelf.width);
+  const from = space.normalizedToCell(bounds.minX, bounds.minY);
+  const to = space.normalizedToCell(bounds.maxX, bounds.maxY);
 
   for (let y = from.y; y <= to.y; y++) {
     if (signal?.aborted) {
@@ -145,25 +139,6 @@ function fillStructure(
       }
 
       if (probe.distance > probe.radius) {
-        // First shelf wins, so the depth and the index always agree on a cell
-        // two shelves meet on.
-        if (shelfIndexMap[index] !== OUTSIDE_SHELF) {
-          continue;
-        }
-        const shelfDepth = shelfDepthMeters(
-          probe.distance,
-          probe.radius,
-          shelf.width,
-          shelf.targetDepth,
-          shelf.falloff
-        );
-        if (shelfDepth === undefined) {
-          continue;
-        }
-        // The shelf is shallow water: it lifts the open-ocean floor towards the
-        // coast.
-        heightmap[index] = Math.max(heightmap[index], -shelfDepth);
-        shelfIndexMap[index] = shelfIndex;
         continue;
       }
 
@@ -180,6 +155,120 @@ function fillStructure(
       // between two influence boxes never cuts a ridge down.
       heightmap[index] = Math.max(heightmap[index], height);
     }
+  }
+}
+
+interface ShelfPass {
+  readonly shelf: ShelfDefinition;
+  readonly shelfIndex: number;
+  readonly influences: readonly StructureInfluence[];
+  readonly from: { readonly x: number; readonly y: number };
+  readonly to: { readonly x: number; readonly y: number };
+}
+
+/** One seabed pass combines all overlapping structures before writing a row. */
+function fillShelves(
+  heightmap: Float32Array,
+  shelfIndexMap: Int16Array,
+  layout: LandmassLayout,
+  shelvesById: ReadonlyMap<string, { shelf: ShelfDefinition; index: number }>,
+  zonesByStructure: ReadonlyMap<string, readonly CharacterZone[]>,
+  worldMask: Uint8Array,
+  space: WorldSpace,
+  signal?: AbortSignal,
+  report?: (progress: number) => void
+): void {
+  const passes: ShelfPass[] = [];
+  for (const structure of layout.structures) {
+    const entry = shelvesById.get(structure.shelfId);
+    if (!entry || !zonesByStructure.get(structure.id)?.length) {
+      continue;
+    }
+    const { shelf, index } = entry;
+    const bounds = structureBounds(structure);
+    const expanded = {
+      minX: bounds.minX - shelf.width,
+      maxX: bounds.maxX + shelf.width,
+      minY: bounds.minY - shelf.width,
+      maxY: bounds.maxY + shelf.width,
+    };
+    passes.push({
+      shelf,
+      shelfIndex: index,
+      influences: [{ id: structure.id, bounds: expanded, segments: structureSegments(structure) }],
+      from: space.normalizedToCell(expanded.minX, expanded.minY),
+      to: space.normalizedToCell(expanded.maxX, expanded.maxY),
+    });
+  }
+
+  const { sampleWidth, sampleHeight } = space;
+  const oceanFloor = oceanHeightMeters(OCEAN_DEPTH_METERS);
+  const riseSquaredSum = new Float64Array(sampleWidth);
+  const bestHeight = new Float32Array(sampleWidth);
+  const owner = new Int16Array(sampleWidth);
+
+  for (let y = 0; y < sampleHeight; y++) {
+    if (signal?.aborted) {
+      throw new GenerationCancelledError();
+    }
+    riseSquaredSum.fill(0);
+    bestHeight.fill(-Infinity);
+    owner.fill(OUTSIDE_SHELF);
+
+    for (const pass of passes) {
+      if (y < pass.from.y || y > pass.to.y) {
+        continue;
+      }
+      for (let x = pass.from.x; x <= pass.to.x; x++) {
+        const index = y * sampleWidth + x;
+        if (worldMask[index] === 0 || heightmap[index] >= 0) {
+          continue;
+        }
+        const point = space.cellToNormalized(x, y);
+        const probe = nearestStructure(pass.influences, point);
+        if (!probe) {
+          continue;
+        }
+        const depth = shelfDepthMeters(
+          probe.distance,
+          probe.radius,
+          pass.shelf.width,
+          pass.shelf.targetDepth,
+          pass.shelf.falloff
+        );
+        if (depth === undefined) {
+          continue;
+        }
+        const candidate = Math.fround(-depth);
+        const rise = candidate - oceanFloor;
+        if (rise <= 0) {
+          continue;
+        }
+        // The quadratic union keeps a single shelf unchanged and lifts shared
+        // water instead of making a dark trough between two shelf profiles.
+        riseSquaredSum[x] += rise * rise;
+        if (
+          candidate > bestHeight[x] ||
+          (candidate === bestHeight[x] && pass.shelfIndex < owner[x])
+        ) {
+          bestHeight[x] = candidate;
+          owner[x] = pass.shelfIndex;
+        }
+      }
+    }
+
+    for (let x = 0; x < sampleWidth; x++) {
+      if (riseSquaredSum[x] <= 0) {
+        continue;
+      }
+      const height = Math.fround(Math.min(-1, oceanFloor + Math.sqrt(riseSquaredSum[x])));
+      if (height > oceanFloor) {
+        const index = y * sampleWidth + x;
+        heightmap[index] = height;
+        shelfIndexMap[index] = owner[x];
+      }
+    }
+    report?.(0.5 + ((y + 1) / sampleHeight) * 0.5);
   }
 }
 
