@@ -1,5 +1,5 @@
 import { createMapGenerator } from './pipeline-factory';
-import { DOMAIN_OUTPUT_KEYS, RASTER_OUTPUT_KEYS } from './stage-outputs';
+import { DOMAIN_OUTPUT_KEYS, PERSISTENT_RASTER_TYPES, RASTER_OUTPUT_KEYS } from './stage-outputs';
 import type { MapConfig, MapState } from '../types';
 
 describe('createMapGenerator', () => {
@@ -88,6 +88,29 @@ describe('createMapGenerator', () => {
         configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
       },
     ]);
+  });
+
+  it('matches every persistent raster against its declared constructor', async () => {
+    const pipeline = createMapGenerator();
+    const config: MapConfig = {
+      world: {
+        dimensions: { widthMeters: 5, heightMeters: 5, sampleWidth: 5, sampleHeight: 5 },
+        seed: 123,
+        shape: 'disc',
+      },
+      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
+    };
+    const constructors = {
+      uint8: Uint8Array,
+      float32: Float32Array,
+      int16: Int16Array,
+    } as const;
+
+    const result = await pipeline.generate(config, {});
+
+    for (const key of RASTER_OUTPUT_KEYS) {
+      expect(result.context.state[key]).toBeInstanceOf(constructors[PERSISTENT_RASTER_TYPES[key]]);
+    }
   });
 
   it('classifies every stage write as a raster or domain output', () => {

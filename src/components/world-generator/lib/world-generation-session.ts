@@ -9,12 +9,12 @@ import {
   runGeneration as runGenerationInWorker,
   selectDomainOutputs,
   selectMapInfo,
+  selectPersistentRasters,
 } from '../../../utils/map-generator';
 import {
-  hasCurrentRasterSources,
+  hasCurrentRasterOutputs,
   type LayerDataRecord,
   type MapRasters,
-  selectRasters,
 } from '../../../utils/map-layers';
 import {
   type GeneratedMapSnapshot,
@@ -88,10 +88,10 @@ export class WorldGenerationSession {
   ): Promise<GenerationStatistics | undefined> {
     this.cancel();
     const saved = mapRepository.get();
-    if (saved && !hasCurrentRasterSources(saved.layers)) {
-      // A snapshot in a format this build no longer understands (e.g. the old
-      // landmass id map) is dropped with its regeneration baseline instead of
-      // being migrated or re-saved; the run starts from scratch.
+    if (saved && !hasCurrentRasterOutputs(saved.layers)) {
+      // A snapshot with keys outside the persistent output set is dropped with
+      // its regeneration baseline instead of being migrated or re-saved; the
+      // run starts from scratch.
       this.reset();
     }
     const generation = new AbortController();
@@ -147,9 +147,9 @@ export class WorldGenerationSession {
       const result = await this.runGeneration(config, {
         signal,
         reuse: plan,
-        onStages: stages => {
+        onStages: (stages, skippedStageIds) => {
           this.regeneration.announce(stages);
-          progress = new ProgressTracker(stages, onProgress, this.regeneration.reusedStageIds);
+          progress = new ProgressTracker(stages, onProgress, skippedStageIds);
           progress.start();
         },
         onEvent: event => {
@@ -182,13 +182,13 @@ export class WorldGenerationSession {
     }
   }
 
-  /** Collects catalog rasters and sends them to the attached preview when there is one. */
+  /** Collects persistent rasters and sends the preview subset when there is one. */
   private receiveStage(data: LayerDataRecord): void {
     const domain = selectDomainOutputs(data);
     if (Object.keys(domain).length > 0) {
       this.mergeInfo(domain);
     }
-    const rasters = selectRasters(data);
+    const rasters = selectPersistentRasters(data);
     Object.assign(this.layers, rasters);
     if (this.followRun) {
       const displayed = layerRegistry.presentIn(rasters).at(-1);

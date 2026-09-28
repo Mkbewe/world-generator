@@ -2,7 +2,11 @@ export { createMapGenerator } from './pipeline/pipeline-factory';
 export { createMacroRegionClassifier } from './stages/macro-region';
 export type { MacroRegionClassifierInput } from './stages/macro-region';
 export { selectMapInfo } from './info-definitions';
-export { selectDomainOutputs } from './pipeline/stage-outputs';
+export {
+  PERSISTENT_RASTER_TYPES,
+  selectDomainOutputs,
+  selectPersistentRasters,
+} from './pipeline/stage-outputs';
 export { createWorldSpace, planarDistance, spaceOf } from './space';
 export type { SampleGrid, WorldSpace } from './space';
 export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region';

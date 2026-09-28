@@ -10,7 +10,7 @@ import type { GenerationEvent, MapConfig } from '../types';
 
 export interface GenerationWorkerOptions {
   signal?: AbortSignal;
-  onStages?: (stages: readonly StageInfo[]) => void;
+  onStages?: (stages: readonly StageInfo[], skippedStageIds: readonly string[]) => void;
   onEvent?: (event: GenerationEvent) => void;
   /** Dirty stage ids plus the cached outputs that let the worker skip the rest. */
   reuse: PipelineWorkerReuse;
@@ -50,7 +50,7 @@ export const runGeneration: RunGeneration = (config, options) =>
       }
       const message = event.data;
       if (message.type === 'stages') {
-        onStages?.(message.stages);
+        onStages?.(message.stages, message.skippedStageIds);
         return;
       }
       if (message.type === 'result') {

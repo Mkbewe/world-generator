@@ -3,6 +3,7 @@ import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
+import type { MapState } from '../types';
 
 const request: PipelineWorkerGenerateRequest = {
   type: 'generate',
@@ -64,6 +65,7 @@ describe('generation worker', () => {
         { id: 'geology', name: 'Geology' },
         { id: 'heightmap', name: 'Heightmap' },
       ],
+      skippedStageIds: [],
     });
     expect(message?.type).toBe('result');
     if (message?.type !== 'result') {
@@ -85,7 +87,10 @@ describe('generation worker', () => {
     const cachedState = {
       worldMask: full.context.state.worldMask,
       noiseMap: full.context.state.noiseMap,
+      macroRegionIdMap: full.context.state.macroRegionIdMap,
       geologyPlan: full.context.state.geologyPlan,
+      heightmap: full.context.state.heightmap,
+      provenanceMap: full.context.state.provenanceMap,
     };
 
     const message = await generate({
@@ -107,6 +112,52 @@ describe('generation worker', () => {
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
       ['world-shape', 'noise', 'geology', 'heightmap']
     );
+  });
+
+  it('reruns a clean stage whose declared writes are missing from cache', async () => {
+    const { createMapGenerator } = await import('../pipeline/pipeline-factory');
+    const full = await createMapGenerator().generate(request.config, {});
+    const cachedState = { ...full.context.state };
+    delete cachedState.noiseMap;
+
+    const message = await generate({ ...request, reuse: { dirtyStageIds: [], cachedState } });
+
+    expect(message?.type).toBe('result');
+    if (message?.type !== 'result') {
+      throw new Error('Expected a generation result.');
+    }
+    // Only the incomplete stage runs; the rule follows declared writes alone.
+    expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
+      'skipped',
+      'completed',
+      'skipped',
+      'skipped',
+      'skipped',
+    ]);
+  });
+
+  it('reruns a clean stage whose cached write has the wrong type', async () => {
+    const { createMapGenerator } = await import('../pipeline/pipeline-factory');
+    const full = await createMapGenerator().generate(request.config, {});
+    const cachedState: MapState = {
+      ...full.context.state,
+      // @ts-expect-error the wrong constructor is the case under test
+      noiseMap: new Uint8Array(4),
+    };
+
+    const message = await generate({ ...request, reuse: { dirtyStageIds: [], cachedState } });
+
+    expect(message?.type).toBe('result');
+    if (message?.type !== 'result') {
+      throw new Error('Expected a generation result.');
+    }
+    expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
+      'skipped',
+      'completed',
+      'skipped',
+      'skipped',
+      'skipped',
+    ]);
   });
 
   it.each(['missing', 'wrong size'] as const)('rejects %s final map data', async kind => {

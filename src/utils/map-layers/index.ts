@@ -1,5 +1,5 @@
 export {
-  hasCurrentRasterSources,
+  hasCurrentRasterOutputs,
   LAYER_CATALOG,
   RASTER_CATALOG,
   selectRasters,

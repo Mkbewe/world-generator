@@ -1,4 +1,4 @@
-import { hasCurrentRasterSources, LAYER_CATALOG, RASTER_CATALOG } from './catalog';
+import { hasCurrentRasterOutputs, LAYER_CATALOG, RASTER_CATALOG } from './catalog';
 import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
 import { RASTER_OUTPUT_KEYS } from '../../map-generator/pipeline/stage-outputs';
 
@@ -12,11 +12,13 @@ describe('LAYER_CATALOG', () => {
     expect(ranks).toEqual([...ranks].sort((left, right) => left - right));
   });
 
-  it('accepts only raster keys of the current catalog', () => {
-    expect(hasCurrentRasterSources({})).toBe(true);
-    expect(hasCurrentRasterSources({ worldMask: new Uint8Array(1) })).toBe(true);
+  it('accepts persistent raster keys with no preview layer', () => {
+    expect(hasCurrentRasterOutputs({})).toBe(true);
+    expect(hasCurrentRasterOutputs({ worldMask: new Uint8Array(1) })).toBe(true);
+    // Provenance has no catalog layer yet stays a current output.
+    expect(hasCurrentRasterOutputs({ provenanceMap: new Int16Array(1) })).toBe(true);
     // A key from an older snapshot format makes the whole record stale.
-    expect(hasCurrentRasterSources({ landmassIdMap: new Uint8Array(1) })).toBe(false);
+    expect(hasCurrentRasterOutputs({ landmassIdMap: new Uint8Array(1) })).toBe(false);
   });
 
   it('keeps the vector layer out of the raster sources', () => {

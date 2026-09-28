@@ -20,6 +20,8 @@ export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;
 export interface PipelineWorkerStagesResponse {
   type: 'stages';
   stages: readonly StageInfo[];
+  /** Stages this run reuses from `cachedState` instead of executing. */
+  skippedStageIds: readonly PipelineStageId[];
 }
 
 export interface PipelineWorkerGenerationResult {
