@@ -37,7 +37,7 @@ async function generate(source: MapConfig = config()) {
     new LandmassLayoutStage(),
     new StructureCharacterStage(),
     new HeightmapStage(),
-  ]).generate(source, { worldMask: WORLD_MASK, noiseMap: new Float32Array(32 * 32) });
+  ]).generate(source, { worldMask: WORLD_MASK });
 }
 
 const EMPTY_LAYOUT: LandmassLayout = { structures: [], shelves: [] };
@@ -90,7 +90,6 @@ describe('HeightmapStage', () => {
         worldMask: WORLD_MASK,
         landmassLayout: EMPTY_LAYOUT,
         structureZones: [],
-        noiseMap: new Float32Array(32 * 32),
       }
     );
 
@@ -106,9 +105,7 @@ describe('HeightmapStage', () => {
   it('requires a landmass layout', async () => {
     const pipeline = new MapGenerator<MapConfig, MapState>([new HeightmapStage()]);
 
-    await expect(
-      pipeline.generate(config(), { worldMask: WORLD_MASK, noiseMap: new Float32Array(32 * 32) })
-    ).rejects.toMatchObject({
+    await expect(pipeline.generate(config(), { worldMask: WORLD_MASK })).rejects.toMatchObject({
       cause: { message: expect.stringContaining('landmassLayout') },
     });
   });

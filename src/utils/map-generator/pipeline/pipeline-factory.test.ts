@@ -97,13 +97,12 @@ describe('createMapGenerator', () => {
       },
       {
         id: 'heightmap',
-        reads: ['worldMask', 'noiseMap', 'landmassLayout', 'structureZones'],
+        reads: ['worldMask', 'landmassLayout', 'structureZones'],
         writes: ['heightmap', 'shelfIndexMap'],
         configKeys: [
           'world.seed',
           'world.shape',
           'world.dimensions',
-          'noise',
           'landmasses',
           'structureCharacter',
           'heightmap',

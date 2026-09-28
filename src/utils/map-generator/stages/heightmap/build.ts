@@ -1,3 +1,4 @@
+import type { HeightmapNoiseBands } from './bands';
 import { OCEAN_DEPTH_METERS } from './defaults';
 import {
   coastNoiseMeters,
@@ -32,7 +33,7 @@ export const OUTSIDE_SHELF = -1;
 export interface HeightmapFieldInput {
   readonly layout: LandmassLayout;
   readonly zones: readonly CharacterZone[];
-  readonly noiseMap: Float32Array;
+  readonly bands: HeightmapNoiseBands;
   readonly worldMask: Uint8Array;
   readonly config: HeightmapConfig;
   readonly worldSizeMeters: number;
@@ -51,15 +52,13 @@ export interface HeightmapField {
 
 /** Builds land and one smoothly combined seabed field in metres. */
 export function buildHeightmap(input: HeightmapFieldInput): HeightmapField {
-  const { layout, zones, noiseMap, worldMask, config, worldSizeMeters, space, signal, report } =
-    input;
+  const { layout, zones, bands, worldMask, config, worldSizeMeters, space, signal, report } = input;
   const heightmap = new Float32Array(space.sampleWidth * space.sampleHeight);
   heightmap.fill(oceanHeightMeters(OCEAN_DEPTH_METERS));
   const shelfIndexMap = new Int16Array(space.sampleWidth * space.sampleHeight).fill(OUTSIDE_SHELF);
 
   const amplitude = landAmplitudeMeters(worldSizeMeters, config.relief);
   const zonesByStructure = groupZones(zones);
-  const noiseAt = createNoiseReader(noiseMap, space);
   const shelvesById = new Map(layout.shelves.map((shelf, index) => [shelf.id, { shelf, index }]));
   let done = 0;
 
@@ -74,7 +73,7 @@ export function buildHeightmap(input: HeightmapFieldInput): HeightmapField {
         heightmap,
         structure,
         structureZones,
-        noiseAt,
+        bands,
         amplitude,
         config,
         worldMask,
@@ -106,7 +105,7 @@ function fillLand(
   heightmap: Float32Array,
   structure: GeologicalStructure,
   zones: readonly CharacterZone[],
-  noiseAt: (point: WorldPoint) => number,
+  bands: HeightmapNoiseBands,
   amplitude: number,
   config: HeightmapConfig,
   worldMask: Uint8Array,
@@ -149,7 +148,7 @@ function fillLand(
         t,
         point
       );
-      const noise = warpedNoise(point, noiseAt, config.featureScale);
+      const noise = warpedNoise(point, bands, config.featureScale);
       const height = Math.max(0, shape * amplitude + coastNoiseMeters(noise, shape, amplitude));
       // Structures of one group may touch; the higher ground wins, so the seam
       // between two influence boxes never cuts a ridge down.
@@ -286,28 +285,16 @@ function clearOutsideWorld(
   }
 }
 
-/** Nearest-cell reader of the shared noise raster. */
-function createNoiseReader(
-  noiseMap: Float32Array,
-  space: WorldSpace
-): (point: WorldPoint) => number {
-  return point => {
-    const cell = space.normalizedToCell(point.x, point.y);
-    return noiseMap[cell.y * space.sampleWidth + cell.x];
-  };
-}
-
-/** Shared noise read at a point bent by the domain warp, so the coast wobbles. */
-function warpedNoise(
-  point: WorldPoint,
-  noiseAt: (point: WorldPoint) => number,
-  featureScale: number
-): number {
+/**
+ * Coast noise at a point: the medium band bends the domain, the fine band adds
+ * the detail. The large band joins the field rewrite (GEO-04).
+ */
+function warpedNoise(point: WorldPoint, bands: HeightmapNoiseBands, featureScale: number): number {
   const warp = {
-    x: noiseAt(point) - 0.5,
-    y: noiseAt({ x: point.x, y: Math.min(1, point.y + 0.01) }) - 0.5,
+    x: bands.medium(point) - 0.5,
+    y: bands.medium({ x: point.x, y: Math.min(1, point.y + 0.01) }) - 0.5,
   };
-  return noiseAt(warpPoint(point, { x: warp.x * 2, y: warp.y * 2 }, featureScale));
+  return bands.fine(warpPoint(point, { x: warp.x * 2, y: warp.y * 2 }, featureScale));
 }
 
 function groupZones(zones: readonly CharacterZone[]): Map<string, CharacterZone[]> {
