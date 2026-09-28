@@ -1,5 +1,16 @@
 # World generation roadmap
 
+> **Aktualizacja kierunku (2026-09-28):** obecne sekcje o
+> `LandmassLayoutStage`, `StructureCharacterStage`, korytarzach i wspólnym
+> `noiseMap` opisują działającą implementację, która zostanie zastąpiona.
+> Docelowe decyzje są w [planie generowania wysp](island-generation-final-plan-2026-09-28.md),
+> a kolejność zmian w [planie wdrożenia](geology-island-generation-implementation-plan-2026-09-28.md).
+> Kontrakty kodu i odbiór opisuje [plan techniczny](geology-generator-technical-implementation-2026-09-28.md).
+> Nie porównujemy nowego generatora ze starym jako warunku odbioru.
+> Podczas przebudowy obecne Landmass i Character zostaną oznaczone jako
+> `@deprecated` w kodzie oraz jako przestarzałe w UI. Po przełączeniu na
+> „Geologię” zostaną usunięte; to nie jest docelowy drugi tryb generatora.
+
 Dokument opisuje kierunek rozwoju generatora od fundamentów po szczegóły.
 Sekcje są ułożone zgodnie z kolejnością powstawania aplikacji: najpierw
 działający pipeline i podgląd, potem fizyczna skala świata, a na końcu etapy,
@@ -77,9 +88,12 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
   Zaznaczenie wszystkich archetypów zapisuje `archetypes: undefined`, czyli
   całą pulę; ostatniej intencji nie da się odznaczyć, więc układ zawsze rysuje
   co najmniej jedną strukturę.
-- Szelf zostaje w konfiguracji z wartościami domyślnymi i swoją kontrolkę
-  dostanie w formularzu etapu, który go zużywa (renderowanie wysokości).
-  Landmassowy formularz go nie dubluje.
+- Ten formularz opisuje stan obecny. Docelowa zakładka „Geologia” będzie
+  edytować listę obszarów geologicznych i presety geografii; jej wpisy nie
+  odpowiadają liczbie wynikowych wysp.
+- W obecnym kodzie parametry szelfu należą do `LandmassConfig`, a kontrolki
+  są w formularzu heightmapy. Po przebudowie parametry i kontrolki
+  płytkiego dna będą należeć do odpowiednich obszarów w „Geologii”.
 - Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
   widoku.
 - Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.
@@ -319,13 +333,19 @@ Formularz świata przyjmuje rozmiar w metrach (presety 1, 2 i 4 km oraz własny
 rozmiar od 100 do 10 000 m) i osobny „terrain detail" (0,5 / 1 / 2 / 4 m na
 próbkę). Pokazuje wyliczoną siatkę `samples` i szacowany rozmiar danych generacji
 (MB dziesiętne, tak jak statystyki). Budżet
-`600 MB` (`MEMORY_BUDGET_BYTES`) dotyczy wyłącznie danych generatora: rastrów
+`600 MB` (`MEMORY_BUDGET_BYTES`) dotyczy obecnego kodu i jest tymczasowym
+ograniczeniem do usunięcia podczas przebudowy. Dotyczy danych generatora: rastrów
 etapów w workerze i kopii wysyłanej do głównego wątku. Przy `6 B` na próbkę daje
 limit `100 000 000` komórek (`SAMPLE_BUDGET`); kwadratowy świat może więc mieć
 maksymalnie `10 000 × 10 000` próbek przy `1 m` na próbkę. `summarizeWorldGrid`
 wylicza siatkę, efektywny `m/sample` i szacowany rozmiar danych, a gdy żądany
 detal przekracza budżet, formularz przycina rozdzielczość i pokazuje
 ostrzeżenie — rozmiar fizyczny zostaje, rośnie `m/sample`.
+
+Po przebudowie dotychczasowy budżet i przycinanie siatki zostaną tymczasowo
+wyłączone. Pozostaną walidacja wymiarów, kontrola przepełnienia liczby
+komórek i informacyjny szacunek pamięci; duże siatki mogą nadal wyczerpać
+pamięć urządzenia. Nowy limit wymaga pomiaru rzeczywistego szczytu.
 
 Przykładowo świat `4000 × 4000 m` może mieć bazową `heightmap` o rozdzielczości
 `2000 × 2000`, co daje około `2 m` na komórkę. Podgląd tego samego świata może
@@ -368,9 +388,9 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu. **[działa]**
 2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
 3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
-4. `LandmassLayoutStage` — globalny układ struktur geologicznych, ich podstawowy kształt, wspólne szelfy oraz potencjalne archipelagi. **[działa]**
-5. `StructureCharacterStage` — strefy charakteru struktur geologicznych. **[działa]**
-6. `HeightmapStage` — rasteryzacja struktur geologicznych oraz utworzenie wysokości lądu i batymetrii dna. **[planowane]**
+4. `LandmassLayoutStage` — obecny układ korytarzy i szelfów. **[działa; do zastąpienia przez Geologię]**
+5. `StructureCharacterStage` — obecne strefy korytarzy. **[działa; do włączenia do Geologii]**
+6. `HeightmapStage` — obecny raster wysokości i dna. **[działa; do przebudowy]**
 7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
 8. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
 9. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów. **[planowane]**
@@ -379,6 +399,18 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 12. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje. **[planowane]**
 
 ### 4.1. Odpowiedzialność etapów kształtujących wyspy — [planowane]
+
+Docelowo jeden etap „Geologia” planuje obszary geologiczne, ich lokalne
+profile i bazę dna. Obszar nie jest wyspą: może dać zero, jedną albo wiele
+wysp. `HeightmapStage` tworzy jedno ciągłe pole wysokości, a `LandOceanStage`
+wyznacza rzeczywiste wyspy. Każdy etap losujący formy ma własny strumień
+szumu; współdzielimy funkcję i układ współrzędnych, nie jedną `noiseMap`.
+Ta mapa nadal służy podglądowi i opcjonalnemu źródłu deformacji makroregionów.
+
+Poniższe akapity oraz §4.2 i §4.5–4.6 opisują działający kod i pozostają jego
+dokumentacją do czasu wymiany etapów. §4.3–4.4 to niewdrożony, zastąpiony
+plan — zostają tylko jako zapis wcześniejszego kierunku i nie są instrukcją
+wdrożenia nowego modelu.
 
 Wyspa nie powinna powstawać w jednym etapie jako gotowy obiekt. Pipeline najpierw
 opisuje strukturę geologiczną i zamiar generatora, następnie tworzy ciągłą
@@ -477,7 +509,7 @@ interface LandmassLayout {
 - Statystyki etapu: struktury, szelfy, węzły, krawędzie i liczba odrzuconych
   kandydatów.
 
-### 4.3. Archipelagi — [planowane]
+### 4.3. Archipelagi — [planowane; zastąpione przez plan generowania wysp]
 
 Archipelag nie musi być generowany jako sztuczna lista niezależnych wysp.
 Naturalniejszym modelem jest jedna częściowo zatopiona struktura geologiczna ze
@@ -499,7 +531,7 @@ i zastosowaniu poziomu morza, a nie obowiązkowym wejściem generatora. Wyspy
 archipelagu dzielą szelf i geologiczne pochodzenie, ale mogą mieć indywidualne
 profile oraz kształty wynikające z lokalnych wyniesień.
 
-### 4.4. Szelf kontynentalny i batymetria — [planowane]
+### 4.4. Szelf kontynentalny i batymetria — [planowane; zastąpione przez plan generowania wysp]
 
 Większość struktur lądowych powinna mieć otaczający je szelf, czyli łagodnie
 opadający obszar płytkiego dna. Szelf jest częścią geometrii i wysokości świata,
@@ -606,8 +638,8 @@ przestrzeni świata. `pathId` wybiera ciągłą ścieżkę: `main` albo ramię
 Pozwala to przerwać pas przy brzegu i wznowić go dalej bez sztucznego
 łączenia ramion. Dla stref nakładających się ostatnia na liście jest widoczna
 w podglądzie i wybierana przez hit-test. Struktura bez krawędzi nie dostaje
-stref wymagających ścieżki. Szczegółowy plan dalszych zmian opisuje
-`structure-character-plan-2026-09-27.md`.
+stref wymagających ścieżki. To opis starej implementacji; docelowy model
+stref obszarów opisuje [plan generowania wysp](island-generation-final-plan-2026-09-28.md).
 
 `createZoneSampler` w generatorze jest wspólnym portem przestrzennym stref.
 Zwraca twarde pokrycie, strefę dominującą (ostatnia pokrywająca punkt wygrywa)
@@ -787,6 +819,14 @@ osobną implementacją. Presety działają na dwóch poziomach:
   presetem świata, np. archipelag na `Earth-like` albo pojedynczy kontynent na
   `Mythic Moon`.
 
+Po przebudowie „preset geografii” oznacza listę obszarów geologicznych z
+ustawieniami, którą można ręcznie edytować. Preset świata i geografii pozostają
+oddzielnymi wyborami; zmiana pierwszego nie nadpisuje edytowanej listy
+bez jawnego działania użytkownika. Przy tworzeniu nowej konfiguracji preset
+świata może wskazać domyślny preset geografii, bez przechowywania własnej
+kopii obszarów. Powyższa lista struktur i etapów opisuje
+wyłącznie obecny kod.
+
 Użytkownik może rozpocząć od presetu, zmienić jego parametry, a następnie zapisać
 wynik jako własny profil.
 
@@ -810,6 +850,7 @@ interface WorldPreset {
   climate: ClimateConfig;
   macroRegions: MacroRegionConfig[];
   starterRegion: StarterRegionConfig;
+  defaultGeographyPresetId?: string; // wybór początkowy, bez kopii obszarów
 }
 ```
 
