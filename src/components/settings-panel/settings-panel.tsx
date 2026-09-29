@@ -20,7 +20,12 @@ import {
 } from './forms';
 import { TabLinkToggle } from './tab-link-toggle';
 import { type SettingsTab, useViewSyncStore } from '../../stores';
-import { type NoiseConfig, PIPELINE_STAGES, type PipelineStageId } from '../../utils/map-generator';
+import {
+  type NoiseConfig,
+  PIPELINE_STAGES,
+  type PipelineStageId,
+  type StageFailure,
+} from '../../utils/map-generator';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
 
 interface SettingsPanelProps {
@@ -28,8 +33,8 @@ interface SettingsPanelProps {
   onSeedChange: (seed: string) => void;
   isGenerating: boolean;
   onGenerate: () => void;
-  /** Latest generation error, so the Geology form can mark failed entries. */
-  generationError?: string;
+  /** Entry-level failures of the last run, so the Geology form can mark them. */
+  generationFailures?: readonly StageFailure[];
   shape: WorldShape;
   sizeMeters: WorldSize;
   metersPerSample: number;
@@ -45,7 +50,7 @@ export function SettingsPanel({
   onSeedChange,
   isGenerating,
   onGenerate,
-  generationError,
+  generationFailures,
   shape,
   sizeMeters,
   metersPerSample,
@@ -85,7 +90,7 @@ export function SettingsPanel({
     geology: {
       label: 'Geology',
       icon: <SewingPinIcon />,
-      content: <GeologyForm error={generationError} />,
+      content: <GeologyForm failures={generationFailures} />,
     },
     heightmap: {
       label: 'Heightmap',

@@ -174,6 +174,7 @@ describe('generation worker', () => {
     expect(message).toEqual({
       type: 'error',
       message: 'Pipeline completed without all required map data.',
+      failures: [],
     });
     expect(messages.some(message => message.type === 'result')).toBe(false);
   });

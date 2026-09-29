@@ -49,7 +49,7 @@ const DENSITY_FLOOR = 0.35;
 /** How far the area stretches across its axis at elongation 1. */
 const ELONGATION_STRETCH = 2;
 
-/** Atoll rim window and lagoon shares of the local relief. */
+/** Local reef rim window and lagoon shares of the relief. */
 const RIM_START = 0.35;
 const RIM_END = 0.95;
 const LAGOON_SHARE = 0.45;
@@ -79,7 +79,7 @@ export interface HeightField {
  * Builds one continuous field in metres from the geology plan and the
  * heightmap's own bands. Every area contributes a signed delta with compact,
  * smooth support: its base seabed offset, an uplift potential driven by the
- * broad bands and a fine detail that fades out near the sea datum. Deltas from
+ * broad bands, local reef tendencies and fine detail that fades out near the sea datum. Deltas from
  * overlapping areas merge with the single quadratic union, so the result is
  * commutative and order-independent; the deep ocean keeps the global floor
  * wherever no area reaches. Cells outside the world mask hold the `0` sentinel
@@ -262,7 +262,7 @@ function areaDelta(pass: AreaPass, point: WorldPoint, bands: HeightmapNoiseBands
   const lowFrequency =
     pass.area.seabedOffsetMeters +
     pass.reliefHeight * (broad * 0.5 + 0.5) +
-    rimHeight(pass, radius);
+    reefHeight(pass, point);
   const fade = Math.max(1, pass.reliefHeight * DETAIL_FADE_SHARE);
   const detail =
     bands.fine(point) *
@@ -286,13 +286,19 @@ function areaRadius(pass: AreaPass, point: WorldPoint): number {
   return planarDistance({ x: along, y: across }, { x: 0, y: 0 }) / pass.area.extent;
 }
 
-/** Radial atoll tendency: a shallow rim with a lower lagoon in the centre. */
-function rimHeight(pass: AreaPass, radius: number): number {
-  if (pass.area.rimStrength <= 0) {
-    return 0;
+/** Local reef tendencies share the area's field and never guarantee a ring. */
+function reefHeight(pass: AreaPass, point: WorldPoint): number {
+  let rim = 0;
+  let lagoon = 0;
+  for (const site of pass.area.reefSites) {
+    const radius = planarDistance(point, site.centre) / site.radius;
+    if (radius >= 1) {
+      continue;
+    }
+    rim = Math.max(rim, rimBump(radius));
+    lagoon = Math.max(lagoon, (1 - smoothstep(radius / LAGOON_CORE)) * smoothstep(1 - radius));
   }
-  const lagoon = 1 - smoothstep(radius / LAGOON_CORE);
-  return pass.area.rimStrength * pass.reliefHeight * (rimBump(radius) - LAGOON_SHARE * lagoon);
+  return pass.area.rimStrength * Math.max(80, pass.reliefHeight) * (rim - LAGOON_SHARE * lagoon);
 }
 
 function rimBump(radius: number): number {

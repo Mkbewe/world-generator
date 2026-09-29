@@ -23,7 +23,8 @@ export function WorldGenerator() {
   const noise = useNoiseFormStore(state => state.noise);
   const setNoise = useNoiseFormStore(state => state.setNoise);
   const progress = useGenerationProgressStore(state => state.progress);
-  const { isGenerating, generationRun, error, onRendererReady, generate } = useWorldGeneration();
+  const { isGenerating, generationRun, error, failures, onRendererReady, generate } =
+    useWorldGeneration();
   const { isFullscreen } = useHeaderActions();
 
   return (
@@ -35,7 +36,7 @@ export function WorldGenerator() {
             onSeedChange={setSeed}
             isGenerating={isGenerating}
             onGenerate={generate}
-            generationError={error}
+            generationFailures={failures}
             shape={shape}
             sizeMeters={sizeMeters}
             metersPerSample={metersPerSample}

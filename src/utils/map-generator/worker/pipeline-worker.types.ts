@@ -1,3 +1,4 @@
+import type { StageFailure } from '../errors';
 import type { PipelineStageId, StageInfo } from '../pipeline/stage-definitions';
 import type { GenerationEvent, MapConfig, MapState, StageStatistics } from '../types';
 
@@ -37,6 +38,8 @@ export interface PipelineWorkerResultResponse {
 export interface PipelineWorkerErrorResponse {
   type: 'error';
   message: string;
+  /** Entry-level failures of the failed stage, e.g. the areas it could not place. */
+  failures?: readonly StageFailure[];
 }
 
 export type PipelineWorkerResponse =

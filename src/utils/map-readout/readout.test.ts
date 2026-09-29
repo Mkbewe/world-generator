@@ -259,8 +259,9 @@ describe('readoutItems', () => {
         areas: [
           {
             id: 'area-2',
+            character: 'volcanic',
             centre: { x: 0.5, y: 0.5 },
-            extent: 0.25,
+            extent: 0.18,
             elongation: 0.3,
             direction: 0,
             upliftDensity: 0.5,
@@ -269,6 +270,7 @@ describe('readoutItems', () => {
             seabedOffsetMeters: -120,
             shelfWidthMeters: 0,
             rimStrength: 0,
+            reefSites: [],
             relief: 'mountains',
             profile,
           },
@@ -277,7 +279,7 @@ describe('readoutItems', () => {
     };
 
     expect(itemValue(readout(inspection), 'name', info)).toBe('area-2');
-    expect(itemValue(readout(inspection), 'extent', info)).toBe('25%');
+    expect(itemValue(readout(inspection), 'extent', info)).toBe('18%');
     expect(itemValue(readout(inspection), 'seabed', info)).toBe('-120 m');
     expect(
       readoutItems(readout({ ...inspection, hit: { id: 'area-9' } }), info).map(item => item.id)

@@ -1,12 +1,14 @@
-import {
-  buildGeologyPlan,
-  compareAreaIds,
-  GeologyPlacementError,
-  placementProblemAreaIds,
-} from './plan';
+import { buildGeologyPlan as buildPlan, compareAreaIds, GeologyPlacementError } from './plan';
 import { createGeologicalArea } from './presets';
+import type { WorldShape } from '../../../world-shape';
 import { RandomFactory } from '../../random';
 import type { GeologicalAreaConfig, GeologyConfig } from '../../types';
+
+const DIMENSIONS = { widthMeters: 2000, heightMeters: 2000, sampleWidth: 65, sampleHeight: 65 };
+
+function buildGeologyPlan(config: unknown, factory: RandomFactory, shape: WorldShape) {
+  return buildPlan(config, factory, shape, DIMENSIONS);
+}
 
 function area(id: string, overrides: Partial<GeologicalAreaConfig> = {}): GeologicalAreaConfig {
   return { ...createGeologicalArea(id, 'shallow-archipelago'), ...overrides };
@@ -117,17 +119,33 @@ describe('buildGeologyPlan', () => {
     expect(plan.areas[0].relief).toBe('mountains');
     expect(plan.areas[0].profile.mountainStrength).toBeGreaterThan(0.5);
   });
+
+  it('plans several stable local reef tendencies for an atoll area', () => {
+    const atoll = createGeologicalArea('reef', 'atoll');
+    const first = buildGeologyPlan({ areas: [atoll] }, random(), 'rectangle');
+    const second = buildGeologyPlan({ areas: [atoll] }, random(), 'rectangle');
+
+    expect(first.areas[0].reefSites.length).toBeGreaterThanOrEqual(3);
+    expect(
+      new Set(first.areas[0].reefSites.map(site => `${site.centre.x}:${site.centre.y}`)).size
+    ).toBe(first.areas[0].reefSites.length);
+    expect(second.areas[0].reefSites).toEqual(first.areas[0].reefSites);
+    expect(first.areas[0].reefSites.every(site => site.radius > 0)).toBe(true);
+  });
 });
 
-describe('placementProblemAreaIds', () => {
-  it('names the areas a placement failure mentions', () => {
+describe('GeologyPlacementError', () => {
+  it('carries structured failures for the offending entries', () => {
     const error = new GeologyPlacementError([
       { areaId: 'area-2', reason: 'no spot' },
       { areaId: 'area-5', reason: 'no spot' },
     ]);
 
-    expect(placementProblemAreaIds(error.message)).toEqual(['area-2', 'area-5']);
-    expect(placementProblemAreaIds('Pipeline failed.')).toEqual([]);
+    expect(error.failures).toEqual([
+      { id: 'area-2', message: 'no spot' },
+      { id: 'area-5', message: 'no spot' },
+    ]);
+    expect(error.message).toContain('Area "area-2" could not be placed');
   });
 });
 

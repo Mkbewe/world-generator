@@ -12,6 +12,7 @@ import {
   useNoiseFormStore,
   useWorldShapeFormStore,
 } from '../../../stores';
+import { type StageFailure, stageFailures } from '../../../utils/map-generator';
 import type { MapRenderer } from '../../../utils/map-renderer';
 import { buildGenerationConfig } from '../lib/generation-config';
 import { worldGenerationSession } from '../lib/world-generation-session';
@@ -20,6 +21,8 @@ export interface WorldGeneration {
   isGenerating: boolean;
   generationRun: number;
   error?: string;
+  /** Entry-level failures of the last run, e.g. the areas it could not place. */
+  failures: readonly StageFailure[];
   onRendererReady: (renderer: MapRenderer | undefined) => void;
   generate: () => Promise<void>;
 }
@@ -32,9 +35,11 @@ export function useWorldGeneration(): WorldGeneration {
   );
   const [generationRun, setGenerationRun] = useState(0);
   const [error, setError] = useState<string>();
+  const [failures, setFailures] = useState<readonly StageFailure[]>([]);
 
   const generate = useCallback(async (): Promise<void> => {
     const shapeForm = useWorldShapeFormStore.getState();
+    const geologyForm = useGeologyFormStore.getState();
     const built = buildGenerationConfig({
       seed: useGeneralFormStore.getState().seed,
       shape: shapeForm.shape,
@@ -43,7 +48,8 @@ export function useWorldGeneration(): WorldGeneration {
       noise: useNoiseFormStore.getState().noise,
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
-      geology: useGeologyFormStore.getState().geology,
+      geology: geologyForm.geology,
+      geographyPreset: geologyForm.edited ? undefined : geologyForm.preset,
       heightmap: useHeightmapFormStore.getState().heightmap,
     });
     if ('error' in built) {
@@ -58,6 +64,7 @@ export function useWorldGeneration(): WorldGeneration {
     setResult(undefined);
     setGenerationRun(current => current + 1);
     setError(undefined);
+    setFailures([]);
     setIsGenerating(true);
 
     try {
@@ -74,10 +81,11 @@ export function useWorldGeneration(): WorldGeneration {
       setError(
         generationError instanceof Error ? generationError.message : 'World generation failed.'
       );
+      setFailures(stageFailures(generationError));
     } finally {
       setIsGenerating(false);
     }
   }, []);
 
-  return { isGenerating, generationRun, error, onRendererReady, generate };
+  return { isGenerating, generationRun, error, failures, onRendererReady, generate };
 }

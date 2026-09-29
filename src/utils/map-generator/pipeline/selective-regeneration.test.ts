@@ -53,6 +53,15 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
+        ['world-shape', 'noise', 'macro-region', 'geology', 'heightmap'],
+      ],
+      [
+        {
+          world: {
+            ...config.world,
+            dimensions: { ...config.world.dimensions, sampleWidth: 4, sampleHeight: 4 },
+          },
+        },
         ['world-shape', 'noise', 'macro-region', 'heightmap'],
       ],
       [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region', 'geology', 'heightmap']],

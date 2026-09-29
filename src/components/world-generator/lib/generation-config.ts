@@ -6,6 +6,10 @@ import type {
   MapConfig,
   NoiseConfig,
 } from '../../../utils/map-generator';
+import {
+  createGeographyPreset,
+  type GeographyPresetId,
+} from '../../../utils/map-generator/stages/geology';
 import { summarizeWorldGrid } from '../../../utils/world-grid';
 
 export interface GenerationConfigInput {
@@ -17,6 +21,7 @@ export interface GenerationConfigInput {
   macroRegions: readonly MacroRegionConfig[];
   macroRegionDeformation: MacroRegionDeformation;
   geology: GeologyConfig;
+  geographyPreset?: GeographyPresetId;
   heightmap: HeightmapConfig;
 }
 
@@ -36,7 +41,9 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
       noise: input.noise,
       macroRegions: input.macroRegions,
       macroRegionDeformation: input.macroRegionDeformation,
-      geology: input.geology,
+      geology: input.geographyPreset
+        ? createGeographyPreset(input.geographyPreset, parsedSeed, grid.dimensions, input.shape)
+        : input.geology,
       heightmap: input.heightmap,
     },
   };

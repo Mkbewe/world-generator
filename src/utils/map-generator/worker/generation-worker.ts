@@ -2,7 +2,7 @@ import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
-import { GenerationStageError } from '../errors';
+import { GenerationStageError, stageFailures } from '../errors';
 import { createMapGenerator } from '../pipeline/pipeline-factory';
 import { isPipelineStageId, type StageInfo } from '../pipeline/stage-definitions';
 import { isPersistentRasterValue, isRasterOutputKey } from '../pipeline/stage-outputs';
@@ -63,6 +63,7 @@ async function generate(
     scope.postMessage({
       type: 'error',
       message: errorMessage(error),
+      failures: stageFailures(error),
     });
   }
 }

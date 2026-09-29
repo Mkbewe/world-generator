@@ -2,6 +2,8 @@ export { createMapGenerator } from './pipeline/pipeline-factory';
 export { createMacroRegionClassifier } from './stages/macro-region';
 export type { MacroRegionClassifierInput } from './stages/macro-region';
 export { selectMapInfo } from './info-definitions';
+export { GenerationCancelledError, GenerationStageError, stageFailures } from './errors';
+export type { StageFailure } from './errors';
 export {
   PERSISTENT_RASTER_TYPES,
   selectDomainOutputs,

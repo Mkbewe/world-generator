@@ -401,6 +401,13 @@ wyznacza rzeczywiste wyspy. Każdy etap losujący formy ma własny strumień
 szumu; współdzielimy funkcję i układ współrzędnych, nie jedną `noiseMap`.
 Ta mapa nadal służy podglądowi i opcjonalnemu źródłu deformacji makroregionów.
 
+Docelowe zachowanie presetów i uproszczonego formularza Geologii po GEO-06B
+opisuje [plan przebudowy presetów](geology-presets-and-form-revision-plan-2026-09-28.md).
+Preset „Archipelag” tworzy zwykłe nieregularne formy bez tendencji atolowych
+i wulkanicznych; „Laguny i atole” sprzyja wielu lokalnym formom, a nie jednemu
+pierścieniowi wokół środka obszaru. Liczba obszarów w nowej mapie zależy od
+fizycznego rozmiaru świata, nie jest stałą liczbą wpisów presetu.
+
 Poniższe akapity oraz §4.2 i §4.5–4.6 opisują działający kod i pozostają jego
 dokumentacją do czasu wymiany etapów. §4.3–4.4 to niewdrożony, zastąpiony
 plan — zostają tylko jako zapis wcześniejszego kierunku i nie są instrukcją

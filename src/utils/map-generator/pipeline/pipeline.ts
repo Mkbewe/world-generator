@@ -1,7 +1,7 @@
 import { MapContext } from './context';
 import { type MapStage, resolveReads } from './stage';
 import { commitStageWrites } from './stage-outputs';
-import { GenerationCancelledError, GenerationStageError } from '../errors';
+import { GenerationCancelledError, GenerationStageError, stageFailures } from '../errors';
 import type { WorldSpace } from '../space';
 import type {
   GenerationEvent,
@@ -130,6 +130,7 @@ export class MapGenerator<
 
         throw new GenerationStageError(stage.id, stage.name, statistics, [...context.statistics], {
           cause: error,
+          failures: stageFailures(error),
         });
       }
 

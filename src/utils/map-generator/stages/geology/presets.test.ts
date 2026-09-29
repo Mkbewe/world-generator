@@ -1,11 +1,15 @@
 import { isGeologyConfig } from './geology-check';
 import {
+  createGeographyPreset,
   createGeologicalArea,
   DEFAULT_GEOLOGICAL_AREA,
-  GEOGRAPHY_PRESETS,
+  GEOGRAPHY_PRESET_IDS,
   GEOLOGICAL_AREA_PRESETS,
   normalizeDirection,
 } from './presets';
+
+const SMALL = { widthMeters: 1000, heightMeters: 1000, sampleWidth: 32, sampleHeight: 32 };
+const LARGE = { widthMeters: 4000, heightMeters: 4000, sampleWidth: 32, sampleHeight: 32 };
 
 describe('geological area presets', () => {
   it('keeps every preset inside the contract', () => {
@@ -58,8 +62,9 @@ describe('geological area presets', () => {
     expect(isGeologyConfig({ areas: [DEFAULT_GEOLOGICAL_AREA] })).toBe(true);
   });
 
-  it('fills every geography preset with a valid, unique area list', () => {
-    for (const preset of Object.values(GEOGRAPHY_PRESETS)) {
+  it('resolves every geography recipe to a valid, unique area list', () => {
+    for (const id of GEOGRAPHY_PRESET_IDS) {
+      const preset = createGeographyPreset(id, 17, LARGE, 'disc');
       expect(isGeologyConfig(preset)).toBe(true);
       const ids = preset.areas.map(area => area.id);
       expect(new Set(ids).size).toBe(ids.length);
@@ -67,12 +72,52 @@ describe('geological area presets', () => {
     }
   });
 
-  it('gives each geography preset its own mix of area characters', () => {
-    const reliefs = Object.values(GEOGRAPHY_PRESETS).map(preset =>
-      preset.areas.map(area => area.relief)
+  it('scales the area count with the physical map size', () => {
+    const small = createGeographyPreset('archipelago', 17, SMALL, 'disc');
+    const large = createGeographyPreset('archipelago', 17, LARGE, 'disc');
+    expect(large.areas.length).toBeGreaterThan(small.areas.length);
+    expect(large.areas[0].extent).toBeLessThan(small.areas[0].extent);
+  });
+
+  it('keeps an archipelago ordinary and starts other recipes with their main character', () => {
+    const volcanic = GEOLOGICAL_AREA_PRESETS.volcanic;
+    const atoll = GEOLOGICAL_AREA_PRESETS.atoll;
+    const archipelago = createGeographyPreset('archipelago', 17, LARGE, 'disc');
+    const volcanicIslands = createGeographyPreset('volcanic-islands', 17, SMALL, 'disc');
+    const lagoons = createGeographyPreset('lagoons-atolls', 17, SMALL, 'disc');
+
+    expect(
+      archipelago.areas.every(
+        area => area.rimStrength === 0 && area.seabedOffsetMeters > 0 && area.shelfWidthMeters > 0
+      )
+    ).toBe(true);
+    expect(volcanicIslands.areas[0].relief).toBe(volcanic.relief);
+    expect(lagoons.areas[0].rimStrength).toBe(atoll.rimStrength);
+  });
+
+  it('resolves every recipe deterministically', () => {
+    for (const id of GEOGRAPHY_PRESET_IDS) {
+      expect(createGeographyPreset(id, 17, LARGE, 'disc')).toEqual(
+        createGeographyPreset(id, 17, LARGE, 'disc')
+      );
+    }
+  });
+
+  it('is deterministic for a seed and changes when the seed changes', () => {
+    const first = createGeographyPreset('random', 17, LARGE, 'disc');
+    expect(createGeographyPreset('random', 17, LARGE, 'disc')).toEqual(first);
+    expect(createGeographyPreset('random', 18, LARGE, 'disc')).not.toEqual(first);
+  });
+
+  it('allows ordinary archipelagos to include hills and occasional mountains', () => {
+    const reliefs = new Set(
+      Array.from({ length: 40 }, (_value, index) =>
+        createGeographyPreset('archipelago', index + 1, LARGE, 'disc').areas.map(
+          area => area.relief
+        )
+      ).flat()
     );
 
-    expect(reliefs[0]).not.toEqual(reliefs[1]);
-    expect(reliefs[1]).not.toEqual(reliefs[2]);
+    expect(reliefs).toEqual(new Set(['plains', 'hills', 'mountains']));
   });
 });

@@ -1,6 +1,8 @@
+import { MAX_REEF_SITES } from './defaults';
 import { validateGeologyConfig } from './geology-check';
+import type { WorldDimensions } from '../../../world-dimensions';
 import { containsNormalized, type WorldShape } from '../../../world-shape';
-import { GenerationCancelledError } from '../../errors';
+import { GenerationCancelledError, type StageFailure } from '../../errors';
 import type { RandomFactory } from '../../random';
 import type { SeededRandom } from '../../random/seeded-random';
 import { planarDistance } from '../../space';
@@ -10,6 +12,7 @@ import type {
   GeologicalAreaPlan,
   GeologyPlacementProblem,
   GeologyPlan,
+  ReefSite,
   TerrainCharacter,
   TerrainProfile,
   WorldPoint,
@@ -26,6 +29,7 @@ const SHARE_SAMPLES = 5;
 
 /** Rejection attempts to draw one random point inside the shape. */
 const POINT_ATTEMPTS = 64;
+const MIN_REEF_SITES = 3;
 
 /** Raised when areas cannot be placed; one problem per offending entry. */
 export class GeologyPlacementError extends Error {
@@ -33,9 +37,14 @@ export class GeologyPlacementError extends Error {
     super(problems.map(placementProblemText).join(' '));
     this.name = 'GeologyPlacementError';
   }
+
+  /** Entry-level shape the pipeline transports without knowing the domain. */
+  get failures(): readonly StageFailure[] {
+    return this.problems.map(problem => ({ id: problem.areaId, message: problem.reason }));
+  }
 }
 
-/** Wording of one placement problem; `placementProblemAreaIds` parses it back. */
+/** Wording of one placement problem; the structured failures carry the id. */
 function placementProblemText(problem: GeologyPlacementProblem): string {
   return `Area "${problem.areaId}" could not be placed: ${problem.reason}`;
 }
@@ -58,6 +67,7 @@ export function buildGeologyPlan(
   config: unknown,
   random: RandomFactory,
   shape: WorldShape,
+  dimensions: WorldDimensions,
   signal?: AbortSignal
 ): GeologyPlan {
   validateGeologyConfig(config);
@@ -81,6 +91,13 @@ export function buildGeologyPlan(
     areas.push({
       ...planFields(area, centre),
       profile: sampleProfile(area.relief, random.create(`geology.area.${area.id}.profile`)),
+      reefSites: planReefSites(
+        area,
+        centre,
+        shape,
+        dimensions,
+        random.create(`geology.area.${area.id}.reefs`)
+      ),
     });
   }
 
@@ -90,14 +107,43 @@ export function buildGeologyPlan(
   return { areas };
 }
 
-/**
- * Area ids named in a placement failure message; empty for unrelated errors.
- * The UI marks the offending cards with this, so the wording above stays the
- * single source of the message format.
- */
-export function placementProblemAreaIds(message: string): readonly string[] {
-  const pattern = /Area "([^"]+)" could not be placed/g;
-  return [...message.matchAll(pattern)].map(match => match[1]);
+/** Several seeded local tendencies replace one area-wide atoll ring. */
+function planReefSites(
+  area: GeologicalAreaConfig,
+  centre: WorldPoint,
+  shape: WorldShape,
+  dimensions: WorldDimensions,
+  random: SeededRandom
+): readonly ReefSite[] {
+  if (area.rimStrength === 0) {
+    return [];
+  }
+  const worldSizeMeters = Math.max(dimensions.widthMeters, dimensions.heightMeters);
+  const extentMeters = area.extent * worldSizeMeters;
+  const radiusMeters = Math.max(35, Math.min(110, area.upliftScaleMeters * 0.15));
+  const count = Math.max(
+    MIN_REEF_SITES,
+    Math.min(MAX_REEF_SITES, Math.round(0.4 * (extentMeters / radiusMeters) ** 2))
+  );
+  const radius = Math.min(radiusMeters / worldSizeMeters, area.extent * 0.24);
+  const cos = Math.cos(area.direction);
+  const sin = Math.sin(area.direction);
+  const acrossScale = 1 + 2 * area.elongation;
+  const sites: ReefSite[] = [];
+  for (let attempt = 0; attempt < count * 8 && sites.length < count; attempt++) {
+    const angle = random.next() * Math.PI * 2;
+    const distance = Math.sqrt(random.next()) * (area.extent - radius) * 0.85;
+    const along = Math.cos(angle) * distance;
+    const across = (Math.sin(angle) * distance) / acrossScale;
+    const siteCentre = {
+      x: centre.x + along * cos - across * sin,
+      y: centre.y + along * sin + across * cos,
+    };
+    if (insideShape(shape, siteCentre)) {
+      sites.push({ centre: siteCentre, radius: radius * (0.75 + random.next() * 0.5) });
+    }
+  }
+  return sites;
 }
 
 /** Plain code-unit order; the same comparator the plan validation enforces. */
@@ -135,7 +181,7 @@ function searchCentre(
     if (!candidate || influenceShare(candidate, extent, shape) < INSIDE_SHARE) {
       continue;
     }
-    const spread = spreadOf(candidate, placed);
+    const spread = spreadOf(candidate, extent, placed);
     if (spread > bestSpread) {
       best = candidate;
       bestSpread = spread;
@@ -144,11 +190,15 @@ function searchCentre(
   return best;
 }
 
-/** Distance to the nearest already placed area; the plan spreads as it grows. */
-function spreadOf(point: WorldPoint, placed: readonly GeologicalAreaPlan[]): number {
+/** Free gap to the nearest influence, rather than distance between centres. */
+function spreadOf(
+  point: WorldPoint,
+  extent: number,
+  placed: readonly GeologicalAreaPlan[]
+): number {
   let nearest = Infinity;
   for (const area of placed) {
-    nearest = Math.min(nearest, planarDistance(area.centre, point));
+    nearest = Math.min(nearest, planarDistance(area.centre, point) - extent - area.extent);
   }
   return nearest;
 }
@@ -193,9 +243,10 @@ function insideShape(shape: WorldShape, point: WorldPoint): boolean {
 function planFields(
   area: GeologicalAreaConfig,
   centre: WorldPoint
-): Omit<GeologicalAreaPlan, 'profile'> {
+): Omit<GeologicalAreaPlan, 'profile' | 'reefSites'> {
   return {
     id: area.id,
+    character: area.character,
     centre,
     extent: area.extent,
     elongation: area.elongation,

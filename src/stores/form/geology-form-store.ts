@@ -1,11 +1,13 @@
+import { DEFAULT_SEED } from './general-form-store';
+import { WORLD_SHAPE_FORM_DEFAULTS } from './world-shape-form-store';
 import {
+  createGeographyPreset,
   createGeologicalArea,
-  DEFAULT_GEOLOGY_CONFIG,
-  GEOGRAPHY_PRESETS,
   type GeographyPresetId,
   type GeologicalAreaPresetId,
 } from '../../utils/map-generator/stages/geology';
 import type { GeologicalAreaConfig, GeologyConfig } from '../../utils/map-generator/types';
+import { dimensionsFromMeters } from '../../utils/world-dimensions';
 import { createStore } from '../create-store';
 
 /** Editable fields of one area; the id stays stable. */
@@ -26,12 +28,24 @@ interface GeologyFormState {
   /** Updates the editable fields of one area. */
   updateArea: (id: string, patch: GeologicalAreaPatch) => void;
   /** Replaces the list with a geography preset and clears the edited mark. */
-  applyPreset: (preset: GeographyPresetId) => void;
+  applyPreset: (preset: GeographyPresetId, geology: GeologyConfig) => void;
+  refreshPreset: (geology: GeologyConfig) => void;
 }
 
+const defaultDimensions = dimensionsFromMeters({
+  widthMeters: WORLD_SHAPE_FORM_DEFAULTS.sizeMeters,
+  heightMeters: WORLD_SHAPE_FORM_DEFAULTS.sizeMeters,
+  metersPerSample: WORLD_SHAPE_FORM_DEFAULTS.metersPerSample,
+});
+
 export const GEOLOGY_FORM_DEFAULTS: Pick<GeologyFormState, 'geology' | 'preset' | 'edited'> = {
-  geology: DEFAULT_GEOLOGY_CONFIG,
-  preset: undefined,
+  geology: createGeographyPreset(
+    'random',
+    Number(DEFAULT_SEED),
+    defaultDimensions,
+    WORLD_SHAPE_FORM_DEFAULTS.shape
+  ),
+  preset: 'random',
   edited: false,
 };
 
@@ -71,12 +85,13 @@ export const useGeologyFormStore = createStore<GeologyFormState>(set => ({
     set(state =>
       editedAreas(state.geology.areas.map(area => (area.id === id ? { ...area, ...patch } : area)))
     ),
-  applyPreset: preset =>
+  applyPreset: (preset, geology) =>
     set({
-      geology: { areas: GEOGRAPHY_PRESETS[preset].areas.map(area => ({ ...area })) },
+      geology,
       preset,
       edited: false,
     }),
+  refreshPreset: geology => set(state => (state.preset && !state.edited ? { geology } : {})),
 }));
 
 function createArea(state: GeologyFormState, preset: GeologicalAreaPresetId): GeologicalAreaConfig {

@@ -17,6 +17,7 @@ const PROFILE: TerrainProfile = {
 function area(overrides: Partial<GeologicalAreaPlan> = {}): GeologicalAreaPlan {
   return {
     id: 'area-1',
+    character: 'ordinary',
     centre: { x: 0.5, y: 0.5 },
     extent: 0.2,
     elongation: 0,
@@ -27,13 +28,21 @@ function area(overrides: Partial<GeologicalAreaPlan> = {}): GeologicalAreaPlan {
     seabedOffsetMeters: 0,
     shelfWidthMeters: 0,
     rimStrength: 0,
+    reefSites: [],
     relief: 'plains',
     profile: PROFILE,
     ...overrides,
   };
 }
 
-const plan: GeologyPlan = { areas: [area({ rimStrength: 0.8 })] };
+const plan: GeologyPlan = {
+  areas: [
+    area({
+      rimStrength: 0.8,
+      reefSites: [{ centre: { x: 0.45, y: 0.5 }, radius: 0.05 }],
+    }),
+  ],
+};
 
 function targetFor(width: number, height: number): RenderTarget {
   return { width, height, projection: { cellSize: 1, left: 0, top: 0, width, height } };

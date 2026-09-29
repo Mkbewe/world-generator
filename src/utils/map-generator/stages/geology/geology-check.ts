@@ -1,6 +1,7 @@
 import {
   MAX_AREA_EXTENT,
   MAX_GEOLOGICAL_AREAS,
+  MAX_REEF_SITES,
   MAX_SEABED_OFFSET_METERS,
   MAX_SHELF_WIDTH_METERS,
   MAX_UPLIFT_SCALE_METERS,
@@ -10,7 +11,13 @@ import {
   MIN_UPLIFT_SCALE_METERS,
 } from './defaults';
 import { isTerrainCharacter, isTerrainProfile } from '../../terrain-profile';
-import type { GeologicalAreaConfig, GeologyConfig, GeologyPlan } from '../../types';
+import {
+  GEOLOGICAL_CHARACTERS,
+  type GeologicalAreaConfig,
+  type GeologicalCharacter,
+  type GeologyConfig,
+  type GeologyPlan,
+} from '../../types';
 
 /** Whether unknown data is a geology configuration within its domain limits. */
 export function isGeologyConfig(value: unknown): value is GeologyConfig {
@@ -107,11 +114,33 @@ function validatePlanArea(area: unknown): string {
   if (!isTerrainProfile(area.profile)) {
     throw new Error(`Plan area "${area.id}" has an invalid profile.`);
   }
+  if (
+    !Array.isArray(area.reefSites) ||
+    area.reefSites.length > MAX_REEF_SITES ||
+    !area.reefSites.every(
+      (site: unknown) =>
+        isRecord(site) &&
+        isNormalizedPoint(site.centre) &&
+        typeof site.radius === 'number' &&
+        Number.isFinite(site.radius) &&
+        site.radius > 0 &&
+        site.radius <= 1
+    )
+  ) {
+    throw new Error(`Plan area "${area.id}" has invalid reef sites.`);
+  }
   return area.id;
+}
+
+function isCharacter(value: unknown): value is GeologicalCharacter {
+  return typeof value === 'string' && (GEOLOGICAL_CHARACTERS as readonly string[]).includes(value);
 }
 
 /** Shared numeric contract of a configured area and its resolved plan twin. */
 function validateAreaNumbers(area: Record<string, unknown>, id: string): void {
+  if (!isCharacter(area.character)) {
+    throw new Error(`Area "${id}" character must be ordinary, volcanic or atoll.`);
+  }
   if (!isWithin(area.extent, MIN_AREA_EXTENT, MAX_AREA_EXTENT)) {
     throw new Error(`Area "${id}" extent must be within ${MIN_AREA_EXTENT}..${MAX_AREA_EXTENT}.`);
   }

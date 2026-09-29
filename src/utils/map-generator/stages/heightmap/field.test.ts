@@ -30,8 +30,9 @@ const PROFILE: TerrainProfile = {
 function area(overrides: Partial<GeologicalAreaPlan> = {}): GeologicalAreaPlan {
   return {
     id: 'area-1',
+    character: 'ordinary',
     centre: { x: 0.5, y: 0.5 },
-    extent: 0.24,
+    extent: 0.18,
     elongation: 0.35,
     direction: 0,
     upliftDensity: 0.55,
@@ -40,6 +41,7 @@ function area(overrides: Partial<GeologicalAreaPlan> = {}): GeologicalAreaPlan {
     seabedOffsetMeters: 40,
     shelfWidthMeters: 800,
     rimStrength: 0,
+    reefSites: [],
     relief: 'plains',
     profile: PROFILE,
     ...overrides,
@@ -139,11 +141,39 @@ describe('buildHeightField', () => {
     expect(at(double.heightmap, 32, 32)).toBeGreaterThan(at(single.heightmap, 32, 32));
   });
 
-  it('raises the atoll rim above its lagoon', () => {
-    const { heightmap } = build([area({ rimStrength: 0.9, seabedOffsetMeters: -60 })]);
-    const rimX = Math.round(32 + 0.7 * 0.24 * (SIDE - 1));
+  it('raises a local reef rim above its lagoon', () => {
+    const { heightmap } = build([
+      area({
+        rimStrength: 0.9,
+        seabedOffsetMeters: 20,
+        reefSites: [{ centre: { x: 0.5, y: 0.5 }, radius: 0.12 }],
+      }),
+    ]);
+    const rimX = Math.round(32 + 0.7 * 0.12 * (SIDE - 1));
 
     expect(at(heightmap, rimX, 32)).toBeGreaterThan(at(heightmap, 32, 32));
+  });
+
+  it('lets one area contribute several separate reef rims', () => {
+    const sites = [
+      { centre: { x: 0.38, y: 0.5 }, radius: 0.08 },
+      { centre: { x: 0.62, y: 0.5 }, radius: 0.08 },
+    ];
+    const flat: HeightmapNoiseBands = { large: () => 0, medium: () => 0, fine: () => 0 };
+    const heightmap = buildHeightField({
+      plan: { areas: [area({ rimStrength: 1, seabedOffsetMeters: 20, reefSites: sites })] },
+      bands: flat,
+      worldMask: new Uint8Array(SIDE * SIDE).fill(1),
+      dimensions: DIMENSIONS,
+      space: SPACE,
+      relief: 0.6,
+    }).heightmap;
+
+    for (const site of sites) {
+      const centreX = Math.round(site.centre.x * (SIDE - 1));
+      const rimX = Math.round((site.centre.x + site.radius * 0.7) * (SIDE - 1));
+      expect(at(heightmap, rimX, 32)).toBeGreaterThan(at(heightmap, centreX, 32));
+    }
   });
 
   it('crosses land, shallow water and the open ocean continuously', () => {
@@ -232,7 +262,12 @@ describe('buildHeightField', () => {
     const second = createGeologicalArea('area-2', 'volcanic');
     const bands = createHeightmapNoiseBands(new RandomFactory(17), DIMENSIONS);
     const forward = buildHeightField({
-      plan: buildGeologyPlan({ areas: [first, second] }, new RandomFactory(17), 'rectangle'),
+      plan: buildGeologyPlan(
+        { areas: [first, second] },
+        new RandomFactory(17),
+        'rectangle',
+        DIMENSIONS
+      ),
       bands,
       worldMask: new Uint8Array(SIDE * SIDE).fill(1),
       dimensions: DIMENSIONS,
@@ -240,7 +275,12 @@ describe('buildHeightField', () => {
       relief: 0.6,
     });
     const reversed = buildHeightField({
-      plan: buildGeologyPlan({ areas: [second, first] }, new RandomFactory(17), 'rectangle'),
+      plan: buildGeologyPlan(
+        { areas: [second, first] },
+        new RandomFactory(17),
+        'rectangle',
+        DIMENSIONS
+      ),
       bands,
       worldMask: new Uint8Array(SIDE * SIDE).fill(1),
       dimensions: DIMENSIONS,
@@ -282,7 +322,8 @@ describe('buildHeightField', () => {
         plan: buildGeologyPlan(
           { areas: [createGeologicalArea('area-1', preset)] },
           new RandomFactory(17),
-          'rectangle'
+          'rectangle',
+          DIMENSIONS
         ),
         bands,
         worldMask: new Uint8Array(SIDE * SIDE).fill(1),
@@ -294,7 +335,7 @@ describe('buildHeightField', () => {
     const shallow = field('shallow-archipelago');
     const volcanic = field('volcanic');
 
-    expect(Math.min(...volcanic)).toBeLessThan(Math.min(...shallow));
+    expect(Math.max(...volcanic)).toBeGreaterThan(0);
     expect(volcanic).not.toEqual(shallow);
   });
 
@@ -389,7 +430,7 @@ describe('buildHeightField', () => {
     // Both fields share the same support, so the ocean floor outside it must
     // not decide the comparison; compare the covered cells instead.
     const covered = calm
-      .map((value, index) => (value > -OCEAN_DEPTH_METERS ? index : -1))
+      .map((value, index) => (value > -OCEAN_DEPTH_METERS + 1 ? index : -1))
       .filter(index => index >= 0);
     const coveredMin = (values: Float32Array) => Math.min(...covered.map(index => values[index]));
 

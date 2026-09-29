@@ -5,6 +5,8 @@ export const MAP_CONFIG_KEYS = [
   'world.seed',
   'world.shape',
   'world.dimensions',
+  'world.dimensions.widthMeters',
+  'world.dimensions.heightMeters',
   'noise',
   'macroRegions',
   'macroRegionDeformation',
@@ -109,12 +111,19 @@ export const HEIGHTMAP_STAGE = {
 /**
  * The geology stage replaces the landmass layout and the structure character
  * stages. The plan carries no raster and works in normalized shares, so the
- * sample resolution never invalidates it — only seed, shape and the areas do.
+ * sample resolution never invalidates it; physical world dimensions do because
+ * local reef scales are specified in metres.
  */
 export const GEOLOGY_STAGE = {
   id: 'geology',
   name: 'Geology',
-  configKeys: ['world.seed', 'world.shape', 'geology'],
+  configKeys: [
+    'world.seed',
+    'world.shape',
+    'world.dimensions.widthMeters',
+    'world.dimensions.heightMeters',
+    'geology',
+  ],
 } as const satisfies DeclaredStage;
 
 /**

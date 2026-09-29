@@ -301,6 +301,15 @@ export interface GeologyPlacementProblem {
 }
 
 /**
+ * What kind of ground the area tends to build: ordinary islands, volcanic
+ * relief or lagoons and reefs. The character picks starter values and the
+ * form's controls; the field still reads values, never the name.
+ */
+export const GEOLOGICAL_CHARACTERS = ['ordinary', 'volcanic', 'atoll'] as const;
+
+export type GeologicalCharacter = (typeof GEOLOGICAL_CHARACTERS)[number];
+
+/**
  * One geological area: a plan of possibilities, never an island outline. The
  * fields carry behaviour as profile data, so consumers never branch on a
  * variant name. Lengths are either a normalized world share or explicit metres.
@@ -316,6 +325,8 @@ export interface GeologyPlacementProblem {
 export interface GeologicalAreaConfig {
   /** Stable id; per-area seed streams and provenance derive from it. */
   readonly id: string;
+  /** What the area tends to build; picks the starter values and the card. */
+  readonly character: GeologicalCharacter;
   readonly placement: GeologicalAreaPlacement;
   /** Influence radius in normalized world units; the area fades out before it. */
   readonly extent: number;
@@ -344,7 +355,7 @@ export interface GeologicalAreaConfig {
    * exactly at the area extent.
    */
   readonly shelfWidthMeters: number;
-  /** Radial tendency of a shallow rim with a lower centre (atoll), 0..1. */
+  /** Strength of local reef rims and lower lagoons, 0..1. */
   readonly rimStrength: number;
   /** Dominant relief of the area; the profile sampler derives concrete values from it. */
   readonly relief: TerrainCharacter;
@@ -363,6 +374,8 @@ export interface GeologyConfig {
 /** One area resolved by the geology stage for a seed. */
 export interface GeologicalAreaPlan {
   readonly id: string;
+  /** See `GeologicalAreaConfig.character`; the field ignores it. */
+  readonly character: GeologicalCharacter;
   readonly centre: WorldPoint;
   readonly extent: number;
   readonly elongation: number;
@@ -376,9 +389,17 @@ export interface GeologicalAreaPlan {
   /** See `GeologicalAreaConfig.shelfWidthMeters`; the field reads the fade stretch. */
   readonly shelfWidthMeters: number;
   readonly rimStrength: number;
+  /** Local reef and lagoon tendencies; these are not island outlines. */
+  readonly reefSites: readonly ReefSite[];
   readonly relief: TerrainCharacter;
   /** Concrete profile values sampled for this area. */
   readonly profile: TerrainProfile;
+}
+
+/** One local tendency within an atoll-capable area, in the shared world frame. */
+export interface ReefSite {
+  readonly centre: WorldPoint;
+  readonly radius: number;
 }
 
 /**

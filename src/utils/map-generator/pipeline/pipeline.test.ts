@@ -204,6 +204,27 @@ describe('MapGenerator', () => {
     });
   });
 
+  it('carries entry-level failures from a failed stage', async () => {
+    const failure = Object.assign(new Error('placement failed'), {
+      failures: [{ id: 'area-2', message: 'no valid spot' }],
+    });
+    const pipeline = new MapGenerator([
+      createStage('heightmap', async () => {
+        throw failure;
+      }),
+    ]);
+
+    const generation = pipeline.generate(
+      { world: { seed: 123 }, terrain: { seaLevel: 0.4 }, resources: { amount: 12 } },
+      { values: [] }
+    );
+
+    await expect(generation).rejects.toMatchObject({
+      stageId: 'heightmap',
+      failures: [{ id: 'area-2', message: 'no valid spot' }],
+    });
+  });
+
   it('fails a stage whose output validation rejects the shared state', async () => {
     const failure = new Error('incomplete output');
     const events: string[] = [];

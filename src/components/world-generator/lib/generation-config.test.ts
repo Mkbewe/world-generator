@@ -56,4 +56,19 @@ describe('buildGenerationConfig', () => {
       config: { macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } },
     });
   });
+
+  it('resolves an untouched geography recipe for the new map size', () => {
+    const small = buildGenerationConfig(input({ geographyPreset: 'archipelago' }));
+    const large = buildGenerationConfig(
+      input({ geographyPreset: 'archipelago', sizeMeters: 4000 })
+    );
+    if (!('config' in small) || !('config' in large)) {
+      throw new Error('Expected valid generated configurations.');
+    }
+
+    expect(large.config.geology?.areas.length).toBeGreaterThan(
+      small.config.geology?.areas.length ?? 0
+    );
+    expect(large.config.geology?.areas.every(area => area.rimStrength === 0)).toBe(true);
+  });
 });

@@ -50,6 +50,7 @@ export class GeologyStage implements MapStage<
       config,
       context.random,
       context.config.world.shape,
+      context.config.world.dimensions,
       signal
     );
     report(1);

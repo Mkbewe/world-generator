@@ -1,9 +1,11 @@
 /** Maximum number of geological areas in one configuration. */
 export const MAX_GEOLOGICAL_AREAS = 20;
+/** Maximum local reef tendencies per area plan. */
+export const MAX_REEF_SITES = 12;
 
-/** Influence radius range in normalized world units. */
+/** Influence radius range in normalized world units; a single area stays local. */
 export const MIN_AREA_EXTENT = 0.04;
-export const MAX_AREA_EXTENT = 0.6;
+export const MAX_AREA_EXTENT = 0.2;
 
 /** Uplift wavelength range in metres. */
 export const MIN_UPLIFT_SCALE_METERS = 100;

@@ -12,8 +12,6 @@ import { traceWorldBoundary } from '../world-boundary-renderer';
 
 /** How far the influence stretches across its axis at elongation 1. */
 const ELONGATION_STRETCH = 2;
-/** Lagoon marker radius as a share of the influence radius. */
-const LAGOON_RADIUS = 0.55;
 
 /**
  * Vector layer over the geology plan. It paints the influence extents — the
@@ -131,17 +129,11 @@ function paintGeologyPlan(
     context.setLineDash([]);
     context.stroke();
 
-    if (area.rimStrength > 0) {
+    for (const site of area.reefSites) {
+      const reefCentre = toCanvas(projection, size, site.centre);
+      const reefRadius = site.radius * Math.max(1, size.width - 1) * projection.cellSize;
       context.beginPath();
-      context.ellipse(
-        centre.x,
-        centre.y,
-        radius * LAGOON_RADIUS,
-        across * LAGOON_RADIUS,
-        area.direction,
-        0,
-        Math.PI * 2
-      );
+      context.ellipse(reefCentre.x, reefCentre.y, reefRadius, reefRadius, 0, 0, Math.PI * 2);
       context.setLineDash([]);
       context.lineWidth = 1;
       context.stroke();

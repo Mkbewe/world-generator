@@ -17,6 +17,7 @@ const PROFILE: TerrainProfile = {
 function planArea(id: string): GeologicalAreaPlan {
   return {
     id,
+    character: 'ordinary',
     centre: { x: 0.5, y: 0.5 },
     extent: 0.2,
     elongation: 0.3,
@@ -27,6 +28,7 @@ function planArea(id: string): GeologicalAreaPlan {
     seabedOffsetMeters: 0,
     shelfWidthMeters: 400,
     rimStrength: 0,
+    reefSites: [],
     relief: 'plains',
     profile: PROFILE,
   };

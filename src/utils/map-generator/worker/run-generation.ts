@@ -4,9 +4,20 @@ import type {
   PipelineWorkerResponse,
   PipelineWorkerReuse,
 } from './pipeline-worker.types';
-import { GenerationCancelledError } from '../errors';
+import { GenerationCancelledError, type StageFailure } from '../errors';
 import type { StageInfo } from '../pipeline/stage-definitions';
 import type { GenerationEvent, MapConfig } from '../types';
+
+/** Worker failure with the entry-level failures of the stage that produced it. */
+export class GenerationFailedError extends Error {
+  constructor(
+    message: string,
+    readonly failures: readonly StageFailure[] = []
+  ) {
+    super(message);
+    this.name = 'GenerationFailedError';
+  }
+}
 
 export interface GenerationWorkerOptions {
   signal?: AbortSignal;
@@ -58,7 +69,7 @@ export const runGeneration: RunGeneration = (config, options) =>
         return;
       }
       if (message.type === 'error') {
-        settle(() => reject(new Error(message.message)));
+        settle(() => reject(new GenerationFailedError(message.message, message.failures)));
         return;
       }
       try {

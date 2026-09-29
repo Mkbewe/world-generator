@@ -115,4 +115,19 @@ describe('runGeneration', () => {
     await expect(promise).rejects.toThrow('Worker failed to load.');
     expect(FakeWorker.latest.terminate).toHaveBeenCalledOnce();
   });
+
+  it('forwards the entry-level failures of a worker error', async () => {
+    const promise = runGeneration(config, { reuse });
+
+    FakeWorker.latest.emitMessage({
+      type: 'error',
+      message: 'Area "area-2" could not be placed.',
+      failures: [{ id: 'area-2', message: 'no valid spot' }],
+    });
+
+    await expect(promise).rejects.toMatchObject({
+      message: 'Area "area-2" could not be placed.',
+      failures: [{ id: 'area-2', message: 'no valid spot' }],
+    });
+  });
 });

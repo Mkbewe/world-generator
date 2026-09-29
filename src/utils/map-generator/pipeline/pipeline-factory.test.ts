@@ -79,7 +79,13 @@ describe('createMapGenerator', () => {
         id: 'geology',
         reads: [],
         writes: ['geologyPlan'],
-        configKeys: ['world.seed', 'world.shape', 'geology'],
+        configKeys: [
+          'world.seed',
+          'world.shape',
+          'world.dimensions.widthMeters',
+          'world.dimensions.heightMeters',
+          'geology',
+        ],
       },
       {
         id: 'heightmap',

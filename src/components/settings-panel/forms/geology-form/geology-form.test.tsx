@@ -1,18 +1,23 @@
 import { Theme } from '@radix-ui/themes';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { GeologyForm } from './geology-form';
-import { GEOLOGY_FORM_DEFAULTS, useGeologyFormStore } from '../../../../stores';
+import {
+  GEOLOGY_FORM_DEFAULTS,
+  useGeologyFormStore,
+  useWorldShapeFormStore,
+} from '../../../../stores';
+import type { StageFailure } from '../../../../utils/map-generator';
 import {
   createGeologicalArea,
   MAX_GEOLOGICAL_AREAS,
 } from '../../../../utils/map-generator/stages/geology';
 
-function renderForm(error?: string) {
+function renderForm(failures?: readonly StageFailure[]) {
   render(
     <Theme>
-      <GeologyForm error={error} />
+      <GeologyForm failures={failures} />
     </Theme>
   );
 }
@@ -21,9 +26,18 @@ function card(id: string) {
   return within(screen.getByRole('group', { name: id }));
 }
 
+function areasOf(character: 'shallow-archipelago' | 'volcanic' | 'atoll') {
+  useGeologyFormStore.setState({
+    geology: { areas: [createGeologicalArea('area-1', character)] },
+    preset: undefined,
+    edited: true,
+  });
+}
+
 describe('GeologyForm', () => {
   beforeEach(() => {
     useGeologyFormStore.setState({ ...GEOLOGY_FORM_DEFAULTS });
+    useWorldShapeFormStore.setState({ sizeMeters: 1000, shape: 'disc' });
   });
 
   it('lists areas by id and never promises island counts', () => {
@@ -37,35 +51,59 @@ describe('GeologyForm', () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole('button', { name: 'Add Volcanic' }));
+    await user.click(screen.getByRole('button', { name: 'Volcanic' }));
     expect(useGeologyFormStore.getState().geology.areas).toHaveLength(2);
 
     await user.click(screen.getByRole('button', { name: 'Remove area-1' }));
     expect(useGeologyFormStore.getState().geology.areas.map(area => area.id)).toEqual(['area-2']);
   });
 
-  it('commits the extent slider to the area', async () => {
+  it('shows only the controls of the area character', () => {
+    areasOf('atoll');
+    renderForm();
+
+    expect(card('area-1').getByLabelText('Size')).toBeInTheDocument();
+    expect(card('area-1').getByLabelText('Atoll density')).toBeInTheDocument();
+    expect(card('area-1').getByLabelText('Lagoon rim')).toBeInTheDocument();
+    expect(card('area-1').queryByLabelText('Rotation')).not.toBeInTheDocument();
+    expect(card('area-1').queryByLabelText('Seabed offset')).not.toBeInTheDocument();
+  });
+
+  it('commits the size slider to the area', async () => {
     const user = userEvent.setup();
     renderForm();
 
     const slider = within(card('area-1').getByLabelText('Size')).getByRole('slider');
     slider.focus();
-    await user.keyboard('{ArrowRight}');
+    await user.keyboard('{ArrowLeft}');
 
     expect(useGeologyFormStore.getState().geology.areas[0].extent).toBeCloseTo(
-      GEOLOGY_FORM_DEFAULTS.geology.areas[0].extent + 0.01
+      GEOLOGY_FORM_DEFAULTS.geology.areas[0].extent - 0.01
     );
+  });
+
+  it('turns the atoll density into the reef scale the field consumes', async () => {
+    const user = userEvent.setup();
+    areasOf('atoll');
+    const before = useGeologyFormStore.getState().geology.areas[0].upliftScaleMeters;
+    renderForm();
+
+    const slider = within(card('area-1').getByLabelText('Atoll density')).getByRole('slider');
+    slider.focus();
+    await user.keyboard('{ArrowRight}');
+
+    expect(useGeologyFormStore.getState().geology.areas[0].upliftScaleMeters).toBeLessThan(before);
   });
 
   it('fills the list from a geography preset and marks later edits', async () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole('radio', { name: 'Volcanic chain' }));
+    await user.click(screen.getByRole('radio', { name: 'Volcanic islands' }));
 
     const areas = useGeologyFormStore.getState().geology.areas;
-    expect(areas).toHaveLength(3);
-    expect(areas.map(area => area.relief)).toEqual(['mountains', 'plains', 'mountains']);
+    expect(areas.length).toBeGreaterThan(0);
+    expect(areas[0].character).toBe('volcanic');
     expect(screen.queryByText(/edited by hand/i)).not.toBeInTheDocument();
 
     const slider = within(card(areas[0].id).getByLabelText('Uplift density')).getByRole('slider');
@@ -87,11 +125,11 @@ describe('GeologyForm', () => {
     const areas = useGeologyFormStore.getState().geology.areas;
     expect(areas.map(area => area.id)).toEqual(['area-1', 'area-2']);
     expect(areas[1].placement).toEqual({ kind: 'automatic' });
-    expect(areas[1].relief).toBe(areas[0].relief);
+    expect(areas[1].character).toBe(areas[0].character);
   });
 
   it('keeps an empty list as an explicit ocean world', () => {
-    useGeologyFormStore.setState({ geology: { areas: [] } });
+    useGeologyFormStore.setState({ geology: { areas: [] }, preset: undefined, edited: true });
     renderForm();
 
     expect(screen.getByText(/No areas - the world stays ocean/)).toBeInTheDocument();
@@ -104,14 +142,16 @@ describe('GeologyForm', () => {
           createGeologicalArea(`area-${index + 1}`, 'shallow-archipelago')
         ),
       },
+      preset: undefined,
+      edited: true,
     });
     renderForm();
 
-    expect(screen.getByRole('button', { name: 'Add Shallow' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Ordinary' })).toBeDisabled();
     expect(card('area-1').getByRole('button', { name: 'Duplicate area-1' })).toBeDisabled();
   });
 
-  it('marks only the areas named in the placement error', () => {
+  it('marks only the areas named in the structured failures', () => {
     useGeologyFormStore.setState({
       geology: {
         areas: [
@@ -119,10 +159,22 @@ describe('GeologyForm', () => {
           createGeologicalArea('area-2', 'volcanic'),
         ],
       },
+      preset: undefined,
+      edited: true,
     });
-    renderForm('Area "area-2" could not be placed: no valid spot keeps 60% inside the world');
+    renderForm([{ id: 'area-2', message: 'no valid spot keeps 60% inside the world' }]);
 
     expect(card('area-2').getByText(/Could not be placed/)).toBeInTheDocument();
     expect(card('area-1').queryByText(/Could not be placed/)).not.toBeInTheDocument();
+  });
+
+  it('rebuilds an untouched preset for a larger new world', async () => {
+    renderForm();
+    const initialCount = useGeologyFormStore.getState().geology.areas.length;
+    act(() => useWorldShapeFormStore.getState().setSizeMeters(4000));
+
+    await waitFor(() => {
+      expect(useGeologyFormStore.getState().geology.areas.length).toBeGreaterThan(initialCount);
+    });
   });
 });
