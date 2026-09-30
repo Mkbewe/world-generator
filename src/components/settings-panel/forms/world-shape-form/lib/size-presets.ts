@@ -8,7 +8,7 @@ interface SizePreset {
 }
 
 export const SIZE_PRESETS: readonly SizePreset[] = [
-  { value: 'small', label: 'Small', sizeMeters: 1000 },
-  { value: 'medium', label: 'Medium', sizeMeters: 2000 },
-  { value: 'big', label: 'Big', sizeMeters: 4000 },
+  { value: 'small', label: 'Small', sizeMeters: 3000 },
+  { value: 'medium', label: 'Medium', sizeMeters: 6000 },
+  { value: 'big', label: 'Big', sizeMeters: 12_000 },
 ];

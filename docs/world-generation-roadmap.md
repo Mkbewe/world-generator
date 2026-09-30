@@ -323,15 +323,14 @@ z `sampleWidth` i `sampleHeight` bez rekonstruowania wymiarów.
   `metersToNormalized`, `normalizedToMeters` i `normalizedToCell` pokrywają
   przeliczenia między metrami, komórkami i współrzędnymi znormalizowanymi.
 
-Formularz świata przyjmuje rozmiar w metrach (presety 1, 2 i 4 km oraz własny
-rozmiar od 100 do 10 000 m) i osobny „terrain detail" (0,5 / 1 / 2 / 4 m na
+Formularz świata przyjmuje rozmiar w metrach (presety 3, 6 i 12 km oraz własny
+rozmiar od 3000 do 12 000 m) i osobny „terrain detail" (1 / 2 / 4 / 8 / 16 m na
 próbkę). Pokazuje wyliczoną siatkę `samples` i szacowany rozmiar danych generacji
 (MB dziesiętne, tak jak statystyki). Budżet
-`600 MB` (`MEMORY_BUDGET_BYTES`) dotyczy obecnego kodu i jest tymczasowym
-ograniczeniem do usunięcia podczas przebudowy. Dotyczy danych generatora: rastrów
-etapów w workerze i kopii wysyłanej do głównego wątku. Przy `6 B` na próbkę daje
-limit `100 000 000` komórek (`SAMPLE_BUDGET`); kwadratowy świat może więc mieć
-maksymalnie `10 000 × 10 000` próbek przy `1 m` na próbkę. `summarizeWorldGrid`
+`864 MB` (`MEMORY_BUDGET_BYTES`) jest skalibrowany pod największy wspierany
+świat: `12 000 × 12 000` próbek przy `1 m` na próbkę. Dotyczy danych generatora:
+rastrów etapów w workerze i kopii wysyłanej do głównego wątku. Przy `6 B` na
+próbkę daje limit `144 000 000` komórek (`SAMPLE_BUDGET`). `summarizeWorldGrid`
 wylicza siatkę, efektywny `m/sample` i szacowany rozmiar danych, a gdy żądany
 detal przekracza budżet, formularz przycina rozdzielczość i pokazuje
 ostrzeżenie — rozmiar fizyczny zostaje, rośnie `m/sample`.

@@ -2,6 +2,7 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { GridSummaryField } from './grid-summary-field';
+import { SIZE_PRESETS } from '../lib/size-presets';
 
 function renderSummary(sizeMeters: number, metersPerSample: number) {
   render(
@@ -12,17 +13,33 @@ function renderSummary(sizeMeters: number, metersPerSample: number) {
 }
 
 describe('GridSummaryField', () => {
-  it('shows the derived grid and the estimated memory', () => {
-    renderSummary(1000, 1);
+  it('fits every size preset at the default detail', () => {
+    for (const preset of SIZE_PRESETS) {
+      const { unmount } = render(
+        <Theme>
+          <GridSummaryField sizeMeters={preset.sizeMeters} metersPerSample={1} />
+        </Theme>
+      );
+      expect(screen.queryByText(/sample budget/i)).toBeNull();
+      unmount();
+    }
+  });
 
-    expect(screen.getByText('1000 × 1000 samples · 6 MB data')).toBeInTheDocument();
+  it('shows the derived grid, the memory and the effective detail', () => {
+    renderSummary(3000, 1);
+
+    expect(
+      screen.getByText('3000 × 3000 samples · 54 MB data · 1 m per sample')
+    ).toBeInTheDocument();
     expect(screen.queryByText(/sample budget/i)).toBeNull();
   });
 
   it('warns when the sample budget clamps the requested detail', () => {
-    renderSummary(10_000, 0.5);
+    renderSummary(12_000, 0.5);
 
-    expect(screen.getByText('10000 × 10000 samples · 600 MB data')).toBeInTheDocument();
-    expect(screen.getByText(/limited to 1.0 m per sample/i)).toBeInTheDocument();
+    expect(
+      screen.getByText('12000 × 12000 samples · 864 MB data · 1 m per sample')
+    ).toBeInTheDocument();
+    expect(screen.getByText(/sample budget/i)).toBeInTheDocument();
   });
 });

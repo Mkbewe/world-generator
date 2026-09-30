@@ -21,7 +21,7 @@ export function DetailField({ metersPerSample, onChange }: DetailFieldProps) {
       <SegmentedControlScroll>
         <SegmentedControl.Root
           value={active}
-          size='2'
+          size='1'
           aria-label='Terrain detail'
           onValueChange={value => {
             const option = TERRAIN_DETAIL_OPTIONS.find(item => item.value === value);
