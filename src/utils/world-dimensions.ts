@@ -25,10 +25,12 @@ export const BYTES_PER_SAMPLE = 6;
 
 /**
  * Budget for the generator data only (stage rasters in the worker and the copy
- * sent to the main thread), in bytes (decimal megabytes). Renderer canvases and
- * GPU memory are counted separately by the render statistics.
+ * sent to the main thread), in bytes (decimal megabytes). Calibrated so the
+ * largest supported world (12000 m) fits at the finest offered detail (1 m):
+ * 12000 × 12000 cells × 6 bytes. Renderer canvases and GPU memory are counted
+ * separately by the render statistics.
  */
-export const MEMORY_BUDGET_BYTES = 600_000_000;
+export const MEMORY_BUDGET_BYTES = 864_000_000;
 
 /** Cells above this count are rejected by both the UI and the generator. */
 export const SAMPLE_BUDGET = Math.floor(MEMORY_BUDGET_BYTES / BYTES_PER_SAMPLE);

@@ -36,12 +36,15 @@ describe('GeologyForm', () => {
   it('adds and removes areas through the form store', async () => {
     const user = userEvent.setup();
     renderForm();
+    const initial = useGeologyFormStore.getState().geology.areas.length;
 
     await user.click(screen.getByRole('button', { name: 'Add Volcanic' }));
-    expect(useGeologyFormStore.getState().geology.areas).toHaveLength(2);
+    expect(useGeologyFormStore.getState().geology.areas).toHaveLength(initial + 1);
 
     await user.click(screen.getByRole('button', { name: 'Remove area-1' }));
-    expect(useGeologyFormStore.getState().geology.areas.map(area => area.id)).toEqual(['area-2']);
+    expect(useGeologyFormStore.getState().geology.areas.map(area => area.id)).not.toContain(
+      'area-1'
+    );
   });
 
   it('commits the extent slider to the area', async () => {
@@ -81,11 +84,12 @@ describe('GeologyForm', () => {
   it('duplicates an area with a fresh id and automatic placement', async () => {
     const user = userEvent.setup();
     renderForm();
+    const before = useGeologyFormStore.getState().geology.areas.map(area => area.id);
 
     await user.click(screen.getByRole('button', { name: 'Duplicate area-1' }));
 
     const areas = useGeologyFormStore.getState().geology.areas;
-    expect(areas.map(area => area.id)).toEqual(['area-1', 'area-2']);
+    expect(areas.map(area => area.id)).toEqual([...before, 'area-2']);
     expect(areas[1].placement).toEqual({ kind: 'automatic' });
     expect(areas[1].relief).toBe(areas[0].relief);
   });

@@ -2,7 +2,7 @@ import type { WorldShape, WorldSize } from '../../components/settings-panel/form
 import { DEFAULT_WORLD_SHAPE } from '../../utils/world-shape';
 import { createStore } from '../create-store';
 
-export const DEFAULT_WORLD_SIZE = 1000;
+export const DEFAULT_WORLD_SIZE = 3000;
 export const DEFAULT_TERRAIN_DETAIL = 1;
 
 export const WORLD_SHAPE_FORM_DEFAULTS: {
