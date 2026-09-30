@@ -10,7 +10,7 @@ function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfig
   return {
     seed: '42',
     shape: 'disc',
-    sizeMeters: 1000,
+    sizeMeters: 3000,
     metersPerSample: 1,
     noise: DEFAULT_NOISE,
     macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
@@ -34,7 +34,7 @@ describe('buildGenerationConfig', () => {
     expect(result).toEqual({
       config: {
         world: {
-          dimensions: expect.objectContaining({ sampleWidth: 1000, sampleHeight: 1000 }),
+          dimensions: expect.objectContaining({ sampleWidth: 3000, sampleHeight: 3000 }),
           seed: 42,
           shape: 'rectangle',
         },
@@ -60,7 +60,7 @@ describe('buildGenerationConfig', () => {
   it('resolves an untouched geography recipe for the new map size', () => {
     const small = buildGenerationConfig(input({ geographyPreset: 'archipelago' }));
     const large = buildGenerationConfig(
-      input({ geographyPreset: 'archipelago', sizeMeters: 4000 })
+      input({ geographyPreset: 'archipelago', sizeMeters: 12_000 })
     );
     if (!('config' in small) || !('config' in large)) {
       throw new Error('Expected valid generated configurations.');

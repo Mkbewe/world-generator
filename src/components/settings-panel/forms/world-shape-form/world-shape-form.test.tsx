@@ -2,6 +2,8 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { SIZE_PRESETS } from './lib/size-presets';
+import { TERRAIN_DETAIL_OPTIONS } from './lib/terrain-detail';
 import { WorldShapeForm } from './world-shape-form';
 
 interface RenderOptions {
@@ -12,7 +14,7 @@ interface RenderOptions {
 
 function renderForm({
   shape = 'disc',
-  sizeMeters = 1000,
+  sizeMeters = 3000,
   metersPerSample = 1,
 }: RenderOptions = {}) {
   const onShapeChange = vi.fn();
@@ -43,25 +45,27 @@ describe('WorldShapeForm', () => {
     expect(onShapeChange).toHaveBeenCalledWith('rectangle');
   });
 
-  it('applies a size preset', async () => {
+  it('applies every size preset from the shared list', async () => {
     const user = userEvent.setup();
-    const { onSizeChange } = renderForm();
+    // A size outside the presets keeps every preset clickable.
+    const { onSizeChange } = renderForm({ sizeMeters: 4500 });
 
-    await user.click(screen.getByRole('radio', { name: 'Medium' }));
-
-    expect(onSizeChange).toHaveBeenCalledWith(2000);
+    for (const preset of SIZE_PRESETS) {
+      await user.click(screen.getByRole('radio', { name: preset.label }));
+      expect(onSizeChange).toHaveBeenLastCalledWith(preset.sizeMeters);
+    }
   });
 
   it('commits a custom size on blur, clamped to the allowed range', async () => {
     const user = userEvent.setup();
-    const { onSizeChange } = renderForm();
+    const { onSizeChange } = renderForm({ sizeMeters: 4500 });
 
     const input = screen.getByLabelText('Custom size:');
     await user.clear(input);
     await user.type(input, '50');
     await user.tab();
 
-    expect(onSizeChange).toHaveBeenCalledWith(100);
+    expect(onSizeChange).toHaveBeenCalledWith(3000);
   });
 
   it('commits an in-range custom size on Enter', async () => {
@@ -70,17 +74,19 @@ describe('WorldShapeForm', () => {
 
     const input = screen.getByLabelText('Custom size:');
     await user.clear(input);
-    await user.type(input, '2500{Enter}');
+    await user.type(input, '4500{Enter}');
 
-    expect(onSizeChange).toHaveBeenCalledWith(2500);
+    expect(onSizeChange).toHaveBeenCalledWith(4500);
   });
 
-  it('reports the selected terrain detail', async () => {
+  it('reports every terrain detail option from the shared list', async () => {
     const user = userEvent.setup();
-    const { onDetailChange } = renderForm();
+    // A detail outside the options keeps every option clickable.
+    const { onDetailChange } = renderForm({ metersPerSample: 3 });
 
-    await user.click(screen.getByRole('radio', { name: '2 m' }));
-
-    expect(onDetailChange).toHaveBeenCalledWith(2);
+    for (const option of TERRAIN_DETAIL_OPTIONS) {
+      await user.click(screen.getByRole('radio', { name: option.label }));
+      expect(onDetailChange).toHaveBeenLastCalledWith(option.metersPerSample);
+    }
   });
 });

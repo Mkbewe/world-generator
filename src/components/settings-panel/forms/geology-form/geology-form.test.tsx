@@ -37,7 +37,7 @@ function areasOf(character: 'shallow-archipelago' | 'volcanic' | 'atoll') {
 describe('GeologyForm', () => {
   beforeEach(() => {
     useGeologyFormStore.setState({ ...GEOLOGY_FORM_DEFAULTS });
-    useWorldShapeFormStore.setState({ sizeMeters: 1000, shape: 'disc' });
+    useWorldShapeFormStore.setState({ sizeMeters: 3000, shape: 'disc' });
   });
 
   it('lists areas by id and never promises island counts', () => {
@@ -50,12 +50,15 @@ describe('GeologyForm', () => {
   it('adds and removes areas through the form store', async () => {
     const user = userEvent.setup();
     renderForm();
+    const initial = useGeologyFormStore.getState().geology.areas.length;
 
     await user.click(screen.getByRole('button', { name: 'Volcanic' }));
-    expect(useGeologyFormStore.getState().geology.areas).toHaveLength(2);
+    expect(useGeologyFormStore.getState().geology.areas).toHaveLength(initial + 1);
 
     await user.click(screen.getByRole('button', { name: 'Remove area-1' }));
-    expect(useGeologyFormStore.getState().geology.areas.map(area => area.id)).toEqual(['area-2']);
+    expect(useGeologyFormStore.getState().geology.areas.map(area => area.id)).not.toContain(
+      'area-1'
+    );
   });
 
   it('shows only the controls of the area character', () => {
@@ -119,13 +122,16 @@ describe('GeologyForm', () => {
   it('duplicates an area with a fresh id and automatic placement', async () => {
     const user = userEvent.setup();
     renderForm();
+    const before = useGeologyFormStore.getState().geology.areas.map(area => area.id);
 
     await user.click(screen.getByRole('button', { name: 'Duplicate area-1' }));
 
     const areas = useGeologyFormStore.getState().geology.areas;
-    expect(areas.map(area => area.id)).toEqual(['area-1', 'area-2']);
-    expect(areas[1].placement).toEqual({ kind: 'automatic' });
-    expect(areas[1].character).toBe(areas[0].character);
+    expect(areas).toHaveLength(before.length + 1);
+    const copy = areas.at(-1);
+    expect(copy && before).not.toContain(copy?.id);
+    expect(copy?.placement).toEqual({ kind: 'automatic' });
+    expect(copy?.character).toBe(areas[0].character);
   });
 
   it('keeps an empty list as an explicit ocean world', () => {
@@ -171,7 +177,7 @@ describe('GeologyForm', () => {
   it('rebuilds an untouched preset for a larger new world', async () => {
     renderForm();
     const initialCount = useGeologyFormStore.getState().geology.areas.length;
-    act(() => useWorldShapeFormStore.getState().setSizeMeters(4000));
+    act(() => useWorldShapeFormStore.getState().setSizeMeters(12_000));
 
     await waitFor(() => {
       expect(useGeologyFormStore.getState().geology.areas.length).toBeGreaterThan(initialCount);

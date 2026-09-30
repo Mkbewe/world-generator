@@ -3,30 +3,46 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { DetailField } from './detail-field';
+import { TERRAIN_DETAIL_OPTIONS } from '../lib/terrain-detail';
+
+function renderField(metersPerSample: number, onChange: (value: number) => void = () => {}) {
+  render(
+    <Theme>
+      <DetailField metersPerSample={metersPerSample} onChange={onChange} />
+    </Theme>
+  );
+}
 
 describe('DetailField', () => {
-  it('marks the active detail option', () => {
-    render(
-      <Theme>
-        <DetailField metersPerSample={2} onChange={() => {}} />
-      </Theme>
-    );
+  it('renders every option from the shared list', () => {
+    renderField(TERRAIN_DETAIL_OPTIONS[0].metersPerSample);
 
-    expect(screen.getByRole('radio', { name: '2 m' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('radio', { name: '1 m' })).toHaveAttribute('aria-checked', 'false');
+    for (const option of TERRAIN_DETAIL_OPTIONS) {
+      expect(screen.getByRole('radio', { name: option.label })).toBeInTheDocument();
+    }
   });
 
-  it('reports the selected detail', async () => {
+  it('marks only the active option', () => {
+    const active = TERRAIN_DETAIL_OPTIONS[1];
+    renderField(active.metersPerSample);
+
+    for (const option of TERRAIN_DETAIL_OPTIONS) {
+      expect(screen.getByRole('radio', { name: option.label })).toHaveAttribute(
+        'aria-checked',
+        String(option === active)
+      );
+    }
+  });
+
+  it('reports every selectable option', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(
-      <Theme>
-        <DetailField metersPerSample={1} onChange={onChange} />
-      </Theme>
-    );
+    // A value outside the list leaves every option clickable.
+    renderField(-1, onChange);
 
-    await user.click(screen.getByRole('radio', { name: '0.5 m' }));
-
-    expect(onChange).toHaveBeenCalledWith(0.5);
+    for (const option of TERRAIN_DETAIL_OPTIONS) {
+      await user.click(screen.getByRole('radio', { name: option.label }));
+      expect(onChange).toHaveBeenLastCalledWith(option.metersPerSample);
+    }
   });
 });

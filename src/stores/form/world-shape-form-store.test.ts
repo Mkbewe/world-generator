@@ -13,12 +13,12 @@ describe('useWorldShapeFormStore', () => {
     const store = useWorldShapeFormStore.getState();
 
     store.setShape('rectangle');
-    store.setSizeMeters(2400);
+    store.setSizeMeters(4500);
     store.setMetersPerSample(2);
 
     expect(useWorldShapeFormStore.getState()).toMatchObject({
       shape: 'rectangle',
-      sizeMeters: 2400,
+      sizeMeters: 4500,
       metersPerSample: 2,
     });
   });
