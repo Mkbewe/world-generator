@@ -1,5 +1,5 @@
 import { planProgress, ProgressTracker } from './progress-state';
-import type { GenerationProgressState } from './progress-types';
+import type { GenerationProgressState } from '../../../stores';
 import type { StageInfo, StageStatistics } from '../../../utils/map-generator';
 
 const stageInfos = [

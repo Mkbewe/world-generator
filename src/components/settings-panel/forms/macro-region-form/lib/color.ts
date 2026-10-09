@@ -8,10 +8,6 @@ const DANGER_RAMP: readonly { at: number; color: Color }[] = [
   { at: 1, color: [103, 0, 13] },
 ];
 
-export function colorString(color: readonly [number, number, number]): string {
-  return `rgb(${color[0]} ${color[1]} ${color[2]})`;
-}
-
 export function dangerColor(value: number): Color {
   const clamped = Math.min(1, Math.max(0, value));
   for (let index = 1; index < DANGER_RAMP.length; index++) {

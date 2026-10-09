@@ -99,8 +99,7 @@ export class RenderMetrics {
       return {
         ...shared,
         kind: 'vector',
-        nodes: statistics?.nodes ?? 0,
-        edges: statistics?.edges ?? 0,
+        elements: statistics?.elements,
       };
     }
     return {

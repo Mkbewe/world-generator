@@ -6,7 +6,12 @@ import { useMapRenderer } from './hooks/use-map-renderer';
 import { usePreviewFullscreen } from './hooks/use-preview-fullscreen';
 import { useTabSync } from './hooks/use-tab-sync';
 import { LayerNavigation } from './lib/layer-navigation';
-import { tabForLayer, usePreviewStore, useViewSyncStore } from '../../stores';
+import {
+  type GenerationProgressState,
+  tabForLayer,
+  usePreviewStore,
+  useViewSyncStore,
+} from '../../stores';
 import { readoutItems } from '../../utils/map-readout';
 import {
   layerRegistry,
@@ -14,7 +19,7 @@ import {
   type MapOverlayId,
   type MapRenderer,
 } from '../../utils/map-renderer';
-import { GenerationProgress, type GenerationProgressState } from '../generation-progress';
+import { GenerationProgress } from '../generation-progress';
 import { LayerTabs } from '../layer-tabs';
 import { MapCanvas } from '../map-canvas';
 import { MapSidebar } from '../map-sidebar';
@@ -38,6 +43,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
   const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer, layerTree);
   const readout = useMapReadout(rendererRef, canvasRef, preview, { zoomable: isFullscreen });
   const hasMap = preview.layers.some(layer => layer.available);
+  const selectedRegionId = useViewSyncStore(state => state.selectedRegionId);
 
   useEffect(() => {
     if (isFullscreen) {
@@ -46,6 +52,27 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     }
     rendererRef.current?.resetView();
   }, [isFullscreen, rendererRef]);
+
+  useEffect(() => {
+    rendererRef.current?.setSelectedRegion(selectedRegionId);
+  }, [preview.info, rendererRef, selectedRegionId]);
+
+  /** The readout's edit action opens the region in the Geology form. */
+  const handleReadoutAction = useCallback(
+    (actionId: string): void => {
+      if (actionId !== 'edit-region') {
+        return;
+      }
+      const inspection = readout.readout?.inspection;
+      if (inspection?.kind !== 'vector' || !inspection.hit) {
+        return;
+      }
+      const { setSelectedRegion, setSettingsTab } = useViewSyncStore.getState();
+      setSelectedRegion(inspection.hit.id);
+      setSettingsTab('geology');
+    },
+    [readout.readout]
+  );
 
   /** Applies a selection: the renderer switches and the preview store remembers it. */
   const selectLayer = useCallback(
@@ -125,6 +152,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             inspector={{
               items: readoutItems(readout.readout, preview.info),
               pinned: readout.pinned,
+              onAction: handleReadoutAction,
             }}
             view={{
               zoom: preview.zoom,

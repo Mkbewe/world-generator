@@ -1,11 +1,13 @@
-import { isGeologyPlan, validateGeologyConfig } from './geology-check';
+import { isGeologyPlan, validateGeologyConfig } from './config/geology-check';
+import { DEFAULT_GEOLOGY_CONFIG } from './config/presets';
 import { buildGeologyPlan } from './plan';
-import { DEFAULT_GEOLOGY_CONFIG } from './presets';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { type MapStage } from '../../pipeline/stage';
 import { GEOLOGY_STAGE } from '../../pipeline/stage-definitions';
+import { spaceOf } from '../../space';
 import type {
+  GeologicalRegionType,
   GeologyPlan,
   MapConfig,
   MapState,
@@ -17,9 +19,8 @@ import type {
 const PLAN_PROGRESS = 0.1;
 
 /**
- * Plans the geological areas: resolves their placement and samples a terrain
- * profile per area. The stage never walks world cells and holds no raster; the
- * heightfield and the actual islands belong to later stages.
+ * Plans the full-world region partition and its ownership raster. Terrain
+ * features inside the regions belong to later stages.
  */
 export class GeologyStage implements MapStage<
   MapConfig,
@@ -50,7 +51,10 @@ export class GeologyStage implements MapStage<
       config,
       context.random,
       context.config.world.shape,
-      signal
+      context.config.world.dimensions,
+      spaceOf(context),
+      signal,
+      progress => report(PLAN_PROGRESS + progress * (1 - PLAN_PROGRESS))
     );
     report(1);
     return { geologyPlan };
@@ -65,11 +69,12 @@ export class GeologyStage implements MapStage<
   summarize(
     _context: MapContext<MapConfig, MapState, string>,
     data: { geologyPlan: GeologyPlan }
-  ): StageMetrics | undefined {
-    const areas = data.geologyPlan.areas;
-    return {
-      areas: areas.length,
-      meanExtent: areas.reduce((total, area) => total + area.extent, 0) / Math.max(1, areas.length),
-    };
+  ): StageMetrics {
+    const regions = data.geologyPlan.regions;
+    const counts: Record<GeologicalRegionType, number> = { ordinary: 0, volcanic: 0, atoll: 0 };
+    for (const region of regions) {
+      counts[region.type]++;
+    }
+    return { regions: regions.length, ...counts };
   }
 }

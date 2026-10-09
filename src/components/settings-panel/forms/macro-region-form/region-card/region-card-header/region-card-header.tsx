@@ -4,7 +4,7 @@ import { Box, Button, Flex, TextField } from '@radix-ui/themes';
 import { useMacroRegionFormStore } from '../../../../../../stores';
 import type { MacroRegionConfig } from '../../../../../../utils/map-generator/types';
 import { regionColor } from '../../../../../../utils/map-layers';
-import { colorString } from '../../lib/color';
+import { colorString } from '../../../../../lib/color';
 import styles from './region-card-header.module.scss';
 
 export function RegionCardHeader({

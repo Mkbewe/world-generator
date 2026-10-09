@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { DrawingPinFilledIcon } from '@radix-ui/react-icons';
-import { Card, Flex, Text } from '@radix-ui/themes';
+import { Button, Card, Flex, Text } from '@radix-ui/themes';
 
 import type { ReadoutItem } from '../../../utils/map-readout';
 import styles from './cursor-readout.module.scss';
@@ -8,12 +8,19 @@ import styles from './cursor-readout.module.scss';
 export interface CursorReadoutProps {
   items: readonly ReadoutItem[];
   pinned?: boolean;
+  /** Called with the action id when a button entry is pressed. */
+  onAction?: (actionId: string) => void;
   /** Renders without its own card, for use inside a shared panel. */
   bare?: boolean;
 }
 
 /** A card with the hovered cell and layer value, pinned to the sidebar footer. */
-export function CursorReadout({ items, pinned = false, bare = false }: CursorReadoutProps) {
+export function CursorReadout({
+  items,
+  pinned = false,
+  onAction,
+  bare = false,
+}: CursorReadoutProps) {
   const content = (
     <Flex
       align='start'
@@ -29,15 +36,7 @@ export function CursorReadout({ items, pinned = false, bare = false }: CursorRea
         </span>
       )}
       {items.map(item => (
-        <Text
-          key={item.id}
-          size='1'
-          color='gray'
-          as='span'
-          className={item.lines ? `${styles.item} ${styles.axes}` : styles.item}
-        >
-          {renderItemContent(item)}
-        </Text>
+        <ReadoutEntry key={item.id} item={item} onAction={onAction} />
       ))}
     </Flex>
   );
@@ -50,6 +49,39 @@ export function CursorReadout({ items, pinned = false, bare = false }: CursorRea
     <Card size='1' variant='surface' className={styles.card}>
       {content}
     </Card>
+  );
+}
+
+interface ReadoutEntryProps {
+  item: ReadoutItem;
+  onAction?: (actionId: string) => void;
+}
+
+function ReadoutEntry({ item, onAction }: ReadoutEntryProps) {
+  const action = item.action;
+  if (action) {
+    return (
+      <div className={styles.action}>
+        <Button
+          size='1'
+          variant='soft'
+          onClick={() => onAction?.(action.id)}
+          aria-label={action.label}
+        >
+          {action.label}
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <Text
+      size='1'
+      color='gray'
+      as='span'
+      className={item.lines ? `${styles.item} ${styles.axes}` : styles.item}
+    >
+      {renderItemContent(item)}
+    </Text>
   );
 }
 

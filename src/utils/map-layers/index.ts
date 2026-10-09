@@ -4,10 +4,16 @@ export {
   RASTER_CATALOG,
   selectRasters,
 } from './catalog/catalog';
-export { compilePalette, HEIGHTMAP_STOPS, regionColor, validatePalette } from './palettes/palettes';
+export {
+  compilePalette,
+  GEOLOGY_REGION_PALETTES,
+  geologyRegionColor,
+  regionColor,
+  validatePalette,
+} from './palettes/palettes';
 export type { PixelWriter } from './palettes/palettes';
-export { CHARACTER_STYLES, characterStyle } from './palettes/characters';
-export type { CharacterStyle } from './palettes/characters';
+export { REGION_STYLES, regionStyle } from './palettes/regions';
+export type { RegionStyle } from './palettes/regions';
 export type {
   Color,
   DiscreteOverflow,

@@ -4,7 +4,6 @@ import { MAP_CONFIG_KEYS, PIPELINE_STAGES, type PipelineStageId } from './stage-
 import { validateDimensions } from '../../world-dimensions';
 import { createWorldSpace } from '../space';
 import { GeologyStage } from '../stages/geology';
-import { HeightmapStage } from '../stages/heightmap';
 import { MacroRegionStage } from '../stages/macro-region';
 import { NoiseStage } from '../stages/noise';
 import { WorldShapeStage } from '../stages/world-shape';
@@ -19,7 +18,6 @@ const STAGE_FACTORIES: Readonly<
   noise: () => new NoiseStage(),
   'macro-region': () => new MacroRegionStage(),
   geology: () => new GeologyStage(),
-  heightmap: () => new HeightmapStage(),
 };
 
 export function createMapGenerator(): MapGenerator<MapConfig, MapState, PipelineStageId> {

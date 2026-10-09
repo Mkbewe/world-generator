@@ -116,7 +116,7 @@ describe('MapGenerator', () => {
   it('reports throttled stage progress ending at 1', async () => {
     const reported: number[] = [];
     const pipeline = new MapGenerator([
-      createStage('heightmap', async (_context, _signal, report) => {
+      createStage('relief', async (_context, _signal, report) => {
         report(0);
         report(0.5);
         report(0.5);
@@ -145,7 +145,7 @@ describe('MapGenerator', () => {
     const reported: number[] = [];
     const pipeline = new MapGenerator([
       {
-        ...createStage('heightmap', async (_context, _signal, report) => {
+        ...createStage('relief', async (_context, _signal, report) => {
           report(0.1);
           report(0.4);
           report(0.6);
@@ -175,7 +175,7 @@ describe('MapGenerator', () => {
   it('wraps a stage failure with stage information', async () => {
     const failure = new Error('failure');
     const pipeline = new MapGenerator([
-      createStage('heightmap', async () => {
+      createStage('relief', async () => {
         throw failure;
       }),
     ]);
@@ -187,16 +187,16 @@ describe('MapGenerator', () => {
 
     await expect(generation).rejects.toMatchObject({
       name: GenerationStageError.name,
-      stageId: 'heightmap',
+      stageId: 'relief',
       cause: failure,
       stageStatistics: {
-        stageId: 'heightmap',
+        stageId: 'relief',
         status: 'failed',
         durationMs: expect.any(Number),
       },
       generationStatistics: [
         {
-          stageId: 'heightmap',
+          stageId: 'relief',
           status: 'failed',
           durationMs: expect.any(Number),
         },
@@ -208,7 +208,7 @@ describe('MapGenerator', () => {
     const failure = new Error('incomplete output');
     const events: string[] = [];
     const stage: TestStage = {
-      ...createStage('heightmap', async () => ({ heightmap: new Float32Array(1) })),
+      ...createStage('relief', async () => ({ relief: new Float32Array(1) })),
       validate: () => {
         throw failure;
       },
@@ -227,10 +227,10 @@ describe('MapGenerator', () => {
 
     await expect(generation).rejects.toMatchObject({
       name: GenerationStageError.name,
-      stageId: 'heightmap',
+      stageId: 'relief',
       cause: failure,
     });
-    expect(events).toEqual(['stage-started:heightmap', 'stage-failed:heightmap']);
+    expect(events).toEqual(['stage-started:relief', 'stage-failed:relief']);
   });
 
   it('hands out a read-only snapshot of the completed stage data', async () => {
@@ -269,7 +269,7 @@ describe('MapGenerator', () => {
     const controller = new AbortController();
     const failure = new Error('real failure');
     const pipeline = new MapGenerator([
-      createStage('heightmap', async () => {
+      createStage('relief', async () => {
         controller.abort();
         throw failure;
       }),
@@ -283,7 +283,7 @@ describe('MapGenerator', () => {
 
     await expect(generation).rejects.toMatchObject({
       name: GenerationStageError.name,
-      stageId: 'heightmap',
+      stageId: 'relief',
       cause: failure,
     });
   });

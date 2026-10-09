@@ -1,4 +1,4 @@
-import type { GenerationProgressState } from '../../components/generation-progress';
+import type { GenerationProgressState } from './progress-types';
 import { createStore } from '../create-store';
 
 interface GenerationProgressStoreState {

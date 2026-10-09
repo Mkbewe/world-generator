@@ -1,7 +1,7 @@
 import { Text } from '@radix-ui/themes';
 
+import type { GenerationStageProgress } from '../../../stores';
 import { formatDuration } from '../lib/progress-format';
-import type { GenerationStageProgress } from '../lib/progress-types';
 import styles from './stage-list.module.scss';
 
 export function StageList({ stages }: { stages: readonly GenerationStageProgress[] }) {

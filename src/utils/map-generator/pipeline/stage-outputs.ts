@@ -1,23 +1,11 @@
 import { isGeologyPlan } from '../stages/geology';
-import { isLandmassLayout } from '../stages/landmass';
-import { isStructureZones } from '../stages/structure-character';
 import type { MapState, StageData } from '../types';
 
 /** Raster keys the generator owns. The layer catalog may display them, not define them. */
-export const RASTER_OUTPUT_KEYS = [
-  'worldMask',
-  'noiseMap',
-  'macroRegionIdMap',
-  'heightmap',
-  'provenanceMap',
-] as const;
+export const RASTER_OUTPUT_KEYS = ['worldMask', 'noiseMap', 'macroRegionIdMap'] as const;
 
-/**
- * Domain keys produced by stages and restored with the rasters on a later run.
- * The corridor keys stay readable during the migration so existing consumers
- * still compile; only `geologyPlan` is produced by the current pipeline.
- */
-export const DOMAIN_OUTPUT_KEYS = ['geologyPlan', 'landmassLayout', 'structureZones'] as const;
+/** Domain keys produced by stages and restored with the rasters on a later run. */
+export const DOMAIN_OUTPUT_KEYS = ['geologyPlan'] as const;
 
 export type RasterOutputKey = (typeof RASTER_OUTPUT_KEYS)[number];
 export type DomainOutputKey = (typeof DOMAIN_OUTPUT_KEYS)[number];
@@ -28,18 +16,15 @@ export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
  * in `./stage`: a stage changing its output type must update both, pinned by
  * the cross-check test over a real run.
  */
-export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32' | 'int16'> = {
+export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32'> = {
   worldMask: 'uint8',
   noiseMap: 'float32',
   macroRegionIdMap: 'uint8',
-  heightmap: 'float32',
-  provenanceMap: 'int16',
 };
 
 const rasterConstructors = {
   uint8: Uint8Array,
   float32: Float32Array,
-  int16: Int16Array,
 } as const;
 
 /** Whether a state key names one of the persistent raster outputs. */
@@ -91,8 +76,6 @@ function assignRasterOutput<Key extends RasterOutputKey>(
 
 const domainReaders = {
   geologyPlan: isGeologyPlan,
-  landmassLayout: isLandmassLayout,
-  structureZones: isStructureZones,
 } satisfies {
   [Key in DomainOutputKey]: (value: unknown) => value is NonNullable<MapState[Key]>;
 };

@@ -1,10 +1,10 @@
 import { Flex } from '@radix-ui/themes';
 
 import { useElapsed } from './hooks/use-elapsed';
-import type { GenerationProgressState } from './lib/progress-types';
 import { ProgressHeader } from './progress-header';
 import { StageBars } from './stage-bars';
 import { StageList } from './stage-list';
+import type { GenerationProgressState } from '../../stores';
 import styles from './generation-progress.module.scss';
 
 interface GenerationProgressProps {

@@ -1,22 +1,5 @@
 import { type InspectorReadout, type ReadoutItem, readoutItems } from './readout';
-import type { LandmassLayout } from '../map-generator/types';
 import type { MapInspection } from '../map-renderer';
-
-const LAYOUT: LandmassLayout = {
-  structures: [
-    {
-      id: 'landmass-1',
-      archetype: 'elongated',
-      nodes: [
-        { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
-        { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.03 },
-      ],
-      edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
-      shelfId: 'shelf-1',
-    },
-  ],
-  shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 60, falloff: 0.5, irregularity: 0.35 }],
-};
 
 function readout(inspection?: MapInspection): InspectorReadout {
   return {
@@ -43,7 +26,7 @@ function itemValue(
 
 describe('readoutItems', () => {
   it('shows placeholders without a readout', () => {
-    expect(readoutItems(undefined).map(item => item.value)).toEqual(['—', '—']);
+    expect(readoutItems(undefined).map(value => value.value)).toEqual(['—', '—']);
   });
 
   it('shows cell coordinates as an X/Y row without a distance', () => {
@@ -55,7 +38,7 @@ describe('readoutItems', () => {
       lines: [{ label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' }],
     });
     expect(items[1]).toMatchObject({ id: 'value', label: 'Value', value: '—' });
-    expect(items.map(item => item.value).join(' ')).not.toContain('%');
+    expect(items.map(value => value.value).join(' ')).not.toContain('%');
   });
 
   it('adds the distance in meters as a second row', () => {
@@ -123,21 +106,6 @@ describe('readoutItems', () => {
     ).toBe('0.250');
   });
 
-  it('describes the heightmap value in metres', () => {
-    expect(
-      itemValue(
-        readout({ kind: 'raster', layerId: 'heightmap', label: 'Height', value: 388 }),
-        'value'
-      )
-    ).toBe('388 m');
-    expect(
-      itemValue(
-        readout({ kind: 'raster', layerId: 'heightmap', label: 'Height', value: -62.5 }),
-        'value'
-      )
-    ).toBe('-62.5 m');
-  });
-
   it('shows macro region labels captured with the generated map', () => {
     const inspection = {
       kind: 'raster',
@@ -160,192 +128,68 @@ describe('readoutItems', () => {
     );
   });
 
-  it('names the vector element under the pointer', () => {
-    const inspection = {
-      kind: 'vector',
-      layerId: 'landmass-layout',
-      label: 'Landmasses',
-      hit: { id: 'landmass-1' },
-    } as const;
-
-    expect(itemValue(readout(inspection), 'name')).toBe('landmass-1');
-    expect(itemValue(readout({ ...inspection, hit: undefined }), 'name')).toBe('—');
-  });
-
   it('keeps the layer label while the raster sample is unavailable', () => {
     const raster = readoutItems(readout({ kind: 'raster', layerId: 'noise', label: 'Noise' }));
 
     expect(raster[1]).toMatchObject({ label: 'Noise', value: '—' });
   });
 
-  it('shows the landmass type and its measurements', () => {
-    const inspection = {
-      kind: 'vector',
-      layerId: 'landmass-layout',
-      label: 'Landmasses',
-      hit: { id: 'landmass-1' },
-    } as const;
-    const info = {
-      landmassLayout: LAYOUT,
-      worldDimensions: {
-        widthMeters: 4000,
-        heightMeters: 2000,
-        sampleWidth: 2000,
-        sampleHeight: 1000,
-      },
-    };
-    const items = readoutItems(readout(inspection), info);
-
-    expect(items.map(item => item.id)).toEqual([
-      'position',
-      'name',
-      'archetype',
-      'nodes',
-      'length',
-      'width',
-    ]);
-    expect(itemValue(readout(inspection), 'name', info)).toBe('landmass-1');
-    expect(itemValue(readout(inspection), 'archetype', info)).toBe('elongated');
-    expect(itemValue(readout(inspection), 'nodes', info)).toBe('2');
-    expect(itemValue(readout(inspection), 'length', info)).toBe('800 m');
-    expect(itemValue(readout(inspection), 'width', info)).toBe('180 m–300 m');
-  });
-
-  it('falls back to normalized measurements without world dimensions', () => {
-    const inspection = {
-      kind: 'vector',
-      layerId: 'landmass-layout',
-      label: 'Landmasses',
-      hit: { id: 'landmass-1' },
-    } as const;
-    const info = { landmassLayout: LAYOUT };
-
-    expect(itemValue(readout(inspection), 'length', info)).toBe('0.200');
-    expect(itemValue(readout(inspection), 'width', info)).toBe('0.060–0.100');
-  });
-
-  it('shows no measurements for a hit outside the captured layout', () => {
-    const inspection = {
-      kind: 'vector',
-      layerId: 'landmass-layout',
-      label: 'Landmasses',
-      hit: { id: 'landmass-9' },
-    } as const;
-    const items = readoutItems(readout(inspection), { landmassLayout: LAYOUT });
-
-    expect(items[1]).toMatchObject({ id: 'name', value: 'landmass-9' });
-    expect(items).toHaveLength(2);
-  });
-
-  it('shows the geology area under the pointer', () => {
+  it('shows the generated region and its type under the pointer', () => {
     const inspection = {
       kind: 'vector',
       layerId: 'geology',
       label: 'Geology',
-      hit: { id: 'area-2' },
+      hit: { id: 'region-2' },
     } as const;
-    const profile = {
-      elevation: 0.5,
-      roughness: 0.5,
-      mountainStrength: 0.8,
-      hillStrength: 0.2,
-      plateauStrength: 0.1,
-      lakePotential: 0.1,
-      erosionStrength: 0.4,
-      coastalCliffStrength: 0.2,
-    };
     const info = {
       geologyPlan: {
-        areas: [
+        regions: [
           {
-            id: 'area-2',
+            id: 'region-2',
             centre: { x: 0.5, y: 0.5 },
-            extent: 0.25,
-            elongation: 0.3,
-            direction: 0,
-            upliftDensity: 0.5,
-            upliftScaleMeters: 600,
-            fragmentation: 0.4,
-            seabedOffsetMeters: -120,
-            shelfWidthMeters: 0,
-            rimStrength: 0,
-            relief: 'mountains',
-            profile,
+            weight: 1,
+            type: 'atoll',
+            areaSquareMeters: 2_000_000,
+          },
+        ],
+        regionRasterSize: { width: 1, height: 1 },
+        regionOwnerMap: new Int16Array([0]),
+        regionBorderDistanceMap: new Float32Array([500]),
+        worldAreaSquareMeters: 10_000_000,
+      },
+    };
+
+    expect(itemValue(readout(inspection), 'region', info)).toBe('region-2');
+    expect(itemValue(readout(inspection), 'type', info)).toBe('Atoll');
+    expect(itemValue(readout(inspection), 'character', info)).toBe(
+      'Low reef platforms and lagoons'
+    );
+    expect(itemValue(readout(inspection), 'area', info)).toBe('2 km² · 20.0%');
+    expect(item(readout(inspection), 'edit-region', info)?.action).toEqual({
+      id: 'edit-region',
+      label: 'Edit region',
+    });
+  });
+
+  it('skips the area row when the plan carries no measurements', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'geology',
+      label: 'Geology',
+      hit: { id: 'region-7' },
+    } as const;
+    const info = {
+      geologyPlan: {
+        regions: [
+          {
+            id: 'region-7',
+            type: 'ordinary',
           },
         ],
       },
     };
 
-    expect(itemValue(readout(inspection), 'name', info)).toBe('area-2');
-    expect(itemValue(readout(inspection), 'extent', info)).toBe('25%');
-    expect(itemValue(readout(inspection), 'seabed', info)).toBe('-120 m');
-    expect(
-      readoutItems(readout({ ...inspection, hit: { id: 'area-9' } }), info).map(item => item.id)
-    ).toEqual(['position']);
-  });
-
-  it('shows the character zone under the pointer', () => {
-    const values = {
-      elevation: 0.5,
-      roughness: 0.5,
-      mountainStrength: 0.8,
-      hillStrength: 0.5,
-      plateauStrength: 0.3,
-      lakePotential: 0.2,
-      erosionStrength: 0.5,
-      coastalCliffStrength: 0.4,
-    };
-    const info = {
-      structureZones: [
-        {
-          id: 'large-zone-1',
-          structureId: 'large',
-          character: 'mountains',
-          geometry: { kind: 'whole' },
-          values,
-        },
-        {
-          id: 'large-zone-2',
-          structureId: 'large',
-          character: 'plains',
-          geometry: { kind: 'chain', pathId: 'main', from: 0, to: 0.5 },
-          values,
-        },
-      ],
-    };
-    const inspection = {
-      kind: 'vector',
-      layerId: 'structure-character',
-      label: 'Character',
-      hit: { id: 'large-zone-2' },
-    } as const;
-    const items = readoutItems(readout(inspection), info);
-
-    expect(items.map(item => item.id)).toEqual([
-      'position',
-      'name',
-      'character',
-      'plateau',
-      'lakes',
-      'erosion',
-      'cliffs',
-    ]);
-    expect(itemValue(readout(inspection), 'name', info)).toBe('large');
-    expect(itemValue(readout(inspection), 'character', info)).toBe('Plains');
-    expect(itemValue(readout(inspection), 'plateau', info)).toBe('30%');
-    expect(itemValue(readout(inspection), 'lakes', info)).toBe('20%');
-  });
-
-  it('falls back to the plain name for a character hit outside the zones', () => {
-    const inspection = {
-      kind: 'vector',
-      layerId: 'structure-character',
-      label: 'Character',
-      hit: { id: 'missing-zone' },
-    } as const;
-    const items = readoutItems(readout(inspection), { structureZones: [] });
-
-    expect(items[1]).toMatchObject({ id: 'name', value: 'missing-zone' });
-    expect(items).toHaveLength(2);
+    expect(itemValue(readout(inspection), 'region', info)).toBe('region-7');
+    expect(item(readout(inspection), 'area', info)).toBeUndefined();
   });
 });

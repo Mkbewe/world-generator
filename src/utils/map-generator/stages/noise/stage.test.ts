@@ -15,6 +15,12 @@ function createConfig(width = 5, height = 5, seed = 123): MapConfig {
       shape: 'disc',
     },
     noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
+    // Tiny test worlds host a single region, so the partition never starves.
+    geology: {
+      regionCount: 1,
+      layout: { evenness: 0.5, irregularity: 0.3 },
+      regions: [{ type: 'ordinary', size: 1 }],
+    },
   };
 }
 

@@ -40,8 +40,7 @@ See `README.md` and `docs/world-generation-roadmap.md` for architecture.
 ## Generator boundaries
 
 The pipeline stays independent of rendering and UI. Rationale and the current
-breaks are in `docs/world-generation-roadmap.md` and
-`docs/geology-generator-technical-implementation-2026-09-28.md`.
+breaks are in `docs/world-generation-roadmap.md`.
 
 - `src/utils/map-generator` must not import from `map-layers`, `map-renderer`,
   components, or stores. Those layers depend on the generator, never the reverse,

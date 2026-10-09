@@ -10,7 +10,7 @@ const BOUNDARY_LINE_WIDTH = 3;
 
 /**
  * Eroded outline for content that must keep water to the world edge, e.g. the
- * landmass preview clipped by the ocean margin. `inset` shrinks the path in
+ * world preview clipped by the ocean margin. `inset` shrinks the path in
  * canvas pixels per axis, mirroring the base outline above.
  */
 export function traceErodedWorldBoundary(

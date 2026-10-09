@@ -51,6 +51,7 @@ export class MapView {
   constructor(
     private readonly elements: MapViewElements,
     metrics: RenderMetrics,
+    onError: (error: unknown) => void,
     selectedLayer?: MapBaseLayerId,
     private readonly shouldDisplay: (id: MapBaseLayerId) => boolean = () => true
   ) {
@@ -61,7 +62,8 @@ export class MapView {
       elements.canvas,
       metrics,
       () => this.renderTarget(),
-      () => this.viewTarget()
+      () => this.viewTarget(),
+      onError
     );
   }
 

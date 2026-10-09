@@ -8,6 +8,14 @@ import { GenerationCancelledError } from '../errors';
 import type { StageInfo } from '../pipeline/stage-definitions';
 import type { GenerationEvent, MapConfig } from '../types';
 
+/** Worker failure carrying the message the worker reported. */
+export class GenerationFailedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GenerationFailedError';
+  }
+}
+
 export interface GenerationWorkerOptions {
   signal?: AbortSignal;
   onStages?: (stages: readonly StageInfo[], skippedStageIds: readonly string[]) => void;
@@ -58,7 +66,7 @@ export const runGeneration: RunGeneration = (config, options) =>
         return;
       }
       if (message.type === 'error') {
-        settle(() => reject(new Error(message.message)));
+        settle(() => reject(new GenerationFailedError(message.message)));
         return;
       }
       try {

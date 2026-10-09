@@ -83,31 +83,21 @@ describe('fractalNoise2D', () => {
 
 describe('createWorldNoiseBand', () => {
   it('is deterministic for the same seed, namespace and spec', () => {
-    const first = createWorldNoiseBand(new RandomFactory(17), 'heightmap.medium', DIMENSIONS, SPEC);
-    const second = createWorldNoiseBand(
-      new RandomFactory(17),
-      'heightmap.medium',
-      DIMENSIONS,
-      SPEC
-    );
+    const first = createWorldNoiseBand(new RandomFactory(17), 'terrain.medium', DIMENSIONS, SPEC);
+    const second = createWorldNoiseBand(new RandomFactory(17), 'terrain.medium', DIMENSIONS, SPEC);
 
     expect(pointGrid(second)).toEqual(pointGrid(first));
   });
 
   it('decorrelates bands across namespaces', () => {
-    const medium = createWorldNoiseBand(
-      new RandomFactory(17),
-      'heightmap.medium',
-      DIMENSIONS,
-      SPEC
-    );
-    const fine = createWorldNoiseBand(new RandomFactory(17), 'heightmap.fine', DIMENSIONS, SPEC);
+    const medium = createWorldNoiseBand(new RandomFactory(17), 'terrain.medium', DIMENSIONS, SPEC);
+    const fine = createWorldNoiseBand(new RandomFactory(17), 'terrain.fine', DIMENSIONS, SPEC);
 
     expect(pointGrid(fine)).not.toEqual(pointGrid(medium));
   });
 
   it('stays continuous between adjacent samples', () => {
-    const band = createWorldNoiseBand(new RandomFactory(17), 'heightmap.fine', DIMENSIONS, SPEC);
+    const band = createWorldNoiseBand(new RandomFactory(17), 'terrain.fine', DIMENSIONS, SPEC);
     const epsilon = 1e-6;
     let maxStep = 0;
 
@@ -122,8 +112,8 @@ describe('createWorldNoiseBand', () => {
   it('keeps the raw band identical across raster resolutions', () => {
     const coarse: WorldDimensions = { ...DIMENSIONS, sampleWidth: 50, sampleHeight: 25 };
     const fine: WorldDimensions = { ...DIMENSIONS, sampleWidth: 400, sampleHeight: 200 };
-    const coarseBand = createWorldNoiseBand(new RandomFactory(17), 'heightmap.large', coarse, SPEC);
-    const fineBand = createWorldNoiseBand(new RandomFactory(17), 'heightmap.large', fine, SPEC);
+    const coarseBand = createWorldNoiseBand(new RandomFactory(17), 'terrain.large', coarse, SPEC);
+    const fineBand = createWorldNoiseBand(new RandomFactory(17), 'terrain.large', fine, SPEC);
 
     for (const point of [
       { x: 0.1, y: 0.2 },
@@ -136,17 +126,17 @@ describe('createWorldNoiseBand', () => {
 
   it('rejects a non-positive wavelength', () => {
     expect(() =>
-      createWorldNoiseBand(new RandomFactory(17), 'heightmap.fine', DIMENSIONS, {
+      createWorldNoiseBand(new RandomFactory(17), 'terrain.fine', DIMENSIONS, {
         wavelengthMeters: 0,
       })
     ).toThrow(RangeError);
   });
 
   it('applies the documented octave defaults', () => {
-    const implicit = createWorldNoiseBand(new RandomFactory(17), 'heightmap.fine', DIMENSIONS, {
+    const implicit = createWorldNoiseBand(new RandomFactory(17), 'terrain.fine', DIMENSIONS, {
       wavelengthMeters: 500,
     });
-    const explicit = createWorldNoiseBand(new RandomFactory(17), 'heightmap.fine', DIMENSIONS, {
+    const explicit = createWorldNoiseBand(new RandomFactory(17), 'terrain.fine', DIMENSIONS, {
       wavelengthMeters: 500,
       octaves: DEFAULT_BAND_OCTAVES,
       persistence: DEFAULT_BAND_PERSISTENCE,

@@ -45,23 +45,27 @@ Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 ## Generation preview
 
 The home page runs the map generation pipeline in a Web Worker. The pipeline
-contains three implemented stages:
+contains four implemented stages:
 
 1. `WorldShapeStage` creates a disc or rectangular `worldMask`.
-2. `MacroRegionStage` assigns every masked cell to exactly one macro region in
+2. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
+3. `MacroRegionStage` assigns every masked cell to exactly one macro region in
    `macroRegionIdMap`.
-3. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
+4. `GeologyStage` divides the world into one to ten geological provinces and
+   produces the owner raster (`regionOwnerMap`) and the distance from every
+   region border (`regionBorderDistanceMap`). Geology plans regions only — it
+   creates no heights and no islands.
 
 The preview exposes these results as base map layers and the `World boundary`
 overlay. The map viewer keeps raw numeric layers separate from rendering, so
 future stages such as height, temperature, moisture, hydrology and biomes can be
 added without changing the rendering layer.
 
-World settings use physical units. The shape form takes a size in meters (1, 2
-and 4 km presets plus a custom value from 100 to 10 000 m) and a terrain detail
-in meters per sample (0.5, 1, 2 or 4 m). The form shows the derived sample grid
+World settings use physical units. The shape form takes a size in meters (3, 6
+and 12 km presets plus a custom value from 3000 to 12 000 m) and a terrain detail
+in meters per sample (1, 2, 4, 8 or 16 m). The form shows the derived sample grid
 and the estimated generation data before generating. Generation is validated against
-a shared sample budget derived from a 600 MB budget for the generation data
+a shared sample budget derived from an 864 MB budget for the generation data
 (stage rasters and their copy sent to the main thread; renderer canvases are
 counted separately by the render statistics). When the requested detail exceeds
 it, the form clamps the grid to the budget and shows a warning while keeping the

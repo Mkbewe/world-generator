@@ -1,7 +1,7 @@
 export { emptyRenderState, MapRenderer } from './renderer';
 export type { MapRendererOptions, MapRendererState } from './renderer';
 export { MapPersistence, mapPersistence } from './persistence';
-export { mapRepository, MapRepository } from './repository';
+export { DATA_CONTRACT_VERSION, mapRepository, MapRepository } from './repository';
 export type { GeneratedMapSnapshot } from './repository';
 export { LayerRegistry, layerRegistry } from './layer';
 export type { MapSize } from './layer';

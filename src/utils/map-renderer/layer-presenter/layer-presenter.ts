@@ -27,7 +27,9 @@ export class LayerPresenter {
     private readonly canvas: HTMLCanvasElement,
     private readonly metrics: RenderMetrics,
     private readonly target: () => RenderTarget | undefined,
-    private readonly view: () => RenderTarget | undefined
+    private readonly view: () => RenderTarget | undefined,
+    /** Receives preparation failures the presenter cannot present itself. */
+    private readonly onError: (error: unknown) => void
   ) {}
 
   setShape(shape: WorldShape): void {
@@ -69,6 +71,7 @@ export class LayerPresenter {
     const rendered = this.renderedTargets.get(layer) ?? layer.renderedTarget;
     const rendering = layer.renderingTarget;
     const target = this.target();
+    const presentation = layer.presentation;
     const currentFrame = rendered && target && targetKey(rendered) === targetKey(target);
     const useOverview = !currentFrame && overview;
     if (!useOverview && !rendered && !rendering) {
@@ -81,17 +84,22 @@ export class LayerPresenter {
       }
       const { width, height } = this.canvas;
       context.clearRect(0, 0, width, height);
-      const clipped = Boolean(useOverview && this.clipWorld(context, view, layer));
+      const clipped = Boolean(
+        (useOverview || presentation.clipPresentation) && this.clipWorld(context, view, layer)
+      );
       if (useOverview) {
         this.drawSurface(context, layer.overview, useOverview, view, true);
       }
-      if (rendered) {
-        const smooth = view.projection.cellSize <= rendered.projection.cellSize;
+      if (rendered && (currentFrame || presentation.showStaleFrame)) {
+        const smooth = !currentFrame && view.projection.cellSize <= rendered.projection.cellSize;
         this.drawSurface(context, layer.canvas, rendered, view, smooth);
       }
-      if (rendering) {
+      if (rendering && presentation.showPartialFrame) {
         const smooth = view.projection.cellSize <= rendering.projection.cellSize;
         this.drawSurface(context, layer.stage, rendering, view, smooth);
+      }
+      if (useOverview) {
+        layer.paintFallbackDetails(context, view);
       }
       if (clipped) {
         context.restore();
@@ -157,6 +165,9 @@ export class LayerPresenter {
     if (render) {
       if (targetKey(render.target) !== targetKey(target)) {
         this.renderPending = true;
+        if (layer.presentation.cancelStaleRender) {
+          render.controller.abort();
+        }
       }
       return;
     }
@@ -184,7 +195,13 @@ export class LayerPresenter {
           this.draw();
         }
       })
-      .catch(() => {})
+      .catch(error => {
+        // A render the presenter itself superseded is expected; anything else
+        // is a real failure the caller must see.
+        if (!controller.signal.aborted) {
+          this.onError(error);
+        }
+      })
       .finally(() => {
         if (this.viewRender?.controller !== controller) {
           return;

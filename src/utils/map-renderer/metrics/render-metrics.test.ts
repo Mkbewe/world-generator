@@ -1,23 +1,30 @@
 import { RenderMetrics } from './render-metrics';
-import type { LandmassLayout } from '../../map-generator/types';
-import { CatalogLayer, LandmassLayoutVectorLayer, LayerRegistry, layerRegistry } from '../layer';
+import type { GeologyPlan } from '../../map-generator/types';
+import { CatalogLayer, GeologyPlanVectorLayer, LayerRegistry, layerRegistry } from '../layer';
 import type { RenderTarget } from '../preview-targets';
 import type { RenderStatistics } from '../types';
 
-const LAYOUT: LandmassLayout = {
-  structures: [
+const PLAN: GeologyPlan = {
+  regions: [
     {
-      id: 'landmass-1',
-      archetype: 'elongated',
-      nodes: [
-        { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
-        { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.05 },
-      ],
-      edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
-      shelfId: 'shelf-1',
+      id: 'region-1',
+      centre: { x: 0.25, y: 0.5 },
+      weight: 1,
+      type: 'ordinary',
+      areaSquareMeters: 100,
+    },
+    {
+      id: 'region-2',
+      centre: { x: 0.75, y: 0.5 },
+      weight: 1,
+      type: 'volcanic',
+      areaSquareMeters: 100,
     },
   ],
-  shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 60, falloff: 0.5, irregularity: 0.35 }],
+  regionRasterSize: { width: 4, height: 4 },
+  regionOwnerMap: new Int16Array(16).fill(0),
+  regionBorderDistanceMap: new Float32Array(16).fill(100),
+  worldAreaSquareMeters: 400,
 };
 
 function targetFor(width: number, height: number): RenderTarget {
@@ -33,11 +40,16 @@ function mockCanvasContext(): () => void {
     }),
     putImageData: vi.fn(),
     drawImage: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    fillText: vi.fn(),
+    strokeText: vi.fn(),
     beginPath: vi.fn(),
     closePath: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
     bezierCurveTo: vi.fn(),
+    quadraticCurveTo: vi.fn(),
     arc: vi.fn(),
     ellipse: vi.fn(),
     rect: vi.fn(),
@@ -85,9 +97,9 @@ describe('RenderMetrics', () => {
     const restore = mockCanvasContext();
     const registry = new LayerRegistry([
       layerRegistry.get('world-shape'),
-      layerRegistry.get('landmass-layout'),
+      layerRegistry.get('geology'),
     ]);
-    const layer = new LandmassLayoutVectorLayer('landmass-layout', { width: 4, height: 4 }, LAYOUT);
+    const layer = new GeologyPlanVectorLayer('geology', { width: 4, height: 4 }, PLAN);
     const reports: RenderStatistics[] = [];
 
     try {
@@ -96,7 +108,10 @@ describe('RenderMetrics', () => {
       await rendered.prepare(layer, new AbortController().signal, targetFor(4, 4));
       rendered.report([layer], 0, undefined);
 
-      expect(reports[0].layers[0]).toMatchObject({ kind: 'vector', nodes: 2, edges: 1 });
+      expect(reports[0].layers[0]).toMatchObject({
+        kind: 'vector',
+        elements: { label: 'Regions', count: 2 },
+      });
       expect(reports[0].layers[0]).not.toHaveProperty('pixels');
       expect(reports[0].layers[0]).not.toHaveProperty('sourceWidth');
     } finally {

@@ -1,8 +1,7 @@
-import { isGeologyPlan, isStructureZones } from '../map-generator';
-import { isLandmassLayout, structureSegments } from '../map-generator/stages/landmass';
-import type { GeologicalStructure } from '../map-generator/types';
-import { characterStyle } from '../map-layers';
-import type { MapInfo, MapInspection } from '../map-renderer';
+import { formatArea } from '../format';
+import type { GeologicalRegionPlan } from '../map-generator/types';
+import { regionStyle } from '../map-layers';
+import type { MapBaseLayerId, MapInfo, MapInspection, VectorMapInspection } from '../map-renderer';
 import { cellOriginMeters, type WorldDimensions } from '../world-dimensions';
 
 export interface PointerSample {
@@ -26,12 +25,20 @@ export interface ReadoutLine {
   readonly y: string;
 }
 
+/** Interactive entry rendered as a button instead of a label/value pair. */
+export interface ReadoutAction {
+  readonly id: string;
+  readonly label: string;
+}
+
 export interface ReadoutItem {
   readonly id: string;
   readonly label: string;
   readonly value: string;
   /** When present, rendered as aligned X/Y columns instead of a single value. */
   readonly lines?: readonly ReadoutLine[];
+  /** When present, rendered as a button. */
+  readonly action?: ReadoutAction;
 }
 
 const EMPTY = '—';
@@ -41,7 +48,6 @@ export function readoutItems(
   info: MapInfo = {}
 ): readonly ReadoutItem[] {
   const inspection = readout?.inspection;
-  const structure = inspection ? landmassStructure(inspection, info) : undefined;
   return [
     {
       id: 'position',
@@ -49,30 +55,32 @@ export function readoutItems(
       value: EMPTY,
       lines: readout ? describePositionLines(readout.position, info) : undefined,
     },
-    ...inspectionItems(inspection, info, structure),
+    ...inspectionItems(inspection, info),
   ];
 }
+
+/** Readout of one vector element; undefined when the hit is unknown. */
+type VectorReadout = (
+  inspection: VectorMapInspection,
+  info: MapInfo
+) => readonly ReadoutItem[] | undefined;
+
+/** One provider per vector layer; a new layer adds an entry, not a branch. */
+const VECTOR_READOUTS: Partial<Record<MapBaseLayerId, VectorReadout>> = {
+  geology: geologyReadout,
+};
 
 /** Raster layers report their value; vector layers name the hovered element. */
 function inspectionItems(
   inspection: MapInspection | undefined,
-  info: MapInfo,
-  structure: GeologicalStructure | undefined
+  info: MapInfo
 ): readonly ReadoutItem[] {
   if (inspection?.kind === 'vector') {
-    if (inspection.layerId === 'geology') {
-      return geologyItems(inspection, info) ?? [];
+    const provider = VECTOR_READOUTS[inspection.layerId];
+    if (provider) {
+      return provider(inspection, info) ?? [];
     }
-    const character =
-      inspection.layerId === 'structure-character' ? characterItems(inspection, info) : undefined;
-    if (character) {
-      return character;
-    }
-    return [
-      { id: 'name', label: 'Name', value: inspection.hit?.id ?? EMPTY },
-      ...(structure ? [{ id: 'archetype', label: 'Archetype', value: structure.archetype }] : []),
-      ...structureItems(structure, info),
-    ];
+    return [{ id: 'name', label: 'Name', value: inspection.hit?.id ?? EMPTY }];
   }
   return [
     {
@@ -114,127 +122,73 @@ function describeValue(inspection: MapInspection | undefined, info: MapInfo): st
       const label = labelAt(info, 'macroRegionLabels', inspection.value);
       return label ?? `Region ${inspection.value}`;
     }
-    case 'heightmap':
-      return formatHeightMeters(inspection.value);
     default:
       return inspection.value.toFixed(3);
   }
 }
 
-/** Structure a vector hit points at, when the map carries the generated layout. */
-function landmassStructure(
-  inspection: MapInspection,
-  info: MapInfo
-): GeologicalStructure | undefined {
-  if (inspection.kind !== 'vector' || !inspection.hit) {
-    return undefined;
-  }
-  const id = inspection.hit.id;
-  const layout: unknown = info.landmassLayout;
-  if (!isLandmassLayout(layout)) {
-    return undefined;
-  }
-  return layout.structures.find(structure => structure.id === id);
-}
-
-/** Readout of a geology plan hit: the influence area under the pointer. */
-function geologyItems(
-  inspection: MapInspection,
+/** Readout of the geological region under the pointer. */
+function geologyReadout(
+  inspection: VectorMapInspection,
   info: MapInfo
 ): readonly ReadoutItem[] | undefined {
-  if (inspection.kind !== 'vector' || !inspection.hit) {
+  if (!inspection.hit) {
     return undefined;
   }
   const plan: unknown = info.geologyPlan;
-  if (!isGeologyPlan(plan)) {
+  if (!hasRegionList(plan)) {
     return undefined;
   }
-  const area = plan.areas.find(candidate => candidate.id === inspection.hit?.id);
-  if (!area) {
+  const region = plan.regions.find(candidate => candidate.id === inspection.hit?.id);
+  if (!region) {
     return undefined;
   }
+  const style = regionStyle(region.type);
   return [
-    { id: 'name', label: 'Name', value: area.id },
-    { id: 'relief', label: 'Relief', value: characterStyle(area.relief).label },
-    { id: 'extent', label: 'Extent', value: percent(area.extent) },
-    { id: 'seabed', label: 'Seabed', value: `${Math.round(area.seabedOffsetMeters)} m` },
+    { id: 'region', label: 'Region', value: region.id },
+    { id: 'type', label: 'Type', value: style.label },
+    { id: 'character', label: 'Character', value: style.description },
+    ...areaItems(region, plan.worldAreaSquareMeters),
+    {
+      id: 'edit-region',
+      label: 'Edit region',
+      value: '',
+      action: { id: 'edit-region', label: 'Edit region' },
+    },
   ];
 }
 
-/** Readout of a structure-character hit: the zone under the pointer. */
-function characterItems(
-  inspection: MapInspection,
-  info: MapInfo
-): readonly ReadoutItem[] | undefined {
-  if (inspection.kind !== 'vector' || !inspection.hit) {
-    return undefined;
-  }
-  const id = inspection.hit.id;
-  const zones = info.structureZones;
-  if (!isStructureZones(zones)) {
-    return undefined;
-  }
-  const zone = zones.find(candidate => candidate.id === id);
-  if (!zone) {
-    return undefined;
-  }
-  return [
-    { id: 'name', label: 'Name', value: zone.structureId },
-    { id: 'character', label: 'Character', value: characterStyle(zone.character).label },
-    { id: 'plateau', label: 'Plateau', value: percent(zone.values.plateauStrength) },
-    { id: 'lakes', label: 'Lakes', value: percent(zone.values.lakePotential) },
-    { id: 'erosion', label: 'Erosion', value: percent(zone.values.erosionStrength) },
-    { id: 'cliffs', label: 'Cliffs', value: percent(zone.values.coastalCliffStrength) },
-  ];
-}
-
-function percent(value: number): string {
-  return `${Math.min(100, Math.max(0, Math.round(value * 100)))}%`;
-}
-
-/** Measurements of the hovered structure, shown as extra readout rows. */
-function structureItems(
-  structure: GeologicalStructure | undefined,
-  info: MapInfo
-): readonly ReadoutItem[] {
-  if (!structure) {
+/** Rasterized area of the region and its share of the world, when measured. */
+function areaItems(region: GeologicalRegionPlan, worldArea: unknown): readonly ReadoutItem[] {
+  if (typeof region.areaSquareMeters !== 'number' || !Number.isFinite(region.areaSquareMeters)) {
     return [];
   }
-  const metrics = structureMetrics(structure, worldDimensions(info));
+  const share =
+    typeof worldArea === 'number' && Number.isFinite(worldArea) && worldArea > 0
+      ? ` · ${((region.areaSquareMeters / worldArea) * 100).toFixed(1)}%`
+      : '';
   return [
-    { id: 'nodes', label: 'Nodes', value: String(metrics.nodes) },
-    { id: 'length', label: 'Length', value: metrics.length },
-    { id: 'width', label: 'Width', value: metrics.width },
+    {
+      id: 'area',
+      label: 'Area',
+      value: `${formatArea(region.areaSquareMeters)}${share}`,
+    },
   ];
 }
 
-interface StructureMetrics {
-  readonly nodes: number;
-  readonly length: string;
-  readonly width: string;
-}
-
-function structureMetrics(
-  structure: GeologicalStructure,
-  dimensions: WorldDimensions | undefined
-): StructureMetrics {
-  let length = 0;
-  for (const segment of structureSegments(structure)) {
-    const dx = segment.to.x - segment.from.x;
-    const dy = segment.to.y - segment.from.y;
-    length += dimensions
-      ? Math.hypot(dx * dimensions.widthMeters, dy * dimensions.heightMeters)
-      : Math.hypot(dx, dy);
+/**
+ * Reads the region list without re-validating the whole raster: the plan was
+ * checked when it entered the map info, and the readout runs on every pointer
+ * move. Only the shape this readout consumes is checked here.
+ */
+function hasRegionList(value: unknown): value is {
+  readonly regions: readonly GeologicalRegionPlan[];
+  readonly worldAreaSquareMeters?: unknown;
+} {
+  if (typeof value !== 'object' || value === null) {
+    return false;
   }
-  const meanScale = dimensions ? (dimensions.widthMeters + dimensions.heightMeters) / 2 : 1;
-  const widths = structure.nodes.map(node => node.radius * 2 * meanScale);
-  const format = (value: number): string =>
-    dimensions ? `${formatMeters(Math.round(value * 10) / 10)} m` : value.toFixed(3);
-  return {
-    nodes: structure.nodes.length,
-    length: format(length),
-    width: `${format(Math.min(...widths))}–${format(Math.max(...widths))}`,
-  };
+  return Array.isArray((value as { readonly regions?: unknown }).regions);
 }
 
 /** Reads the label captured with the generated map at the given label index. */
@@ -266,9 +220,4 @@ function worldDimensions(info: MapInfo): WorldDimensions | undefined {
 
 function formatMeters(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-/** Height under the cursor, in metres above or below the sea datum. */
-function formatHeightMeters(value: number): string {
-  return `${formatMeters(Math.round(value * 10) / 10)} m`;
 }

@@ -11,7 +11,7 @@ import {
 import { PIPELINE_STAGES } from '../../../utils/map-generator/pipeline/stage-definitions';
 import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region/defaults';
 import type { MapRasters } from '../../../utils/map-layers';
-import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
+import { DATA_CONTRACT_VERSION, MapRenderer, mapRepository } from '../../../utils/map-renderer';
 import { MapLayer } from '../../../utils/map-renderer/layer';
 import { Viewport } from '../../../utils/map-renderer/viewport';
 
@@ -60,24 +60,6 @@ function stageStatistics(
     startedAt: 0,
     finishedAt: durationMs,
     durationMs,
-  };
-}
-
-function landmassLayoutFixture() {
-  return {
-    structures: [
-      {
-        id: 'landmass-1',
-        archetype: 'elongated',
-        nodes: [
-          { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
-          { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.05 },
-        ],
-        edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
-        shelfId: 'shelf-1',
-      },
-    ],
-    shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 60, falloff: 0.5, irregularity: 0.35 }],
   };
 }
 
@@ -203,50 +185,6 @@ describe('WorldGenerationSession', () => {
     expect(planned()).toEqual([]);
   });
 
-  it('saves the generated landmass layout with the snapshot', async () => {
-    session.attach(renderer);
-    const layout = landmassLayoutFixture();
-    const setInfo = vi.spyOn(renderer, 'setInfo');
-    runner.mockImplementation(async (_, options) => {
-      options?.onStages?.(stages, []);
-      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
-      options?.onEvent?.(completed('landmass-layout', { landmassLayout: layout }));
-      return { statistics: [], totalDurationMs: 1 };
-    });
-
-    await session.generate(config, vi.fn());
-
-    expect(setInfo).toHaveBeenCalledWith(expect.objectContaining({ landmassLayout: layout }));
-    expect(mapRepository.get()?.info?.landmassLayout).toEqual(layout);
-  });
-
-  it('restores the saved landmass layout while the stage is reused', async () => {
-    const layout = landmassLayoutFixture();
-    mapRepository.save({
-      width: 2,
-      height: 2,
-      seed: '17',
-      shape: 'disc',
-      layers: {},
-      info: { landmassLayout: layout },
-    });
-    const setInfo = vi.spyOn(renderer, 'setInfo');
-    session.attach(renderer);
-    runner.mockImplementation(async (_, options) => {
-      options?.onStages?.(stages, []);
-      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
-      return { statistics: [], totalDurationMs: 1 };
-    });
-
-    await session.generate(config, vi.fn());
-
-    expect(setInfo).toHaveBeenCalledWith(expect.objectContaining({ landmassLayout: layout }));
-    expect(mapRepository.get()?.info?.landmassLayout).toEqual(layout);
-    expect(runner.mock.lastCall?.[1]?.reuse.cachedState).toEqual(
-      expect.objectContaining({ landmassLayout: layout })
-    );
-  });
-
   it('drops a snapshot from an older format instead of reusing its rasters', async () => {
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(config, vi.fn());
@@ -255,11 +193,12 @@ describe('WorldGenerationSession', () => {
     mapRepository.save({
       width: 2,
       height: 2,
+      contractVersion: DATA_CONTRACT_VERSION,
       seed: '17',
       shape: 'disc',
       layers: {
         worldMask: new Uint8Array(4).fill(1),
-        landmassIdMap: new Uint8Array(4),
+        legacyMap: new Uint8Array(4),
       } as unknown as MapRasters,
     });
 
@@ -268,7 +207,26 @@ describe('WorldGenerationSession', () => {
     expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(
       PIPELINE_STAGES.map(stage => stage.id)
     );
-    expect(mapRepository.get()?.layers).not.toHaveProperty('landmassIdMap');
+    expect(mapRepository.get()?.layers).not.toHaveProperty('legacyMap');
+  });
+
+  it('drops a snapshot from another data contract version', async () => {
+    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
+    await session.generate(config, vi.fn());
+    mapRepository.save({
+      width: 2,
+      height: 2,
+      contractVersion: DATA_CONTRACT_VERSION - 1,
+      seed: '17',
+      shape: 'disc',
+      layers: { worldMask: new Uint8Array(4).fill(1) },
+    });
+
+    await session.generate(config, vi.fn());
+
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(
+      PIPELINE_STAGES.map(stage => stage.id)
+    );
   });
 
   it('reuses the saved rasters for the clean stages', async () => {
@@ -343,43 +301,6 @@ describe('WorldGenerationSession', () => {
 
     expect(prepare).toHaveBeenCalledTimes(1);
     expect(renderer.state.displayedLayer).toBe('macro-region');
-  });
-
-  it('follows the landmass layout while a fresh map is built', async () => {
-    runner.mockImplementation(async (_, options) => {
-      options?.onStages?.(stages, []);
-      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
-      options?.onEvent?.(completed('noise', { noiseMap: new Float32Array(4) }));
-      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
-      options?.onEvent?.(completed('landmass-layout', { landmassLayout: landmassLayoutFixture() }));
-      return { statistics: [], totalDurationMs: 1 };
-    });
-    session.attach(renderer);
-
-    await session.generate(config, vi.fn());
-    await renderer.ready;
-
-    expect(renderer.state.displayedLayer).toBe('landmass-layout');
-  });
-
-  it('keeps the selection when a later run reports a new layout', async () => {
-    runner.mockImplementation(async (_, options) => {
-      options?.onStages?.(stages, []);
-      options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
-      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
-      options?.onEvent?.(completed('landmass-layout', { landmassLayout: landmassLayoutFixture() }));
-      return { statistics: [], totalDurationMs: 1 };
-    });
-    session.attach(renderer);
-    await session.generate(config, vi.fn());
-    await renderer.ready;
-    expect(renderer.state.displayedLayer).toBe('landmass-layout');
-
-    await session.generate(config, vi.fn());
-    await renderer.ready;
-
-    // The refreshed instance takes over the slot the user is already watching.
-    expect(renderer.state.displayedLayer).toBe('landmass-layout');
   });
 
   it('plans reused stages as skipped before the worker reports', async () => {
@@ -727,6 +648,7 @@ describe('WorldGenerationSession', () => {
     const snapshot = {
       width: 2,
       height: 2,
+      contractVersion: DATA_CONTRACT_VERSION,
       seed: '17',
       shape: 'disc' as const,
       layers: { worldMask: mask, noiseMap: noise },
@@ -785,40 +707,6 @@ describe('WorldGenerationSession', () => {
     await expect(first).resolves.toBeUndefined();
     expect(mapRepository.get()).toBe(saved);
     expect(renderer.state.displayedLayer).toBe('noise');
-  });
-
-  it('saves outputs with no preview layer and never sends them to the renderer', async () => {
-    session.attach(renderer);
-    const mask = new Uint8Array(4).fill(1);
-    const heightmap = new Float32Array(4);
-    const provenanceMap = new Int16Array(4);
-    const add = vi.spyOn(renderer, 'add');
-    runner.mockImplementation(async (_, options) => {
-      options?.onStages?.(stages, []);
-      options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('heightmap', { heightmap, provenanceMap }));
-      return { statistics: [], totalDurationMs: 1 };
-    });
-
-    await session.generate(config, vi.fn());
-    await renderer.ready;
-
-    // The persistent set keeps provenance although no catalog layer maps it…
-    expect(mapRepository.get()?.layers.heightmap).toBe(heightmap);
-    expect(mapRepository.get()?.layers.provenanceMap).toBe(provenanceMap);
-    // …while the preview only ever receives catalog data.
-    expect(add).toHaveBeenCalled();
-    for (const call of add.mock.calls) {
-      expect(call[1]).not.toBe(provenanceMap);
-    }
-    expect(renderer.state.displayedLayer).toBe('heightmap');
-
-    // The next run reuses both from cache.
-    await session.generate(config, vi.fn());
-    expect(runner.mock.lastCall?.[1]?.reuse.cachedState).toMatchObject({
-      heightmap,
-      provenanceMap,
-    });
   });
 
   it('does not touch a renderer that is not attached', async () => {

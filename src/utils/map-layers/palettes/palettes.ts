@@ -1,4 +1,4 @@
-import { OCEAN_DEPTH_METERS } from '../../map-generator/stages/heightmap/defaults';
+import type { GeologicalRegionType } from '../../map-generator/types';
 import type { Color, DiscreteOverflow, PaletteSpec, RampStop } from '../catalog/layer-spec';
 
 export type PixelWriter = (pixels: Uint8ClampedArray, offset: number, value: number) => void;
@@ -15,27 +15,62 @@ export const REGION_COLORS = [
 ] as const satisfies readonly Color[];
 
 /**
- * Hypsometric ramp for the heightmap, from the ocean floor through the coast to
- * the peaks. Stops are in metres, so `catalog-layer` samples the raster directly
- * without a second normalization. The deepest stop and the shelf water colour
- * follow `OCEAN_DEPTH_METERS`, so the ramp stays aligned with the stage.
+ * Body shades of every geological region type: greens for ordinary ground,
+ * browns for volcanic relief and blues for atoll waters. The region index
+ * picks the shade, so neighbours of one type still differ.
  */
-export const HEIGHTMAP_STOPS = [
-  { at: -OCEAN_DEPTH_METERS, color: [12, 36, 64] },
-  { at: -OCEAN_DEPTH_METERS * 0.6, color: [30, 78, 120] },
-  { at: -1, color: [78, 140, 178] },
-  { at: 0, color: [214, 204, 158] },
-  { at: 80, color: [104, 156, 84] },
-  { at: 300, color: [196, 172, 92] },
-  { at: 600, color: [150, 116, 88] },
-  { at: 1200, color: [238, 238, 238] },
-] as const satisfies readonly RampStop[];
+export const GEOLOGY_REGION_PALETTES: Readonly<Record<GeologicalRegionType, readonly Color[]>> = {
+  ordinary: [
+    [148, 196, 108],
+    [108, 178, 96],
+    [88, 158, 92],
+    [72, 140, 84],
+    [126, 186, 122],
+    [94, 162, 70],
+    [64, 128, 74],
+    [138, 190, 78],
+    [82, 148, 60],
+    [56, 118, 88],
+  ],
+  volcanic: [
+    [176, 120, 84],
+    [150, 96, 70],
+    [196, 138, 96],
+    [128, 82, 60],
+    [166, 108, 92],
+    [200, 150, 110],
+    [142, 90, 62],
+    [184, 132, 118],
+    [118, 76, 52],
+    [208, 158, 132],
+  ],
+  atoll: [
+    [96, 165, 220],
+    [72, 140, 196],
+    [122, 186, 232],
+    [60, 118, 170],
+    [96, 158, 190],
+    [140, 200, 230],
+    [78, 128, 188],
+    [54, 104, 152],
+    [112, 172, 214],
+    [88, 148, 176],
+  ],
+};
 
 const UNKNOWN_COLOR = [120, 120, 120] as const satisfies Color;
 
 export function regionColor(index: number): Color {
   return Number.isInteger(index) && index >= 0
     ? (REGION_COLORS[index % REGION_COLORS.length] ?? UNKNOWN_COLOR)
+    : UNKNOWN_COLOR;
+}
+
+/** Body colour of one geological region; the form and the map share it. */
+export function geologyRegionColor(type: GeologicalRegionType, index: number): Color {
+  const palette = GEOLOGY_REGION_PALETTES[type];
+  return Number.isInteger(index) && index >= 0
+    ? (palette[index % palette.length] ?? UNKNOWN_COLOR)
     : UNKNOWN_COLOR;
 }
 

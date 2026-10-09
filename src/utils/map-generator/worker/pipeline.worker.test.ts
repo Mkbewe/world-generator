@@ -9,14 +9,14 @@ const request: PipelineWorkerGenerateRequest = {
   type: 'generate',
   config: {
     world: {
-      dimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
+      dimensions: { widthMeters: 16, heightMeters: 16, sampleWidth: 16, sampleHeight: 16 },
       seed: 7,
       shape: 'rectangle',
     },
     noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   },
   reuse: {
-    dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'geology', 'heightmap'],
+    dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'geology'],
     cachedState: {},
   },
 };
@@ -63,7 +63,6 @@ describe('generation worker', () => {
         { id: 'noise', name: 'Noise' },
         { id: 'macro-region', name: 'Macro region' },
         { id: 'geology', name: 'Geology' },
-        { id: 'heightmap', name: 'Heightmap' },
       ],
       skippedStageIds: [],
     });
@@ -73,7 +72,6 @@ describe('generation worker', () => {
     }
     expect(message.result).not.toHaveProperty('layers');
     expect(message.result.statistics.map(stage => stage.status)).toEqual([
-      'completed',
       'completed',
       'completed',
       'completed',
@@ -89,8 +87,6 @@ describe('generation worker', () => {
       noiseMap: full.context.state.noiseMap,
       macroRegionIdMap: full.context.state.macroRegionIdMap,
       geologyPlan: full.context.state.geologyPlan,
-      heightmap: full.context.state.heightmap,
-      provenanceMap: full.context.state.provenanceMap,
     };
 
     const message = await generate({
@@ -107,10 +103,9 @@ describe('generation worker', () => {
       'skipped',
       'completed',
       'skipped',
-      'skipped',
     ]);
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
-      ['world-shape', 'noise', 'geology', 'heightmap']
+      ['world-shape', 'noise', 'geology']
     );
   });
 
@@ -132,8 +127,33 @@ describe('generation worker', () => {
       'completed',
       'skipped',
       'skipped',
-      'skipped',
     ]);
+  });
+
+  it('recomputes geology when only the sample resolution changes', async () => {
+    const { createMapGenerator } = await import('../pipeline/pipeline-factory');
+    const { selectDirtyStageIds } = await import('../pipeline/selective-regeneration');
+    const full = await createMapGenerator().generate(request.config, {});
+    const resized = {
+      ...request.config,
+      world: {
+        ...request.config.world,
+        dimensions: { ...request.config.world.dimensions, sampleWidth: 8, sampleHeight: 8 },
+      },
+    };
+
+    const message = await generate({
+      type: 'generate',
+      config: resized,
+      reuse: {
+        dirtyStageIds: selectDirtyStageIds(request.config, resized),
+        cachedState: { ...full.context.state },
+      },
+    });
+
+    expect(message?.type).toBe('result');
+    const skipped = messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []));
+    expect(skipped).not.toContain('geology');
   });
 
   it('reruns a clean stage whose cached write has the wrong type', async () => {
@@ -154,7 +174,6 @@ describe('generation worker', () => {
     expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
       'skipped',
       'completed',
-      'skipped',
       'skipped',
       'skipped',
     ]);

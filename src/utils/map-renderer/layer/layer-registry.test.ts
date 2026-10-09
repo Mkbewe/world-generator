@@ -109,33 +109,16 @@ describe('LayerRegistry', () => {
     const registry = new LayerRegistry([
       world,
       {
-        id: 'landmass-layout',
-        label: 'Landmasses',
+        id: 'geology',
+        label: 'Geology',
         kind: 'vector',
-        source: 'landmassLayout',
+        source: 'geologyPlan',
         clipTo: 'world-shape',
       },
     ]);
 
-    expect(registry.get('landmass-layout').kind).toBe('vector');
-    expect(registry.order).toEqual(['world-shape', 'landmass-layout']);
-    expect(() => registry.raster('landmass-layout')).toThrow('not a raster');
-  });
-
-  it('keeps hidden layers out of the tree but addressable', () => {
-    const registry = new LayerRegistry([
-      world,
-      {
-        id: 'legacy',
-        label: 'Legacy',
-        kind: 'vector',
-        source: 'legacyData',
-        hidden: true,
-      },
-    ]);
-
-    expect(registry.tree.map(node => node.id)).toEqual(['world-shape']);
-    expect(registry.get('legacy').kind).toBe('vector');
-    expect(registry.order).toEqual(['world-shape', 'legacy']);
+    expect(registry.get('geology').kind).toBe('vector');
+    expect(registry.order).toEqual(['world-shape', 'geology']);
+    expect(() => registry.raster('geology')).toThrow('not a raster');
   });
 });

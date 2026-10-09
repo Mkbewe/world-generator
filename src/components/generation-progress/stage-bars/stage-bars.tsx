@@ -2,7 +2,7 @@ import type {
   GenerationProgressState,
   GenerationStageProgress,
   GenerationStageStatus,
-} from '../lib/progress-types';
+} from '../../../stores';
 import styles from './stage-bars.module.scss';
 
 const STATUS_WIDTH: Record<GenerationStageStatus, (stage: GenerationStageProgress) => string> = {

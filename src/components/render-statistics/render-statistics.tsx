@@ -24,19 +24,16 @@ function layerMetrics(layer: RenderLayerStatistics): StatisticsMetric[] {
   ];
 
   if (layer.kind === 'vector') {
-    return [
-      {
-        label: 'Nodes',
-        value: formatNumber(layer.nodes),
-        description: 'Ridge nodes carried by this vector layer.',
-      },
-      {
-        label: 'Edges',
-        value: formatNumber(layer.edges),
-        description: 'Ridge edges carried by this vector layer.',
-      },
-      ...shared,
-    ];
+    const elements: StatisticsMetric[] = layer.elements
+      ? [
+          {
+            label: layer.elements.label,
+            value: formatNumber(layer.elements.count),
+            description: 'Elements carried by this vector layer.',
+          },
+        ]
+      : [];
+    return [...elements, ...shared];
   }
 
   return [

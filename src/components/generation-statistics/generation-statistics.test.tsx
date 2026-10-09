@@ -136,35 +136,32 @@ describe('GenerationStatisticsPanel', () => {
     expect(screen.getByText('dedicated')).toBeInTheDocument();
   });
 
-  it('formats landmass layout counts as integers', () => {
+  it('formats geology region counts as integers', () => {
     renderPanel({
       statistics: [
         createStage({
-          stageId: 'landmass-layout',
-          stageName: 'Landmass layout',
+          stageId: 'geology',
+          stageName: 'Geology',
           details: {
-            structures: 10,
-            shelves: 8,
-            nodes: 73,
-            edges: 63,
-            dropped: 0,
+            regions: 5,
+            ordinary: 3,
+            volcanic: 2,
+            atoll: 0,
           },
         }),
       ],
       totalDurationMs: 40,
     });
 
-    expect(screen.getByText('Structures')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('Shelves')).toBeInTheDocument();
-    expect(screen.getByText('8')).toBeInTheDocument();
-    expect(screen.getByText('Nodes')).toBeInTheDocument();
-    expect(screen.getByText('73')).toBeInTheDocument();
-    expect(screen.getByText('Edges')).toBeInTheDocument();
-    expect(screen.getByText('63')).toBeInTheDocument();
-    expect(screen.getByText('Dropped')).toBeInTheDocument();
+    expect(screen.getByText('Regions')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('Ordinary')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Volcanic')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('Atoll')).toBeInTheDocument();
     expect(screen.getByText('0')).toBeInTheDocument();
-    expect(screen.queryByText('10.000')).not.toBeInTheDocument();
+    expect(screen.queryByText('5.000')).not.toBeInTheDocument();
     expect(screen.queryByText('0.000')).not.toBeInTheDocument();
   });
 });

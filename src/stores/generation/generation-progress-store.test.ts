@@ -1,5 +1,5 @@
 import { useGenerationProgressStore } from './generation-progress-store';
-import type { GenerationProgressState } from '../../components/generation-progress';
+import type { GenerationProgressState } from './progress-types';
 
 const progress: GenerationProgressState = {
   status: 'completed',

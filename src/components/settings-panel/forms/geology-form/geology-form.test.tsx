@@ -1,132 +1,87 @@
 import { Theme } from '@radix-ui/themes';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { GeologyForm } from './geology-form';
-import { GEOLOGY_FORM_DEFAULTS, useGeologyFormStore } from '../../../../stores';
 import {
-  createGeologicalArea,
-  MAX_GEOLOGICAL_AREAS,
-} from '../../../../utils/map-generator/stages/geology';
+  GEOLOGY_FORM_DEFAULTS,
+  useGeologyFormStore,
+  useViewSyncStore,
+  VIEW_SYNC_DEFAULTS,
+} from '../../../../stores';
+import { geologyRegionColor } from '../../../../utils/map-layers';
 
-function renderForm(error?: string) {
-  render(
+function renderForm() {
+  return render(
     <Theme>
-      <GeologyForm error={error} />
+      <GeologyForm />
     </Theme>
   );
-}
-
-function card(id: string) {
-  return within(screen.getByRole('group', { name: id }));
 }
 
 describe('GeologyForm', () => {
   beforeEach(() => {
     useGeologyFormStore.setState({ ...GEOLOGY_FORM_DEFAULTS });
+    useViewSyncStore.setState({ ...VIEW_SYNC_DEFAULTS });
   });
 
-  it('lists areas by id and never promises island counts', () => {
+  it('shows the shared layout controls and the active region editor', () => {
     renderForm();
 
-    expect(screen.getByDisplayValue('area-1')).toBeInTheDocument();
-    expect(screen.getByText(/one area can grow zero, one or many islands/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Regions')).toBeInTheDocument();
+    expect(screen.getByLabelText('Evenness')).toBeInTheDocument();
+    expect(screen.getByLabelText('Border irregularity')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Region 1' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Geology region areas')).toBeInTheDocument();
+    expect(screen.queryByText('Add area')).not.toBeInTheDocument();
   });
 
-  it('adds and removes areas through the form store', async () => {
-    const user = userEvent.setup();
-    renderForm();
-    const initial = useGeologyFormStore.getState().geology.areas.length;
-
-    await user.click(screen.getByRole('button', { name: 'Add Volcanic' }));
-    expect(useGeologyFormStore.getState().geology.areas).toHaveLength(initial + 1);
-
-    await user.click(screen.getByRole('button', { name: 'Remove area-1' }));
-    expect(useGeologyFormStore.getState().geology.areas.map(area => area.id)).not.toContain(
-      'area-1'
-    );
-  });
-
-  it('commits the extent slider to the area', async () => {
+  it('applies a preset to the form state', async () => {
     const user = userEvent.setup();
     renderForm();
 
-    const slider = within(card('area-1').getByLabelText('Size')).getByRole('slider');
-    slider.focus();
-    await user.keyboard('{ArrowRight}');
+    await user.click(screen.getByRole('button', { name: 'Mosaic' }));
 
-    expect(useGeologyFormStore.getState().geology.areas[0].extent).toBeCloseTo(
-      GEOLOGY_FORM_DEFAULTS.geology.areas[0].extent + 0.01
-    );
+    expect(useGeologyFormStore.getState().regionCount).toBe(9);
+    expect(screen.getByRole('tab', { name: 'Region 9' })).toBeInTheDocument();
   });
 
-  it('fills the list from a geography preset and marks later edits', async () => {
+  it('uses map colours and identifies each region on the area bar', () => {
+    renderForm();
+
+    const volcanic = screen.getByTitle('Region 2: Volcanic (18%)');
+    const [red, green, blue] = geologyRegionColor('volcanic', 1);
+    expect(volcanic).toHaveStyle({ backgroundColor: `rgb(${red}, ${green}, ${blue})` });
+  });
+
+  it('edits only the active region', async () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole('radio', { name: 'Volcanic chain' }));
+    await user.click(screen.getByRole('tab', { name: 'Region 2' }));
+    await user.click(screen.getAllByText('Volcanic')[0] ?? screen.getByText('Volcanic'));
 
-    const areas = useGeologyFormStore.getState().geology.areas;
-    expect(areas).toHaveLength(3);
-    expect(areas.map(area => area.relief)).toEqual(['mountains', 'plains', 'mountains']);
-    expect(screen.queryByText(/edited by hand/i)).not.toBeInTheDocument();
-
-    const slider = within(card(areas[0].id).getByLabelText('Uplift density')).getByRole('slider');
-    slider.focus();
-    await user.keyboard('{ArrowRight}');
-
-    const state = useGeologyFormStore.getState();
-    expect(state.edited).toBe(true);
-    expect(state.preset).toBeUndefined();
-    expect(screen.getByText(/edited by hand/i)).toBeInTheDocument();
+    const slots = useGeologyFormStore.getState().slots;
+    expect(slots[1]?.type).toBe('volcanic');
+    expect(slots[0]?.type).toBe('ordinary');
   });
 
-  it('duplicates an area with a fresh id and automatic placement', async () => {
+  it('points the shared selection at the chosen region', async () => {
     const user = userEvent.setup();
     renderForm();
-    const before = useGeologyFormStore.getState().geology.areas.map(area => area.id);
 
-    await user.click(screen.getByRole('button', { name: 'Duplicate area-1' }));
+    await user.click(screen.getByRole('tab', { name: 'Region 3' }));
 
-    const areas = useGeologyFormStore.getState().geology.areas;
-    expect(areas.map(area => area.id)).toEqual([...before, 'area-2']);
-    expect(areas[1].placement).toEqual({ kind: 'automatic' });
-    expect(areas[1].relief).toBe(areas[0].relief);
+    expect(useViewSyncStore.getState().selectedRegionId).toBe('region-3');
   });
 
-  it('keeps an empty list as an explicit ocean world', () => {
-    useGeologyFormStore.setState({ geology: { areas: [] } });
+  it('falls back to the first region when the selection leaves the active count', () => {
+    useViewSyncStore.setState({ selectedRegionId: 'region-5' });
+    useGeologyFormStore.getState().setRegionCount(2);
+
     renderForm();
 
-    expect(screen.getByText(/No areas - the world stays ocean/)).toBeInTheDocument();
-  });
-
-  it('disables adding areas at the limit', () => {
-    useGeologyFormStore.setState({
-      geology: {
-        areas: Array.from({ length: MAX_GEOLOGICAL_AREAS }, (_value, index) =>
-          createGeologicalArea(`area-${index + 1}`, 'shallow-archipelago')
-        ),
-      },
-    });
-    renderForm();
-
-    expect(screen.getByRole('button', { name: 'Add Shallow' })).toBeDisabled();
-    expect(card('area-1').getByRole('button', { name: 'Duplicate area-1' })).toBeDisabled();
-  });
-
-  it('marks only the areas named in the placement error', () => {
-    useGeologyFormStore.setState({
-      geology: {
-        areas: [
-          createGeologicalArea('area-1', 'shallow-archipelago'),
-          createGeologicalArea('area-2', 'volcanic'),
-        ],
-      },
-    });
-    renderForm('Area "area-2" could not be placed: no valid spot keeps 60% inside the world');
-
-    expect(card('area-2').getByText(/Could not be placed/)).toBeInTheDocument();
-    expect(card('area-1').queryByText(/Could not be placed/)).not.toBeInTheDocument();
+    expect(useViewSyncStore.getState().selectedRegionId).toBe('region-1');
   });
 });

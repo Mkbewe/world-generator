@@ -1,15 +1,11 @@
 # World generation roadmap
 
-> **Aktualizacja kierunku (2026-09-28):** obecne sekcje o
-> `LandmassLayoutStage`, `StructureCharacterStage`, korytarzach i wspólnym
-> `noiseMap` opisują działającą implementację, która zostanie zastąpiona.
-> Docelowe decyzje są w [planie generowania wysp](island-generation-final-plan-2026-09-28.md),
-> a kolejność zmian w [planie wdrożenia](geology-island-generation-implementation-plan-2026-09-28.md).
-> Kontrakty kodu i odbiór opisuje [plan techniczny](geology-generator-technical-implementation-2026-09-28.md).
-> Nie porównujemy nowego generatora ze starym jako warunku odbioru.
-> Podczas przebudowy obecne Landmass i Character zostaną oznaczone jako
-> `@deprecated` w kodzie oraz jako przestarzałe w UI. Po przełączeniu na
-> „Geologię” zostaną usunięte; to nie jest docelowy drugi tryb generatora.
+> **Aktualizacja kierunku (2026-10-09):** geology dzieli świat na 1–10
+> prowincji geologicznych: raster właściciela i odległość od granicy to wynik
+> etapu, bez wysokości i bez lądów. Etapy korytarzy (`LandmassLayoutStage`,
+> `StructureCharacterStage`) oraz `HeightmapStage` zostały usunięte z kodu;
+> heightmapa wróci jako osobny etap po ustabilizowaniu geologii. Nie
+> porównujemy nowego generatora ze starym jako warunku odbioru.
 
 Dokument opisuje kierunek rozwoju generatora od fundamentów po szczegóły.
 Sekcje są ułożone zgodnie z kolejnością powstawania aplikacji: najpierw
@@ -20,6 +16,7 @@ Legenda statusów:
 
 - **[działa]** — zaimplementowane i używane w aplikacji,
 - **[częściowo]** — fundament jest, brakuje części zakresu,
+- **[odłożone]** — poza aktywnym pipeline'em; wróci jako osobny etap,
 - **[planowane]** — brak implementacji.
 
 ## 1. Cel i zasady ogólne — [działa]
@@ -32,7 +29,7 @@ a docelowa gra powstanie w Godocie. Obowiązujące zasady:
 - Jeden seed świata tworzy niezależne, nazwane strumienie losowości dla
   poszczególnych etapów.
 - Etapy zapisują osobne warstwy danych; obecnie można wyświetlać maskę świata,
-  makroregiony i szum.
+  makroregiony, szum i prowincje geologiczne.
 - Rozdzielczość danych nie określa fizycznego rozmiaru świata (sekcja 3).
 - Docelowo najpierw może powstawać podgląd w niskiej rozdzielczości, a następnie
   dokładniejsza wersja tego samego świata. Ten tryb nie jest jeszcze
@@ -61,6 +58,10 @@ warstw, renderer z inspekcją oraz formularze ustawień.
   deterministycznego szumu; przełącznik „Border noise" w formularzu (pole
   `macroRegionDeformation.source`) wybiera interpolowane `noiseMap` (#313).
   `irregularity` regionów nakładanych może nadpisać wspólną amplitudę.
+- `GeologyStage` — plan prowincji: 1–10 regionów o typie, względnej wielkości
+  i wspólnym układzie; raster właściciela `regionOwnerMap` oraz odległość od
+  granicy `regionBorderDistanceMap`. Udziały powierzchni są dopasowywane do
+  ustawionych wielkości, a etap nie tworzy wysokości ani lądów.
 - Kolejność etapów jest zdefiniowana raz w `PIPELINE_STAGES`
   (`stage-definitions.ts`) i steruje generatorem, zakładkami formularza oraz
   kolejnością warstw w podglądzie.
@@ -77,17 +78,14 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
 ### 2.2. Ustawienia — [działa]
 
 - Formularze: general (seed), world shape (kształt, rozmiar i detal), noise,
-  macro regions i heightmap; kolejność zakładek wynika z `PIPELINE_STAGES`.
+  macro regions i geology; kolejność zakładek wynika z `PIPELINE_STAGES`.
 - Formularz makroregionów ma na górze przełącznik „Border noise" (własny szum
   albo `noiseMap`), a pod nim presety, układ bazowy, ustawienia granic i sekcje
   regionów.
-- Formularz heightmapy ma dziś jeden suwak „Relief” (globalny lean amplitudy).
-  Rozmiary form, szelf i baza dna są parametrami obszarów geologicznych;
-  zakładka „Geologia” dojdzie osobno, a jej wpisy nie odpowiadają liczbie
-  wynikowych wysp.
-- Stary formularz landmassów i parametry szelfu z `LandmassConfig` są
-  deprecated i znikną razem z korytarzem (GEO-06); żadna zakładka ich już nie
-  pokazuje.
+- Formularz geologii ma cztery presety startowe (Varied, Oceanic, Vast,
+  Mosaic), liczbę prowincji, równomierność rozmieszczenia, nieregularność
+  granic oraz pasek udziałów powierzchni; aktywna prowincja ma typ i kolor,
+  a jej edycja dotyczy tylko tej prowincji.
 - Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
   widoku.
 - Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.
@@ -117,8 +115,8 @@ Rastry renderowalne są wyprowadzane z deklaratywnego katalogu
 - `CatalogLayer` waliduje typed array i maluje piksele skompilowaną paletą;
   warstwy wektorowe powstają w rejestrze fabryk po `layerId`, więc scena nie zna
   typów domenowych, a nowy wektor to fabryka i klasa warstwy.
-- `MapState` generatora rozszerza `MapRasters` o dane nierastrowe, np. układ
-  struktur, więc etapy nie muszą znać renderera.
+- `MapState` generatora rozszerza `MapRasters` o dane nierastrowe, np. plan
+  geologii, więc etapy nie muszą znać renderera.
 - Nowa warstwa rastrowa to wpis w katalogu, plik stage'a, fabryka w
   `pipeline-factory.ts` i pozycja w `PIPELINE_STAGES`; kolejność katalogu
   wynika z kolejności etapów, więc wpisu nie trzeba przestawiać ręcznie.
@@ -134,7 +132,7 @@ canvas, natomiast granica świata jest rysowana na drugim canvasie nad nią. UI
 utrzymuje jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
 traktować każdą kombinację jako osobny typ mapy.
 
-- Główne zakładki to `World shape`, `Noise`, `Macro regions` i `Landmasses`
+- Główne zakładki to `World shape`, `Noise`, `Macro regions` i `Geology`
   (kolejność z `PIPELINE_STAGES`), a nakładka `World boundary` jest rysowana nad
   warstwą bazową.
 - Definicje warstw mogą grupować kilka podwidoków pod jedną zakładką; przełącznik
@@ -143,13 +141,12 @@ traktować każdą kombinację jako osobny typ mapy.
 - Raster może zadeklarować źródło granicy analitycznej (`boundarySource`:
   `region` dla makroregionów). Malarz rozdziela wtedy granice w rozdzielczości
   ekranu zamiast po komórkach rastra, a geometrię dostarcza scena z konfiguracji.
-- Warstwa `Landmasses` jest wektorowa: ocean w granicach świata, oś szkieletu,
-  jedna poprzeczka szerokości i kropka na węzeł, kolor rozróżnia struktury.
-  Korpus wypełnia wstęga między relingami, struktura bez krawędzi maluje koło
-  wpływu, a treść przycina margines oceanu, gdy scena zna metry świata.
-  Układ struktur jedzie w `MapInfo` i jest zapisywany razem z mapą, więc warstwa
-  działa też po odtworzeniu mapy. Odczyt pod kursorem zwraca id struktury, jej
-  archetyp, liczbę węzłów, długość grzbietu i zakres szerokości.
+- Warstwa `Geology` jest wektorowa: ciało prowincji w kolorze zależnym od typu
+  i indeksu, białe rowki rozdzielają granice, a podświetlenie zaznaczonej
+  prowincji rysuje pasmo akcentu; na środku ciała leży kropka kotwicy z ikoną
+  typu. Plan geologii jedzie w `MapInfo` i jest zapisywany razem z mapą, więc
+  warstwa działa też po odtworzeniu mapy. Odczyt pod kursorem zwraca id
+  prowincji, jej typ, charakter i udział powierzchni.
 - Rysowanie jest progresywne, a wybór pamiętany między widokami.
 - Przelot przez etapy pokazuje się tylko przy pierwszej mapie (albo po zmianie
   rozmiaru lub kształtu, która resetuje scenę). Gdy podgląd ma już wyświetloną
@@ -239,8 +236,8 @@ danych roboczego podglądu.
   wyniki zależnych etapów są oznaczane jako wymagające ponownego wygenerowania.
 - `Generate Map` nadal uruchamia pełny pipeline w docelowej rozdzielczości.
   Zmiana samego sposobu wyświetlania lub nakładek nie uruchamia generatora.
-- Weryfikacja obejmuje serię szybkich zmian kontrolek, anulowanie, zgodność
-  seedu i układu przy różnych rozdzielczościach oraz pomiary czasu i pamięci.
+- Weryfikacja obejmuje serię szybkich zmian kontrolek, anulowanie oraz
+  zgodność seedu i układu przy różnych rozdzielczościach.
 
 ### 2.8. Selektywne przeliczanie etapów — [działa]
 
@@ -253,8 +250,8 @@ konfiguracji, a reszta jest reużyta:
   poza maską, a makroregiony dodatkowo `noise`, bo źródło `noise-map` próbkuje
   jego raster (`selectDirtyStageIds`),
 - przeliczają się dokładnie te etapy, których ścieżka się zmieniła; zmiana
-  makroregionów nie rusza landmassów, a zmiana noise nie rusza ani
-  makroregionów w trybie `dedicated`, ani landmassów,
+  makroregionów nie rusza geologii, a zmiana noise nie rusza ani makroregionów
+  w trybie `dedicated`, ani geologii,
 - pierwszy run, zmiana seedu, rozmiaru lub kształtu unieważniają wszystko,
 - worker dostaje brudny zbiór i rastrowe dane zapisanej mapy, seeduje nimi stan
   i pomija czyste etapy, emitując dla nich `stage-skipped` (bez odsyłania
@@ -326,19 +323,14 @@ z `sampleWidth` i `sampleHeight` bez rekonstruowania wymiarów.
 Formularz świata przyjmuje rozmiar w metrach (presety 3, 6 i 12 km oraz własny
 rozmiar od 3000 do 12 000 m) i osobny „terrain detail" (1 / 2 / 4 / 8 / 16 m na
 próbkę). Pokazuje wyliczoną siatkę `samples` i szacowany rozmiar danych generacji
-(MB dziesiętne, tak jak statystyki). Budżet
-`864 MB` (`MEMORY_BUDGET_BYTES`) jest skalibrowany pod największy wspierany
-świat: `12 000 × 12 000` próbek przy `1 m` na próbkę. Dotyczy danych generatora:
-rastrów etapów w workerze i kopii wysyłanej do głównego wątku. Przy `6 B` na
-próbkę daje limit `144 000 000` komórek (`SAMPLE_BUDGET`). `summarizeWorldGrid`
-wylicza siatkę, efektywny `m/sample` i szacowany rozmiar danych, a gdy żądany
-detal przekracza budżet, formularz przycina rozdzielczość i pokazuje
-ostrzeżenie — rozmiar fizyczny zostaje, rośnie `m/sample`.
-
-Po przebudowie dotychczasowy budżet i przycinanie siatki zostaną tymczasowo
-wyłączone. Pozostaną walidacja wymiarów, kontrola przepełnienia liczby
-komórek i informacyjny szacunek pamięci; duże siatki mogą nadal wyczerpać
-pamięć urządzenia. Nowy limit wymaga pomiaru rzeczywistego szczytu.
+(MB dziesiętne, tak jak statystyki). Budżet `864 MB` (`MEMORY_BUDGET_BYTES`)
+dotyczy danych generatora: rastrów etapów w workerze i kopii wysyłanej do
+głównego wątku. Przy `12 B` na próbkę (maska, szum, makroregiony, właściciel
+prowincji i odległość od granicy) daje limit `36 000 000` komórek
+(`SAMPLE_BUDGET`, czyli siatka do `6000 × 6000`). `summarizeWorldGrid` wylicza
+siatkę, efektywny `m/sample` i szacowany rozmiar danych, a gdy żądany detal
+przekracza budżet, formularz przycina rozdzielczość i pokazuje ostrzeżenie —
+rozmiar fizyczny zostaje, rośnie `m/sample`.
 
 Przykładowo świat `4000 × 4000 m` może mieć bazową `heightmap` o rozdzielczości
 `2000 × 2000`, co daje około `2 m` na komórkę. Podgląd tego samego świata może
@@ -372,7 +364,7 @@ oraz kopie `postMessage` opisuje sekcja 9.
 
 ## 4. Kolejne etapy pipeline'u — [częściowo]
 
-Docelowy pipeline rozszerza obecne trzy etapy. Kolejność może być później
+Docelowy pipeline rozszerza obecne cztery etapy. Kolejność może być później
 doprecyzowana, szczególnie w przypadku wzajemnego wpływu hydrologii, erozji
 i formacji terenu. Kanoniczna kolejność jest zdefiniowana w jednym miejscu —
 `PIPELINE_STAGES` w `src/utils/map-generator/stage-definitions.ts` — i steruje
@@ -381,9 +373,9 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu. **[działa]**
 2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
 3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
-4. `GeologyStage` — lekki plan obszarów geologicznych i ich profili, bez rastra. **[działa]**
-5. ~~`LandmassLayoutStage` i `StructureCharacterStage`~~ — dawny układ korytarzy i stref. **[@deprecated; do usunięcia w GEO-06]**
-6. `HeightmapStage` — jedno ciągłe pole wysokości i dna z planu Geologii. **[działa; do strojenia w GEO-05B/07]**
+4. `GeologyStage` — podział świata na prowincje geologiczne, raster właściciela i odległość od granicy. **[działa]**
+5. ~~`LandmassLayoutStage` i `StructureCharacterStage`~~ — usunięte z kodu; zastąpił je podział na prowincje w `GeologyStage`.
+6. `HeightmapStage` — jedno ciągłe, nieujemne pole wysokości z planu Geologii; podział ląd/woda należy do `LandOceanStage`. **[odłożone]**
 7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
 8. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
 9. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów. **[planowane]**
@@ -391,311 +383,20 @@ generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
 11. `BiomeStage` — biomy wynikające z warunków środowiskowych. **[planowane]**
 12. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje. **[planowane]**
 
-### 4.1. Odpowiedzialność etapów kształtujących wyspy — [planowane]
+### 4.1. Podział pracy między etapami — [planowane]
 
-Docelowo jeden etap „Geologia” planuje obszary geologiczne, ich lokalne
-profile i bazę dna. Obszar nie jest wyspą: może dać zero, jedną albo wiele
-wysp. `HeightmapStage` tworzy jedno ciągłe pole wysokości, a `LandOceanStage`
-wyznacza rzeczywiste wyspy. Każdy etap losujący formy ma własny strumień
-szumu; współdzielimy funkcję i układ współrzędnych, nie jedną `noiseMap`.
-Ta mapa nadal służy podglądowi i opcjonalnemu źródłu deformacji makroregionów.
+Jednym źródłem podziału świata jest `GeologyStage`: prowincje z typem
+i docelowym udziałem powierzchni, bez wysokości i bez lądów. `HeightmapStage`
+zamieni ten plan na jedno ciągłe, nieujemne pole wysokości, a `LandOceanStage`
+przetnie je poziomem morza i wyznaczy faktyczne wyspy, linię brzegową oraz
+płytkie wody szelfowe. `BiomeStage` sklasyfikuje biom na podstawie faktycznej
+głębokości i pozostałych warunków. Każdy etap losujący formy ma własny strumień
+szumu; współdzielimy funkcję i układ współrzędnych, nie jedną mapę szumu.
 
-Poniższe akapity oraz §4.2 i §4.5–4.6 opisują działający kod i pozostają jego
-dokumentacją do czasu wymiany etapów. §4.3–4.4 to niewdrożony, zastąpiony
-plan — zostają tylko jako zapis wcześniejszego kierunku i nie są instrukcją
-wdrożenia nowego modelu.
-
-Wyspa nie powinna powstawać w jednym etapie jako gotowy obiekt. Pipeline najpierw
-opisuje strukturę geologiczną i zamiar generatora, następnie tworzy ciągłą
-wysokość, a dopiero poziom morza wyznacza faktyczny podział na wyspy.
-
-- `LandmassLayoutStage` odpowiada za kształt w dużej skali: szkielet (graf
-  węzłów i krawędzi), intencję archetypu, szerokość wpływu i wspólne szelfy.
-  Linia brzegowa, zatoki i półwyspy powstają później, z form i szumu.
-- `StructureCharacterStage` przypisuje strukturom profile terenu i regiony, np.
-  góry na zachodzie, równiny na wschodzie albo płaskowyż w centrum. Na tym etapie
-  nie ma jeszcze wysp — powstają dopiero po przecięciu poziomem morza.
-- `HeightmapStage` płynnie łączy geometrię, profile regionalne i szum w jedną
-  wysokość obejmującą również dno oceanu.
-- `LandOceanStage` stosuje poziom morza, wykrywa spójne wyspy i archipelagi oraz
-  wylicza linię brzegową, głębokość wody i obszary szelfowe.
-- `BiomeStage` dopiero na podstawie faktycznej głębokości i pozostałych warunków
-  klasyfikuje płytkie morze jako biom wodny.
-
-Przykładowo długa wyspa ze słabo rozwiniętą linią brzegową wynika z wydłużonego
-szkieletu i małej nieregularności. Wyspa w kształcie litery C może powstać
-z zakrzywionego szkieletu albo ujemnego kształtu wycinającego dużą zatokę.
-Informacja o górzystym zachodzie i równinnym wschodzie należy natomiast do
-regionalnych profili terenu, a nie do samej geometrii struktury.
-
-### 4.2. Masy lądowe i kształty wysp — [działa]
-
-Wyspa nie jest opisywana pojedynczym centrum i promieniem. Układ struktur to
-graf: węzły niosą pozycję i promień wpływu, krawędzie łączą je i mogą być
-zgięte punktami kontrolnymi, a całość przechodzi przez plan rozmiaru i placement.
-
-```ts
-interface LandmassNode {
-  id: string;
-  position: WorldPoint; // 0..1
-  radius: number; // promień wpływu, 0..1
-}
-
-interface LandmassEdge {
-  id: string;
-  from: string;
-  to: string;
-  controlPoints?: WorldPoint[];
-}
-
-interface GeologicalStructure {
-  id: string;
-  archetype: LandmassArchetype;
-  nodes: LandmassNode[];
-  edges: LandmassEdge[];
-  shelfId: string;
-}
-
-interface LandmassLayout {
-  structures: GeologicalStructure[];
-  shelves: ShelfDefinition[];
-}
-```
-
-- Archetypy to intencje kształtu: `round`, `irregular`, `elongated`,
-  `branched`, `lagoon`. Każdy jest przepisem z losowanymi zakresami
-  (długość, skręt, falowanie, promień, zmienność grubości, zwężenie końców,
-  odgałęzienia i ich kąt) i własnym zakresem liczby węzłów. Receptura wybiera
-  też buildera korytarza: `sine` (gładkie grzbiety i łuki) albo `angular`
-  (bryłowe łamańce irregular). `round` schodzi do jednego węzła, `lagoon`
-  czyta mały (`size: 0,5`) i domyka się w niemal pierścień w górnej części
-  zakresu skrętu, a `elongated` obejmuje od cienkich węży po grubsze haki.
-- Z gęstego korytarza powstaje zredukowana łamana: węzły plus punkty kontrolne
-  (do 6 na krawędź oraz zachowane załamania `angular`, więc bryły nie gubią
-  narożników). Ta sama łamana jest osią szkieletu, geometrią kolizji
-  i źródłem hit testingu; podgląd rysuje ją wygładzonym splajnem
-  Catmulla-Roma, więc ostre załamania dostają ciasne zaokrąglenie.
-- Promień jest bezpieczny dla krzywizny: generator mierzy najciaśniejszy zakręt
-  (na rzadkim próbkowaniu) i nie pozwala korytarzowi złożyć własnego obrysu.
-  Dyskretne załamania `angular` trzymają pełną szerokość z przepisu
-  (`clampWidth: false`) — mitra jest kształtem, nie błędem.
-- Plan rozmiaru dobiera **typowy extent** ze skali `size` 0–1 (2,6–16,9%
-  świata odniesienia 2000 m, domyślnie 0,5) i rozrzut (`diversity`, wagi
-  log-normalne), z podłogą i sufitem (`MIN_EXTENT_METERS`/`MAX_EXTENT`).
-  Wyspy rosną ze światem pierwiastkowo (4× świat to 2× wyspy w metrach).
-  Intencja niesie mnożnik (`size`, np. lagoon 0,5) i własny sufit
-  (`maxExtent`, np. elongated 0,3). Dzięki temu kompaktowa i cienka struktura
-  mają porównywalny rozmiar, a nie tylko pole.
-- Placement startuje z równomiernej siatki kotwic nad światem (z losowym
-  wychyłem, żeby kratka nie prześwitywała). Każda struktura staje na kotwicy
-  najdalszej od już postawionych; gdy się nie mieści, próbuje kolejnych obrotów,
-  potem się zmniejsza, a na końcu zostaje odrzucona. Część struktur celowo tworzy
-  grupy o wspólnym szelfie (`LandmassLayout.shelves`), co jest fundamentem
-  archipelagu (§4.3).
-- Część korytarza może wystawać poza świat — co najmniej 75% wpływu musi leżeć
-  wewnątrz kształtu zerodowanego o margines oceanu (25 m, maks. 10% mniejszego
-  boku); kandydat, który wystaje bardziej, jest zmniejszany albo odrzucany.
-  Struktury przy krawędzi dostawiają się dłuższym bokiem do stycznej granicy.
-  Dzięki temu dochodzą do krawędzi zamiast ściskać się w środku mapy.
-- Etap nie skanuje komórek świata: maska jest wyłącznie próbkowana przez
-  placement, więc koszt zależy od liczby struktur, nie od rozdzielczości.
-- Statystyki etapu: struktury, szelfy, węzły, krawędzie i liczba odrzuconych
-  kandydatów.
-
-### 4.3. Archipelagi — [planowane; zastąpione przez plan generowania wysp]
-
-Archipelag nie musi być generowany jako sztuczna lista niezależnych wysp.
-Naturalniejszym modelem jest jedna częściowo zatopiona struktura geologiczna ze
-wspólnym szelfem i kilkoma lokalnymi wyniesieniami. Po przecięciu jej poziomem
-morza wyższa struktura może utworzyć jedną dużą wyspę, a niższa — kilka wysp
-tworzących archipelag.
-
-```ts
-interface ArchipelagoDefinition {
-  id: string;
-  structureId: string;
-  shelfId: string;
-  islandIds: string[];
-}
-```
-
-`ArchipelagoDefinition` jest więc wynikiem klasyfikacji po utworzeniu wysokości
-i zastosowaniu poziomu morza, a nie obowiązkowym wejściem generatora. Wyspy
-archipelagu dzielą szelf i geologiczne pochodzenie, ale mogą mieć indywidualne
-profile oraz kształty wynikające z lokalnych wyniesień.
-
-### 4.4. Szelf kontynentalny i batymetria — [planowane; zastąpione przez plan generowania wysp]
-
-Większość struktur lądowych powinna mieć otaczający je szelf, czyli łagodnie
-opadający obszar płytkiego dna. Szelf jest częścią geometrii i wysokości świata,
-a nie od razu biomem. Pozwala to później klasyfikować płytkie morze na podstawie
-rzeczywistej głębokości oraz tworzyć wspólny szelf dla całego archipelagu.
-
-Poza szelfem dno powinno opadać w stronę głębokiego oceanu. Granica nie musi być
-równomiernym pierścieniem — jej szerokość, nieregularność i tempo opadania mogą
-zależeć od definicji struktury geologicznej oraz lokalnego szumu.
-
-Przydatne warstwy danych:
-
-- `bathymetryMap` — wysokość dna względem poziomu morza,
-- `waterDepthMap` — dodatnia głębokość wody wyliczona po zastosowaniu poziomu morza,
-- `shelfIdMap` — przypisanie płytkich obszarów do wspólnej struktury geologicznej,
-- `islandIdMap` — wynikowy podział wynurzonych, spójnych obszarów na faktyczne wyspy.
-
-### 4.5. Charakter struktur — [częściowo]
-
-Charakter struktury opisuje **zamiar** generatora, a nie gwarantowany wynik.
-`HeightmapStage`, `HydrologyStage` i pozostałe etapy weryfikują, gdzie dana
-cecha może faktycznie powstać. Na tym etapie nie ma jeszcze wysp — są tylko
-struktury geologiczne z `LandmassLayoutStage`.
-
-Zamiast zestawu 8 niezależnych floatów każda strefa terenu ma jeden wzajemnie
-wykluczający się **primary character**:
-
-```ts
-type TerrainCharacter = 'plains' | 'hills' | 'mountains';
-```
-
-Cechy (`plateauStrength`, `lakePotential`, `erosionStrength`,
-`coastalCliffStrength`) są pochodną primary character i losowane z zakresów
-właściwych dla danego charakteru. Płaskowyż jest cechą, nie charakterem; dzięki
-temu jezior nie ma w górach, a klifów brzegowych nie ma na nizinach — bez
-rozgałęzień w kodzie.
-
-Każdy archetype ma pulę dozwolonych primary characters:
-
-| Archetype | Dozwolone charaktery |
-|---|---|
-| `lagoon` | tylko `plains` — czysta, płaska nizina (atol) bez cech wtórnych |
-| `round` | wszystkie trzy |
-| `irregular` | wszystkie trzy |
-| `elongated` | `plains`, `hills` (bez gór) |
-| `branched` | wszystkie trzy |
-
-Generator najpierw losuje ważony układ terenu z puli archetypu: wyższy grzbiet,
-wyższe obrzeża, lokalny pas wybrzeża albo zmianę wzdłuż szkieletu. Następnie
-losuje charaktery i fragmenty ścieżek. `characterVariation: 0` zostawia każdą
-strukturę jednolitą; powyżej zera liczba stref zależy także od rozpiętości,
-użytecznej długości i szerokości korytarzy oraz liczby ramion. Atol pozostaje
-nizinny. Dodatkowe strefy to `chain`, `spine`, `rim` lub `point`.
-
-Osobny suwak `terrainBias` (0 = niziny, 0.5 = równowaga, 1 = góry) przechyla
-losowanie charakterów w obrębie tego, co dopuszcza pula: niziny tracą wagę na
-rzecz gór wraz ze wzrostem wartości, a `hills` pozostają neutralne. Nie łamie to
-reguł archetypu — `lagoon` nadal jest nizinny, a `elongated` nie dostaje gór.
-
-Etap produkuje wyłącznie definicje — bez rastra i bez wysokości — więc nie
-zależy od liczby komórek świata. Ma własny wycinek konfiguracji
-(`structureCharacter`), żeby zmiana parametrów terenu nie unieważniała
-placementu landmassów (§2.8).
-
-### 4.6. Strefy charakteru wewnątrz struktury — [częściowo]
-
-Duża struktura nie powinna mieć jednolitego charakteru. Zamiast osobnego profilu
-bazowego i listy nadpisujących regionów, etap produkuje jedną listę równorzędnych
-**stref charakteru** (`CharacterZone`). Każda strefa niesie własny `TerrainCharacter`
-i geometrię określającą, która część struktury ją obejmuje.
-
-```ts
-interface CharacterZone {
-  id: string;
-  structureId: string;
-  character: TerrainCharacter;
-  geometry: ZoneGeometry;
-}
-
-type ZoneGeometry =
-  | { kind: 'whole' }
-  | { kind: 'chain'; pathId: string; from: number; to: number }
-  | { kind: 'spine'; pathId: string; from: number; to: number; share: number }
-  | { kind: 'rim'; pathId: string; from: number; to: number; share: number }
-  | { kind: 'point'; center: WorldPoint; influenceRadius: number };
-```
-
-Każda struktura ma co najmniej jedną strefę `whole` z wylosowanym primary
-character. Duże struktury mogą dostać jedną lub dwie dodatkowe strefy — szansa
-rośnie z rozmiarem (`extent`) i liczbą węzłów, a trzecia strefa wymaga dużej,
-rozgałęzionej struktury. Daje to efekty takie jak "pierwsza połowa grzbietu
-górzysta, druga nizinna" (`chain`), "góry wzdłuż osi szkieletu, łagodniejszy
-teren przy brzegach" (`spine`/`rim`) albo "lokalny masyw na jednym z węzłów"
-(`point`).
-
-Strefy nakładają się w kolejności listy: `whole` leży na spodzie, a każda
-następna nadpisuje obszar, który pokrywa. Tak samo maluje je renderer i tak samo
-czyta hit-test (od końca listy), więc kolor i odczyt zostają spójne.
-
-Geometria podąża za **szkieletem struktury**, nie za płaskimi figurami w
-przestrzeni świata. `pathId` wybiera ciągłą ścieżkę: `main` albo ramię
-`branch:<id krawędzi>`. `from`/`to` określają fragment jej długości, także dla
-`spine` i `rim`; `share` to szerokość pasa względem lokalnego promienia.
-Pozwala to przerwać pas przy brzegu i wznowić go dalej bez sztucznego
-łączenia ramion. Dla stref nakładających się ostatnia na liście jest widoczna
-w podglądzie i wybierana przez hit-test. Struktura bez krawędzi nie dostaje
-stref wymagających ścieżki. To opis starej implementacji; docelowy model
-stref obszarów opisuje [plan generowania wysp](island-generation-final-plan-2026-09-28.md).
-
-`createZoneSampler` w generatorze jest wspólnym portem przestrzennym stref.
-Zwraca twarde pokrycie, strefę dominującą (ostatnia pokrywająca punkt wygrywa)
-i płynną wagę względem odległości od granicy. `whole` daje profil bazowy.
-Przyszły `HeightmapStage` pobierze z tego portu profil po kolejnym blendowaniu
-wartości dodatkowych stref; podgląd i hit-test pokazują charakter dominujący.
-
-Charakter jest podwidokiem grupy `Landmasses` („Landmasses / Character\").
-Ciało struktury pokrywa kolor primary character, a odcinek korytarza przykryty
-dodatkową strefą dostaje jej kolor. Szkielet rysuje się na wierzchu. Readout
-pod kursorem podaje primary character strefy i jej geometry kind.
-
-Kolory są przypisane do charakteru, nie do położenia: niziny zielone, pagórki
-żółto-pomarańczowe, góry brązowe — także gdy wyższy charakter leży na obrzeżach.
-
-Klucz domenowy w `MapState` to `structureZones`; dane płyną istniejącym
-kanałem `selectDomainOutputs` → `MapInfo` → warstwa podglądu — bez wpisu
-w `MAP_INFO_CATALOG`.
-
-Przydatne warstwy danych:
-
-- `structureZones` — definicje charakteru z tego etapu,
-- `islandIdMap` — przypisanie komórki lądu do faktycznej wyspy (poziom morza),
-- `heightmap` — rzeczywista wysokość,
-- `slopeMap` — nachylenie,
-- `waterMap` i `drainageMap` — hydrologia,
-- `biomeMap` — wynikowa klasyfikacja biomów.
-
-### 4.7. Rozmieszczanie lądów względem makroregionów — [propozycje]
-
-Makroregiony są już słownikiem „gdzie": pasy dają północ i południe, pierścienie
-środek i peryferia. Rozmieszczanie struktur powinno z nich korzystać, zamiast
-losować po całym świecie — wtedy każdy region ma swój ląd, a rozkład da się
-w miarę równo rozłożyć i świadomie ukierunkować.
-
-```ts
-interface MacroRegionConfig {
-  // ...
-  /** Waga lądu regionu; 0 wyklucza region z rozmieszczania. */
-  landWeight?: number;
-}
-```
-
-- `count` w formularzu landmassów pozostaje jedynym źródłem liczby struktur,
-  a regiony dostają tylko wagi (`landWeight`, domyślnie 1, czyli po równo),
-- reguła podziału: po jednej strukturze na region bazowy, gdy `count` na to
-  pozwala i region ma sensowną powierzchnię; reszta struktur dzieli się według
-  wag. Przykład: układ poziomy, dwa regiony i `count` 2 dają po jednej wyspie
-  na północy i południu, a wagi 2:1 dają dwie na północy i jedną na południu,
-- etap buduje `createMacroRegionSampler` (ten sam, którego używa renderer) i
-  losuje kandydatów wewnątrz regionu docelowego, a wybiera po zapasie odstępu
-  (best-of-N z #372), więc rozkład w regionie wychodzi równomierny bez
-  dodatkowych mechanizmów,
-- przypadek ciasny (mały region, dużo struktur) działa jak dziś: struktura się
-  zmniejsza, a bez miejsca spada do najlepszego kandydata.
-
-Konsekwencja: etap landmass deklaruje wtedy `macroRegions` i
-`macroRegionDeformation` (oraz `noise` przy źródle `noise-map`), więc zmiana
-regionów przelicza layout. To poprawne, bo wynik naprawdę od nich zależy.
-
-Na później: gęstość i wielkość wysp sterowane `danger` regionu, a ręczne
-wskazywanie miejsc (piny na mapie) świadomie odłożone — wagi i układy regionów
-pokrywają większość intencji.
+Formularz geologii ma cztery presety startowe (Varied, Oceanic, Vast, Mosaic),
+które jednorazowo wypełniają liczbę, typy, wielkości i układ prowincji.
+Geologia nie obiecuje konkretnej linii brzegowej — nie generuje lądów ani
+wysokości.
 
 ## 5. Hydrologia, biomy i klimat — [planowane]
 
@@ -806,19 +507,16 @@ osobną implementacją. Presety działają na dwóch poziomach:
 - preset świata definiuje budowę całego świata: topologię, układ i charakter stref
   klimatycznych, źródła ciepła i wilgoci, obrót osi klimatu, gradienty oraz
   rozkład `danger`; nie opisuje pojedynczych lądów,
-- preset geografii (poziom landmass) definiuje samą geografię: liczbę i układ
-  struktur lądowych, szkielet, formy dodatnie i ujemne, szelf oraz profile terenu
-  (`LandmassLayoutStage`, `StructureCharacterStage`); można go łączyć z dowolnym
+- preset geografii definiuje samą geografię: listę prowincji geologicznych
+  z typami, wielkościami i układem (`GeologyStage`); można go łączyć z dowolnym
   presetem świata, np. archipelag na `Earth-like` albo pojedynczy kontynent na
   `Mythic Moon`.
 
-Po przebudowie „preset geografii” oznacza listę obszarów geologicznych z
-ustawieniami, którą można ręcznie edytować. Preset świata i geografii pozostają
-oddzielnymi wyborami; zmiana pierwszego nie nadpisuje edytowanej listy
-bez jawnego działania użytkownika. Przy tworzeniu nowej konfiguracji preset
-świata może wskazać domyślny preset geografii, bez przechowywania własnej
-kopii obszarów. Powyższa lista struktur i etapów opisuje
-wyłącznie obecny kod.
+„Preset geografii” oznacza listę prowincji geologicznych z ustawieniami, którą
+można ręcznie edytować. Preset świata i geografii pozostają oddzielnymi
+wyborami; zmiana pierwszego nie nadpisuje edytowanej listy bez jawnego działania
+użytkownika. Przy tworzeniu nowej konfiguracji preset świata może wskazać
+domyślny preset geografii, bez przechowywania własnej kopii prowincji.
 
 Użytkownik może rozpocząć od presetu, zmienić jego parametry, a następnie zapisać
 wynik jako własny profil.
@@ -975,8 +673,8 @@ a nasz podgląd pozostałby narzędziem deweloperskim. Na razie bez zadań.
 
 ## 9. Wydajność i pamięć — [częściowo]
 
-Techniczne podstawy, pomiary i pomysły (formaty danych, kopie, canvasy, koszty
-etapów) zbierze osobny dokument z notatkami o wydajności — jeszcze nieutworzony.
+Techniczne podstawy i pomysły (formaty danych, kopie, canvasy, koszty etapów)
+zbiera ten rozdział.
 
 Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
 progresywne rysowanie podglądu, postęp raportowany z wnętrza etapów oraz
@@ -1010,9 +708,9 @@ Pozostałe zadania:
 - Selektywne przeliczanie etapów jest wdrożone (§2.8): deklaracje `configKeys`,
   diff konfiguracji i ponowne użycie wyników z `stage-skipped` w progressie
   (#257, #258).
-- Rozważyć reużycie workera (zamiast świeżego na run) dopiero wtedy, gdy pomiary
-  wykażą, że koszt startu jest istotny.
-- Po pomiarach rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami
-  w puli workerów. Hydrologię i inne globalnie zależne etapy dzielić dopiero po
+- Rozważyć reużycie workera (zamiast świeżego na run), jeśli koszt startu okaże
+  się istotny.
+- Rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami w puli
+  workerów. Hydrologię i inne globalnie zależne etapy dzielić dopiero po
   zaprojektowaniu ich przepływu danych.
-- Rozważyć WebGL lub WebGPU dopiero wtedy, gdy pomiary wykażą taką potrzebę.
+- Rozważyć WebGL lub WebGPU dopiero, gdy będzie realna potrzeba.
