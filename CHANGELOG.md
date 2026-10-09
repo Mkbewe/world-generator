@@ -1,5 +1,238 @@
 # Changelog
 
+## [0.11.0](https://github.com/Mkbewe/world-generator/compare/v0.10.0...v0.11.0) (2026-10-09)
+
+### Features
+
+* **[219](https://github.com/Mkbewe/world-generator/issues/219):** add the structure character stage ([#421](https://github.com/Mkbewe/world-generator/issues/421)) ([ea238ef](https://github.com/Mkbewe/world-generator/commit/ea238ef41c6600d6946ecb5abc30dd17ff3f8ca3))
+
+  - assign a terrain profile and optional regional overrides to every
+  geological structure from the seed, as definitions only,
+  - add the stage, its config slice and the pipeline wiring,
+  - restore structureProfiles and structureRegions as domain outputs,
+  - cover the stage, profiles, regions and mainChainNodes with tests,
+  - grow no regions at regionDensity 0 and trim the stage's public
+  exports,
+  - sync the roadmap with the structure naming and the TerrainProfile
+  split.
+* **[351](https://github.com/Mkbewe/world-generator/issues/351):** overlay structure character zones on the landmass layer ([#422](https://github.com/Mkbewe/world-generator/issues/422)) ([6e956e4](https://github.com/Mkbewe/world-generator/commit/6e956e40e1bf6ef791988b9d9e11aef51520c26e))
+
+  - assign character zones to structures: one whole zone plus an optional
+  split
+  - carry per-character value ranges and sample concrete zone values
+  - replace structure profiles and regions with structureZones in the map
+  state
+  - add the character overlay as a Landmasses sub-view with one zone
+  geometry port
+  - split with half/center/edge/point and pooled weights per archetype
+  - show the zone character and its features in the cursor readout
+  - sync the roadmap and add the zone analysis doc
+* **[352](https://github.com/Mkbewe/world-generator/issues/352):** add the structure character settings section ([#423](https://github.com/Mkbewe/world-generator/issues/423)) ([67a107d](https://github.com/Mkbewe/world-generator/commit/67a107df434e9d8332b7d318e433f1d4ebafd289))
+
+  - add a structure character form store with the character variation
+  setting
+  - render a Character variety slider as a section in the Landmasses tab
+  - pass structureCharacter into the generation config and the worker
+  - export the variation range constants and use them in the stage
+  validation
+  - cover the store, section, landmass form and generation config with
+  tests
+* **[353](https://github.com/Mkbewe/world-generator/issues/353):** add the heightmap preview layer ([#430](https://github.com/Mkbewe/world-generator/issues/430)) ([3406083](https://github.com/Mkbewe/world-generator/commit/340608343c8c5b76525d125cdf2ee2afdf8883a9)), references [#58](https://github.com/Mkbewe/world-generator/issues/58)
+
+  - Add the heightmap entry to the layer catalog as a clipped float32
+  raster
+  - Add the hypsometric ramp in metres, tied to OCEAN_DEPTH_METERS
+  - Show the height under the cursor in metres through formatHeightMeters
+  - Extend the catalog, palette, readout, type and renderer tests
+* **[418](https://github.com/Mkbewe/world-generator/issues/418):** add the heightmap settings form ([#431](https://github.com/Mkbewe/world-generator/issues/431)) ([869c480](https://github.com/Mkbewe/world-generator/commit/869c480bf17e3750ea6d66705ed4305612297211))
+
+  - Add the Heightmap tab with relief and feature scale sliders
+  - Add the shelf controls, writing to the landmass config that owns them
+  - Add the heightmap form store and the setShelf action
+  - Pass heightmap through the generation config and the generator hook
+  - Match the heightmap tab icon to the preview layer icon
+  - Extend the form, settings panel and generation config tests
+* **[428](https://github.com/Mkbewe/world-generator/issues/428):** add the heightmap shelf and wire the stage ([#429](https://github.com/Mkbewe/world-generator/issues/429)) ([fa9a1f8](https://github.com/Mkbewe/world-generator/commit/fa9a1f8371e11e79c52a15791c36b539a1c0fff0)), references [#353](https://github.com/Mkbewe/world-generator/issues/353)
+
+  - Shape the shelf in shelfDepthMeters: targetDepth at the coast to just
+  above the ocean floor, with the falloff exponent
+  - Lift the open-ocean floor through the shelf band instead of deepening
+  it
+  - Index shelfIndexMap by layout.shelves, shared by a group's structures
+  - Keep the first shelf on a cell two shelves meet on, depth and index
+  alike
+  - Register HEIGHTMAP_STAGE in PIPELINE_STAGES, the factory and the
+  raster keys
+  - Mark the stage dirty on a heightmap config change
+  - Check the abort signal and report progress per structure and row
+  - Report the shelf count instead of the cell count
+  - Drop "generation" from the stage names shown in the progress bar
+  - Add HeightmapStage tests and update the pipeline and regeneration
+  tests
+* **[436](https://github.com/Mkbewe/world-generator/issues/436):** define the geological area and field contracts ([#449](https://github.com/Mkbewe/world-generator/issues/449)) ([93f1ef5](https://github.com/Mkbewe/world-generator/commit/93f1ef52f5c268c6505249372394b50cfde8af5e))
+
+  - add the geology contract module: area config, plan, guards, presets
+  and per-field defaults
+  - settle the order-independent contribution merge with a numeric example
+  - map provenance from area ids to the diagnostic index
+  - record the GEO-01A decisions and deprecate the replaced heightmap
+  parameters
+* **[438](https://github.com/Mkbewe/world-generator/issues/438):** give stages their own deterministic noise bands ([#450](https://github.com/Mkbewe/world-generator/issues/450)) ([fb5099b](https://github.com/Mkbewe/world-generator/commit/fb5099b428ad7881b9c52bd09192d05ee1410772))
+
+  - add the shared noise port with seeded streams, fractal stacks and
+  world-space bands in metres
+  - give the heightmap its own large/medium/fine bands and stop reading
+  noiseMap and the Noise config
+  - refactor NoiseStage onto the shared sampler and pin noiseMap with a
+  golden regression test
+  - record the GEO-02 decisions (engine, units, procedural sampling) in
+  the technical plan
+* **[439](https://github.com/Mkbewe/world-generator/issues/439):** replace landmass and character stages with geology planning ([#451](https://github.com/Mkbewe/world-generator/issues/451)) ([8dcb4af](https://github.com/Mkbewe/world-generator/commit/8dcb4af68ac3abf5bdebc9be74cc3b045fc832a6)), references [#440](https://github.com/Mkbewe/world-generator/issues/440)
+
+  - add the GeologyStage plan with per-area streams and explicit placement
+  errors
+  - swap the landmass layout and structure character stages for Geology in
+  the pipeline
+  - add geology to MapConfig, MapState, pipeline outputs and selective
+  regeneration
+  - extract the shared terrain-profile helpers and the normalized mask
+  port
+  - skip the corridor pipeline tests until the heightmap wiring lands
+  (#440)
+* **[440](https://github.com/Mkbewe/world-generator/issues/440):** generate one continuous land and seabed heightfield ([#452](https://github.com/Mkbewe/world-generator/issues/452)) ([e7026f9](https://github.com/Mkbewe/world-generator/commit/e7026f92e99dca2a39a7a31d398787cea8479dba))
+
+  - replace fillLand/fillShelves with one H(p) field in metres
+  - merge overlapping areas with the shared quadratic union on smooth
+  support
+  - write the diagnostic provenance map and drop shelfIndexMap from the
+  rasters
+  - gate fine detail below the sample scale and fade it near the sea datum
+  - remove the corridor field helpers and their old cross-section tests
+  - pin land/shallow/deep continuity, several uplifts and order invariance
+  in tests
+* **[441](https://github.com/Mkbewe/world-generator/issues/441):** persist generator outputs outside the preview catalog ([#453](https://github.com/Mkbewe/world-generator/issues/453)) ([450bef1](https://github.com/Mkbewe/world-generator/commit/450bef137a64a701214822674a32ee0dfd5c6851))
+
+  - select persistent rasters from RASTER_OUTPUT_KEYS, not the layer
+  catalog
+  - keep provenanceMap through save, restore, reuse and the worker cache
+  - rerun a clean stage when its cached writes are missing or invalid
+  - report the real skipped-stage set to the progress tracker
+  - drop shelfIndexMap from the snapshot format and cover both selectors
+  with tests
+* **[444](https://github.com/Mkbewe/world-generator/issues/444):** wire the geology form minimally ([#455](https://github.com/Mkbewe/world-generator/issues/455)) ([880075b](https://github.com/Mkbewe/world-generator/commit/880075ba4a06b21a2ee81860c70cef524e2802d0))
+
+  - add the Geology settings tab with the area list, extent slider and
+  add/remove
+  - feed geology from the form store through MapConfig and drop the dead
+  landmass inputs
+  - hide the corridor preview layers so the preview order matches the
+  settings tabs
+  - pin the placement error, tab linkage, extent and edge states in tests
+* **[445](https://github.com/Mkbewe/world-generator/issues/445):** build the editable geology editor and presets ([#456](https://github.com/Mkbewe/world-generator/issues/456)) ([b487dfb](https://github.com/Mkbewe/world-generator/commit/b487dfbacb9298231ce485b3a5ca94861d9d65b6))
+* **[457](https://github.com/Mkbewe/world-generator/issues/457):** replace the geology areas with a fitted province partition ([#463](https://github.com/Mkbewe/world-generator/issues/463)) ([972bbed](https://github.com/Mkbewe/world-generator/commit/972bbed10a075ffd2281b0c5b422344b38e1373c))
+
+  - replace the weighted Voronoi with priority-queue growth, so every
+  province stays 4-connected by construction; drop the smoothing and
+  island-merging repairs
+  - fit one bias per province on a sampled lattice, so the rasterised
+  shares match the configured sizes; report progress across the fit,
+  growth, consistency check and border distances
+  - rework the geology form around presets, a share bar, region tabs and a
+  type editor; keep the edited region in sync with the map highlight
+  - extract the shared distribution bar, its draft hook and the segment
+  type into components/distribution-bar and components/lib
+  - delete the heightmap, landmass and structure-character stages with
+  their forms, stores, layers and previews; geology ends the pipeline
+  - remove the geology prototype page and its algorithm
+  - split the geology stage and the renderer layer folders into focused
+  modules and drop the stale stage config keys
+  - cover shares, connectivity, cancellation and border irregularity with
+  tests; keep README and the roadmap current
+* **[459](https://github.com/Mkbewe/world-generator/issues/459):** rework world sizes, terrain detail and the sample budget ([#461](https://github.com/Mkbewe/world-generator/issues/461)) ([01e5d74](https://github.com/Mkbewe/world-generator/commit/01e5d745b31b0a480781bd8181dfead18827c553))
+
+  - move size presets to 3, 6 and 12 km, custom range 3-12 km, default 3
+  km
+  - replace detail steps with 1, 2, 4, 8 and 16 m without stretching the
+  form
+  - calibrate the sample budget (864 MB, 144M cells) so the largest world
+  fits
+  - show the effective detail and warn when the budget clamps a grid
+  - make the size and detail tests iterate over the shared option lists
+  - update the roadmap, supersede the plan with the review notes and demo
+* **[57](https://github.com/Mkbewe/world-generator/issues/57):** add the heightmap contract ([#426](https://github.com/Mkbewe/world-generator/issues/426)) ([7bd09e1](https://github.com/Mkbewe/world-generator/commit/7bd09e11046dc5be1b160ac9e33091d8f761ad2d))
+
+  - Add HeightmapConfig (relief, featureScale) and MapConfig.heightmap
+  - Add MapState.heightmap (Float32Array) and shelfIndexMap (Int16Array)
+  - Define land positive, sea floor negative and zero as the sea datum
+  - Keep the ocean a flat floor at OCEAN_DEPTH_METERS instead of a
+  parameter
+  - Move ShelfDefinition.targetDepth from 0..1 to metres, default 60
+  - Accept int16 outputs in assertStageOutput
+  - Declare HEIGHTMAP_STAGE without wiring it into PIPELINE_STAGES yet
+  - Add the heightmap config guard, defaults and tests
+* **[57](https://github.com/Mkbewe/world-generator/issues/57):** build the land height from the structure skeleton ([#427](https://github.com/Mkbewe/world-generator/issues/427)) ([5fff3b9](https://github.com/Mkbewe/world-generator/commit/5fff3b9a01b426ab08bf792654cf834c978a1786))
+
+  - Add nearestOnSegment and nearestStructure as the one point-to-corridor
+  query
+  - Move zone-influence onto the shared nearest and keep its own slice
+  logic
+  - Add crossSection so the zone profile shapes landforms across the
+  corridor
+  - Invert the cross-section for rim zones through isInvertedGeometry
+  - Scale the land amplitude with world size and relief
+  - Bend the coast with the shared noise and a featureScale domain warp
+  - Keep the higher ground where two structures overlap
+  - Export the heightmap field helpers through the stage index
+* **structure-character:** rework zones onto the structure skeleton ([#425](https://github.com/Mkbewe/world-generator/issues/425)) ([ec7b0b3](https://github.com/Mkbewe/world-generator/commit/ec7b0b35194fa2ccab320d1ef98f39f5e53da2be))
+
+  - Replace ZoneGeometry half/center/edge with chain/spine/rim/point on a
+  path
+  - Choose a weighted terrain layout before characters and path slices
+  - Grow the zone count from extent, ridge length, corridor width and arms
+  - Add terrainBias to lean character draws between plains and mountains
+  - Let later zones override earlier ones in the layer hit test
+  - Recolour characters: plains green, hills ochre, mountains brown
+  - Keep lagoon flat and elongated mountain-free despite the bias
+
+### Bug Fixes
+
+* **[432](https://github.com/Mkbewe/world-generator/issues/432):** distinguish missing samples from negative heights ([#433](https://github.com/Mkbewe/world-generator/issues/433)) ([8c17797](https://github.com/Mkbewe/world-generator/commit/8c17797a6ca2357743d18f887460f3796fc0ef1f))
+
+  - use undefined instead of -1 for missing samples in valueAt
+  - paint negative heights in the interior and boundary paths
+  - return the nearest existing cell from nearestInsideValue
+  - cover a negative raster at two preview scales in the test
+
+### Documentation
+
+* replace corridor plans with the geology island pipeline plans ([#434](https://github.com/Mkbewe/world-generator/issues/434)) ([4d85a57](https://github.com/Mkbewe/world-generator/commit/4d85a57c0f33b61cb4d8e2fef3b6987c36a439e2))
+
+  - add the final island generation plan, the GEO-01A–09 task list and the
+  technical implementation plan
+  - remove the heightmap and structure character plans
+  - mark the corridor roadmap sections as replaced and note the temporary
+  sample cap removal
+  - fold in the review corrections: irregularity, shelf depth diagnosis,
+  GEO task split, provenance order independence, noise engine comparison
+
+### Code Refactoring
+
+* **[419](https://github.com/Mkbewe/world-generator/issues/419):** drop the atoll and winding archetypes ([#420](https://github.com/Mkbewe/world-generator/issues/420)) ([0becece](https://github.com/Mkbewe/world-generator/commit/0becece6db72187b938a1ac827f1c4958a0ebaca))
+
+  Fold the two pooled recipes into elongated and lagoon, drop the pool
+  helpers and the walk/ring corridor builders, and update the form, store,
+  tests and roadmap.
+* **[442](https://github.com/Mkbewe/world-generator/issues/442):** settle field parameters and shelf ownership ([#454](https://github.com/Mkbewe/world-generator/issues/454)) ([166c50d](https://github.com/Mkbewe/world-generator/commit/166c50d343147aa3bd859463207f818d31d1ca69))
+
+  - remove the dead featureScale control and the shelf section from the
+  heightmap form
+  - keep HeightmapConfig at relief and drop the deprecated featureScale
+  field
+  - drive the field from upliftScaleMeters, fragmentation,
+  shelfWidthMeters and the profile
+  - document the real parameter meanings in the type contract and the
+  technical plan
+
 ## [0.10.0](https://github.com/Mkbewe/world-generator/compare/v0.9.0...v0.10.0) (2026-09-25)
 
 ### Features
