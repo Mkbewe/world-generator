@@ -1,8 +1,8 @@
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
-import type { GenerationProgressState } from './lib/progress-types';
 import { GenerationProgress } from './generation-progress';
+import type { GenerationProgressState } from '../../stores';
 
 function renderProgress(progress: GenerationProgressState) {
   return render(

@@ -1,9 +1,10 @@
-import { type GeneratedMapSnapshot, MapRepository } from './repository';
+import { DATA_CONTRACT_VERSION, type GeneratedMapSnapshot, MapRepository } from './repository';
 
 function createSnapshot(seed: string): GeneratedMapSnapshot {
   return {
     width: 2,
     height: 2,
+    contractVersion: DATA_CONTRACT_VERSION,
     seed,
     shape: 'disc',
     layers: {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { GenerationProgressState } from '../lib/progress-types';
+import type { GenerationProgressState } from '../../../stores';
 
 /** Wall-clock time since the run started, ticking while the run is active. */
 export function useElapsed(status: GenerationProgressState['status'], startedAt?: number): number {

@@ -19,22 +19,27 @@ export interface ViewSyncValues {
   settingsTab: SettingsTab;
   /** Whether settings tabs and preview layers follow each other. */
   linked: boolean;
+  /** Region selected for editing in the Geology form and highlighted on the map. */
+  selectedRegionId?: string;
 }
 
 export const VIEW_SYNC_DEFAULTS: ViewSyncValues = {
   settingsTab: 'general',
   linked: false,
+  selectedRegionId: undefined,
 };
 
 interface ViewSyncState extends ViewSyncValues {
   setSettingsTab: (tab: SettingsTab) => void;
   setLinked: (linked: boolean) => void;
+  setSelectedRegion: (regionId: string | undefined) => void;
 }
 
 export const useViewSyncStore = createStore<ViewSyncState>(set => ({
   ...VIEW_SYNC_DEFAULTS,
   setSettingsTab: settingsTab => set({ settingsTab }),
   setLinked: linked => set({ linked }),
+  setSelectedRegion: selectedRegionId => set({ selectedRegionId }),
 }));
 
 /**

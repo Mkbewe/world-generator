@@ -1,11 +1,6 @@
 import type { MacroRegionLayout } from './presets';
 import type { MacroRegionConfig } from '../../../types';
 
-export interface MacroRegionSegment {
-  readonly id: string;
-  readonly percent: number;
-}
-
 export interface MacroRegionLayoutChange {
   readonly regions: readonly MacroRegionConfig[];
 }
@@ -26,7 +21,7 @@ export function overlayRegions(regions: readonly MacroRegionConfig[]): MacroRegi
 export function regionSegments(
   layout: MacroRegionLayout,
   regions: readonly MacroRegionConfig[]
-): MacroRegionSegment[] {
+): readonly { readonly id: string; readonly percent: number }[] {
   const base = baseRegions(regions);
   const raw = base.map(region => geometryShare(layout, region));
   const total = sum(raw) || 1;

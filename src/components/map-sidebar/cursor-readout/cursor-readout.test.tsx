@@ -1,5 +1,6 @@
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { CursorReadout } from './cursor-readout';
 import type { ReadoutItem } from '../../../utils/map-readout';
@@ -27,6 +28,30 @@ describe('CursorReadout', () => {
     );
 
     expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+  });
+
+  it('renders an action entry as a button and reports it', async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+    const items: readonly ReadoutItem[] = [
+      ...ITEMS,
+      {
+        id: 'edit-region',
+        label: 'Edit region',
+        value: '',
+        action: { id: 'edit-region', label: 'Edit region' },
+      },
+    ];
+
+    render(
+      <Theme>
+        <CursorReadout items={items} onAction={onAction} />
+      </Theme>
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Edit region' }));
+
+    expect(onAction).toHaveBeenCalledWith('edit-region');
   });
 
   it('renders repeated line labels without duplicate keys', () => {

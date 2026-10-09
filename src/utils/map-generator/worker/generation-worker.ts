@@ -4,6 +4,7 @@ import type {
 } from './pipeline-worker.types';
 import { GenerationStageError } from '../errors';
 import { createMapGenerator } from '../pipeline/pipeline-factory';
+import { resolveReads } from '../pipeline/stage';
 import { isPipelineStageId, type StageInfo } from '../pipeline/stage-definitions';
 import { isPersistentRasterValue, isRasterOutputKey } from '../pipeline/stage-outputs';
 import type { MapState } from '../types';
@@ -27,11 +28,28 @@ async function generate(
   const generator = createMapGenerator();
   const dirty = new Set(request.reuse.dirtyStageIds);
   const cached = request.reuse.cachedState;
-  // A clean stage is skipped only with all its declared writes in cache.
-  // Missing outputs recompute instead of flowing downstream silently; no
-  // domain object is named here, the rule follows the stage contract alone.
+  // A stage reruns when the config changed, when its own writes are missing
+  // or invalid, or when it reads a state key written by a stage that reruns in
+  // this pass. The dependency follows `reads`/`writes` alone, so a stage
+  // executed because of a missing output also invalidates its consumers.
+  const writers = new Map<string, string>();
+  for (const stage of generator.stages) {
+    for (const key of stage.writes ?? []) {
+      writers.set(String(key), stage.id);
+    }
+  }
+  const runIds = new Set<string>();
+  for (const stage of generator.stages) {
+    const staleInput = resolveReads(stage, request.config).some(key => {
+      const writer = writers.get(String(key));
+      return writer !== undefined && runIds.has(writer);
+    });
+    if (dirty.has(stage.id) || !hasCachedWrites(stage, cached) || staleInput) {
+      runIds.add(stage.id);
+    }
+  }
   const skipStageIds = generator.stages
-    .filter(stage => !dirty.has(stage.id) && hasCachedWrites(stage, cached))
+    .filter(stage => !runIds.has(stage.id))
     .map(stage => stage.id);
   // The session renders progress from the real skip set, not from its guess.
   scope.postMessage({

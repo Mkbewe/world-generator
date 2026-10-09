@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react';
 
 import { useGenerationSession } from './use-generation-session';
 import {
+  geologyConfigOf,
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
   useGeologyFormStore,
-  useHeightmapFormStore,
   useMacroRegionFormStore,
   useMapConfigStore,
   useNoiseFormStore,
@@ -35,6 +35,7 @@ export function useWorldGeneration(): WorldGeneration {
 
   const generate = useCallback(async (): Promise<void> => {
     const shapeForm = useWorldShapeFormStore.getState();
+    const geologyForm = useGeologyFormStore.getState();
     const built = buildGenerationConfig({
       seed: useGeneralFormStore.getState().seed,
       shape: shapeForm.shape,
@@ -43,8 +44,7 @@ export function useWorldGeneration(): WorldGeneration {
       noise: useNoiseFormStore.getState().noise,
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
-      geology: useGeologyFormStore.getState().geology,
-      heightmap: useHeightmapFormStore.getState().heightmap,
+      geology: geologyConfigOf(geologyForm),
     });
     if ('error' in built) {
       setError(built.error);

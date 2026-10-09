@@ -1,7 +1,7 @@
 import { Flex, Text } from '@radix-ui/themes';
 
+import type { GenerationProgressState } from '../../../stores';
 import { formatDuration } from '../lib/progress-format';
-import type { GenerationProgressState } from '../lib/progress-types';
 
 const STATUS_LABEL: Record<GenerationProgressState['status'], string> = {
   running: 'Generating',

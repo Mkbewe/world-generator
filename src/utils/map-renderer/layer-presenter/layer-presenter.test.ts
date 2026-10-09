@@ -1,3 +1,5 @@
+import type { Mock } from 'vitest';
+
 import { LayerPresenter } from './index';
 import { CatalogLayer, layerRegistry, MapLayer, type TileReporter } from '../layer';
 import { RenderMetrics } from '../metrics';
@@ -45,17 +47,20 @@ describe('LayerPresenter', () => {
   let renderTargetValue: RenderTarget | undefined;
   let viewTargetValue: RenderTarget | undefined;
   let presenter: LayerPresenter;
+  let onError: Mock<(error: unknown) => void>;
 
   beforeEach(() => {
     context = createContext();
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context);
     renderTargetValue = target(6, 6, 2, 1, 1);
     viewTargetValue = target(4, 4, 2, 0, 0);
+    onError = vi.fn<(error: unknown) => void>();
     presenter = new LayerPresenter(
       document.createElement('canvas'),
       new RenderMetrics(layerRegistry),
       () => renderTargetValue,
-      () => viewTargetValue
+      () => viewTargetValue,
+      onError
     );
   });
 
@@ -74,11 +79,13 @@ describe('LayerPresenter', () => {
       document.createElement('canvas'),
       new RenderMetrics(layerRegistry),
       () => renderTargetValue,
-      () => viewTargetValue
+      () => viewTargetValue,
+      onError
     );
     presenter.show(layer);
 
     expect(drawImage).toHaveBeenCalled();
+    expect(context.imageSmoothingEnabled).toBe(false);
     expect(layer.renderingTarget).toBeUndefined();
   });
 
@@ -168,6 +175,25 @@ describe('LayerPresenter', () => {
     layer.dispose();
   });
 
+  it('clips a presentation-clipped layer once for complete and fallback frames', async () => {
+    presenter.setShape('disc');
+    const layer = createLayer();
+    vi.spyOn(layer, 'presentation', 'get').mockReturnValue({
+      ...layer.presentation,
+      clipPresentation: true,
+    });
+    await layer.prepare(new AbortController().signal, target(6, 6, 2, 1, 1));
+    presenter.show(layer);
+    expect(context.clip).toHaveBeenCalledOnce();
+
+    vi.mocked(context.clip).mockClear();
+    viewTargetValue = target(6, 6, 3, 0, 0);
+    renderTargetValue = target(9, 9, 3, 1.5, 1.5);
+    presenter.draw();
+    expect(context.clip).toHaveBeenCalledOnce();
+    layer.dispose();
+  });
+
   it('finishes an in-flight frame and then catches up with the latest target', async () => {
     const aborted = vi.fn();
     const originalPrepare = MapLayer.prototype.prepare;
@@ -218,6 +244,86 @@ describe('LayerPresenter', () => {
 
     expect(prepared).toHaveLength(2);
     expect(prepared[1]).toMatchObject({ width: 12, height: 12 });
+    layer.dispose();
+  });
+
+  it('replaces an obsolete render when the layer supports cancellation', async () => {
+    const signals: AbortSignal[] = [];
+    const originalPrepare = MapLayer.prototype.prepare;
+    vi.spyOn(MapLayer.prototype, 'prepare').mockImplementation(function (
+      this: MapLayer,
+      signal: AbortSignal,
+      renderTarget: RenderTarget,
+      onTile?: TileReporter
+    ) {
+      signals.push(signal);
+      return originalPrepare.call(this, signal, renderTarget, onTile);
+    });
+    const layer = createLayer();
+    vi.spyOn(layer, 'presentation', 'get').mockReturnValue({
+      ...layer.presentation,
+      cancelStaleRender: true,
+    });
+    presenter.show(layer);
+    presenter.ensure(layer);
+
+    renderTargetValue = target(9, 9, 3, 1.5, 1.5);
+    presenter.ensure(layer);
+    expect(signals[0]?.aborted).toBe(true);
+
+    await presenter.ready;
+    expect(layer.renderedTarget?.width).toBe(9);
+    layer.dispose();
+  });
+
+  it('uses only the overview while a layer with fixed-width details catches up', async () => {
+    const layer = createLayer();
+    vi.spyOn(layer, 'presentation', 'get').mockReturnValue({
+      ...layer.presentation,
+      showStaleFrame: false,
+    });
+    const details = vi.spyOn(layer, 'paintFallbackDetails');
+    await layer.prepare(new AbortController().signal, target(6, 6, 2, 1, 1));
+    presenter.show(layer);
+    vi.mocked(context.drawImage).mockClear();
+
+    renderTargetValue = target(9, 9, 3, 1.5, 1.5);
+    presenter.draw();
+    expect(context.drawImage).toHaveBeenCalledWith(layer.overview, 0, 0, 512, 512, 0, 0, 4, 4);
+    expect(
+      vi.mocked(context.drawImage).mock.calls.some(([surface]) => surface === layer.canvas)
+    ).toBe(false);
+    expect(details).toHaveBeenCalledOnce();
+    layer.dispose();
+  });
+
+  it('reports a failed preparation instead of swallowing it', async () => {
+    vi.spyOn(MapLayer.prototype, 'prepare').mockRejectedValue(new Error('Allocation failed'));
+    const layer = createLayer();
+
+    presenter.show(layer);
+    presenter.ensure(layer);
+    await presenter.ready;
+
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Allocation failed' }));
+    layer.dispose();
+  });
+
+  it('ignores the rejection of a render the presenter superseded', async () => {
+    vi.spyOn(MapLayer.prototype, 'prepare').mockImplementation(
+      signal =>
+        new Promise((_, reject) => {
+          signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+        })
+    );
+    const layer = createLayer();
+
+    presenter.show(layer);
+    presenter.ensure(layer);
+    presenter.reset();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(onError).not.toHaveBeenCalled();
     layer.dispose();
   });
 });

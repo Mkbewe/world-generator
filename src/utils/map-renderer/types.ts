@@ -134,8 +134,11 @@ export interface RasterRenderLayerStatistics extends RenderLayerStatisticsBase {
 
 export interface VectorRenderLayerStatistics extends RenderLayerStatisticsBase {
   kind: 'vector';
-  nodes: number;
-  edges: number;
+  /** Domain elements the layer reports, e.g. geological regions. */
+  elements?: {
+    readonly label: string;
+    readonly count: number;
+  };
 }
 
 export type RenderLayerStatistics = RasterRenderLayerStatistics | VectorRenderLayerStatistics;

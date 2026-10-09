@@ -5,12 +5,13 @@ import { useMacroRegionFormStore } from '../../../../../stores';
 import { MAX_MACRO_REGIONS } from '../../../../../utils/map-generator/stages/macro-region/defaults';
 import {
   baseRegions,
+  clampBoundaries,
   regionBoundaries,
   regionSegments,
 } from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
-import { RegionDistribution } from '../distribution';
-import { useBoundaryDraft } from '../hooks/use-boundary-draft';
+import { useBoundaryDraft } from '../../../../distribution-bar';
 import { BaseRegionCard } from '../region-card';
+import { RegionDistribution } from '../region-distribution';
 
 export function BaseRegionSection() {
   const regions = useMacroRegionFormStore(state => state.regions);
@@ -20,7 +21,15 @@ export function BaseRegionSection() {
   const base = baseRegions(regions);
   const segments = regionSegments(layout, regions);
   const boundaries = regionBoundaries(layout, regions);
-  const draft = useBoundaryDraft(boundaries, segments.length, setRegionBoundaries);
+  const draft = useBoundaryDraft(
+    boundaries,
+    (base, index, value) =>
+      clampBoundaries(
+        base.map((boundary, position) => (position === index ? value(boundary) : boundary)),
+        segments.length
+      ),
+    setRegionBoundaries
+  );
   const atLimit = regions.length >= MAX_MACRO_REGIONS;
 
   return (

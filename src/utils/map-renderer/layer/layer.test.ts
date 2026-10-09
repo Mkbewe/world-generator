@@ -1,4 +1,4 @@
-import { CatalogLayer } from './catalog-layer';
+import { CatalogLayer } from './catalog/catalog-layer';
 import type { MapSize } from './layer';
 import { layerRegistry } from './layer-registry';
 import type { RenderTarget } from '../preview-targets';

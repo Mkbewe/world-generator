@@ -12,8 +12,6 @@ describe('selectPersistentRasters', () => {
       worldMask: new Uint8Array(1),
       noiseMap: new Float32Array(1),
       macroRegionIdMap: new Uint8Array(1),
-      heightmap: new Float32Array(1),
-      provenanceMap: new Int16Array(1),
     };
 
     const selected = selectPersistentRasters(data);
@@ -25,16 +23,18 @@ describe('selectPersistentRasters', () => {
   });
 
   it('throws on a wrong constructor and drops unknown keys', () => {
-    expect(() => selectPersistentRasters({ heightmap: new Uint8Array(1) })).toThrow('invalid type');
-    expect(selectPersistentRasters({ shelfIndexMap: new Int16Array(1) })).toEqual({});
+    expect(() => selectPersistentRasters({ worldMask: new Float32Array(1) })).toThrow(
+      'invalid type'
+    );
+    expect(selectPersistentRasters({ legacyMap: new Int16Array(1) })).toEqual({});
   });
 
   it('returns a new record over the shared buffers', () => {
-    const data = { heightmap: new Float32Array(1) };
+    const data = { noiseMap: new Float32Array(1) };
     const selected = selectPersistentRasters(data);
 
     expect(selected).not.toBe(data);
-    expect(selected.heightmap).toBe(data.heightmap);
+    expect(selected.noiseMap).toBe(data.noiseMap);
   });
 
   it('covers every declared key in the constructor table', () => {
@@ -42,9 +42,9 @@ describe('selectPersistentRasters', () => {
   });
 
   it('names raster keys and validates declared values', () => {
-    expect(isRasterOutputKey('heightmap')).toBe(true);
-    expect(isRasterOutputKey('landmassIdMap')).toBe(false);
-    expect(isPersistentRasterValue('heightmap', new Float32Array(1))).toBe(true);
-    expect(isPersistentRasterValue('heightmap', new Uint8Array(1))).toBe(false);
+    expect(isRasterOutputKey('noiseMap')).toBe(true);
+    expect(isRasterOutputKey('legacyMap')).toBe(false);
+    expect(isPersistentRasterValue('noiseMap', new Float32Array(1))).toBe(true);
+    expect(isPersistentRasterValue('noiseMap', new Uint8Array(1))).toBe(false);
   });
 });

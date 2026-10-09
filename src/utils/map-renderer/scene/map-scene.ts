@@ -21,7 +21,7 @@ import {
   type VectorLayerFactory,
   type VectorLayerFactoryRegistry,
 } from '../layer';
-import type { SmoothGeometry } from '../layer/smooth-geometry';
+import type { SmoothGeometry } from '../layer/catalog/smooth-geometry';
 import type { MapBaseLayerId, MapLayerOption, MapMetadata, SpatialMask } from '../types';
 
 /** Owns the current map's layers and readiness; scheduling and drawing belong to the renderer. */
@@ -32,6 +32,7 @@ export class MapScene {
   private regionConfig?: MapMetadata['regionGeometry'];
   private dimensionsMeters?: MapMetadata['dimensionsMeters'];
   private info: MapInfo = {};
+  private selection?: string;
   private readonly layers = new Map<MapBaseLayerId, MapLayer>();
   private readonly available = new Set<MapBaseLayerId>();
 
@@ -121,12 +122,30 @@ export class MapScene {
   }
 
   /**
-   * Keeps domain data the vector layers carry, e.g. the landmass layout, so a
+   * Keeps domain data the vector layers carry, e.g. the geology plan, so a
    * restored map shows them without re-running the generator.
    */
   setInfo(info: MapInfo): readonly MapLayer[] {
     this.info = info;
     return this.applyVectorLayers();
+  }
+
+  /**
+   * Element the studio highlights, e.g. the region being edited. Layers
+   * that support selection repaint; an unchanged selection is a no-op.
+   */
+  setSelection(selection: string | undefined): readonly MapLayer[] {
+    if (this.selection === selection) {
+      return [];
+    }
+    this.selection = selection;
+    const repainted: MapLayer[] = [];
+    for (const layer of this.layers.values()) {
+      if (layer.applySelection(selection)) {
+        repainted.push(layer);
+      }
+    }
+    return repainted;
   }
 
   /** Adds every vector layer whose domain data is present and whose mask is loaded. */
@@ -217,7 +236,6 @@ export class MapScene {
   ): MapLayer {
     const size = this.size;
     const clipMask = spec.clipTo ? this.rasterLayer(spec.clipTo) : undefined;
-    const reads = spec.reads ?? [];
     const previous = this.layers.get(spec.id);
     const layer = this.cache.getOrCreate(
       spec.id,
@@ -230,7 +248,6 @@ export class MapScene {
         this.geometry?.shape,
         this.dimensionsMeters?.widthMeters,
         this.dimensionsMeters?.heightMeters,
-        ...reads.map(source => this.info[source]),
       ],
       () =>
         factory.create({
@@ -244,6 +261,7 @@ export class MapScene {
         })
     );
     this.layers.set(spec.id, layer);
+    layer.applySelection(this.selection);
     // A refreshed layer becomes ready again once it is presented.
     if (layer !== previous) {
       this.available.delete(spec.id);
@@ -350,6 +368,7 @@ export class MapScene {
     this.regionConfig = undefined;
     this.dimensionsMeters = undefined;
     this.info = {};
+    this.selection = undefined;
     this.layers.clear();
     this.available.clear();
   }

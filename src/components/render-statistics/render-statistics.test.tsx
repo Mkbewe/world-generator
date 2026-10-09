@@ -95,11 +95,10 @@ describe('RenderStatisticsPanel', () => {
             layers: [
               {
                 kind: 'vector',
-                id: 'landmass-layout',
-                name: 'Landmasses',
+                id: 'geology',
+                name: 'Geology',
                 durationMs: 5,
-                nodes: 120,
-                edges: 134,
+                elements: { label: 'Regions', count: 120 },
                 outputWidth: 320,
                 outputHeight: 240,
                 bytes: 1_000_000,
@@ -110,10 +109,9 @@ describe('RenderStatisticsPanel', () => {
       </Theme>
     );
 
-    expect(screen.getByText('Nodes')).toBeInTheDocument();
+    expect(screen.getByText('Regions')).toBeInTheDocument();
     expect(screen.getByText('120')).toBeInTheDocument();
-    expect(screen.getByText('Edges')).toBeInTheDocument();
-    expect(screen.getByText('134')).toBeInTheDocument();
+    expect(screen.queryByText('Nodes')).not.toBeInTheDocument();
     expect(screen.queryByText('Drawing performance')).not.toBeInTheDocument();
     expect(screen.queryByText('Source')).not.toBeInTheDocument();
   });

@@ -2,7 +2,7 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { StageList } from './stage-list';
-import type { GenerationStageProgress } from '../lib/progress-types';
+import type { GenerationStageProgress } from '../../../stores';
 
 const stages: readonly GenerationStageProgress[] = [
   { id: 'a', name: 'World shape', status: 'completed', percentage: 100, durationMs: 120 },

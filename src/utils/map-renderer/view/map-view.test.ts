@@ -60,7 +60,7 @@ describe('MapView', () => {
       devicePixelRatio: 3,
     });
     const elements = createElements();
-    const view = new MapView(elements, new RenderMetrics(layerRegistry));
+    const view = new MapView(elements, new RenderMetrics(layerRegistry), vi.fn());
     const layer = createLayer();
 
     view.start({ width: 2, height: 2 }, 'disc');
@@ -82,7 +82,7 @@ describe('MapView', () => {
       height: 4,
       devicePixelRatio: 1,
     });
-    const view = new MapView(createElements(), new RenderMetrics(layerRegistry));
+    const view = new MapView(createElements(), new RenderMetrics(layerRegistry), vi.fn());
     const layer = createLayer();
     view.start({ width: 2, height: 2 }, 'disc');
     view.begin(layer);
@@ -114,7 +114,7 @@ describe('MapView', () => {
   it('keeps the raster size until the viewport is measured', () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue(undefined);
     const elements = createElements();
-    const view = new MapView(elements, new RenderMetrics(layerRegistry));
+    const view = new MapView(elements, new RenderMetrics(layerRegistry), vi.fn());
 
     view.start({ width: 2, height: 2 }, 'disc');
 
@@ -141,7 +141,7 @@ describe('MapView', () => {
       toJSON: () => ({}),
     } as DOMRect);
     const elements = createElements();
-    const view = new MapView(elements, new RenderMetrics(layerRegistry));
+    const view = new MapView(elements, new RenderMetrics(layerRegistry), vi.fn());
 
     view.start({ width: 2, height: 2 }, 'disc');
 

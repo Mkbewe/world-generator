@@ -22,7 +22,7 @@ export {
   removeBaseRegion,
   splitLargestRegion,
 } from './editor/boundary-model';
-export type { MacroRegionLayoutChange, MacroRegionSegment } from './editor/boundary-model';
+export type { MacroRegionLayoutChange } from './editor/boundary-model';
 export {
   createBandOverlay,
   createHorizontalLayout,

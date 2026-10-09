@@ -6,7 +6,7 @@ import {
   RASTER_OUTPUT_KEYS,
   type RasterOutputKey,
 } from '../../map-generator/pipeline/stage-outputs';
-import { HEIGHTMAP_STOPS, REGION_COLORS } from '../palettes/palettes';
+import { REGION_COLORS } from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
   PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)
@@ -36,42 +36,12 @@ const CATALOG_ENTRIES = [
     samples: ['noise'],
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
   },
-  // The corridor layers have no producer since the geology cutover; they stay
-  // readable for old readers but leave the preview navigation until GEO-06.
-  {
-    id: 'landmass-layout',
-    label: 'Landmasses',
-    kind: 'vector',
-    source: 'landmassLayout',
-    clipTo: 'world-shape',
-    hidden: true,
-    group: { id: 'landmass', label: 'Landmasses' },
-  },
-  {
-    id: 'structure-character',
-    label: 'Character',
-    kind: 'vector',
-    source: 'structureZones',
-    clipTo: 'world-shape',
-    reads: ['landmassLayout'],
-    hidden: true,
-    group: { id: 'landmass', label: 'Landmasses' },
-  },
   {
     id: 'geology',
     label: 'Geology',
     kind: 'vector',
     source: 'geologyPlan',
     clipTo: 'world-shape',
-  },
-  {
-    id: 'heightmap',
-    label: 'Heightmap',
-    kind: 'raster',
-    source: 'heightmap',
-    dataType: 'float32',
-    clipTo: 'world-shape',
-    palette: { kind: 'ramp', stops: HEIGHTMAP_STOPS },
   },
   {
     id: 'noise',

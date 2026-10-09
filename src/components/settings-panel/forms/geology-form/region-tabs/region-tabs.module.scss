@@ -1,0 +1,31 @@
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  border: 1px solid var(--gray-a6);
+  border-radius: var(--radius-2);
+  background-color: var(--color-panel-solid);
+  color: var(--gray-12);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &[data-active] {
+    border-color: var(--violet-9);
+    background-color: var(--violet-a3);
+  }
+}
+
+.swatch {
+  flex-shrink: 0;
+  inline-size: 0.75rem;
+  block-size: 0.75rem;
+  border-radius: var(--radius-1);
+}

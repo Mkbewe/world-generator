@@ -2,6 +2,7 @@ export { createMapGenerator } from './pipeline/pipeline-factory';
 export { createMacroRegionClassifier } from './stages/macro-region';
 export type { MacroRegionClassifierInput } from './stages/macro-region';
 export { selectMapInfo } from './info-definitions';
+export { GenerationCancelledError, GenerationStageError } from './errors';
 export {
   PERSISTENT_RASTER_TYPES,
   selectDomainOutputs,
@@ -10,23 +11,14 @@ export {
 export { createWorldSpace, planarDistance, spaceOf } from './space';
 export type { SampleGrid, WorldSpace } from './space';
 export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region';
-export { isLandmassLayout } from './stages/landmass';
-export { DEFAULT_STRUCTURE_CHARACTER_CONFIG } from './stages/structure-character';
-export { isStructureZones } from './stages/structure-character';
 export {
   DEFAULT_GEOLOGY_CONFIG,
-  GEOLOGICAL_AREA_PRESETS,
+  GEOLOGY_PRESETS,
+  geologyPresetConfig,
   isGeologyConfig,
   isGeologyPlan,
 } from './stages/geology';
-export { TERRAIN_CHARACTERS } from './types';
-export {
-  CHARACTER_RANGES,
-  isTerrainCharacter,
-  isTerrainProfile,
-  sampleRange,
-} from './terrain-profile';
-export type { CharacterRanges, FieldRange } from './terrain-profile';
+export type { GeologyPreset } from './stages/geology';
 export { selectDirtyStageIds } from './pipeline/selective-regeneration';
 export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './pipeline/stage-definitions';
 export type { MapConfigKey, PipelineStageId, StageInfo } from './pipeline/stage-definitions';
@@ -54,22 +46,15 @@ export type {
   RunGeneration,
 } from './worker';
 export type {
-  CharacterZone,
   GenerationEvent,
   GenerationOptions,
   GenerationResult,
-  GeologicalAreaConfig,
-  GeologicalAreaPlan,
-  GeologicalAreaPlacement,
-  GeologicalStructure,
+  GeologicalRegionConfig,
+  GeologicalRegionPlan,
+  GeologicalRegionType,
   GeologyConfig,
-  GeologyPlacementProblem,
+  GeologyLayoutConfig,
   GeologyPlan,
-  HeightmapConfig,
-  LandmassConfig,
-  LandmassEdge,
-  LandmassLayout,
-  LandmassNode,
   MacroRegionConfig,
   MacroRegionDeformation,
   MacroRegionGeometry,
@@ -82,8 +67,5 @@ export type {
   StageMetric,
   StageMetrics,
   StageStatistics,
-  StructureCharacterConfig,
-  TerrainCharacter,
-  ZoneGeometry,
   WorldConfig,
 } from './types';

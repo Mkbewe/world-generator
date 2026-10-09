@@ -19,9 +19,11 @@ export interface LayerRenderStatistics {
   durationMs: number;
   tiles: number;
   pixels: number;
-  /** Element counts a vector layer reports instead of a raster resolution. */
-  nodes?: number;
-  edges?: number;
+  /** Domain elements a vector layer reports instead of a raster resolution. */
+  elements?: {
+    readonly label: string;
+    readonly count: number;
+  };
 }
 
 /** Output tile of the preview buffer, in canvas pixels. */
@@ -34,6 +36,29 @@ export interface LayerTile {
 
 /** Longest side of the whole-map fallback surface, in pixels. */
 const OVERVIEW_MAX_PX = 512;
+
+/**
+ * Presentation decisions of one layer, read together by the presenter. A layer
+ * replaces the whole set instead of individual flags, so the choices stay
+ * consistent with each other.
+ */
+export interface LayerPresentation {
+  /** Whether a frame being painted may be shown before its final commit. */
+  readonly showPartialFrame: boolean;
+  /** Whether a newer view can replace an unfinished render of this layer. */
+  readonly cancelStaleRender: boolean;
+  /** Whether an old completed frame should be stretched while the view catches up. */
+  readonly showStaleFrame: boolean;
+  /** Whether the presenter clips every frame to the smooth world outline. */
+  readonly clipPresentation: boolean;
+}
+
+const DEFAULT_PRESENTATION: LayerPresentation = {
+  showPartialFrame: true,
+  cancelStaleRender: false,
+  showStaleFrame: true,
+  clipPresentation: false,
+};
 
 export abstract class MapLayer {
   /** Stable surface with the last completed frame; only `commit` writes here. */
@@ -71,6 +96,30 @@ export abstract class MapLayer {
   get renderingTarget(): RenderTarget | undefined {
     return this.preparing ? this.activeTarget : undefined;
   }
+
+  /** Presentation strategy of this layer; a layer may replace the whole set. */
+  get presentation(): LayerPresentation {
+    return DEFAULT_PRESENTATION;
+  }
+
+  /**
+   * Applies the element highlighted in the preview; returns whether the layer
+   * must repaint. Layers without a selection keep the default.
+   */
+  applySelection(_selection: string | undefined): boolean {
+    return false;
+  }
+
+  /** Marks the committed frame stale so the next prepare repaints it. */
+  invalidate(): void {
+    this.committedTarget = undefined;
+    this.preparation = undefined;
+    this.preparationKey = undefined;
+    this.overviewSurfaceTarget = undefined;
+  }
+
+  /** Optional screen-space details over a scaled overview during view changes. */
+  paintFallbackDetails(_context: CanvasRenderingContext2D, _view: RenderTarget): void {}
 
   /** Projection of the whole-map fallback, or undefined before the first render. */
   get overviewTarget(): RenderTarget | undefined {

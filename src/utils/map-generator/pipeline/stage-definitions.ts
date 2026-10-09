@@ -8,10 +8,7 @@ export const MAP_CONFIG_KEYS = [
   'noise',
   'macroRegions',
   'macroRegionDeformation',
-  'landmasses',
-  'structureCharacter',
   'geology',
-  'heightmap',
 ] as const;
 
 export type MapConfigKey = (typeof MAP_CONFIG_KEYS)[number];
@@ -76,45 +73,14 @@ export const MACRO_REGION_STAGE = {
 } as const satisfies DeclaredStage;
 
 /**
- * @deprecated Replaced by {@link GEOLOGY_STAGE}; kept until the corridor
- * implementation is removed (GEO-06).
- */
-export const LANDMASS_LAYOUT_STAGE = {
-  id: 'landmass-layout',
-  name: 'Landmass layout',
-  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses'],
-} as const satisfies DeclaredStage;
-
-/**
- * @deprecated Replaced by {@link GEOLOGY_STAGE}; kept until the corridor
- * implementation is removed (GEO-06).
- */
-export const STRUCTURE_CHARACTER_STAGE = {
-  id: 'structure-character',
-  name: 'Structure character',
-  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'landmasses', 'structureCharacter'],
-} as const satisfies DeclaredStage;
-
-/**
- * The heightmap reads the mask and the geology plan, so it inherits their
- * configuration, plus its own slice with the relief and feature scale. It does
- * not read the shared noise: every stage owns its own bands and stream.
- */
-export const HEIGHTMAP_STAGE = {
-  id: 'heightmap',
-  name: 'Heightmap',
-  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
-} as const satisfies DeclaredStage;
-
-/**
- * The geology stage replaces the landmass layout and the structure character
- * stages. The plan carries no raster and works in normalized shares, so the
- * sample resolution never invalidates it — only seed, shape and the areas do.
+ * The geology stage plans the regions and rasterises their owner and border
+ * distance maps at the sample resolution; both the sample counts and the
+ * physical size shape that raster.
  */
 export const GEOLOGY_STAGE = {
   id: 'geology',
   name: 'Geology',
-  configKeys: ['world.seed', 'world.shape', 'geology'],
+  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology'],
 } as const satisfies DeclaredStage;
 
 /**
@@ -128,7 +94,6 @@ export const PIPELINE_STAGES = [
   NOISE_STAGE,
   MACRO_REGION_STAGE,
   GEOLOGY_STAGE,
-  HEIGHTMAP_STAGE,
 ] as const;
 
 export type PipelineStageId = (typeof PIPELINE_STAGES)[number]['id'];

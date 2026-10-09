@@ -2,7 +2,7 @@ import { buildGenerationConfig, type GenerationConfigInput } from './generation-
 import {
   DEFAULT_NOISE,
   GEOLOGY_FORM_DEFAULTS,
-  HEIGHTMAP_FORM_DEFAULTS,
+  geologyConfigOf,
   MACRO_REGION_FORM_DEFAULTS,
 } from '../../../stores';
 
@@ -15,8 +15,7 @@ function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfig
     noise: DEFAULT_NOISE,
     macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
     macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
-    geology: GEOLOGY_FORM_DEFAULTS.geology,
-    heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
+    geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
     ...overrides,
   };
 }
@@ -41,8 +40,7 @@ describe('buildGenerationConfig', () => {
         noise: DEFAULT_NOISE,
         macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
         macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
-        geology: GEOLOGY_FORM_DEFAULTS.geology,
-        heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
+        geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
       },
     });
   });
@@ -55,5 +53,15 @@ describe('buildGenerationConfig', () => {
     expect(result).toMatchObject({
       config: { macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } },
     });
+  });
+
+  it('keeps the region composition independent of the world size', () => {
+    const small = buildGenerationConfig(input());
+    const large = buildGenerationConfig(input({ sizeMeters: 4000 }));
+    if (!('config' in small) || !('config' in large)) {
+      throw new Error('Expected valid generated configurations.');
+    }
+
+    expect(large.config.geology).toEqual(small.config.geology);
   });
 });

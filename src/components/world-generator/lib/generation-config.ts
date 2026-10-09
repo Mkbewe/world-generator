@@ -1,6 +1,5 @@
 import type {
   GeologyConfig,
-  HeightmapConfig,
   MacroRegionConfig,
   MacroRegionDeformation,
   MapConfig,
@@ -17,7 +16,6 @@ export interface GenerationConfigInput {
   macroRegions: readonly MacroRegionConfig[];
   macroRegionDeformation: MacroRegionDeformation;
   geology: GeologyConfig;
-  heightmap: HeightmapConfig;
 }
 
 export type GenerationConfigResult = { config: MapConfig } | { error: string };
@@ -37,7 +35,6 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
       macroRegions: input.macroRegions,
       macroRegionDeformation: input.macroRegionDeformation,
       geology: input.geology,
-      heightmap: input.heightmap,
     },
   };
 }

@@ -82,7 +82,13 @@ export class MapRenderer {
   ) {
     this.scene = new MapScene(layerCache, this.registry);
     this.metrics = new RenderMetrics(this.registry, options.onRenderStatistics);
-    this.view = new MapView(elements, this.metrics, options.selectedLayer, options.shouldDisplay);
+    this.view = new MapView(
+      elements,
+      this.metrics,
+      error => this.reportError(error),
+      options.selectedLayer,
+      options.shouldDisplay
+    );
     this.queue = new LayerQueue({
       signal: () => this.lifetime.signal,
       begin: (layer, silent) => {
@@ -288,6 +294,13 @@ export class MapRenderer {
       this.queue.enqueue(layer);
     }
     this.emitState();
+  }
+
+  /** Highlights one domain element in the preview, e.g. the edited region. */
+  setSelectedRegion(regionId: string | undefined): void {
+    for (const layer of this.scene.setSelection(regionId)) {
+      this.queue.enqueue(layer);
+    }
   }
 
   /** Stops drawing and accepting data for this run, keeping the current preview. */

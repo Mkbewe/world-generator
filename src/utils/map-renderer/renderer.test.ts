@@ -1,27 +1,38 @@
 import { MapLayer } from './layer';
 import { MapPersistence } from './persistence';
 import { MapRenderer, type MapRendererOptions } from './renderer';
-import { type GeneratedMapSnapshot, MapRepository } from './repository';
+import { DATA_CONTRACT_VERSION, type GeneratedMapSnapshot, MapRepository } from './repository';
 import { Viewport } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
-import type { LandmassLayout } from '../map-generator/types';
+import type { GeologyPlan } from '../map-generator/types';
 
-/** Domain data of the landmass layout layer. */
-const LAYOUT: LandmassLayout = {
-  structures: [
-    {
-      id: 'landmass-1',
-      archetype: 'elongated',
-      nodes: [
-        { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
-        { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.05 },
-      ],
-      edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
-      shelfId: 'shelf-1',
-    },
-  ],
-  shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 60, falloff: 0.5, irregularity: 0.35 }],
-};
+/** Domain data of the geology vector layer; the first cell belongs to no region. */
+function planFixture(): GeologyPlan {
+  const owners = new Int16Array(121).fill(0);
+  owners[0] = -1;
+  return {
+    regions: [
+      {
+        id: 'region-1',
+        centre: { x: 0.25, y: 0.5 },
+        weight: 1,
+        type: 'ordinary',
+        areaSquareMeters: 100,
+      },
+      {
+        id: 'region-2',
+        centre: { x: 0.75, y: 0.5 },
+        weight: 1,
+        type: 'volcanic',
+        areaSquareMeters: 100,
+      },
+    ],
+    regionRasterSize: { width: 11, height: 11 },
+    regionOwnerMap: owners,
+    regionBorderDistanceMap: new Float32Array(121).fill(100),
+    worldAreaSquareMeters: 400,
+  };
+}
 
 function deferred() {
   let resolve!: () => void;
@@ -40,7 +51,14 @@ function elements() {
 }
 
 function snapshot(layers: GeneratedMapSnapshot['layers']): GeneratedMapSnapshot {
-  return { width: 2, height: 2, seed: '1', shape: 'disc', layers };
+  return {
+    width: 2,
+    height: 2,
+    contractVersion: DATA_CONTRACT_VERSION,
+    seed: '1',
+    shape: 'disc',
+    layers,
+  };
 }
 
 function setup(options: MapRendererOptions = {}) {
@@ -78,11 +96,14 @@ describe('MapRenderer', () => {
       drawImage: vi.fn(),
       save: vi.fn(),
       restore: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
       beginPath: vi.fn(),
       closePath: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
       bezierCurveTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
       arc: vi.fn(),
       ellipse: vi.fn(),
       rect: vi.fn(),
@@ -125,11 +146,6 @@ describe('MapRenderer', () => {
       'noise',
       'macro-region',
       'geology',
-      'heightmap',
-      // The deprecated corridor layers have no pipeline stage, so the catalog
-      // sorts them after the canonical stages until GEO-06 removes them.
-      'landmass-layout',
-      'structure-character',
     ]);
   });
 
@@ -138,25 +154,25 @@ describe('MapRenderer', () => {
     preview.add('world-shape', new Uint8Array(4).fill(1));
     await preview.ready;
 
-    preview.setInfo({ landmassLayout: LAYOUT });
+    preview.setInfo({ geologyPlan: planFixture() });
     await preview.ready;
 
-    const option = preview.state.layers.find(layer => layer.id === 'landmass-layout');
+    const option = preview.state.layers.find(layer => layer.id === 'geology');
     expect(option?.available).toBe(true);
-    // A fresh map follows every stage, the vector layout included.
-    expect(preview.state.displayedLayer).toBe('landmass-layout');
+    // A fresh map follows every stage, the vector plan included.
+    expect(preview.state.displayedLayer).toBe('geology');
   });
 
   it('follows the vector layer unlocked by a mask that arrives later', async () => {
     const { preview } = setup();
-    preview.setInfo({ landmassLayout: LAYOUT });
+    preview.setInfo({ geologyPlan: planFixture() });
 
     preview.add('world-shape', new Uint8Array(4).fill(1));
     await preview.ready;
 
-    const option = preview.state.layers.find(layer => layer.id === 'landmass-layout');
+    const option = preview.state.layers.find(layer => layer.id === 'geology');
     expect(option?.available).toBe(true);
-    expect(preview.state.displayedLayer).toBe('landmass-layout');
+    expect(preview.state.displayedLayer).toBe('geology');
     preview.dispose();
   });
 
@@ -265,15 +281,7 @@ describe('MapRenderer', () => {
 
     expect(preview.signal.aborted).toBe(true);
     expect(preview.state.displayedLayer).toBe('noise');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([
-      true,
-      false,
-      false,
-      false,
-      false,
-      false,
-      false,
-    ]);
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
     expect(() => preview.add('noise', new Float32Array(4))).toThrow();
     preview.dispose();
   });
@@ -290,6 +298,21 @@ describe('MapRenderer', () => {
     expect(preview.state.error).toBe('Allocation failed');
     expect(preview.state.displayedLayer).toBe('noise');
     expect(preview.state.layers[0].available).toBe(false);
+  });
+
+  it('reports a render failure that happens while the view catches up', async () => {
+    const { preview } = setup();
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    await preview.ready;
+
+    vi.spyOn(MapLayer.prototype, 'prepare').mockRejectedValue(new Error('Canvas lost'));
+    preview.zoomIn();
+    // The presenter renders outside the generation queue, so the failure lands
+    // on the next microtask instead of on `ready`.
+    await vi.runAllTimersAsync();
+
+    expect(preview.state.error).toBe('Canvas lost');
+    preview.dispose();
   });
 
   it('restores a cached snapshot', async () => {
@@ -406,8 +429,12 @@ describe('MapRenderer', () => {
       },
       save: vi.fn(),
       restore: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
       beginPath: vi.fn(),
+      arc: vi.fn(),
       ellipse: vi.fn(),
+      fill: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
@@ -543,27 +570,27 @@ describe('MapRenderer', () => {
     });
   });
 
-  it('inspects the structure under the vector layer', async () => {
+  it('inspects the region under the vector layer', async () => {
     const { preview } = setup();
     preview.start({ width: 11, height: 11 }, 'disc');
     preview.add('world-shape', new Uint8Array(121).fill(1));
     await vi.runAllTimersAsync();
     await preview.ready;
 
-    preview.setInfo({ landmassLayout: LAYOUT });
+    preview.setInfo({ geologyPlan: planFixture() });
     await preview.ready;
-    preview.select('landmass-layout');
+    preview.select('geology');
 
     expect(preview.inspect(5, 5)).toEqual({
       kind: 'vector',
-      layerId: 'landmass-layout',
-      label: 'Landmasses',
-      hit: { id: 'landmass-1' },
+      layerId: 'geology',
+      label: 'Geology',
+      hit: { id: 'region-1' },
     });
     expect(preview.inspect(0, 0)).toEqual({
       kind: 'vector',
-      layerId: 'landmass-layout',
-      label: 'Landmasses',
+      layerId: 'geology',
+      label: 'Geology',
       hit: undefined,
     });
     preview.dispose();

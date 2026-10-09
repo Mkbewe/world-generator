@@ -4,11 +4,7 @@ describe('view sync store', () => {
   it('maps stage tabs and preview layers both ways', () => {
     expect(layerForTab('noise')).toBe('noise');
     expect(layerForTab('general')).toBeUndefined();
-    expect(layerForTab('heightmap')).toBe('heightmap');
     expect(tabForLayer('macro-region')).toBe('macro-region');
-    // The corridor layers have no form any more, so they map to no tab.
-    expect(tabForLayer('landmass-layout')).toBeUndefined();
-    expect(tabForLayer('structure-character')).toBeUndefined();
   });
 
   it('maps the geology tab to its plan layer', () => {
@@ -17,7 +13,17 @@ describe('view sync store', () => {
   });
 
   it('starts unlinked on the general tab', () => {
-    expect(VIEW_SYNC_DEFAULTS).toEqual({ settingsTab: 'general', linked: false });
+    expect(VIEW_SYNC_DEFAULTS).toEqual({
+      settingsTab: 'general',
+      linked: false,
+      selectedRegionId: undefined,
+    });
     expect(useViewSyncStore.getState().linked).toBe(false);
+  });
+
+  it('tracks the region selected for editing', () => {
+    useViewSyncStore.getState().setSelectedRegion('region-3');
+
+    expect(useViewSyncStore.getState().selectedRegionId).toBe('region-3');
   });
 });

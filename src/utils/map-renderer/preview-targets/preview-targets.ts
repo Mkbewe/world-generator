@@ -38,9 +38,12 @@ export function renderSize(
     return presentationSize(measured, size);
   }
   const viewport = presentationSize(measured, size);
+  const width = Math.max(1, Math.round(viewport.width * RENDER_OVERSCAN));
+  const height = Math.max(1, Math.round(viewport.height * RENDER_OVERSCAN));
   return {
-    width: Math.max(1, Math.round(viewport.width * RENDER_OVERSCAN)),
-    height: Math.max(1, Math.round(viewport.height * RENDER_OVERSCAN)),
+    // Keep the overscan symmetric in whole pixels so a completed frame copies 1:1.
+    width: width + ((width - viewport.width) % 2),
+    height: height + ((height - viewport.height) % 2),
   };
 }
 

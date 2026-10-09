@@ -7,6 +7,10 @@ import type { MapConfig, MapState, WorldPoint } from './types';
 export interface SampleGrid {
   readonly sampleWidth: number;
   readonly sampleHeight: number;
+  /** Physical width; without it one sample step counts as one unit. */
+  readonly widthMeters?: number;
+  /** Physical height; without it one sample step counts as one unit. */
+  readonly heightMeters?: number;
 }
 
 /**
@@ -32,6 +36,12 @@ export interface WorldSpace {
   /** Canonical distance of two normalized points. No wrapping yet (§7). */
   distance(left: WorldPoint, right: WorldPoint): number;
   /**
+   * Physical distance of two normalized points, in metres. On a rectangular
+   * world the same normalized delta differs per axis, so features sized in
+   * metres must use this and not `distance`.
+   */
+  distanceMeters(left: WorldPoint, right: WorldPoint): number;
+  /**
    * Mask-frame coordinates (-1..1) of a cell. Only the world-shape stage may
    * use this: the mask predicate lives in `-1..1`, everything else in 0..1.
    */
@@ -52,6 +62,8 @@ export function createWorldSpace(grid: SampleGrid): WorldSpace {
   const sampleHeight = grid.sampleHeight;
   const xDivisor = Math.max(1, sampleWidth - 1);
   const yDivisor = Math.max(1, sampleHeight - 1);
+  const widthMeters = grid.widthMeters ?? sampleWidth;
+  const heightMeters = grid.heightMeters ?? sampleHeight;
 
   return {
     sampleWidth,
@@ -70,6 +82,9 @@ export function createWorldSpace(grid: SampleGrid): WorldSpace {
     distance(left, right) {
       return planarDistance(left, right);
     },
+    distanceMeters(left, right) {
+      return Math.hypot((right.x - left.x) * widthMeters, (right.y - left.y) * heightMeters);
+    },
     cellToMask(x, y) {
       return { x: (2 * x) / xDivisor - 1, y: (2 * y) / yDivisor - 1 };
     },
@@ -78,8 +93,8 @@ export function createWorldSpace(grid: SampleGrid): WorldSpace {
 
 /**
  * Space of a canonical run: the pipeline transports it on the context, direct
- * `MapContext` users (tests, benches) fall back to deriving it from the
- * dimensions. Either way there is exactly one frame per run.
+ * `MapContext` users (tests) fall back to deriving it from the dimensions.
+ * Either way there is exactly one frame per run.
  */
 export function spaceOf(context: {
   readonly config: Readonly<MapConfig>;

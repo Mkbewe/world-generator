@@ -1,53 +1,39 @@
 import { MapScene } from './map-scene';
 import { createRadialLayout } from '../../map-generator/stages/macro-region/editor/presets';
-import type { LandmassLayout } from '../../map-generator/types';
+import type { GeologyPlan } from '../../map-generator/types';
 import {
-  LandmassLayoutVectorLayer,
+  GeologyPlanVectorLayer,
   LayerCache,
   LayerRegistry,
   layerRegistry,
   MapLayer,
-  StructureCharacterVectorLayer,
 } from '../layer';
 
 const BASE_CATALOG = [layerRegistry.get('world-shape'), layerRegistry.get('noise')];
 
-/** Domain data of the landmass layout layer. */
-const LAYOUT: LandmassLayout = {
-  structures: [
+/** Domain data of the geology vector layer. */
+const PLAN: GeologyPlan = {
+  regions: [
     {
-      id: 'landmass-1',
-      archetype: 'elongated',
-      nodes: [
-        { id: 'landmass-1-n1', position: { x: 0.4, y: 0.5 }, radius: 0.05 },
-        { id: 'landmass-1-n2', position: { x: 0.6, y: 0.5 }, radius: 0.05 },
-      ],
-      edges: [{ id: 'landmass-1-e1', from: 'landmass-1-n1', to: 'landmass-1-n2' }],
-      shelfId: 'shelf-1',
+      id: 'region-1',
+      centre: { x: 0.25, y: 0.5 },
+      weight: 1,
+      type: 'ordinary',
+      areaSquareMeters: 100,
+    },
+    {
+      id: 'region-2',
+      centre: { x: 0.75, y: 0.5 },
+      weight: 1,
+      type: 'volcanic',
+      areaSquareMeters: 100,
     },
   ],
-  shelves: [{ id: 'shelf-1', width: 0.07, targetDepth: 60, falloff: 0.5, irregularity: 0.35 }],
+  regionRasterSize: { width: 4, height: 4 },
+  regionOwnerMap: new Int16Array(16).fill(0),
+  regionBorderDistanceMap: new Float32Array(16).fill(100),
+  worldAreaSquareMeters: 400,
 };
-
-/** Domain data of the structure character layer. */
-const ZONES = [
-  {
-    id: 'landmass-1-zone-1',
-    structureId: 'landmass-1',
-    character: 'mountains',
-    geometry: { kind: 'whole' },
-    values: {
-      elevation: 0.5,
-      roughness: 0.5,
-      mountainStrength: 0.8,
-      hillStrength: 0.5,
-      plateauStrength: 0.3,
-      lakePotential: 0.2,
-      erosionStrength: 0.5,
-      coastalCliffStrength: 0.4,
-    },
-  },
-];
 
 function setup() {
   const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_CATALOG));
@@ -56,6 +42,22 @@ function setup() {
 }
 
 describe('MapScene', () => {
+  it('applies the highlighted element without rebuilding the vector layer', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+    const added = scene.setInfo({ geologyPlan: PLAN });
+
+    expect(added.map(layer => layer.id)).toEqual(['geology']);
+
+    const repainted = scene.setSelection('region-2');
+
+    expect(repainted.map(layer => layer.id)).toEqual(['geology']);
+    expect(repainted[0]).toBe(added[0]);
+    expect(scene.setSelection('region-2')).toEqual([]);
+    expect(scene.setSelection(undefined).map(layer => layer.id)).toEqual(['geology']);
+  });
+
   it('invalidates a smoothed region layer when its noise field changes', () => {
     const scene = new MapScene(new LayerCache());
     const size = { width: 3, height: 3 };
@@ -273,41 +275,21 @@ describe('MapScene', () => {
     scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
     scene.add('world-shape', new Uint8Array(16).fill(1));
 
-    scene.setInfo({ landmassLayout: LAYOUT });
+    scene.setInfo({ geologyPlan: PLAN });
 
-    expect(scene.get('landmass-layout')).toBeInstanceOf(LandmassLayoutVectorLayer);
+    expect(scene.get('geology')).toBeInstanceOf(GeologyPlanVectorLayer);
   });
 
   it('waits for the mask before adding the vector layer', () => {
     const scene = new MapScene(new LayerCache());
     scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
-    scene.setInfo({ landmassLayout: LAYOUT });
+    scene.setInfo({ geologyPlan: PLAN });
 
-    expect(scene.get('landmass-layout')).toBeUndefined();
+    expect(scene.get('geology')).toBeUndefined();
 
     scene.add('world-shape', new Uint8Array(16).fill(1));
 
-    expect(scene.get('landmass-layout')).toBeInstanceOf(LandmassLayoutVectorLayer);
-  });
-
-  it('adds the structure character layer when its regions arrive', () => {
-    const scene = new MapScene(new LayerCache());
-    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
-    scene.add('world-shape', new Uint8Array(16).fill(1));
-
-    scene.setInfo({ structureZones: ZONES });
-
-    expect(scene.get('structure-character')).toBeInstanceOf(StructureCharacterVectorLayer);
-  });
-
-  it('skips the structure character layer without regions', () => {
-    const scene = new MapScene(new LayerCache());
-    scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
-    scene.add('world-shape', new Uint8Array(16).fill(1));
-
-    scene.setInfo({ landmassLayout: LAYOUT });
-
-    expect(scene.get('structure-character')).toBeUndefined();
+    expect(scene.get('geology')).toBeInstanceOf(GeologyPlanVectorLayer);
   });
 
   it('refuses a vector catalog without a factory', () => {
@@ -319,12 +301,12 @@ describe('MapScene', () => {
   it('returns the vector layers a new mask unlocks', () => {
     const scene = new MapScene(new LayerCache());
     scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
-    scene.setInfo({ landmassLayout: LAYOUT });
+    scene.setInfo({ geologyPlan: PLAN });
 
     const added = scene.add('world-shape', new Uint8Array(16).fill(1));
 
     expect(added[0].id).toBe('world-shape');
-    expect(added[1]).toBeInstanceOf(LandmassLayoutVectorLayer);
+    expect(added[1]).toBeInstanceOf(GeologyPlanVectorLayer);
   });
 
   it('ignores malformed domain data', () => {
@@ -332,22 +314,22 @@ describe('MapScene', () => {
     scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
     scene.add('world-shape', new Uint8Array(16).fill(1));
 
-    scene.setInfo({ landmassLayout: { structures: 'nope', shelves: [] } });
+    scene.setInfo({ geologyPlan: { regions: 'nope' } });
 
-    expect(scene.get('landmass-layout')).toBeUndefined();
+    expect(scene.get('geology')).toBeUndefined();
   });
 
   it('reuses the vector layer while the domain data is unchanged', () => {
     const scene = new MapScene(new LayerCache());
     scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });
     scene.add('world-shape', new Uint8Array(16).fill(1));
-    scene.setInfo({ landmassLayout: LAYOUT });
-    const first = scene.get('landmass-layout');
+    scene.setInfo({ geologyPlan: PLAN });
+    const first = scene.get('geology');
 
-    const added = scene.setInfo({ landmassLayout: LAYOUT });
+    const added = scene.setInfo({ geologyPlan: PLAN });
 
     expect(first).toBeDefined();
-    expect(scene.get('landmass-layout')).toBe(first);
+    expect(scene.get('geology')).toBe(first);
     expect(added).toEqual([]);
   });
 });

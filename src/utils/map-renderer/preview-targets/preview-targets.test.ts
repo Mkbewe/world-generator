@@ -24,6 +24,19 @@ describe('preview targets', () => {
     expect(render?.projection.top).toBe((display?.projection.top ?? 0) + 2);
   });
 
+  it('keeps the overscan offset on whole pixels for odd viewport sizes', () => {
+    const measured = { width: 7, height: 9, devicePixelRatio: 1 };
+    const display = viewTarget(fitView(), SIZE, measured);
+    const render = renderTarget(fitView(), SIZE, measured);
+    if (!display || !render) {
+      throw new Error('Expected measured render targets.');
+    }
+    expect((render.width - display.width) % 2).toBe(0);
+    expect((render.height - display.height) % 2).toBe(0);
+    expect(Math.abs(display.projection.left - render.projection.left) % 1).toBe(0);
+    expect(Math.abs(display.projection.top - render.projection.top) % 1).toBe(0);
+  });
+
   it('covers the whole viewport for a panned, magnified view', () => {
     const size = { width: 8, height: 8 };
     const view = { scale: 4, centerX: 0.75, centerY: 0.25 };

@@ -19,11 +19,6 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'ratio',
     description: 'Share of the grid that lies inside the world shape.',
   },
-  landCoverage: {
-    label: 'Land coverage',
-    kind: 'ratio',
-    description: 'Share of the world mask covered by land, measured from the generated id map.',
-  },
   frequency: {
     label: 'Frequency',
     kind: 'number',
@@ -64,7 +59,7 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
   regions: {
     label: 'Regions',
     kind: 'number',
-    description: 'Number of configured macro regions.',
+    description: 'Number of regions the stage produced or configured.',
   },
   overlays: {
     label: 'Overlays',
@@ -82,47 +77,20 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'text',
     description: 'Noise source used to bend macro-region borders.',
   },
-  structures: {
-    label: 'Structures',
+  ordinary: {
+    label: 'Ordinary',
     kind: 'number',
-    description: 'Geological structures placed in the world.',
+    description: 'Regions seeded as ordinary ground.',
   },
-  areas: {
-    label: 'Areas',
+  volcanic: {
+    label: 'Volcanic',
     kind: 'number',
-    description: 'Geological areas resolved in the plan.',
+    description: 'Regions seeded as volcanic ground.',
   },
-  meanExtent: {
-    label: 'Mean extent',
+  atoll: {
+    label: 'Atoll',
     kind: 'number',
-    precision: 3,
-    description: 'Mean area influence radius as a share of the world.',
-  },
-  landShare: {
-    label: 'Land share',
-    kind: 'number',
-    precision: 3,
-    description: 'Share of world cells above the sea datum.',
-  },
-  shelves: {
-    label: 'Shelves',
-    kind: 'number',
-    description: 'Shared shallow-water shelves around the structures.',
-  },
-  nodes: {
-    label: 'Nodes',
-    kind: 'number',
-    description: 'Ridge-graph nodes across all structures.',
-  },
-  edges: {
-    label: 'Edges',
-    kind: 'number',
-    description: 'Ridge-graph edges across all structures.',
-  },
-  dropped: {
-    label: 'Dropped',
-    kind: 'number',
-    description: 'Structures the world could not place without a collision.',
+    description: 'Regions seeded as atoll ground.',
   },
   bytes: {
     label: 'Data',

@@ -38,6 +38,13 @@ export function formatAreaKm2(squareMeters: number): string {
   return `${formatMeasure(squareMeters / 1_000_000, 3)} km²`;
 }
 
+/** Area in the fitting unit: km² from a square kilometre up, m² below. */
+export function formatArea(squareMeters: number): string {
+  return squareMeters >= 1_000_000
+    ? formatAreaKm2(squareMeters)
+    : `${formatMeasure(squareMeters, 0)} m²`;
+}
+
 export function formatDuration(ms: number | undefined): string {
   if (ms === undefined) {
     return '—';

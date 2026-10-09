@@ -5,6 +5,13 @@ export interface WorldDimensions {
   readonly sampleHeight: number;
 }
 
+/** Physical world side length in meters. */
+export type WorldSize = number;
+
+/** Supported world side lengths, in meters. */
+export const MIN_WORLD_SIZE = 3000;
+export const MAX_WORLD_SIZE = 12_000;
+
 export interface MeterPoint {
   readonly xMeters: number;
   readonly yMeters: number;
@@ -20,20 +27,24 @@ export interface NormalizedPoint {
   readonly v: number;
 }
 
-/** Rough bytes per cell used by the generated layers (mask, noise and region ids). */
-export const BYTES_PER_SAMPLE = 6;
+/**
+ * Bytes one full generator state copy holds per cell: the persistent rasters —
+ * world mask 1, noise 4, macro region ids 1 — and the geology plan rasters —
+ * region owner 2 and region border distance 4. The plan metadata is negligible
+ * next to the rasters.
+ */
+export const BYTES_PER_SAMPLE = 12;
 
 /**
- * Budget for the generator data only (stage rasters in the worker and the copy
- * sent to the main thread), in bytes (decimal megabytes). Calibrated so the
- * largest supported world (12000 m) fits at the finest offered detail (1 m):
- * 12000 × 12000 cells × 6 bytes. Renderer canvases and GPU memory are counted
- * separately by the render statistics.
+ * Budget for the generator data across both threads, in bytes (decimal
+ * megabytes): the worker state and the copy sent to the main thread. Working
+ * value pending a real peak measurement; renderer canvases and GPU memory are
+ * counted separately by the render statistics.
  */
 export const MEMORY_BUDGET_BYTES = 864_000_000;
 
 /** Cells above this count are rejected by both the UI and the generator. */
-export const SAMPLE_BUDGET = Math.floor(MEMORY_BUDGET_BYTES / BYTES_PER_SAMPLE);
+export const SAMPLE_BUDGET = Math.floor(MEMORY_BUDGET_BYTES / (BYTES_PER_SAMPLE * 2));
 
 export interface DimensionRequest {
   readonly widthMeters: number;

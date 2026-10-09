@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 
 import { StageBars } from './stage-bars';
-import type { GenerationStageProgress } from '../lib/progress-types';
+import type { GenerationStageProgress } from '../../../stores';
 
 const stages: readonly GenerationStageProgress[] = [
   { id: 'a', name: 'Pending', status: 'pending', percentage: 0 },
