@@ -94,16 +94,13 @@ describe('readoutItems', () => {
     expect(itemValue(readout({ ...inspection, value: 0 }), 'value')).toBe('Outside');
   });
 
-  it('describes macro region ids and noise values', () => {
+  it('describes macro region ids with their labels', () => {
     expect(
       itemValue(
         readout({ kind: 'raster', layerId: 'macro-region', label: 'Macro regions', value: 3 }),
         'value'
       )
     ).toBe('Region 3');
-    expect(
-      itemValue(readout({ kind: 'raster', layerId: 'noise', label: 'Noise', value: 0.25 }), 'value')
-    ).toBe('0.250');
   });
 
   it('shows macro region labels captured with the generated map', () => {
@@ -129,9 +126,11 @@ describe('readoutItems', () => {
   });
 
   it('keeps the layer label while the raster sample is unavailable', () => {
-    const raster = readoutItems(readout({ kind: 'raster', layerId: 'noise', label: 'Noise' }));
+    const raster = readoutItems(
+      readout({ kind: 'raster', layerId: 'world-shape', label: 'World shape' })
+    );
 
-    expect(raster[1]).toMatchObject({ label: 'Noise', value: '—' });
+    expect(raster[1]).toMatchObject({ label: 'World shape', value: '—' });
   });
 
   it('shows the generated region and its type under the pointer', () => {

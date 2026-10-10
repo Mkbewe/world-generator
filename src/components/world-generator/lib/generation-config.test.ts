@@ -1,6 +1,5 @@
 import { buildGenerationConfig, type GenerationConfigInput } from './generation-config';
 import {
-  DEFAULT_NOISE,
   GEOLOGY_FORM_DEFAULTS,
   geologyConfigOf,
   MACRO_REGION_FORM_DEFAULTS,
@@ -12,7 +11,6 @@ function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfig
     shape: 'disc',
     sizeMeters: 3000,
     metersPerSample: 1,
-    noise: DEFAULT_NOISE,
     macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
     macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
     geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
@@ -37,21 +35,10 @@ describe('buildGenerationConfig', () => {
           seed: 42,
           shape: 'rectangle',
         },
-        noise: DEFAULT_NOISE,
         macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
         macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
         geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
       },
-    });
-  });
-
-  it('passes a selected region noise source into the worker config', () => {
-    const result = buildGenerationConfig(
-      input({ macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } })
-    );
-
-    expect(result).toMatchObject({
-      config: { macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } },
     });
   });
 

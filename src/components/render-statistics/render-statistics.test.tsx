@@ -27,8 +27,8 @@ const statistics = {
     },
     {
       kind: 'raster',
-      id: 'noise',
-      name: 'Noise',
+      id: 'macro-region',
+      name: 'Macro regions',
       durationMs: 20,
       tiles: 16,
       pixels: 2_000_000,
@@ -60,7 +60,7 @@ describe('RenderStatisticsPanel', () => {
     expect(screen.getByText('30.00 ms/MPix')).toBeInTheDocument();
     expect(screen.getByText('10.00 ms/MPix')).toBeInTheDocument();
     expect(screen.getByText('World shape')).toBeInTheDocument();
-    expect(screen.getByText('Noise')).toBeInTheDocument();
+    expect(screen.getByText('Macro regions')).toBeInTheDocument();
     expect(
       screen.getByText('Additional time outside measured rendering: 1.13 s.')
     ).toBeInTheDocument();

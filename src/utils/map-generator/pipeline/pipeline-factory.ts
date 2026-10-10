@@ -1,11 +1,10 @@
 import { MapGenerator } from './pipeline';
-import { type MapStage, resolveReads } from './stage';
+import { type MapStage } from './stage';
 import { MAP_CONFIG_KEYS, PIPELINE_STAGES, type PipelineStageId } from './stage-definitions';
 import { validateDimensions } from '../../world-dimensions';
 import { createWorldSpace } from '../space';
 import { GeologyStage } from '../stages/geology';
 import { MacroRegionStage } from '../stages/macro-region';
-import { NoiseStage } from '../stages/noise';
 import { WorldShapeStage } from '../stages/world-shape';
 import type { MapConfig, MapState, StageData } from '../types';
 
@@ -15,7 +14,6 @@ const STAGE_FACTORIES: Readonly<
   Record<PipelineStageId, () => MapStage<MapConfig, MapState, PipelineStageId, StageData>>
 > = {
   'world-shape': () => new WorldShapeStage(),
-  noise: () => new NoiseStage(),
   'macro-region': () => new MacroRegionStage(),
   geology: () => new GeologyStage(),
 };
@@ -53,7 +51,7 @@ function orderByDataDependencies(
   const available = new Set<keyof MapState>();
   while (remaining.length > 0) {
     const next = remaining.findIndex(stage =>
-      resolveReads(stage).every(key => available.has(key) || !writers.has(key))
+      (stage.reads ?? []).every(key => available.has(key) || !writers.has(key))
     );
     if (next < 0) {
       throw new Error(

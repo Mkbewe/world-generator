@@ -4,7 +4,7 @@ import { DEFAULT_GEOLOGY_CONFIG } from '../stages/geology';
 import { createRadialLayout } from '../stages/macro-region';
 import type { MapConfig } from '../types';
 
-const deformation = { amplitude: 0.1, source: 'dedicated' } as const;
+const deformation = { amplitude: 0.1 } as const;
 const geology = DEFAULT_GEOLOGY_CONFIG;
 
 const config: MapConfig = {
@@ -13,7 +13,6 @@ const config: MapConfig = {
     seed: 17,
     shape: 'disc',
   },
-  noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   macroRegions: createRadialLayout(2),
   macroRegionDeformation: deformation,
   geology,
@@ -32,7 +31,6 @@ describe('selectDirtyStageIds', () => {
     const copy: MapConfig = {
       ...config,
       world: { ...config.world, dimensions: { ...config.world.dimensions } },
-      noise: { ...config.noise },
       macroRegions: createRadialLayout(2).map(region => ({ ...region })),
       macroRegionDeformation: { ...deformation },
       geology: {
@@ -49,7 +47,7 @@ describe('selectDirtyStageIds', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
-        ['world-shape', 'noise', 'macro-region', 'geology'],
+        ['world-shape', 'macro-region', 'geology'],
       ],
       [
         {
@@ -58,7 +56,7 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'noise', 'macro-region', 'geology'],
+        ['world-shape', 'macro-region', 'geology'],
       ],
       [
         {
@@ -67,12 +65,11 @@ describe('selectDirtyStageIds', () => {
             dimensions: { ...config.world.dimensions, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'noise', 'macro-region', 'geology'],
+        ['world-shape', 'macro-region', 'geology'],
       ],
-      [{ world: { ...config.world, seed: 18 } }, ['noise', 'macro-region', 'geology']],
-      [{ noise: { ...config.noise, frequency: 5 } }, ['noise']],
+      [{ world: { ...config.world, seed: 18 } }, ['macro-region', 'geology']],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
-      [{ macroRegionDeformation: { amplitude: 0.2, source: 'noise-map' } }, ['macro-region']],
+      [{ macroRegionDeformation: { amplitude: 0.2 } }, ['macro-region']],
       [{ geology: { ...geology, regionCount: 6 } }, ['geology']],
     ];
 
@@ -81,29 +78,10 @@ describe('selectDirtyStageIds', () => {
     }
   });
 
-  it('follows the noise raster only under the noise-map border source', () => {
-    const noiseMap = {
-      ...config,
-      macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' } as const,
-    };
-    const changedNoise: MapConfig = {
-      ...noiseMap,
-      noise: { ...noiseMap.noise, frequency: 5 },
-    };
-
-    expect(selectDirtyStageIds(noiseMap, changedNoise)).toEqual(['noise', 'macro-region']);
-    expect(selectDirtyStageIds(changedNoise, noiseMap)).toEqual(['noise', 'macro-region']);
-  });
-
-  it('keeps geology clean when macro regions or noise change', () => {
+  it('keeps geology clean when macro regions change', () => {
     const regions = selectDirtyStageIds(config, { ...config, macroRegions: createRadialLayout(3) });
-    const noise = selectDirtyStageIds(config, {
-      ...config,
-      noise: { ...config.noise, octaves: 6 },
-    });
 
-    expect(regions).not.toContain('geology');
-    expect(noise).not.toContain('geology');
+    expect(regions).toEqual(['macro-region']);
   });
 
   it('treats a removed optional slice as a change', () => {

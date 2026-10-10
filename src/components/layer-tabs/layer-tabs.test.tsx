@@ -8,7 +8,7 @@ import type { MapLayerNode } from '../../utils/map-renderer';
 const TABS: readonly MapLayerNode[] = [
   { id: 'world-shape', label: 'World shape', available: true, selectedLayer: 'world-shape' },
   { id: 'macro-region', label: 'Macro regions', available: false, selectedLayer: 'macro-region' },
-  { id: 'noise', label: 'Noise', available: true, selectedLayer: 'noise' },
+  { id: 'geology', label: 'Geology', available: true, selectedLayer: 'geology' },
 ];
 
 function renderTabs(activeTab = 'world-shape'): ReturnType<typeof vi.fn> {
@@ -30,11 +30,11 @@ describe('LayerTabs', () => {
       within(screen.getByRole('tablist', { name: 'Map layers' }))
         .getAllByRole('tab')
         .map(tab => tab.getAttribute('aria-label'))
-    ).toEqual(['World shape', 'Macro regions', 'Noise']);
+    ).toEqual(['World shape', 'Macro regions', 'Geology']);
 
-    await user.click(screen.getByRole('tab', { name: 'Noise' }));
+    await user.click(screen.getByRole('tab', { name: 'Geology' }));
 
-    expect(onLayerChange).toHaveBeenCalledWith('noise');
+    expect(onLayerChange).toHaveBeenCalledWith('geology');
   });
 
   it('ignores unavailable tabs', async () => {

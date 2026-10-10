@@ -6,7 +6,6 @@ const dimensions = { widthMeters: 8, heightMeters: 4, sampleWidth: 4, sampleHeig
 
 const baseConfig: MapConfig = {
   world: { dimensions, seed: 9, shape: 'disc' },
-  noise: { frequency: 2, octaves: 2, persistence: 0.5, lacunarity: 2 },
 };
 
 describe('selectMapInfo', () => {

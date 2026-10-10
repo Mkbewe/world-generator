@@ -1,14 +1,32 @@
 import { CatalogLayer } from './catalog/catalog-layer';
 import type { MapSize } from './layer';
 import { layerRegistry } from './layer-registry';
+import type { LayerSpec } from '../../map-layers';
 import type { RenderTarget } from '../preview-targets';
+
+/** Float ramp layer used by the tests; the catalog ships only integer rasters. */
+const FLOAT_SPEC = {
+  id: 'macro-region',
+  label: 'Float map',
+  kind: 'raster',
+  source: 'floatMap',
+  dataType: 'float32',
+  clipTo: 'world-shape',
+  palette: {
+    kind: 'ramp',
+    stops: [
+      { at: 0, color: [0, 0, 0] },
+      { at: 1, color: [255, 255, 255] },
+    ],
+  },
+} as const satisfies LayerSpec;
 
 function worldLayer(size: MapSize, data: Uint8Array): CatalogLayer {
   return new CatalogLayer(layerRegistry.raster('world-shape'), size, data);
 }
 
-function noiseLayer(world: CatalogLayer, data: Float32Array): CatalogLayer {
-  return new CatalogLayer(layerRegistry.raster('noise'), world.size, data, world);
+function floatLayer(world: CatalogLayer, data: Float32Array): CatalogLayer {
+  return new CatalogLayer(FLOAT_SPEC, world.size, data, world);
 }
 
 /** Output buffer mapped one pixel per source cell. */
@@ -34,9 +52,9 @@ describe('MapLayer.sample', () => {
     }
   });
 
-  it('reads noise only inside the world mask', () => {
+  it('reads float values only inside the world mask', () => {
     const world = worldLayer({ width: 2, height: 2 }, new Uint8Array([1, 0, 1, 1]));
-    const layer = noiseLayer(world, new Float32Array([0.25, 0.5, 0.75, 1]));
+    const layer = floatLayer(world, new Float32Array([0.25, 0.5, 0.75, 1]));
     try {
       expect(layer.sample(0, 0)).toBe(0.25);
       expect(layer.sample(1, 0)).toBeUndefined();
@@ -86,7 +104,7 @@ describe('MapLayer rendering lifecycle', () => {
     const world = worldLayer({ width: 2, height: 1 }, new Uint8Array([1, 1]));
     const skipLayer = new CatalogLayer(
       {
-        id: 'noise',
+        id: 'macro-region',
         label: 'Skip',
         kind: 'raster',
         source: 'skipMap',

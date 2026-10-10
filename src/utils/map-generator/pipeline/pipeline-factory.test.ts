@@ -8,7 +8,6 @@ describe('createMapGenerator', () => {
 
     expect(pipeline.stages.map(stage => stage.id)).toEqual([
       'world-shape',
-      'noise',
       'macro-region',
       'geology',
     ]);
@@ -19,20 +18,17 @@ describe('createMapGenerator', () => {
         seed: 123,
         shape: 'disc',
       },
-      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
 
     const result = await pipeline.generate(config, {});
 
     expect(result.statistics.map(statistic => statistic.stageId)).toEqual([
       'world-shape',
-      'noise',
       'macro-region',
       'geology',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
-    expect(result.context.state.noiseMap).toBeInstanceOf(Float32Array);
     expect(result.context.state.geologyPlan?.regions?.length).toBeGreaterThan(0);
   });
 
@@ -52,12 +48,6 @@ describe('createMapGenerator', () => {
         reads: [],
         writes: ['worldMask'],
         configKeys: ['world.dimensions', 'world.shape'],
-      },
-      {
-        id: 'noise',
-        reads: ['worldMask'],
-        writes: ['noiseMap'],
-        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'noise'],
       },
       {
         id: 'macro-region',
@@ -88,7 +78,6 @@ describe('createMapGenerator', () => {
         seed: 123,
         shape: 'disc',
       },
-      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
     const constructors = {
       uint8: Uint8Array,
@@ -128,7 +117,6 @@ describe('createMapGenerator', () => {
         seed: 123,
         shape: 'disc',
       },
-      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
 
     await expect(pipeline.generate(config, {}, { onEvent })).rejects.toThrow(RangeError);

@@ -127,7 +127,7 @@ describe('MapRenderer', () => {
       .mockReturnValueOnce(world.promise)
       .mockReturnValueOnce(noise.promise);
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4).fill(0.5));
+    preview.add('macro-region', new Uint8Array(4).fill(1));
     expect(prepare).toHaveBeenCalledTimes(1);
 
     world.resolve();
@@ -140,10 +140,9 @@ describe('MapRenderer', () => {
     const displayed = onChange.mock.calls
       .map(([state]) => state.displayedLayer)
       .filter((id, index, ids) => Boolean(id) && id !== ids[index - 1]);
-    expect(displayed).toEqual(['world-shape', 'noise']);
+    expect(displayed).toEqual(['world-shape', 'macro-region']);
     expect(preview.state.layers.map(layer => layer.id)).toEqual([
       'world-shape',
-      'noise',
       'macro-region',
       'geology',
     ]);
@@ -195,12 +194,12 @@ describe('MapRenderer', () => {
     const { preview } = setup();
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4), true);
+    preview.add('macro-region', new Uint8Array(4), true);
     await vi.runAllTimersAsync();
     await preview.ready;
 
     expect(preview.state.displayedLayer).toBe('world-shape');
-    expect(preview.state.layers.find(layer => layer.id === 'noise')?.available).toBe(true);
+    expect(preview.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
     preview.dispose();
   });
 
@@ -209,14 +208,13 @@ describe('MapRenderer', () => {
     const prepare = vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     preview.add('world-shape', new Uint8Array(4).fill(1));
     preview.add('macro-region', new Uint8Array(4));
-    preview.add('noise', new Float32Array(4));
     await vi.runAllTimersAsync();
     await preview.ready;
 
     const displayed = onChange.mock.calls
       .map(([state]) => state.displayedLayer)
       .filter((id, index, ids) => Boolean(id) && id !== ids[index - 1]);
-    expect(displayed).toEqual(['world-shape', 'noise']);
+    expect(displayed).toEqual(['world-shape']);
     const regionsIndex = prepare.mock.contexts.findIndex(
       layer => layer instanceof MapLayer && layer.id === 'macro-region'
     );
@@ -240,14 +238,14 @@ describe('MapRenderer', () => {
     const { preview } = setup();
     const prepare = vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4));
+    preview.add('macro-region', new Uint8Array(4));
     await vi.runAllTimersAsync();
     await preview.ready;
     preview.select('world-shape');
-    preview.select('noise');
+    preview.select('macro-region');
     expect(prepare).toHaveBeenCalledTimes(2);
     expect(renderBoundary).toHaveBeenCalledOnce();
-    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.state.displayedLayer).toBe('macro-region');
   });
 
   it('ignores stale completion after restart', async () => {
@@ -273,16 +271,16 @@ describe('MapRenderer', () => {
       .mockReturnValueOnce(pending.promise);
     preview.add('world-shape', new Uint8Array(4).fill(1));
     await preview.ready;
-    preview.add('noise', new Float32Array(4));
+    preview.add('macro-region', new Uint8Array(4));
 
     preview.cancel();
     pending.resolve();
     await preview.ready;
 
     expect(preview.signal.aborted).toBe(true);
-    expect(preview.state.displayedLayer).toBe('noise');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
-    expect(() => preview.add('noise', new Float32Array(4))).toThrow();
+    expect(preview.state.displayedLayer).toBe('macro-region');
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false]);
+    expect(() => preview.add('macro-region', new Uint8Array(4))).toThrow();
     preview.dispose();
   });
 
@@ -292,11 +290,11 @@ describe('MapRenderer', () => {
       .mockRejectedValueOnce(new Error('Allocation failed'))
       .mockResolvedValueOnce();
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4));
+    preview.add('macro-region', new Uint8Array(4));
     await vi.runAllTimersAsync();
     await preview.ready;
     expect(preview.state.error).toBe('Allocation failed');
-    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.state.displayedLayer).toBe('macro-region');
     expect(preview.state.layers[0].available).toBe(false);
   });
 
@@ -318,20 +316,20 @@ describe('MapRenderer', () => {
   it('restores a cached snapshot', async () => {
     const { preview } = setupWithSnapshot({
       worldMask: new Uint8Array(4).fill(1),
-      noiseMap: new Float32Array(4),
+      macroRegionIdMap: new Uint8Array(4),
     });
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
 
     await vi.runAllTimersAsync();
     await preview.ready;
-    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.state.displayedLayer).toBe('macro-region');
     expect(preview.state.overlays.map(overlay => overlay.id)).toEqual(['world-boundary']);
     expect(preview.state.overlays[0]).toMatchObject({ available: true, visible: true });
   });
 
   it('honours the preferred layer option on restore', async () => {
     const { preview } = setupWithSnapshot(
-      { worldMask: new Uint8Array(4).fill(1), noiseMap: new Float32Array(4) },
+      { worldMask: new Uint8Array(4).fill(1), macroRegionIdMap: new Uint8Array(4) },
       { selectedLayer: 'world-shape' }
     );
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
@@ -362,7 +360,7 @@ describe('MapRenderer', () => {
 
     preview.start({ width: 2, height: 2 }, 'disc');
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4));
+    preview.add('macro-region', new Uint8Array(4));
     await vi.runAllTimersAsync();
     await preview.ready;
 
@@ -441,13 +439,13 @@ describe('MapRenderer', () => {
     const onRenderStatistics = vi.fn();
     const { preview } = setup({ onRenderStatistics });
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
     now += 100;
     preview.add('world-shape', mask);
     await vi.runAllTimersAsync();
     await preview.ready;
     preview.select('world-shape');
-    preview.add('noise', noise);
+    preview.add('macro-region', regions);
     await vi.runAllTimersAsync();
     await preview.ready;
 
@@ -482,7 +480,7 @@ describe('MapRenderer', () => {
 
     preview.start({ width: 2, height: 2 }, 'disc');
     preview.add('world-shape', mask);
-    preview.add('noise', noise);
+    preview.add('macro-region', regions);
     await vi.runAllTimersAsync();
     await preview.ready;
 
@@ -506,7 +504,7 @@ describe('MapRenderer', () => {
     expect(preview.state.displayedLayer).toBeUndefined();
 
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4));
+    preview.add('macro-region', new Uint8Array(4));
     await vi.runAllTimersAsync();
     await preview.ready;
     preview.zoomIn();
@@ -516,9 +514,9 @@ describe('MapRenderer', () => {
     preview.start({ width: 2, height: 2 }, 'disc');
 
     // A continuing scene keeps the layer, which tells the session to stay put.
-    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.state.displayedLayer).toBe('macro-region');
     expect(preview.viewTransform.scale).toBe(zoom);
-    expect(preview.state.layers.find(layer => layer.id === 'noise')?.available).toBe(true);
+    expect(preview.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
 
     preview.start({ width: 3, height: 3 }, 'disc');
 
@@ -531,19 +529,18 @@ describe('MapRenderer', () => {
     const { preview } = setup();
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4));
+    preview.add('macro-region', new Uint8Array(4));
     await vi.runAllTimersAsync();
     await preview.ready;
-    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.state.displayedLayer).toBe('macro-region');
 
     preview.start({ width: 2, height: 2 }, 'disc');
     preview.add('world-shape', new Uint8Array(4).fill(1));
-    preview.add('noise', new Float32Array(4));
     preview.add('macro-region', new Uint8Array(4));
     await vi.runAllTimersAsync();
     await preview.ready;
 
-    expect(preview.state.displayedLayer).toBe('noise');
+    expect(preview.state.displayedLayer).toBe('macro-region');
     preview.dispose();
   });
 
@@ -551,21 +548,21 @@ describe('MapRenderer', () => {
     const { preview } = setup();
     vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
     preview.add('world-shape', new Uint8Array([0, 1, 1, 1]));
-    preview.add('noise', new Float32Array([0.25, 0.5, 0.75, 1]));
+    preview.add('macro-region', new Uint8Array([0, 1, 2, 3]));
     await vi.runAllTimersAsync();
     await preview.ready;
 
     expect(preview.currentSize).toEqual({ width: 2, height: 2 });
     expect(preview.inspect(1, 1)).toEqual({
       kind: 'raster',
-      layerId: 'noise',
-      label: 'Noise',
-      value: 1,
+      layerId: 'macro-region',
+      label: 'Macro regions',
+      value: 3,
     });
     expect(preview.inspect(0, 0)).toEqual({
       kind: 'raster',
-      layerId: 'noise',
-      label: 'Noise',
+      layerId: 'macro-region',
+      label: 'Macro regions',
       value: undefined,
     });
   });

@@ -11,8 +11,8 @@ function climateTabs(macroRegionAvailable = true): readonly MapLayerNode[] {
       id: 'climate',
       label: 'Climate',
       available: true,
-      selectedChild: 'noise',
-      selectedLayer: 'noise',
+      selectedChild: 'geology',
+      selectedLayer: 'geology',
       children: [
         {
           id: 'macro-region',
@@ -20,7 +20,7 @@ function climateTabs(macroRegionAvailable = true): readonly MapLayerNode[] {
           available: macroRegionAvailable,
           selectedLayer: 'macro-region',
         },
-        { id: 'noise', label: 'Noise', available: true, selectedLayer: 'noise' },
+        { id: 'geology', label: 'Geology', available: true, selectedLayer: 'geology' },
       ],
     },
   ];
@@ -36,7 +36,7 @@ describe('LayerViews', () => {
       </Theme>
     );
 
-    expect(screen.getByRole('radio', { name: 'Noise' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Geology' })).toBeChecked();
 
     await user.click(screen.getByRole('radio', { name: 'Macro regions' }));
 

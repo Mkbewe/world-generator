@@ -368,7 +368,7 @@ describe('MapPreview tab sync', () => {
     if (!instance) {
       throw new Error('Expected a renderer.');
     }
-    instance.add('noise', new Float32Array(16));
+    instance.add('macro-region', new Uint8Array(16));
     await act(async () => {});
     await instance.ready;
     return instance;
@@ -376,7 +376,7 @@ describe('MapPreview tab sync', () => {
 
   it('selects the linked layer when the settings tab changes', async () => {
     const renderer = await renderWithLayers();
-    expect(renderer.state.displayedLayer).toBe('noise');
+    expect(renderer.state.displayedLayer).toBe('macro-region');
 
     act(() => useViewSyncStore.setState({ linked: true }));
     act(() => useViewSyncStore.getState().setSettingsTab('world-shape'));
@@ -389,7 +389,7 @@ describe('MapPreview tab sync', () => {
     const renderer = await renderWithLayers();
 
     act(() => useViewSyncStore.getState().setSettingsTab('world-shape'));
-    expect(renderer.state.displayedLayer).toBe('noise');
+    expect(renderer.state.displayedLayer).toBe('macro-region');
 
     act(() => useViewSyncStore.getState().setLinked(true));
 
@@ -401,7 +401,7 @@ describe('MapPreview tab sync', () => {
 
     act(() => useViewSyncStore.setState({ linked: true, settingsTab: 'macro-region' }));
 
-    expect(renderer.state.displayedLayer).toBe('noise');
+    expect(renderer.state.displayedLayer).toBe('macro-region');
   });
 
   it('follows a preview layer click with the settings tab when linked', async () => {

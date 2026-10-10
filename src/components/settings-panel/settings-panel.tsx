@@ -1,24 +1,18 @@
-import {
-  GearIcon,
-  GlobeIcon,
-  LayersIcon,
-  MixerHorizontalIcon,
-  SewingPinIcon,
-} from '@radix-ui/react-icons';
+import { GearIcon, GlobeIcon, LayersIcon, SewingPinIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
   GeneralForm,
   GeologyForm,
   MacroRegionForm,
-  NoiseForm,
   type WorldShape,
   WorldShapeForm,
   type WorldSize,
 } from './forms';
 import { TabLinkToggle } from './tab-link-toggle';
 import { type SettingsTab, useViewSyncStore } from '../../stores';
-import { type NoiseConfig, PIPELINE_STAGES, type PipelineStageId } from '../../utils/map-generator';
+import { LAYER_CATALOG } from '../../utils/map-layers';
+import { type MapBaseLayerId } from '../../utils/map-renderer';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
 
 interface SettingsPanelProps {
@@ -32,8 +26,6 @@ interface SettingsPanelProps {
   onShapeChange: (shape: WorldShape) => void;
   onSizeChange: (sizeMeters: WorldSize) => void;
   onDetailChange: (metersPerSample: number) => void;
-  noise: NoiseConfig;
-  onNoiseChange: (noise: NoiseConfig) => void;
 }
 
 export function SettingsPanel({
@@ -47,12 +39,10 @@ export function SettingsPanel({
   onShapeChange,
   onSizeChange,
   onDetailChange,
-  noise,
-  onNoiseChange,
 }: SettingsPanelProps) {
   const activeTab = useViewSyncStore(state => state.settingsTab);
   const setSettingsTab = useViewSyncStore(state => state.setSettingsTab);
-  const stageTabs: Readonly<Partial<Record<PipelineStageId, Omit<VerticalTabItem, 'value'>>>> = {
+  const formTabs: Record<MapBaseLayerId, Omit<VerticalTabItem, 'value'>> = {
     'world-shape': {
       label: 'World shape',
       icon: <GlobeIcon />,
@@ -66,11 +56,6 @@ export function SettingsPanel({
           onDetailChange={onDetailChange}
         />
       ),
-    },
-    noise: {
-      label: 'Noise',
-      icon: <MixerHorizontalIcon />,
-      content: <NoiseForm noise={noise} onNoiseChange={onNoiseChange} />,
     },
     'macro-region': {
       label: 'Macro regions',
@@ -90,11 +75,8 @@ export function SettingsPanel({
       icon: <GearIcon />,
       content: <GeneralForm seed={seed} onSeedChange={onSeedChange} />,
     },
-    // Stages without a form yet simply have no settings tab.
-    ...PIPELINE_STAGES.flatMap(stage => {
-      const tab = stageTabs[stage.id];
-      return tab ? [{ value: stage.id, ...tab }] : [];
-    }),
+    // Form tabs follow the layer catalog order.
+    ...LAYER_CATALOG.map(layer => ({ value: layer.id, ...formTabs[layer.id] })),
   ];
 
   const handleTabChange = (value: string): void => {

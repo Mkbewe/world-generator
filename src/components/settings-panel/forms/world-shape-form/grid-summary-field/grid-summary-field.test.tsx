@@ -8,6 +8,7 @@ import { SIZE_PRESETS } from '../lib/size-presets';
 const BUDGET_SIDE = Math.floor(Math.sqrt(SAMPLE_BUDGET));
 const BUDGET_MEMORY_MB = Math.round((BUDGET_SIDE * BUDGET_SIDE * BYTES_PER_SAMPLE) / 1_000_000);
 const BUDGET_DETAIL = (12_000 / BUDGET_SIDE).toFixed(0);
+const PRESET_MEMORY_MB = Math.round((3000 * 3000 * BYTES_PER_SAMPLE) / 1_000_000);
 
 function renderSummary(sizeMeters: number, metersPerSample: number) {
   render(
@@ -34,7 +35,7 @@ describe('GridSummaryField', () => {
     renderSummary(3000, 1);
 
     expect(
-      screen.getByText('3000 × 3000 samples · 108 MB data · 1 m per sample')
+      screen.getByText(`3000 × 3000 samples · ${PRESET_MEMORY_MB} MB data · 1 m per sample`)
     ).toBeInTheDocument();
     expect(screen.queryByText(/sample budget/i)).toBeNull();
   });

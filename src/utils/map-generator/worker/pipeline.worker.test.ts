@@ -13,10 +13,9 @@ const request: PipelineWorkerGenerateRequest = {
       seed: 7,
       shape: 'rectangle',
     },
-    noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
   },
   reuse: {
-    dirtyStageIds: ['world-shape', 'noise', 'macro-region', 'geology'],
+    dirtyStageIds: ['world-shape', 'macro-region', 'geology'],
     cachedState: {},
   },
 };
@@ -60,7 +59,6 @@ describe('generation worker', () => {
       type: 'stages',
       stages: [
         { id: 'world-shape', name: 'World shape' },
-        { id: 'noise', name: 'Noise' },
         { id: 'macro-region', name: 'Macro region' },
         { id: 'geology', name: 'Geology' },
       ],
@@ -75,7 +73,6 @@ describe('generation worker', () => {
       'completed',
       'completed',
       'completed',
-      'completed',
     ]);
   });
 
@@ -84,7 +81,6 @@ describe('generation worker', () => {
     const full = await createMapGenerator().generate(request.config, {});
     const cachedState = {
       worldMask: full.context.state.worldMask,
-      noiseMap: full.context.state.noiseMap,
       macroRegionIdMap: full.context.state.macroRegionIdMap,
       geologyPlan: full.context.state.geologyPlan,
     };
@@ -100,12 +96,11 @@ describe('generation worker', () => {
     }
     expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
       'skipped',
-      'skipped',
       'completed',
       'skipped',
     ]);
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
-      ['world-shape', 'noise', 'geology']
+      ['world-shape', 'geology']
     );
   });
 
@@ -113,7 +108,7 @@ describe('generation worker', () => {
     const { createMapGenerator } = await import('../pipeline/pipeline-factory');
     const full = await createMapGenerator().generate(request.config, {});
     const cachedState = { ...full.context.state };
-    delete cachedState.noiseMap;
+    delete cachedState.macroRegionIdMap;
 
     const message = await generate({ ...request, reuse: { dirtyStageIds: [], cachedState } });
 
@@ -125,7 +120,6 @@ describe('generation worker', () => {
     expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
       'skipped',
       'completed',
-      'skipped',
       'skipped',
     ]);
   });
@@ -162,7 +156,7 @@ describe('generation worker', () => {
     const cachedState: MapState = {
       ...full.context.state,
       // @ts-expect-error the wrong constructor is the case under test
-      noiseMap: new Uint8Array(4),
+      macroRegionIdMap: new Float32Array(4),
     };
 
     const message = await generate({ ...request, reuse: { dirtyStageIds: [], cachedState } });
@@ -175,19 +169,14 @@ describe('generation worker', () => {
       'skipped',
       'completed',
       'skipped',
-      'skipped',
     ]);
   });
 
-  it.each(['missing', 'wrong size'] as const)('rejects %s final map data', async kind => {
+  it('rejects invalid final map data', async () => {
     // Import the same module instance used by the freshly loaded worker.
-    const { NoiseStage: WorkerNoiseStage } = await import('../stages/noise');
-    vi.spyOn(WorkerNoiseStage.prototype, 'execute').mockImplementation(async context => {
-      const noiseMap = new Float32Array(1);
-      if (kind === 'wrong size') {
-        context.state.noiseMap = noiseMap;
-      }
-      return { noiseMap };
+    const { WorldShapeStage } = await import('../stages/world-shape');
+    vi.spyOn(WorldShapeStage.prototype, 'execute').mockResolvedValue({
+      worldMask: new Uint8Array(1),
     });
     const message = await generate();
     expect(message).toEqual({

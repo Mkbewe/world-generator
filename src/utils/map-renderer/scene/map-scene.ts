@@ -4,7 +4,6 @@ import {
   type LayerSpec,
   type MapInfo,
   type MapRasters,
-  type RasterLayerSpec,
   selectRasters,
   type VectorLayerSpec,
 } from '../../map-layers';
@@ -97,13 +96,12 @@ export class MapScene {
     }
     this.geometry = {
       shape: this.shape,
-      regionAt: this.createRegionAt(this.regionConfig, size),
+      regionAt: this.createRegionAt(this.regionConfig),
     };
   }
 
   private createRegionAt(
-    region: MapMetadata['regionGeometry'],
-    size: MapSize
+    region: MapMetadata['regionGeometry']
   ): ((x: number, y: number) => number) | undefined {
     if (!region) {
       return undefined;
@@ -112,12 +110,6 @@ export class MapScene {
       seed: region.seed,
       regions: region.regions,
       deformation: region.deformation,
-      width: size.width,
-      height: size.height,
-      noiseAt: (cellX, cellY) => {
-        const sample = this.noiseLayer()?.sample(cellX, cellY);
-        return typeof sample === 'number' ? sample : undefined;
-      },
     });
   }
 
@@ -174,14 +166,6 @@ export class MapScene {
     return added;
   }
 
-  /** Catalog layer that carries the shared noise raster, when the catalog has one. */
-  private noiseLayer(): MapLayer | undefined {
-    const id = this.registry.order.find(
-      layerId => this.registry.get(layerId).source === 'noiseMap'
-    );
-    return id ? this.layers.get(id) : undefined;
-  }
-
   /**
    * Adds or refreshes a layer; repeated data replaces the previous layer. The
    * result starts with the requested layer and continues with every vector
@@ -217,7 +201,6 @@ export class MapScene {
         clipMask,
         this.geometry?.shape,
         spec.boundarySource === 'region' ? this.regionConfig : undefined,
-        ...this.sampledRasters(spec),
       ],
       () => new CatalogLayer(spec, size, value, clipMask, this.geometry)
     );
@@ -271,23 +254,7 @@ export class MapScene {
 
   /** First declared dependency this layer still misses, if any. */
   private missingDependency(spec: LayerSpec<MapBaseLayerId>): MapBaseLayerId | undefined {
-    const clip = spec.clipTo ? [spec.clipTo] : [];
-    const samples = spec.kind === 'raster' ? this.sampledLayers(spec) : [];
-    return [...clip, ...samples].find(id => !this.layers.has(id));
-  }
-
-  /** Rasters of the sampled layers, in the order the spec declares them. */
-  private sampledRasters(spec: RasterLayerSpec<MapBaseLayerId>): readonly unknown[] {
-    return this.sampledLayers(spec).map(id => this.rasterLayer(id)?.data);
-  }
-
-  /**
-   * Declared samples the current map reads. Region borders sample the noise
-   * raster only while the deformation uses the noise map.
-   */
-  private sampledLayers(spec: RasterLayerSpec<MapBaseLayerId>): readonly MapBaseLayerId[] {
-    const samples = spec.samples ?? [];
-    return this.regionConfig?.deformation.source === 'noise-map' ? samples : [];
+    return spec.clipTo && !this.layers.has(spec.clipTo) ? spec.clipTo : undefined;
   }
 
   /** Layer that carries a raster, or undefined when it is absent or vector. */

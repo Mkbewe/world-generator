@@ -1,11 +1,5 @@
 import type { MapContext } from './context';
-import type {
-  ConditionalRead,
-  SeededWorldConfig,
-  StageData,
-  StageMetrics,
-  StageProgressReporter,
-} from '../types';
+import type { SeededWorldConfig, StageData, StageMetrics, StageProgressReporter } from '../types';
 
 export interface MapStage<
   TConfig extends SeededWorldConfig,
@@ -17,12 +11,6 @@ export interface MapStage<
   readonly name: string;
   /** State keys this stage reads. Absent on generic test stages. */
   readonly reads?: readonly (keyof TState)[];
-  /**
-   * State keys this stage reads only while the config selects them.
-   * The factory orders by the union with `reads`; the pipeline asserts the
-   * resolved set for the run config.
-   */
-  readonly conditionalReads?: readonly ConditionalRead<TConfig, TState>[];
   /**
    * State keys this stage writes, bound to its output type: every declared
    * write must exist on the value `execute` returns. The pipeline copies
@@ -50,24 +38,6 @@ export interface MapStage<
 
   /** Optional metrics derived from the produced data and exposed in the statistics. */
   summarize?(context: MapContext<TConfig, TState, TId>, data: TOutput): StageMetrics | undefined;
-}
-
-/**
- * State keys a stage needs: without a config the union of `reads` and every
- * conditional edge (for ordering); with a config only the selected edges
- * (for input assertion).
- */
-export function resolveReads<TConfig extends SeededWorldConfig, TState extends object>(
-  stage: Pick<MapStage<TConfig, TState, string, StageData>, 'reads' | 'conditionalReads'>,
-  config?: Readonly<TConfig>
-): readonly (keyof TState)[] {
-  const keys = [...(stage.reads ?? [])];
-  for (const edge of stage.conditionalReads ?? []) {
-    if ((!config || edge.when(config)) && !keys.includes(edge.key)) {
-      keys.push(edge.key);
-    }
-  }
-  return keys;
 }
 
 /** Throws when a stage output is missing or has the wrong type and size. */

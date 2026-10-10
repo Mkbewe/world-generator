@@ -9,9 +9,6 @@ import { createMacroRegionSampler, MacroRegionStage } from './stage';
 import { MapGenerator } from '../../pipeline/pipeline';
 import { planarDistance } from '../../space';
 import type { MacroRegionConfig, MapConfig, MapState } from '../../types';
-import { NoiseStage } from '../noise';
-
-const noise = { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 };
 
 function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 5): MapConfig {
   return {
@@ -25,7 +22,6 @@ function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 
       seed: 123,
       shape: 'disc',
     },
-    noise,
     macroRegions,
     macroRegionDeformation: { amplitude: 0 },
   };
@@ -34,10 +30,7 @@ function config(macroRegions: readonly MacroRegionConfig[], width = 5, height = 
 async function generate(source: MapConfig, mask?: Uint8Array) {
   const { sampleWidth, sampleHeight } = source.world.dimensions;
   const worldMask = mask ?? new Uint8Array(sampleWidth * sampleHeight).fill(1);
-  const pipeline = new MapGenerator<MapConfig, MapState>([
-    new NoiseStage(),
-    new MacroRegionStage(),
-  ]);
+  const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
   return pipeline.generate(source, { worldMask });
 }
 
@@ -178,41 +171,6 @@ describe('MacroRegionStage', () => {
     expect(first.context.state.macroRegionIdMap).toEqual(second.context.state.macroRegionIdMap);
   });
 
-  it('takes the border displacement from the noise map', async () => {
-    const regions = createRadialLayout(4);
-    const smooth = await generate({
-      ...config(regions, 12, 12),
-      noise: { frequency: 2, octaves: 3, persistence: 0.5, lacunarity: 2 },
-      macroRegionDeformation: { amplitude: 0.3, source: 'noise-map' },
-    });
-    const detailed = await generate({
-      ...config(regions, 12, 12),
-      noise: { frequency: 6, octaves: 3, persistence: 0.5, lacunarity: 2 },
-      macroRegionDeformation: { amplitude: 0.3, source: 'noise-map' },
-    });
-
-    expect(detailed.context.state.macroRegionIdMap).not.toEqual(
-      smooth.context.state.macroRegionIdMap
-    );
-  });
-
-  it('keeps dedicated borders independent of NoiseStage settings', async () => {
-    const regions = createRadialLayout(4);
-    const base = config(regions, 12, 12);
-    const smooth = await generate({
-      ...base,
-      macroRegionDeformation: { amplitude: 0.2 },
-      noise: { ...noise, frequency: 2 },
-    });
-    const detailed = await generate({
-      ...base,
-      macroRegionDeformation: { amplitude: 0.2 },
-      noise: { ...noise, frequency: 6 },
-    });
-
-    expect(detailed.context.state.macroRegionIdMap).toEqual(smooth.context.state.macroRegionIdMap);
-  });
-
   it('keeps deformed borders inside the world mask', async () => {
     const regions = createRadialLayout(3);
     const mask = new Uint8Array(25);
@@ -244,28 +202,12 @@ describe('MacroRegionStage', () => {
     const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
     const source = config(createRadialLayout(2), 3, 3);
 
-    await expect(
-      pipeline.generate(source, { noiseMap: new Float32Array(9) })
-    ).rejects.toMatchObject({
+    await expect(pipeline.generate(source, {})).rejects.toMatchObject({
       cause: { message: expect.stringContaining('worldMask') },
     });
   });
 
-  it('requires a valid noise map', async () => {
-    const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
-    const source = {
-      ...config(createRadialLayout(2), 3, 3),
-      macroRegionDeformation: { amplitude: 0.1, source: 'noise-map' as const },
-    };
-
-    await expect(
-      pipeline.generate(source, { worldMask: new Uint8Array(9).fill(1) })
-    ).rejects.toMatchObject({
-      cause: { message: expect.stringContaining('noiseMap') },
-    });
-  });
-
-  it('generates dedicated borders without a noise map', async () => {
+  it('generates borders with only the world mask', async () => {
     const pipeline = new MapGenerator<MapConfig, MapState>([new MacroRegionStage()]);
     const source = {
       ...config(createRadialLayout(2), 3, 3),
@@ -292,11 +234,10 @@ describe('MacroRegionStage', () => {
     expect(() => stage.validate({ macroRegionIdMap: new Uint8Array(12) }, source)).toThrow(
       'required map data'
     );
-    expect(result.statistics[1].details).toEqual({
+    expect(result.statistics[0].details).toEqual({
       regions: 6,
       overlays: 2,
       deformationAmplitude: 0,
-      deformationSource: 'dedicated',
       bytes: 12,
     });
   });

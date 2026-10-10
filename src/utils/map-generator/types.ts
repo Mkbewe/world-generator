@@ -14,14 +14,6 @@ export interface SeededWorldConfig {
   };
 }
 
-export interface NoiseConfig {
-  /** Number of base noise cycles across the normalized world space. */
-  frequency: number;
-  octaves: number;
-  persistence: number;
-  lacunarity: number;
-}
-
 export interface MacroRegionPoint {
   /** Normalized world coordinate in the 0..1 range. */
   readonly x: number;
@@ -61,14 +53,10 @@ export interface MacroRegionConfig {
   readonly irregularity?: number;
 }
 
-export type MacroRegionNoiseSource = 'dedicated' | 'noise-map';
-
 /** Border displacement; individual overlays may override the amplitude. */
 export interface MacroRegionDeformation {
   /** How far the borders may shift in normalized units; 0 disables deformation. */
   readonly amplitude: number;
-  /** Defaults to the dedicated region noise when omitted. */
-  readonly source?: MacroRegionNoiseSource;
 }
 
 /** Normalized world coordinate in the 0..1 range. */
@@ -143,7 +131,6 @@ export interface GeologyPlan {
 
 export interface MapConfig extends SeededWorldConfig {
   world: WorldConfig;
-  noise: NoiseConfig;
   macroRegions?: readonly MacroRegionConfig[];
   macroRegionDeformation?: MacroRegionDeformation;
   /**
@@ -160,8 +147,6 @@ export interface MapConfig extends SeededWorldConfig {
 export interface MapState {
   /** Produced by the world-shape stage. */
   worldMask?: Uint8Array;
-  /** Produced by the noise stage. */
-  noiseMap?: Float32Array;
   /** Produced by the macro-region stage. */
   macroRegionIdMap?: Uint8Array;
   /**
@@ -188,16 +173,6 @@ export interface StageStatistics<TId extends string = string> {
 }
 
 export type StageData = Record<string, unknown>;
-/**
- * A state input a stage reads only while the config selects it — the data
- * twin of `ConditionalConfigKey`. The pipeline asserts the resolved set at
- * runtime; the factory orders by the union, so presentation order never
- * breaks the data flow.
- */
-export interface ConditionalRead<TConfig extends SeededWorldConfig, TState extends object> {
-  readonly key: keyof TState;
-  readonly when: (config: Readonly<TConfig>) => boolean;
-}
 
 interface StageEventBase<TId extends string = string> {
   stageId: TId;

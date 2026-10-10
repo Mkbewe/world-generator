@@ -240,7 +240,6 @@ describe('MapGenerator', () => {
         seed: 7,
         shape: 'disc',
       },
-      noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
     };
     let eventData: Readonly<StageData> | undefined;
     const pipeline = createMapGenerator();

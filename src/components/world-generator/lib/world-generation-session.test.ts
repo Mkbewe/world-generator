@@ -21,12 +21,11 @@ const config: MapConfig = {
     seed: 17,
     shape: 'disc',
   },
-  noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
 };
 
 const stages: readonly StageInfo[] = [
   { id: 'world-shape', name: 'World shape' },
-  { id: 'noise', name: 'Noise' },
+  { id: 'macro-region', name: 'Macro region' },
 ];
 
 function completed(stageId: string, data: Record<string, unknown>): GenerationEvent {
@@ -69,7 +68,7 @@ function skipped(stageId: string): GenerationEvent {
     stageId,
     stageName: stageId,
     stageIndex: stageId === 'world-shape' ? 0 : 1,
-    stageCount: 3,
+    stageCount: 2,
     statistics: {
       stageId,
       stageName: stageId,
@@ -129,7 +128,7 @@ describe('WorldGenerationSession', () => {
   it('maps registered stage data and saves map metadata after generation', async () => {
     session.attach(renderer);
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
     const result: PipelineWorkerGenerationResult = {
       statistics: [],
       totalDurationMs: 2,
@@ -144,8 +143,8 @@ describe('WorldGenerationSession', () => {
         stageCount: 2,
       });
       options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('statistics-only', { unknown: noise }));
-      options?.onEvent?.(completed('noise', { noiseMap: noise }));
+      options?.onEvent?.(completed('statistics-only', { unknown: regions }));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
       return result;
     });
 
@@ -162,11 +161,11 @@ describe('WorldGenerationSession', () => {
       height: 2,
       seed: '17',
       shape: 'disc',
-      regionGeometry: { seed: 17, deformation: { source: 'dedicated' } },
+      regionGeometry: { seed: 17, deformation: { amplitude: 0.08 } },
     });
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
-    expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
-    expect(renderer.state.displayedLayer).toBe('noise');
+    expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regions);
+    expect(renderer.state.displayedLayer).toBe('macro-region');
     expect(onProgress.mock.lastCall?.[0].status).toBe('completed');
   });
 
@@ -231,7 +230,6 @@ describe('WorldGenerationSession', () => {
 
   it('reuses the saved rasters for the clean stages', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
     const regions = new Uint8Array(4);
     let run = 0;
     runner.mockImplementation(async (_, options) => {
@@ -239,10 +237,8 @@ describe('WorldGenerationSession', () => {
       options?.onStages?.(stages, []);
       if (run === 1) {
         options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-        options?.onEvent?.(completed('noise', { noiseMap: noise }));
       } else {
         options?.onEvent?.(skipped('world-shape'));
-        options?.onEvent?.(skipped('noise'));
       }
       options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
       return { statistics: [], totalDurationMs: 1 };
@@ -256,20 +252,21 @@ describe('WorldGenerationSession', () => {
 
     expect(runner.mock.lastCall?.[1]?.reuse).toEqual({
       dirtyStageIds: ['macro-region'],
-      cachedState: { worldMask: mask, noiseMap: noise, macroRegionIdMap: regions },
+      cachedState: { worldMask: mask, macroRegionIdMap: regions },
     });
-    expect(mapRepository.get()?.layers).toMatchObject({ worldMask: mask, noiseMap: noise });
+    expect(mapRepository.get()?.layers).toMatchObject({
+      worldMask: mask,
+      macroRegionIdMap: regions,
+    });
     expect(renderer.state.displayedLayer).toBe('macro-region');
   });
 
   it('keeps the previous map visible and prepares only the new layers', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
     const regions = new Uint8Array(4);
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages, []);
       options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('noise', { noiseMap: noise }));
       options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
       return { statistics: [], totalDurationMs: 1 };
     });
@@ -284,7 +281,6 @@ describe('WorldGenerationSession', () => {
     runner.mockImplementation((_, options) => {
       options?.onStages?.(stages, []);
       options?.onEvent?.(skipped('world-shape'));
-      options?.onEvent?.(skipped('noise'));
       options?.onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
       return new Promise(resolve => {
         finish = resolve;
@@ -323,7 +319,7 @@ describe('WorldGenerationSession', () => {
 
     expect(onProgress.mock.calls[0][0].stages).toEqual([
       { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0 },
-      { id: 'noise', name: 'Noise', status: 'skipped', percentage: 0 },
+      { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
     ]);
 
     finish({ statistics: [], totalDurationMs: 1 });
@@ -332,12 +328,10 @@ describe('WorldGenerationSession', () => {
 
   it('keeps the preview selection while regenerating an existing map', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
     const regions = new Uint8Array(4);
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages, []);
       options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('noise', { noiseMap: noise }));
       options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
       return { statistics: [], totalDurationMs: 1 };
     });
@@ -346,18 +340,17 @@ describe('WorldGenerationSession', () => {
     await renderer.ready;
     expect(usePreviewStore.getState().baseLayer).toBe('macro-region');
 
-    renderer.select('noise');
-    usePreviewStore.getState().setBaseLayer('noise');
+    renderer.select('world-shape');
+    usePreviewStore.getState().setBaseLayer('world-shape');
     await session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
     await renderer.ready;
 
-    expect(usePreviewStore.getState().baseLayer).toBe('noise');
-    expect(renderer.state.displayedLayer).toBe('noise');
+    expect(usePreviewStore.getState().baseLayer).toBe('world-shape');
+    expect(renderer.state.displayedLayer).toBe('world-shape');
   });
 
   it('keeps the real statistics of stages reused by the next run', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
     const regions = new Uint8Array(4);
     let run = 0;
     runner.mockImplementation(async (_, options) => {
@@ -365,24 +358,20 @@ describe('WorldGenerationSession', () => {
       options?.onStages?.(stages, []);
       if (run === 1) {
         options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-        options?.onEvent?.(completed('noise', { noiseMap: noise }));
         options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
         return {
           statistics: [
             stageStatistics('world-shape', 'completed', 120),
-            stageStatistics('noise', 'completed', 80),
             stageStatistics('macro-region', 'completed', 40),
           ],
-          totalDurationMs: 240,
+          totalDurationMs: 160,
         };
       }
       options?.onEvent?.(skipped('world-shape'));
-      options?.onEvent?.(skipped('noise'));
       options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
       return {
         statistics: [
           stageStatistics('world-shape', 'skipped', 0),
-          stageStatistics('noise', 'skipped', 0),
           stageStatistics('macro-region', 'completed', 40),
         ],
         totalDurationMs: 40,
@@ -399,7 +388,6 @@ describe('WorldGenerationSession', () => {
       second?.statistics.map(stage => [stage.stageId, stage.status, stage.durationMs])
     ).toEqual([
       ['world-shape', 'skipped', 120],
-      ['noise', 'skipped', 80],
       ['macro-region', 'completed', 40],
     ]);
     expect(second?.totalDurationMs).toBe(40);
@@ -415,7 +403,7 @@ describe('WorldGenerationSession', () => {
     await session.generate(config, vi.fn());
     const saved = mapRepository.get();
 
-    const changed = { ...config, noise: { ...config.noise, frequency: 5 } };
+    const changed = { ...config, macroRegions: DEFAULT_MACRO_REGIONS };
     runner.mockRejectedValue(new Error('generation failed'));
     await expect(session.generate(changed, vi.fn())).rejects.toThrow('generation failed');
 
@@ -423,7 +411,7 @@ describe('WorldGenerationSession', () => {
 
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(changed, vi.fn());
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['noise']);
+    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['macro-region']);
   });
 
   it('rejects invalid raster payloads without saving an incomplete map', async () => {
@@ -485,13 +473,13 @@ describe('WorldGenerationSession', () => {
   it('saves generated stage data even when the renderer stops', async () => {
     session.attach(renderer);
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
     const add = vi.spyOn(renderer, 'add');
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages, []);
       renderer.cancel();
       options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      options?.onEvent?.(completed('noise', { noiseMap: noise }));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
       return {
         statistics: [],
         totalDurationMs: 1,
@@ -502,7 +490,7 @@ describe('WorldGenerationSession', () => {
 
     expect(add).not.toHaveBeenCalled();
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
-    expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
+    expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regions);
   });
 
   it('does not save when the generator rejects its incomplete result', async () => {
@@ -577,14 +565,16 @@ describe('WorldGenerationSession', () => {
 
       onStages?.(stages, []);
       const mask = new Uint8Array(4);
-      const noise = new Float32Array(4);
+      const regions = new Uint8Array(4);
       expect(() => onEvent?.(completed('world-shape', { worldMask: mask }))).not.toThrow();
-      expect(() => onEvent?.(completed('noise', { noiseMap: noise }))).not.toThrow();
+      expect(() =>
+        onEvent?.(completed('macro-region', { macroRegionIdMap: regions }))
+      ).not.toThrow();
       expect(add).not.toHaveBeenCalled();
       finish({ statistics: [], totalDurationMs: 1 });
       await expect(generation).resolves.toMatchObject({ totalDurationMs: 1 });
       expect(mapRepository.get()?.layers.worldMask).toBe(mask);
-      expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
+      expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regions);
       expect(onProgress.mock.lastCall?.[0].status).toBe('completed');
     }
   );
@@ -602,27 +592,23 @@ describe('WorldGenerationSession', () => {
       });
     });
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
     const generation = session.generate(config, vi.fn());
 
     onStages?.(stages, []);
     onEvent?.(completed('world-shape', { worldMask: mask }));
-    onEvent?.(completed('noise', { noiseMap: noise }));
-    expect(usePreviewStore.getState().baseLayer).toBe('noise');
+    onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
+    expect(usePreviewStore.getState().baseLayer).toBe('macro-region');
 
     session.attach(renderer);
     await renderer.ready;
-    expect(renderer.state.displayedLayer).toBe('noise');
-    expect(renderer.state.layers.find(layer => layer.id === 'world-shape')?.available).toBe(true);
-
-    onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
-    await renderer.ready;
     expect(renderer.state.displayedLayer).toBe('macro-region');
+    expect(renderer.state.layers.find(layer => layer.id === 'world-shape')?.available).toBe(true);
 
     finish({ statistics: [], totalDurationMs: 1 });
     await expect(generation).resolves.toMatchObject({ totalDurationMs: 1 });
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
-    expect(mapRepository.get()?.layers.noiseMap).toBe(noise);
+    expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regions);
   });
 
   it('follows the last generated layer with the preview selection', async () => {
@@ -630,7 +616,7 @@ describe('WorldGenerationSession', () => {
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages, []);
       options?.onEvent?.(completed('world-shape', { worldMask: new Uint8Array(4).fill(1) }));
-      options?.onEvent?.(completed('noise', { noiseMap: new Float32Array(4) }));
+      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: new Uint8Array(4) }));
       return {
         statistics: [],
         totalDurationMs: 1,
@@ -639,27 +625,27 @@ describe('WorldGenerationSession', () => {
 
     await session.generate(config, vi.fn());
 
-    expect(usePreviewStore.getState().baseLayer).toBe('noise');
+    expect(usePreviewStore.getState().baseLayer).toBe('macro-region');
   });
 
   it('restores the saved snapshot when a renderer attaches after the run', async () => {
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
     const snapshot = {
       width: 2,
       height: 2,
       contractVersion: DATA_CONTRACT_VERSION,
       seed: '17',
       shape: 'disc' as const,
-      layers: { worldMask: mask, noiseMap: noise },
+      layers: { worldMask: mask, macroRegionIdMap: regions },
     };
     mapRepository.save(snapshot);
 
     session.attach(renderer);
     await renderer.ready;
 
-    expect(renderer.state.displayedLayer).toBe('noise');
-    expect(renderer.state.layers.find(layer => layer.id === 'noise')?.available).toBe(true);
+    expect(renderer.state.displayedLayer).toBe('macro-region');
+    expect(renderer.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
     expect(mapRepository.get()).toBe(snapshot);
   });
 
@@ -669,7 +655,7 @@ describe('WorldGenerationSession', () => {
     let firstEvent: ((event: GenerationEvent) => void) | undefined;
     let firstSignal: AbortSignal | undefined;
     const mask = new Uint8Array(4).fill(1);
-    const noise = new Float32Array(4);
+    const regions = new Uint8Array(4);
     runner
       .mockImplementationOnce((_, options) => {
         firstEvent = options?.onEvent;
@@ -681,7 +667,7 @@ describe('WorldGenerationSession', () => {
       .mockImplementationOnce(async (_, options) => {
         options?.onStages?.(stages, []);
         options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-        options?.onEvent?.(completed('noise', { noiseMap: noise }));
+        options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
         return {
           statistics: [],
           totalDurationMs: 2,
@@ -698,7 +684,7 @@ describe('WorldGenerationSession', () => {
     const saved = mapRepository.get();
     expect(saved?.seed).toBe('99');
     expect(saved?.layers.worldMask).toBe(mask);
-    expect(saved?.layers.noiseMap).toBe(noise);
+    expect(saved?.layers.macroRegionIdMap).toBe(regions);
 
     finishFirst({
       statistics: [],
@@ -706,7 +692,7 @@ describe('WorldGenerationSession', () => {
     });
     await expect(first).resolves.toBeUndefined();
     expect(mapRepository.get()).toBe(saved);
-    expect(renderer.state.displayedLayer).toBe('noise');
+    expect(renderer.state.displayedLayer).toBe('macro-region');
   });
 
   it('does not touch a renderer that is not attached', async () => {

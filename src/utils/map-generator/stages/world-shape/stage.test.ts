@@ -19,7 +19,6 @@ describe('WorldShapeStage', () => {
   it('creates a circular mask within the rectangular data grid', async () => {
     const config: MapConfig = {
       world: worldConfig(5, 5),
-      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
     const pipeline = new MapGenerator<MapConfig, MapState>([new WorldShapeStage()]);
 
@@ -38,7 +37,6 @@ describe('WorldShapeStage', () => {
     const stage = new WorldShapeStage();
     const config: MapConfig = {
       world: worldConfig(5, 5),
-      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
 
     expect(() => stage.validate({}, config)).toThrow('required map data');
@@ -51,7 +49,6 @@ describe('WorldShapeStage', () => {
   it('summarizes the generated world shape', async () => {
     const config: MapConfig = {
       world: worldConfig(5, 5),
-      noise: { frequency: 4, octaves: 3, persistence: 0.5, lacunarity: 2 },
     };
     const pipeline = new MapGenerator<MapConfig, MapState>([new WorldShapeStage()]);
 

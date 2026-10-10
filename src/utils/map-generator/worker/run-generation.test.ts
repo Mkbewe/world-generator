@@ -38,11 +38,10 @@ const config: MapConfig = {
     seed: 7,
     shape: 'disc',
   },
-  noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
 };
 
 const reuse = {
-  dirtyStageIds: ['world-shape', 'noise', 'macro-region'],
+  dirtyStageIds: ['world-shape', 'macro-region', 'geology'],
   cachedState: {},
 } satisfies PipelineWorkerReuse;
 
@@ -67,13 +66,13 @@ describe('runGeneration', () => {
     });
     FakeWorker.latest.emitMessage({
       type: 'stages',
-      stages: [{ id: 'noise', name: 'Noise' }],
+      stages: [{ id: 'geology', name: 'Geology' }],
       skippedStageIds: [],
     });
     FakeWorker.latest.emitMessage({
       type: 'stage-started',
-      stageId: 'noise',
-      stageName: 'Noise',
+      stageId: 'geology',
+      stageName: 'Geology',
       stageIndex: 0,
       stageCount: 1,
     });
@@ -83,7 +82,7 @@ describe('runGeneration', () => {
     });
 
     await expect(promise).resolves.toEqual({ statistics: [], totalDurationMs: 5 });
-    expect(onStages).toHaveBeenCalledWith([{ id: 'noise', name: 'Noise' }], []);
+    expect(onStages).toHaveBeenCalledWith([{ id: 'geology', name: 'Geology' }], []);
     expect(onEvent).toHaveBeenCalledOnce();
     expect(FakeWorker.latest.terminate).toHaveBeenCalledOnce();
   });
@@ -99,8 +98,8 @@ describe('runGeneration', () => {
 
     FakeWorker.latest.emitMessage({
       type: 'stage-started',
-      stageId: 'noise',
-      stageName: 'Noise',
+      stageId: 'geology',
+      stageName: 'Geology',
       stageIndex: 0,
       stageCount: 1,
     });

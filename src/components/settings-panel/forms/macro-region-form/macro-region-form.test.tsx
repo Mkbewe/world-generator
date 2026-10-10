@@ -17,11 +17,10 @@ describe('MacroRegionForm', () => {
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
   });
 
-  it('stacks the border noise switch, presets, base layout, borders and regions', () => {
+  it('stacks presets, base layout, borders and regions', () => {
     renderForm();
 
     const sections = [
-      screen.getByText('Border noise'),
       screen.getByText('Presets'),
       screen.getByText('Base layout'),
       screen.getByText('Borders'),

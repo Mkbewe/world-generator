@@ -2,7 +2,7 @@ import { layerForTab, tabForLayer, useViewSyncStore, VIEW_SYNC_DEFAULTS } from '
 
 describe('view sync store', () => {
   it('maps stage tabs and preview layers both ways', () => {
-    expect(layerForTab('noise')).toBe('noise');
+    expect(layerForTab('geology')).toBe('geology');
     expect(layerForTab('general')).toBeUndefined();
     expect(tabForLayer('macro-region')).toBe('macro-region');
   });

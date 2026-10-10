@@ -14,9 +14,9 @@ describe('usePreviewStore', () => {
   });
 
   it('stores the selected base layer', () => {
-    usePreviewStore.getState().setBaseLayer('noise');
+    usePreviewStore.getState().setBaseLayer('macro-region');
 
-    expect(usePreviewStore.getState().baseLayer).toBe('noise');
+    expect(usePreviewStore.getState().baseLayer).toBe('macro-region');
   });
 
   it('stores the navigation tree with the selected layer and preserves it when omitted', () => {
@@ -31,7 +31,7 @@ describe('usePreviewStore', () => {
       },
     ];
     store.setBaseLayer('macro-region', tree);
-    store.setBaseLayer('noise');
+    store.setBaseLayer('geology');
 
     expect(usePreviewStore.getState().layerTree).toBe(tree);
   });

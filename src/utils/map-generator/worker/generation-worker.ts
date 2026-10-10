@@ -4,7 +4,6 @@ import type {
 } from './pipeline-worker.types';
 import { GenerationStageError } from '../errors';
 import { createMapGenerator } from '../pipeline/pipeline-factory';
-import { resolveReads } from '../pipeline/stage';
 import { isPipelineStageId, type StageInfo } from '../pipeline/stage-definitions';
 import { isPersistentRasterValue, isRasterOutputKey } from '../pipeline/stage-outputs';
 import type { MapState } from '../types';
@@ -40,7 +39,7 @@ async function generate(
   }
   const runIds = new Set<string>();
   for (const stage of generator.stages) {
-    const staleInput = resolveReads(stage, request.config).some(key => {
+    const staleInput = (stage.reads ?? []).some(key => {
       const writer = writers.get(String(key));
       return writer !== undefined && runIds.has(writer);
     });

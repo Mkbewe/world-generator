@@ -28,11 +28,11 @@ describe('validateVectorLayerFactories', () => {
 
   it('rejects a factory registered under another layer ID', () => {
     const factories: VectorLayerFactoryRegistry = new Map([
-      ['geology', { ...geologyFactory, id: 'noise' }],
+      ['geology', { ...geologyFactory, id: 'macro-region' }],
     ]);
 
     expect(() => validateVectorLayerFactories(layerRegistry, factories)).toThrow(
-      'Vector layer factory "noise" is registered under "geology"'
+      'Vector layer factory "macro-region" is registered under "geology"'
     );
   });
 
