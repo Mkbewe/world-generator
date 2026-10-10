@@ -17,6 +17,7 @@ export {
   fitView,
   isFitted,
   panBy,
+  project,
   zoomAt,
 } from './view-transform';
 export type { ViewTransform } from './view-transform';

@@ -1,4 +1,10 @@
-import { type PointerEventHandler, type RefObject, useEffect, useState } from 'react';
+import {
+  type PointerEventHandler,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useState,
+} from 'react';
 import { Text } from '@radix-ui/themes';
 
 import styles from './map-canvas.module.scss';
@@ -23,6 +29,8 @@ interface MapCanvasProps {
   panning?: boolean;
   /** Centers the square in the available space, used by the fullscreen mode. */
   expanded?: boolean;
+  /** Overlays drawn over the map, e.g. the scale bar. */
+  children?: ReactNode;
 }
 
 export function MapCanvas({
@@ -33,6 +41,7 @@ export function MapCanvas({
   ready,
   panning = false,
   expanded = false,
+  children,
 }: MapCanvasProps) {
   const [graceElapsed, setGraceElapsed] = useState(false);
 
@@ -79,6 +88,7 @@ export function MapCanvas({
           className={styles.overlayCanvas}
           aria-hidden='true'
         />
+        {children}
       </div>
     </div>
   );
