@@ -7,14 +7,24 @@ import {
   baseRegions,
   overlayRegions,
 } from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
+import { regionColor } from '../../../../../utils/map-layers';
+import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
+import { useMacroRegionSelection } from '../hooks/use-macro-region-selection';
 import { OverlayRegionCard } from '../region-card';
 
+/** Overlay bands: their tabs and the selected band fields. */
 export function OverlayRegionSection() {
   const regions = useMacroRegionFormStore(state => state.regions);
   const addOverlay = useMacroRegionFormStore(state => state.addOverlay);
   const baseCount = baseRegions(regions).length;
   const overlays = overlayRegions(regions);
+  const { region, selectedIndex, selectRegion } = useMacroRegionSelection(overlays);
   const atLimit = regions.length >= MAX_MACRO_REGIONS;
+  const tabItems: readonly RegionTabItem[] = overlays.map((item, index) => ({
+    id: item.id,
+    label: item.label,
+    color: regionColor(baseCount + index),
+  }));
 
   return (
     <Flex direction='column' gap='2'>
@@ -48,9 +58,15 @@ export function OverlayRegionSection() {
           </Button>
         </Flex>
       </Flex>
-      {overlays.map((region, index) => (
-        <OverlayRegionCard key={region.id} region={region} index={baseCount + index} />
-      ))}
+      {overlays.length > 0 && (
+        <RegionTabs
+          items={tabItems}
+          selectedIndex={selectedIndex}
+          onSelect={selectRegion}
+          ariaLabel='Overlay regions'
+        />
+      )}
+      {region && <OverlayRegionCard region={region} index={baseCount + selectedIndex} />}
     </Flex>
   );
 }

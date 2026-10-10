@@ -10,19 +10,30 @@ const baseConfig: MapConfig = {
 
 describe('selectMapInfo', () => {
   it('captures the world dimensions from the config', () => {
-    expect(selectMapInfo(baseConfig)).toEqual({ worldDimensions: dimensions });
+    expect(selectMapInfo(baseConfig).worldDimensions).toEqual(dimensions);
   });
 
-  it('captures macro region labels in region order', () => {
-    expect(selectMapInfo({ ...baseConfig, macroRegions: DEFAULT_MACRO_REGIONS })).toEqual({
-      macroRegionLabels: DEFAULT_MACRO_REGIONS.map(region => region.label),
-      worldDimensions: dimensions,
-    });
+  it('captures the macro region details in region order', () => {
+    const info = selectMapInfo({ ...baseConfig, macroRegions: DEFAULT_MACRO_REGIONS });
+
+    expect(info.macroRegionInfo).toEqual(
+      DEFAULT_MACRO_REGIONS.map(region => ({
+        label: region.label,
+        role: region.role,
+        danger: region.danger,
+        kind: region.geometry.kind,
+        range: expect.any(Array),
+      }))
+    );
+  });
+
+  it('falls back to the default regions when the config omits them', () => {
+    expect(selectMapInfo(baseConfig).macroRegionInfo).toHaveLength(DEFAULT_MACRO_REGIONS.length);
   });
 
   it('exposes stable source keys', () => {
     expect(MAP_INFO_CATALOG.map(spec => spec.source)).toEqual([
-      'macroRegionLabels',
+      'macroRegionInfo',
       'worldDimensions',
     ]);
   });

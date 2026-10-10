@@ -6,12 +6,13 @@ import { percent } from './lib/percent';
 import { PRESET_OPTIONS } from './lib/preset-options';
 import { RegionDistribution } from './region-distribution';
 import { RegionEditor } from './region-editor';
-import { RegionTabs } from './region-tabs';
 import { useGeologyFormStore } from '../../../../stores';
 import {
   MAX_GEOLOGICAL_REGIONS,
   MIN_GEOLOGICAL_REGIONS,
 } from '../../../../utils/map-generator/stages/geology';
+import { geologyRegionColor } from '../../../../utils/map-layers';
+import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';
 
 /** Starter presets, shared layout and per-region settings of the geology map. */
@@ -26,6 +27,11 @@ export function GeologyForm(): React.JSX.Element {
   const applyPreset = useGeologyFormStore(state => state.applyPreset);
   const activeSlots = slots.slice(0, regionCount);
   const regionTypes = activeSlots.map(slot => slot.type);
+  const tabItems: readonly RegionTabItem[] = regionTypes.map((type, index) => ({
+    id: `region-${index + 1}`,
+    label: `Region ${index + 1}`,
+    color: geologyRegionColor(type, index),
+  }));
   const { selectedIndex, region, selectRegion } = useGeologySelection(regionCount, slots);
   const { segments, draft, minShare } = useRegionDistribution(activeSlots, setRegionShareBoundary);
 
@@ -89,7 +95,12 @@ export function GeologyForm(): React.JSX.Element {
         rangeLabels={['Clean', 'Ragged']}
         onChange={irregularity => setLayout({ irregularity })}
       />
-      <RegionTabs types={regionTypes} selectedIndex={selectedIndex} onSelect={selectRegion} />
+      <RegionTabs
+        items={tabItems}
+        selectedIndex={selectedIndex}
+        onSelect={selectRegion}
+        ariaLabel='Geology regions'
+      />
       <RegionEditor
         index={selectedIndex}
         region={region}

@@ -103,7 +103,49 @@ describe('readoutItems', () => {
     ).toBe('Region 3');
   });
 
-  it('shows macro region labels captured with the generated map', () => {
+  it('shows the macro region range, width, danger and area captured with the map', () => {
+    const inspection = {
+      kind: 'raster',
+      layerId: 'macro-region',
+      label: 'Macro regions',
+      value: 1,
+    } as const;
+    const info = {
+      macroRegionInfo: [
+        { label: 'Safe haven', role: 'base', danger: 0.1, kind: 'ring', range: [0, 0.25] },
+        { label: 'Wasteland', role: 'base', danger: 0.9, kind: 'ring', range: [0.25, 0.5] },
+      ],
+      macroRegionAreas: [2_000_000, 6_000_000],
+    };
+
+    expect(itemValue(readout(inspection), 'region', info)).toBe('Wasteland');
+    expect(item(readout(inspection), 'width', info)?.label).toBe('Ring thickness');
+    expect(itemValue(readout(inspection), 'range', info)).toBe('50–100% of the radius');
+    expect(itemValue(readout(inspection), 'width', info)).toBe('50%');
+    expect(itemValue(readout(inspection), 'danger', info)).toBe('0.90');
+    expect(itemValue(readout(inspection), 'area', info)).toBe('6 km² · 75.0%');
+  });
+
+  it('shows an overlay band coverage and its axis range', () => {
+    const inspection = {
+      kind: 'raster',
+      layerId: 'macro-region',
+      label: 'Macro regions',
+      value: 0,
+    } as const;
+    const info = {
+      macroRegionInfo: [
+        { label: 'Crossing', role: 'overlay', danger: 0.5, kind: 'band', range: [0.42, 0.58] },
+      ],
+    };
+
+    expect(item(readout(inspection), 'width', info)?.label).toBe('Band width');
+    expect(itemValue(readout(inspection), 'range', info)).toBe('42–58% of the axis');
+    expect(itemValue(readout(inspection), 'width', info)).toBe('16%');
+    expect(item(readout(inspection), 'area', info)).toBeUndefined();
+  });
+
+  it('falls back to the region number for malformed macro region info', () => {
     const inspection = {
       kind: 'raster',
       layerId: 'macro-region',
@@ -111,16 +153,8 @@ describe('readoutItems', () => {
       value: 1,
     } as const;
 
-    expect(
-      readoutItems(readout(inspection), { macroRegionLabels: ['Safe haven', 'Wasteland'] })[1].value
-    ).toBe('Wasteland');
-    expect(readoutItems(readout(inspection), { macroRegionLabels: ['Safe'] })[1].value).toBe(
-      'Region 1'
-    );
-    expect(readoutItems(readout(inspection), { macroRegionLabels: ['', ' '] })[1].value).toBe(
-      'Region 1'
-    );
-    expect(readoutItems(readout(inspection), { macroRegionLabels: 'nope' })[1].value).toBe(
+    expect(itemValue(readout(inspection), 'value', { macroRegionInfo: 'nope' })).toBe('Region 1');
+    expect(itemValue(readout(inspection), 'value', { macroRegionInfo: [{ label: 1 }] })).toBe(
       'Region 1'
     );
   });

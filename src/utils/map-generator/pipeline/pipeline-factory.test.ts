@@ -52,7 +52,7 @@ describe('createMapGenerator', () => {
       {
         id: 'macro-region',
         reads: ['worldMask'],
-        writes: ['macroRegionIdMap'],
+        writes: ['macroRegionIdMap', 'macroRegionAreas'],
         configKeys: [
           'world.seed',
           'world.shape',

@@ -451,7 +451,7 @@ describe('WorldGenerationSession', () => {
     expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regionIds);
   });
 
-  it('captures macro region labels with the snapshot', async () => {
+  it('captures the macro region details with the snapshot', async () => {
     session.attach(renderer);
     runner.mockImplementation(async (_, options) => {
       options?.onStages?.(stages, []);
@@ -464,8 +464,10 @@ describe('WorldGenerationSession', () => {
 
     await session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
 
-    expect(mapRepository.get()?.info).toEqual({
-      macroRegionLabels: DEFAULT_MACRO_REGIONS.map(region => region.label),
+    expect(mapRepository.get()?.info).toMatchObject({
+      macroRegionInfo: DEFAULT_MACRO_REGIONS.map(region =>
+        expect.objectContaining({ label: region.label })
+      ),
       worldDimensions: { widthMeters: 2, heightMeters: 2, sampleWidth: 2, sampleHeight: 2 },
     });
   });
