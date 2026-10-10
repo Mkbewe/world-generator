@@ -1,7 +1,7 @@
 import type { RefObject } from 'react';
 
-import { useElementSize } from './hooks/use-element-size';
 import { metersPerCssPixel, scaleBarSegment } from './lib/scale-bar';
+import { useElementSize } from '../../hooks/use-element-size';
 import type { WorldDimensions } from '../../utils/world-dimensions';
 import styles from './scale-bar.module.scss';
 

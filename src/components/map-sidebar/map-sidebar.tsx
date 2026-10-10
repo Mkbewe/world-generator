@@ -3,6 +3,7 @@ import { Card, Flex, Separator } from '@radix-ui/themes';
 
 import { CursorReadout, type CursorReadoutProps } from './cursor-readout';
 import { LayerViews } from './layer-views';
+import { MeasureControls } from './measure-controls';
 import { OverlayControls } from './overlay-controls';
 import { PanelHeader, type PanelPosition } from './panel-header';
 import { ViewControls } from './view-controls';
@@ -21,13 +22,19 @@ interface MapSidebarProps {
   onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
   /** Cursor readout rendered below the layer sections. */
   inspector?: CursorReadoutProps;
-  /** Zoom controls rendered above the overlays; only the fullscreen mode can zoom. */
+  /** Zoom controls rendered above the overlays. */
   view?: {
     zoom: number;
     fitted: boolean;
+    zoomable: boolean;
     onZoomIn: () => void;
     onZoomOut: () => void;
     onReset: () => void;
+  };
+  /** Distance measuring controls rendered under the view section. */
+  measure?: {
+    measuring: boolean;
+    onToggleMeasuring: () => void;
   };
   /** Floats the sidebar over the map; used by the fullscreen mode. */
   expanded?: boolean;
@@ -40,6 +47,7 @@ export function MapSidebar({
   onOverlayChange,
   inspector,
   view,
+  measure,
   expanded = false,
 }: MapSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -53,6 +61,12 @@ export function MapSidebar({
       {expanded && view && (
         <>
           <ViewControls {...view} bare />
+          {divider}
+        </>
+      )}
+      {expanded && measure && (
+        <>
+          <MeasureControls {...measure} />
           {divider}
         </>
       )}

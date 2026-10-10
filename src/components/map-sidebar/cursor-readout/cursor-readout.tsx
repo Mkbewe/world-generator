@@ -73,13 +73,15 @@ function ReadoutEntry({ item, onAction }: ReadoutEntryProps) {
       </div>
     );
   }
+  const className = [
+    styles.item,
+    item.lines ? styles.axes : '',
+    item.separated ? styles.separated : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <Text
-      size='1'
-      color='gray'
-      as='span'
-      className={item.lines ? `${styles.item} ${styles.axes}` : styles.item}
-    >
+    <Text size='1' color='gray' as='span' className={className}>
       {renderItemContent(item)}
     </Text>
   );
@@ -89,7 +91,7 @@ function renderItemContent(item: ReadoutItem): ReactNode {
   if (item.lines) {
     return item.lines.flatMap((line, index) => [
       <span key={`line-${index}-label`} className={styles.label}>
-        {line.label}:
+        {line.label === undefined ? '' : `${line.label}:`}
       </span>,
       <span key={`line-${index}-x`} className={styles.value}>
         {line.x}

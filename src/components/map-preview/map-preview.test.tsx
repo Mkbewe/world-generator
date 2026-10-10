@@ -1,5 +1,5 @@
 import { Theme } from '@radix-ui/themes';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { MapPreview } from './map-preview';
@@ -273,7 +273,7 @@ describe('MapPreview readout', () => {
     expect(renderer.current?.viewTransform.scale).toBeGreaterThan(1);
 
     const centerBefore = renderer.current?.viewTransform.centerX ?? 0;
-    fireEvent.pointerDown(canvas, { button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerDown(canvas, { button: 1, clientX: 200, clientY: 200 });
     fireEvent.pointerMove(canvas, { clientX: 260, clientY: 200 });
     fireEvent.pointerUp(canvas, { button: 0, clientX: 260, clientY: 200 });
     expect(renderer.current?.viewTransform.centerX).toBeLessThan(centerBefore);
@@ -299,7 +299,7 @@ describe('MapPreview readout', () => {
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
     expect(screen.getByRole('button', { name: /reset/i })).toBeDisabled();
 
-    fireEvent.pointerDown(canvas, { button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerDown(canvas, { button: 1, clientX: 200, clientY: 200 });
     fireEvent.pointerMove(canvas, { clientX: 260, clientY: 200 });
     fireEvent.pointerUp(canvas, { button: 0, clientX: 260, clientY: 200 });
 
@@ -327,7 +327,7 @@ describe('MapPreview readout', () => {
 
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
     fireEvent.wheel(canvas, { deltaY: -500, clientX: 200, clientY: 200 });
-    fireEvent.pointerDown(canvas, { pointerId: 7, button: 0, clientX: 200, clientY: 200 });
+    fireEvent.pointerDown(canvas, { pointerId: 7, button: 1, clientX: 200, clientY: 200 });
     fireEvent.pointerMove(canvas, { pointerId: 7, buttons: 1, clientX: 260, clientY: 200 });
     expect(capturePointer).toHaveBeenCalledWith(7);
 
@@ -335,6 +335,69 @@ describe('MapPreview readout', () => {
     const centerAfterRelease = renderer.current?.viewTransform.centerX;
     fireEvent.pointerMove(canvas, { pointerId: 7, buttons: 0, clientX: 240, clientY: 200 });
     expect(renderer.current?.viewTransform.centerX).toBe(centerAfterRelease);
+  });
+
+  it('measures a drag in metres in the fullscreen mode', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 400,
+      right: 400,
+      bottom: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    const { onReady, renderer } = createOnReady();
+    render(
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <MapPreview onReady={onReady} progressKey={0} />
+        </HeaderActionsProvider>
+      </Theme>
+    );
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+    renderer.current?.setInfo({
+      worldDimensions: { widthMeters: 4000, heightMeters: 4000, sampleWidth: 4, sampleHeight: 4 },
+    });
+    await act(async () => {});
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
+    expect(screen.getByRole('button', { name: /measure/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(canvas, { clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 300, clientY: 300 });
+
+    expect(screen.getByText('Distance:')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('group', { name: 'Cursor readout' })).getByText('2.89 km')
+    ).toBeInTheDocument();
+    expect(canvas.parentElement?.querySelector('line')).not.toBeNull();
+
+    await user.click(screen.getByRole('button', { name: /measure/i }));
+
+    expect(screen.queryByText('Distance:')).toBeNull();
+    expect(canvas.parentElement?.querySelector('line')).toBeNull();
+  });
+
+  it('keeps measuring out of the normal view', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    expect(screen.queryByRole('button', { name: /measure/i })).toBeNull();
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(canvas, { clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 300, clientY: 300 });
+
+    expect(screen.queryByText('Distance:')).toBeNull();
   });
 });
 

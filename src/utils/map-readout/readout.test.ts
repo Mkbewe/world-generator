@@ -1,5 +1,5 @@
-import { type InspectorReadout, type ReadoutItem, readoutItems } from './readout';
-import type { MapInspection } from '../map-renderer';
+import { type InspectorReadout, type Measurement, type ReadoutItem, readoutItems } from './readout';
+import type { MapInfo, MapInspection } from '../map-renderer';
 
 function readout(inspection?: MapInspection): InspectorReadout {
   return {
@@ -53,7 +53,7 @@ describe('readoutItems', () => {
 
     expect(item(readout(), 'position', info)?.lines).toEqual([
       { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
-      { label: 'Distance', x: 'X 100 m', y: 'Y 50 m' },
+      { x: 'X 100 m', y: 'Y 50 m' },
     ]);
   });
 
@@ -68,7 +68,6 @@ describe('readoutItems', () => {
     };
 
     expect(item(readout(), 'position', info)?.lines?.[1]).toEqual({
-      label: 'Distance',
       x: 'X 166.7 m',
       y: 'Y 83.3 m',
     });
@@ -85,6 +84,38 @@ describe('readoutItems', () => {
     expect(item(readout(), 'position', malformed)?.lines).toEqual([
       { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
     ]);
+  });
+
+  it('adds the measured distance in the fitting unit', () => {
+    const info = {
+      worldDimensions: {
+        widthMeters: 4000,
+        heightMeters: 2000,
+        sampleWidth: 2000,
+        sampleHeight: 1000,
+      },
+    };
+    const measurement: Measurement = {
+      start: { x: 0, y: 0, u: 0, v: 0 },
+      end: { x: 0, y: 0, u: 0.5, v: 0.5 },
+    };
+    const measured = (value: Measurement | undefined, mapInfo: MapInfo = info) =>
+      readoutItems(readout(), mapInfo, value).find(entry => entry.id === 'distance');
+
+    expect(measured(measurement)).toMatchObject({
+      label: 'Distance',
+      value: '2.24 km',
+      separated: true,
+    });
+    expect(measured({ ...measurement, end: { x: 0, y: 0, u: 0.05, v: 0 } })?.value).toBe('200 m');
+    expect(measured(measurement, {})).toBeUndefined();
+    expect(readoutItems(readout(), info, measurement).map(entry => entry.id)).toEqual([
+      'position',
+      'distance',
+      'value',
+    ]);
+    expect(readoutItems(readout(), info, measurement)[0]).toMatchObject({ separated: false });
+    expect(readoutItems(readout(), info)[0]).toMatchObject({ separated: true });
   });
 
   it('describes world shape values', () => {
@@ -202,6 +233,36 @@ describe('readoutItems', () => {
       id: 'edit-region',
       label: 'Edit region',
     });
+  });
+
+  it('drops action entries when actions are disabled', () => {
+    const inspection = {
+      kind: 'vector',
+      layerId: 'geology',
+      label: 'Geology',
+      hit: { id: 'region-2' },
+    } as const;
+    const info = {
+      geologyPlan: {
+        regions: [
+          {
+            id: 'region-2',
+            centre: { x: 0.5, y: 0.5 },
+            weight: 1,
+            type: 'atoll',
+            areaSquareMeters: 2_000_000,
+          },
+        ],
+        regionRasterSize: { width: 1, height: 1 },
+        regionOwnerMap: new Int16Array([0]),
+        regionBorderDistanceMap: new Float32Array([500]),
+        worldAreaSquareMeters: 10_000_000,
+      },
+    };
+    const items = readoutItems(readout(inspection), info, undefined, { actions: false });
+
+    expect(items.find(entry => entry.id === 'edit-region')).toBeUndefined();
+    expect(items.find(entry => entry.id === 'region')).toBeDefined();
   });
 
   it('skips the area row when the plan carries no measurements', () => {
