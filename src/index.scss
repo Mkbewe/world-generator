@@ -10,11 +10,30 @@
 
 html {
   font-size: 16px;
-  overflow: clip scroll;
+
+  /* Normal bar when the page scrolls; the canvas colour mirrors the theme below. */
+  overflow: clip auto;
+  background: #111;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizelegibility;
   width: 100%;
+}
+
+/*
+ * Radix paints the page on `.radix-themes`; the canvas mirrors its colour so the
+ * body padding Radix adds while a dialog is open never shows a light gap.
+ */
+html:has(.radix-themes.light) {
+  background: #fff;
+}
+
+/*
+ * The page scrolls on html, but Radix locks only the body while a dialog is
+ * open; hide the page bar for the duration of the lock.
+ */
+html:has(body[data-scroll-locked]) {
+  overflow-y: hidden;
 }
 
 @include mobile {

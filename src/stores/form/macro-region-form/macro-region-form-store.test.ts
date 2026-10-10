@@ -11,12 +11,13 @@ describe('useMacroRegionFormStore', () => {
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
   });
 
-  it('starts with four adjacent radial regions', () => {
+  it('starts with the rings + poles preset', () => {
     const state = useMacroRegionFormStore.getState();
 
     expect(state.layout).toBe('radial');
-    expect(state.activePreset).toBe('rings');
+    expect(state.activePreset).toBe('rings-with-poles');
     expect(baseRegions(state.regions)).toHaveLength(4);
+    expect(overlayRegions(state.regions)).toHaveLength(2);
     expect(regionSegments('radial', state.regions).map(segment => segment.percent)).toEqual([
       25, 25, 25, 25,
     ]);
@@ -98,21 +99,24 @@ describe('useMacroRegionFormStore', () => {
     store.addOverlay('x');
 
     let state = useMacroRegionFormStore.getState();
-    const overlay = overlayRegions(state.regions)[0];
+    const overlay = overlayRegions(state.regions).at(-1);
+    if (!overlay) {
+      throw new Error('Expected the added overlay.');
+    }
     expect(overlay.geometry).toMatchObject({ kind: 'band', axis: 'x' });
 
     store.updateOverlay(overlay.id, { axis: 'y', center: 0.2, width: 0.3, irregularity: 0.02 });
     store.updateRegion(overlay.id, { danger: 0.75 });
 
     state = useMacroRegionFormStore.getState();
-    expect(overlayRegions(state.regions)[0]).toMatchObject({
+    expect(overlayRegions(state.regions).find(region => region.id === overlay.id)).toMatchObject({
       danger: 0.75,
       irregularity: 0.02,
       geometry: { kind: 'band', axis: 'y', center: 0.2, width: 0.3 },
     });
 
     store.removeRegion(overlay.id);
-    expect(overlayRegions(useMacroRegionFormStore.getState().regions)).toHaveLength(0);
+    expect(overlayRegions(useMacroRegionFormStore.getState().regions)).toHaveLength(2);
     expect(baseRegions(useMacroRegionFormStore.getState().regions)).toHaveLength(4);
   });
 
@@ -142,7 +146,7 @@ describe('useMacroRegionFormStore', () => {
 
   it('tracks the chosen preset explicitly', () => {
     const store = useMacroRegionFormStore.getState();
-    expect(store.activePreset).toBe('rings');
+    expect(store.activePreset).toBe('rings-with-poles');
 
     store.applyPreset('horizontal');
 

@@ -3,33 +3,27 @@ import { act, renderHook } from '@testing-library/react';
 import { HeaderActionsProvider, useHeaderActions } from './header-actions-context';
 
 describe('HeaderActionsProvider', () => {
-  it('starts with everything closed and nothing to export', () => {
+  it('starts without a fullscreen preview', () => {
     const { result } = renderHook(() => useHeaderActions(), { wrapper: HeaderActionsProvider });
 
-    expect(result.current.isExportDialogOpen).toBe(false);
-    expect(result.current.isMapGenerated).toBe(false);
     expect(result.current.canFullscreen).toBe(false);
     expect(result.current.isFullscreen).toBe(false);
   });
 
-  it('confirms an export once and closes the dialog', () => {
+  it('tracks the fullscreen flag registered by the preview', () => {
     const { result } = renderHook(() => useHeaderActions(), { wrapper: HeaderActionsProvider });
-    const exportMap = vi.fn();
 
-    act(() => {
-      result.current.exportMapRef.current = exportMap;
-      result.current.setIsExportDialogOpen(true);
-    });
-    act(() => result.current.confirmExport());
+    act(() => result.current.setCanFullscreen(true));
+    act(() => result.current.setIsFullscreen(true));
 
-    expect(exportMap).toHaveBeenCalledTimes(1);
-    expect(result.current.isExportDialogOpen).toBe(false);
+    expect(result.current.canFullscreen).toBe(true);
+    expect(result.current.isFullscreen).toBe(true);
   });
 
   it('keeps working without a provider', () => {
     const { result } = renderHook(() => useHeaderActions());
 
-    expect(result.current.isExportDialogOpen).toBe(false);
-    expect(() => result.current.confirmExport()).not.toThrow();
+    expect(result.current.isFullscreen).toBe(false);
+    expect(() => result.current.setIsFullscreen(true)).not.toThrow();
   });
 });

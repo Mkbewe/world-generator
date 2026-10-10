@@ -1,6 +1,7 @@
 import { MemoryRouter } from 'react-router';
 import { Theme } from '@radix-ui/themes';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { StatisticsPage } from './statistics-page';
 import {
@@ -49,6 +50,7 @@ describe('StatisticsPage', () => {
     expect(screen.getByRole('heading', { name: 'No statistics yet' })).toBeInTheDocument();
     expect(screen.getByText('Generate a world to see pipeline statistics.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to generator' })).toHaveAttribute('href', '/');
+    expect(screen.queryByRole('button', { name: 'Export' })).not.toBeInTheDocument();
   });
 
   it('renders map and generation statistics when present', () => {
@@ -86,5 +88,40 @@ describe('StatisticsPage', () => {
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();
     expect(screen.getAllByText('40.0 ms')).toHaveLength(2);
     expect(screen.queryByText('No statistics yet')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+  });
+
+  it('exports the statistics as a JSON file', async () => {
+    const user = userEvent.setup();
+    useGenerationStatisticsStore.setState({
+      result: { statistics: [createStage()], totalDurationMs: 40 },
+    });
+    useMapConfigStore.setState({
+      config: {
+        world: {
+          dimensions: { widthMeters: 10, heightMeters: 10, sampleWidth: 10, sampleHeight: 10 },
+          seed: 123456,
+          shape: 'disc',
+        },
+      },
+    });
+    const createObjectURL = vi.fn(() => 'blob:statistics');
+    const revokeObjectURL = vi.fn();
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL;
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+
+    const dialog = screen.getByRole('alertdialog');
+    expect(within(dialog).getByText('Export Statistics')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Export' }));
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:statistics');
   });
 });

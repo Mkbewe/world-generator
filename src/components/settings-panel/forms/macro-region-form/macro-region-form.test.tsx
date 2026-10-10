@@ -25,7 +25,7 @@ describe('MacroRegionForm', () => {
       screen.getByText('Base layout'),
       screen.getByText('Borders'),
       screen.getByText('Base regions (4)'),
-      screen.getByText('Overlay regions (0)'),
+      screen.getByText('Overlay regions (2)'),
     ];
 
     for (let index = 1; index < sections.length; index++) {

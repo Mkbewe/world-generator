@@ -23,23 +23,26 @@ describe('PresetPicker', () => {
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
   });
 
-  it('starts on the rings preset and applies another one', async () => {
+  it('starts on the rings + poles preset and applies another one', async () => {
     const user = userEvent.setup();
     renderPicker();
 
-    expect(screen.getByRole('radio', { name: 'Rings' })).toHaveAttribute('aria-checked', 'true');
-
-    await user.click(screen.getByRole('radio', { name: 'Rings + poles' }));
-
-    const state = useMacroRegionFormStore.getState();
-    expect(state.activePreset).toBe('rings-with-poles');
-    expect(baseRegions(state.regions)).toHaveLength(4);
-    expect(overlayRegions(state.regions)).toHaveLength(2);
     expect(screen.getByRole('radio', { name: 'Rings + poles' })).toHaveAttribute(
       'aria-checked',
       'true'
     );
-    expect(screen.getByRole('radio', { name: 'Rings' })).toHaveAttribute('aria-checked', 'false');
+
+    await user.click(screen.getByRole('radio', { name: 'Rings' }));
+
+    const state = useMacroRegionFormStore.getState();
+    expect(state.activePreset).toBe('rings');
+    expect(baseRegions(state.regions)).toHaveLength(4);
+    expect(overlayRegions(state.regions)).toHaveLength(0);
+    expect(screen.getByRole('radio', { name: 'Rings' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Rings + poles' })).toHaveAttribute(
+      'aria-checked',
+      'false'
+    );
   });
 
   it('clears the active preset after a manual change', async () => {
