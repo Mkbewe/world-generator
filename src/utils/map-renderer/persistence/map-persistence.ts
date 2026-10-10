@@ -1,10 +1,5 @@
 import type { MapRenderer } from '../renderer';
-import {
-  DATA_CONTRACT_VERSION,
-  type GeneratedMapSnapshot,
-  type MapRepository,
-  mapRepository,
-} from '../repository';
+import { type GeneratedMapSnapshot, type MapRepository, mapRepository } from '../repository';
 
 /** Saves map data and restores saved data into a preview. */
 export class MapPersistence {
@@ -12,7 +7,7 @@ export class MapPersistence {
 
   restore(renderer: MapRenderer): void {
     const snapshot = this.repository.get();
-    if (snapshot && snapshot.contractVersion === DATA_CONTRACT_VERSION) {
+    if (snapshot) {
       renderer.load(snapshot);
     }
   }

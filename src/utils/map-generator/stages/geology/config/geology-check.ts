@@ -50,6 +50,9 @@ function validateRegionConfig(value: unknown, index: number): void {
       `Region ${index + 1} size must be a number from ${MIN_REGION_SIZE} to ${MAX_REGION_SIZE}.`
     );
   }
+  validateUnit(value.concentration, `Region ${index + 1} concentration`);
+  validateUnit(value.mountainousness, `Region ${index + 1} mountainousness`);
+  validateUnit(value.landShare, `Region ${index + 1} land share`);
 }
 
 function validateUnit(value: unknown, label: string): void {
@@ -126,6 +129,13 @@ function validateRegionPlan(value: unknown, index: number): void {
   }
   if (!isNonNegativeNumber(value.areaSquareMeters)) {
     throw new Error(`Region plan "${value.id}" has an invalid area.`);
+  }
+  if (
+    !isWithinNumber(value.concentration, 0, 1) ||
+    !isWithinNumber(value.mountainousness, 0, 1) ||
+    !isWithinNumber(value.landShare, 0, 1)
+  ) {
+    throw new Error(`Region plan "${value.id}" has invalid terrain metadata.`);
   }
 }
 

@@ -1,3 +1,4 @@
+import { defaultRegionTerrain } from './region-terrain';
 import type {
   GeologicalRegionConfig,
   GeologicalRegionType,
@@ -67,13 +68,17 @@ export function geologyPresetConfig(preset: GeologyPreset): GeologyConfig {
   return {
     regionCount: regions.length,
     layout: { ...PRESET_LAYOUTS[preset] },
-    regions: regions.map(region => ({ ...region })),
+    regions: regions.map(region => ({
+      type: region.type,
+      size: region.size,
+      ...defaultRegionTerrain(region.type),
+    })),
   };
 }
 
 /** One neutral region used by slots the user has not edited yet. */
 export function defaultRegionConfig(): GeologicalRegionConfig {
-  return { type: 'ordinary', size: 1 };
+  return { type: 'ordinary', size: 1, ...defaultRegionTerrain('ordinary') };
 }
 
 /** Editable slots of a fresh configuration: the default preset padded to the limit. */

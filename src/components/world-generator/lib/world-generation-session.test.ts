@@ -11,7 +11,7 @@ import {
 import { PIPELINE_STAGES } from '../../../utils/map-generator/pipeline/stage-definitions';
 import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region/defaults';
 import type { MapRasters } from '../../../utils/map-layers';
-import { DATA_CONTRACT_VERSION, MapRenderer, mapRepository } from '../../../utils/map-renderer';
+import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
 import { MapLayer } from '../../../utils/map-renderer/layer';
 import { Viewport } from '../../../utils/map-renderer/viewport';
 
@@ -184,7 +184,7 @@ describe('WorldGenerationSession', () => {
     expect(planned()).toEqual([]);
   });
 
-  it('drops a snapshot from an older format instead of reusing its rasters', async () => {
+  it('drops a snapshot with keys outside the persistent output set', async () => {
     runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
     await session.generate(config, vi.fn());
     // The same config would normally reuse everything, so a stale snapshot must
@@ -192,7 +192,6 @@ describe('WorldGenerationSession', () => {
     mapRepository.save({
       width: 2,
       height: 2,
-      contractVersion: DATA_CONTRACT_VERSION,
       seed: '17',
       shape: 'disc',
       layers: {
@@ -207,25 +206,6 @@ describe('WorldGenerationSession', () => {
       PIPELINE_STAGES.map(stage => stage.id)
     );
     expect(mapRepository.get()?.layers).not.toHaveProperty('legacyMap');
-  });
-
-  it('drops a snapshot from another data contract version', async () => {
-    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
-    await session.generate(config, vi.fn());
-    mapRepository.save({
-      width: 2,
-      height: 2,
-      contractVersion: DATA_CONTRACT_VERSION - 1,
-      seed: '17',
-      shape: 'disc',
-      layers: { worldMask: new Uint8Array(4).fill(1) },
-    });
-
-    await session.generate(config, vi.fn());
-
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(
-      PIPELINE_STAGES.map(stage => stage.id)
-    );
   });
 
   it('reuses the saved rasters for the clean stages', async () => {
@@ -636,7 +616,6 @@ describe('WorldGenerationSession', () => {
     const snapshot = {
       width: 2,
       height: 2,
-      contractVersion: DATA_CONTRACT_VERSION,
       seed: '17',
       shape: 'disc' as const,
       layers: { worldMask: mask, macroRegionIdMap: regions },

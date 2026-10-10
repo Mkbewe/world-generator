@@ -62,6 +62,7 @@ export type {
   MapGeneratorOptions,
   MapConfig,
   MapState,
+  RegionTerrainParameter,
   StageMetric,
   StageMetrics,
   StageStatistics,

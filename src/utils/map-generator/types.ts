@@ -74,11 +74,25 @@ export const GEOLOGICAL_REGION_TYPES = ['ordinary', 'volcanic', 'atoll'] as cons
 
 export type GeologicalRegionType = (typeof GEOLOGICAL_REGION_TYPES)[number];
 
+/**
+ * Terrain parameters stored with every region and read by the heightmap; the
+ * geology stage carries them but never uses them.
+ */
+export const REGION_TERRAIN_PARAMETERS = ['concentration', 'mountainousness', 'landShare'] as const;
+
+export type RegionTerrainParameter = (typeof REGION_TERRAIN_PARAMETERS)[number];
+
 /** Editable settings of one region; the list position is its stable id. */
 export interface GeologicalRegionConfig {
   readonly type: GeologicalRegionType;
   /** Relative area share: 1 is the even share of the world, higher grows it. */
   readonly size: number;
+  /** Land concentration: 0 gathers one large island, 1 scatters an archipelago. */
+  readonly concentration: number;
+  /** How mountainous the land is; used only by region types that support it. */
+  readonly mountainousness: number;
+  /** Target share of the region above the sea level, 0..1. */
+  readonly landShare: number;
 }
 
 /** Whole-map arrangement of the regions: anchor spread and border noise. */
@@ -110,6 +124,10 @@ export interface GeologicalRegionPlan {
   readonly weight: number;
   /** Rasterized area of the region, in square metres. */
   readonly areaSquareMeters: number;
+  /** Terrain metadata carried from the configuration for the heightmap. */
+  readonly concentration: number;
+  readonly mountainousness: number;
+  readonly landShare: number;
 }
 
 /**

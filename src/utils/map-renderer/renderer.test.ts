@@ -1,7 +1,7 @@
 import { MapLayer } from './layer';
 import { MapPersistence } from './persistence';
 import { MapRenderer, type MapRendererOptions } from './renderer';
-import { DATA_CONTRACT_VERSION, type GeneratedMapSnapshot, MapRepository } from './repository';
+import { type GeneratedMapSnapshot, MapRepository } from './repository';
 import { Viewport } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
 import type { GeologyPlan } from '../map-generator/types';
@@ -17,6 +17,9 @@ function planFixture(): GeologyPlan {
         centre: { x: 0.25, y: 0.5 },
         weight: 1,
         type: 'ordinary',
+        concentration: 0.5,
+        mountainousness: 0.5,
+        landShare: 0.4,
         areaSquareMeters: 100,
       },
       {
@@ -24,6 +27,9 @@ function planFixture(): GeologyPlan {
         centre: { x: 0.75, y: 0.5 },
         weight: 1,
         type: 'volcanic',
+        concentration: 0.5,
+        mountainousness: 0.5,
+        landShare: 0.4,
         areaSquareMeters: 100,
       },
     ],
@@ -54,7 +60,6 @@ function snapshot(layers: GeneratedMapSnapshot['layers']): GeneratedMapSnapshot 
   return {
     width: 2,
     height: 2,
-    contractVersion: DATA_CONTRACT_VERSION,
     seed: '1',
     shape: 'disc',
     layers,

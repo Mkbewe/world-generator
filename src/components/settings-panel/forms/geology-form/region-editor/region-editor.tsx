@@ -1,7 +1,11 @@
 import { Card, Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
+import { REGION_TERRAIN_SUPPORT } from '../../../../../utils/map-generator/stages/geology';
 import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
+import { SliderField } from '../../../../slider-field';
+import { percent } from '../lib/percent';
 import { REGION_TYPE_OPTIONS } from '../lib/region-options';
+import { TERRAIN_SLIDER_OPTIONS, terrainParameterPatch } from '../lib/terrain-options';
 
 export interface RegionEditorProps {
   index: number;
@@ -9,9 +13,11 @@ export interface RegionEditorProps {
   onChange: (patch: Partial<GeologicalRegionConfig>) => void;
 }
 
-/** Type and character of the active region; its area is edited on the bar. */
+/** Type, character and terrain sliders of the active region; its area is edited on the bar. */
 export function RegionEditor({ index, region, onChange }: RegionEditorProps) {
   const selected = REGION_TYPE_OPTIONS.find(option => option.id === region.type);
+  const supported = new Set(REGION_TERRAIN_SUPPORT[region.type]);
+  const terrainOptions = TERRAIN_SLIDER_OPTIONS.filter(option => supported.has(option.id));
   return (
     <Card variant='surface'>
       <Flex direction='column' gap='3'>
@@ -33,6 +39,20 @@ export function RegionEditor({ index, region, onChange }: RegionEditorProps) {
           ))}
         </SegmentedControl.Root>
         {selected && <Text size='1' color='gray'>{`Character: ${selected.description}`}</Text>}
+        {terrainOptions.map(option => (
+          <SliderField
+            key={option.id}
+            label={option.label}
+            description={option.description}
+            value={region[option.id]}
+            min={0}
+            max={1}
+            step={0.05}
+            format={percent}
+            rangeLabels={option.rangeLabels}
+            onChange={value => onChange(terrainParameterPatch(option.id, value))}
+          />
+        ))}
       </Flex>
     </Card>
   );

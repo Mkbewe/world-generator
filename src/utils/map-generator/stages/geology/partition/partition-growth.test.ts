@@ -16,7 +16,15 @@ const DIMENSIONS: WorldDimensions = {
 };
 
 function marker(index: number, x: number, y: number): RegionMarker {
-  return { id: `region-${index + 1}`, type: 'ordinary', centre: { x, y }, weight: 1 };
+  return {
+    id: `region-${index + 1}`,
+    type: 'ordinary',
+    centre: { x, y },
+    weight: 1,
+    concentration: 0.5,
+    mountainousness: 0.5,
+    landShare: 0.4,
+  };
 }
 
 function input(regions: readonly RegionMarker[], seed = 3): RegionPartitionInput {

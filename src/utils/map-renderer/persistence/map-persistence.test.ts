@@ -1,5 +1,5 @@
 import { MapPersistence } from './map-persistence';
-import { DATA_CONTRACT_VERSION, MapRepository } from '../repository';
+import { MapRepository } from '../repository';
 
 describe('MapPersistence', () => {
   it('saves supplied map data and metadata without a renderer', () => {
@@ -13,7 +13,6 @@ describe('MapPersistence', () => {
     const saved = persistence.save({
       width: 2,
       height: 3,
-      contractVersion: DATA_CONTRACT_VERSION,
       seed: '7',
       shape: 'rectangle',
       layers,
@@ -22,7 +21,6 @@ describe('MapPersistence', () => {
     expect(saved).toEqual({
       width: 2,
       height: 3,
-      contractVersion: DATA_CONTRACT_VERSION,
       seed: '7',
       shape: 'rectangle',
       layers,
