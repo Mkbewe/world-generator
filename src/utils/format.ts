@@ -34,6 +34,11 @@ export function formatMeters(meters: number): string {
   return `${formatMeasure(meters)} m`;
 }
 
+/** Distance in the fitting unit: km from a kilometre up, m below. */
+export function formatDistance(meters: number): string {
+  return meters >= 1000 ? `${formatMeasure(meters / 1000)} km` : formatMeters(meters);
+}
+
 export function formatAreaKm2(squareMeters: number): string {
   return `${formatMeasure(squareMeters / 1_000_000, 3)} km²`;
 }

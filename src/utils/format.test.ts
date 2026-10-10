@@ -1,4 +1,4 @@
-import { formatAreaKm2, formatBytes, formatMeters } from './format';
+import { formatAreaKm2, formatBytes, formatDistance, formatMeters } from './format';
 
 describe('measure formatters', () => {
   it('formats metres and areas without floating point noise', () => {
@@ -8,6 +8,13 @@ describe('measure formatters', () => {
     expect(formatMeters(300 / 128)).toBe('2.34 m');
     expect(formatAreaKm2(5_000)).toBe('0.005 km²');
     expect(formatAreaKm2(4_500_000)).toBe('4.5 km²');
+  });
+
+  it('switches distances to kilometres from a thousand metres', () => {
+    expect(formatDistance(500)).toBe('500 m');
+    expect(formatDistance(999.4)).toBe('999.4 m');
+    expect(formatDistance(1000)).toBe('1 km');
+    expect(formatDistance(12_500)).toBe('12.5 km');
   });
 });
 

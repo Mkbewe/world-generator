@@ -61,4 +61,11 @@ describe('ViewControls', () => {
     expect(screen.getByRole('button', { name: 'Zoom in' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Zoom out' })).toBeEnabled();
   });
+
+  it('hides the zoom controls outside the fullscreen mode', () => {
+    renderControls({ zoomable: false });
+
+    expect(screen.queryByRole('button', { name: 'Zoom in' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /reset/i })).toBeNull();
+  });
 });

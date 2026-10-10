@@ -1,0 +1,33 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.line {
+  stroke: var(--violet-9);
+  stroke-width: 2;
+}
+
+.tick {
+  stroke: var(--violet-9);
+  stroke-width: 1.5;
+}
+
+.marker {
+  fill: var(--violet-9);
+  stroke: var(--color-background);
+  stroke-width: 1.5;
+}
+
+.label {
+  fill: var(--gray-12);
+  stroke: var(--color-background);
+  stroke-width: 3px;
+  paint-order: stroke;
+  font-size: var(--font-size-1);
+  font-weight: var(--font-weight-medium);
+}

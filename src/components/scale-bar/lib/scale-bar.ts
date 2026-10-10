@@ -1,5 +1,6 @@
-import { formatMeasure, formatMeters } from '../../../utils/format';
+import { formatDistance } from '../../../utils/format';
 import { PRESENTATION_MARGIN, project } from '../../../utils/map-renderer';
+import { roundDistance } from '../../../utils/measure';
 import type { WorldDimensions } from '../../../utils/world-dimensions';
 
 /** Longest bar drawn, in CSS pixels; the value snaps down to a round distance. */
@@ -51,18 +52,6 @@ export function scaleBarSegment(
   if (!Number.isFinite(metersPerPixel) || metersPerPixel <= 0 || maxPixels <= 0) {
     return undefined;
   }
-  const raw = metersPerPixel * maxPixels;
-  const magnitude = 10 ** Math.floor(Math.log10(raw));
-  let meters = magnitude;
-  for (const step of [1, 2, 5, 10]) {
-    const candidate = step * magnitude;
-    if (candidate <= raw) {
-      meters = candidate;
-    }
-  }
-  return { meters, pixels: meters / metersPerPixel, label: distanceLabel(meters) };
-}
-
-function distanceLabel(meters: number): string {
-  return meters >= 1000 ? `${formatMeasure(meters / 1000)} km` : formatMeters(meters);
+  const meters = roundDistance(metersPerPixel * maxPixels);
+  return { meters, pixels: meters / metersPerPixel, label: formatDistance(meters) };
 }

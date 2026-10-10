@@ -7,7 +7,6 @@
 
 .panel[data-position] {
   position: absolute;
-  top: calc(50% - var(--layer-strip-half-height));
   right: 0;
   width: 16rem;
 }
@@ -16,8 +15,11 @@
   top: 0;
 }
 
+.panel[data-position='middle'] {
+  top: 25%;
+}
+
 .panel[data-position='bottom'] {
-  top: auto;
   bottom: 0;
 }
 

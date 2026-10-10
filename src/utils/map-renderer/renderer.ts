@@ -1,4 +1,4 @@
-import { isFitted, type ViewTransform } from './view/view-transform';
+import { fitView, isFitted, type ViewTransform } from './view/view-transform';
 import {
   isLayerHit,
   layerCache,
@@ -33,6 +33,8 @@ export interface MapRendererState {
   info: MapInfo;
   /** Current zoom relative to the fitted view; the default zoom shows the whole map. */
   zoom: number;
+  /** Current placement of the map in the preview; overlays project with it. */
+  viewTransform: ViewTransform;
   /** Whether the view is the default fitted placement. */
   fitted: boolean;
   error?: string;
@@ -60,6 +62,7 @@ export function emptyRenderState(): MapRendererState {
     })),
     info: {},
     zoom: 1,
+    viewTransform: fitView(),
     fitted: true,
   };
 }
@@ -136,6 +139,7 @@ export class MapRenderer {
       displayedLayer: this.view.displayedLayer,
       info: this.info,
       zoom: this.view.viewTransform.scale,
+      viewTransform: this.view.viewTransform,
       fitted: isFitted(this.view.viewTransform),
       error: this.error,
     };

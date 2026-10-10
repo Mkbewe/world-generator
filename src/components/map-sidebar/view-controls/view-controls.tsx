@@ -9,6 +9,8 @@ interface ViewControlsProps {
   zoom: number;
   /** Whether the view is the default fitted placement. */
   fitted: boolean;
+  /** Zoom and reset belong to the fullscreen mode; they are hidden outside it. */
+  zoomable?: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
@@ -19,6 +21,7 @@ interface ViewControlsProps {
 export function ViewControls({
   zoom,
   fitted,
+  zoomable = true,
   onZoomIn,
   onZoomOut,
   onReset,
@@ -33,48 +36,52 @@ export function ViewControls({
             View
           </Text>
         </Flex>
-        <Button
-          size='1'
-          variant='soft'
-          color='gray'
-          disabled={fitted}
-          onClick={onReset}
-          title='Show the whole map'
-        >
-          <ResetIcon />
-          Reset
-        </Button>
-      </Flex>
-      <Flex align='center' justify='between' gap='3'>
-        <Flex align='center' gap='2'>
-          <IconButton
-            size='2'
+        {zoomable && (
+          <Button
+            size='1'
             variant='soft'
             color='gray'
-            aria-label='Zoom out'
-            disabled={zoom <= MIN_VIEW_SCALE}
-            onClick={onZoomOut}
+            disabled={fitted}
+            onClick={onReset}
+            title='Show the whole map'
           >
-            <MinusIcon />
-          </IconButton>
-          <Text size='2' weight='medium' className={styles.zoom}>
-            {zoom.toFixed(1)}x
+            <ResetIcon />
+            Reset
+          </Button>
+        )}
+      </Flex>
+      {zoomable && (
+        <Flex align='center' justify='between' gap='3'>
+          <Flex align='center' gap='2'>
+            <IconButton
+              size='2'
+              variant='soft'
+              color='gray'
+              aria-label='Zoom out'
+              disabled={zoom <= MIN_VIEW_SCALE}
+              onClick={onZoomOut}
+            >
+              <MinusIcon />
+            </IconButton>
+            <Text size='2' weight='medium' className={styles.zoom}>
+              {zoom.toFixed(1)}x
+            </Text>
+            <IconButton
+              size='2'
+              variant='soft'
+              color='gray'
+              aria-label='Zoom in'
+              disabled={zoom >= MAX_VIEW_SCALE}
+              onClick={onZoomIn}
+            >
+              <PlusIcon />
+            </IconButton>
+          </Flex>
+          <Text size='1' color='gray'>
+            Scroll to zoom
           </Text>
-          <IconButton
-            size='2'
-            variant='soft'
-            color='gray'
-            aria-label='Zoom in'
-            disabled={zoom >= MAX_VIEW_SCALE}
-            onClick={onZoomIn}
-          >
-            <PlusIcon />
-          </IconButton>
         </Flex>
-        <Text size='1' color='gray'>
-          Scroll to zoom
-        </Text>
-      </Flex>
+      )}
     </Flex>
   );
 

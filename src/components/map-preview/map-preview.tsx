@@ -22,6 +22,7 @@ import {
 import { GenerationProgress } from '../generation-progress';
 import { LayerTabs } from '../layer-tabs';
 import { MapCanvas } from '../map-canvas';
+import { MapMeasure } from '../map-measure';
 import { MapSidebar } from '../map-sidebar';
 import { ScaleBar } from '../scale-bar';
 import styles from './map-preview.module.scss';
@@ -42,10 +43,16 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     onReady,
   });
   const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer, layerTree);
-  const readout = useMapReadout(rendererRef, canvasRef, preview, { zoomable: isFullscreen });
+  const [measuring, setMeasuring] = useState(true);
+  const readout = useMapReadout(rendererRef, canvasRef, preview, {
+    zoomable: isFullscreen,
+    measuring: isFullscreen && measuring,
+  });
   const hasMap = preview.layers.some(layer => layer.available);
   const dimensions = worldDimensions(preview.info);
   const selectedRegionId = useViewSyncStore(state => state.selectedRegionId);
+
+  const { clearMeasurement } = readout;
 
   useEffect(() => {
     if (isFullscreen) {
@@ -53,7 +60,8 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
       return;
     }
     rendererRef.current?.resetView();
-  }, [isFullscreen, rendererRef]);
+    clearMeasurement();
+  }, [clearMeasurement, isFullscreen, rendererRef]);
 
   useEffect(() => {
     rendererRef.current?.setSelectedRegion(selectedRegionId);
@@ -146,7 +154,15 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             expanded={isFullscreen}
           >
             {dimensions && (
-              <ScaleBar containerRef={wrapperRef} zoom={preview.zoom} dimensions={dimensions} />
+              <>
+                <ScaleBar containerRef={wrapperRef} zoom={preview.zoom} dimensions={dimensions} />
+                <MapMeasure
+                  containerRef={wrapperRef}
+                  viewTransform={preview.viewTransform}
+                  dimensions={dimensions}
+                  measurement={readout.measurement}
+                />
+              </>
             )}
           </MapCanvas>
           <div className={styles.spacer} aria-hidden='true' />
@@ -156,16 +172,28 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             onLayerChange={handleLayerChange}
             onOverlayChange={handleOverlayChange}
             inspector={{
-              items: readoutItems(readout.readout, preview.info),
+              items: readoutItems(readout.readout, preview.info, readout.measurement, {
+                actions: !isFullscreen,
+              }),
               pinned: readout.pinned,
               onAction: handleReadoutAction,
             }}
             view={{
               zoom: preview.zoom,
               fitted: preview.fitted,
+              zoomable: isFullscreen,
               onZoomIn: () => rendererRef.current?.zoomIn(),
               onZoomOut: () => rendererRef.current?.zoomOut(),
               onReset: () => rendererRef.current?.resetView(),
+            }}
+            measure={{
+              measuring,
+              onToggleMeasuring: () => {
+                if (measuring) {
+                  readout.clearMeasurement();
+                }
+                setMeasuring(!measuring);
+              },
             }}
             expanded={isFullscreen}
           />

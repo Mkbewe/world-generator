@@ -1,4 +1,4 @@
-import { formatArea, formatMeasure } from '../format';
+import { formatArea, formatDistance, formatMeasure } from '../format';
 import type { MacroRegionInfo } from '../map-generator/info-definitions';
 import type { GeologicalRegionPlan } from '../map-generator/types';
 import { regionStyle } from '../map-layers';
@@ -25,9 +25,16 @@ export interface InspectorReadout {
   readonly inspection?: MapInspection;
 }
 
+/** Two map points of an active distance measurement. */
+export interface Measurement {
+  readonly start: PointerSample;
+  readonly end: PointerSample;
+}
+
 /** Labelled pair of X/Y values rendered as aligned columns. */
 export interface ReadoutLine {
-  readonly label: string;
+  /** Column caption; omitted for a continuation of the line above. */
+  readonly label?: string;
   readonly x: string;
   readonly y: string;
 }
@@ -46,6 +53,8 @@ export interface ReadoutItem {
   readonly lines?: readonly ReadoutLine[];
   /** When present, rendered as a button. */
   readonly action?: ReadoutAction;
+  /** When true, the entry ends its group and keeps a margin below it. */
+  readonly separated?: boolean;
 }
 
 const EMPTY = '—';
@@ -53,20 +62,31 @@ const EMPTY = '—';
 /** Share names of the macro region form; the readout keeps its own short pair. */
 const WIDTH_LABELS = { ring: 'Ring thickness', band: 'Band width' } as const;
 
+export interface ReadoutOptions {
+  /** When false, action buttons are dropped, e.g. in the fullscreen preview. */
+  readonly actions?: boolean;
+}
+
 export function readoutItems(
   readout: InspectorReadout | undefined,
-  info: MapInfo = {}
+  info: MapInfo = {},
+  measurement?: Measurement,
+  options: ReadoutOptions = {}
 ): readonly ReadoutItem[] {
   const inspection = readout?.inspection;
-  return [
+  const measured = measurement ? measuredItem(measurement, info) : undefined;
+  const items: ReadoutItem[] = [
     {
       id: 'position',
       label: 'Position',
       value: EMPTY,
       lines: readout ? describePositionLines(readout.position, info) : undefined,
+      separated: measured === undefined,
     },
+    ...(measured ? [measured] : []),
     ...inspectionItems(inspection, info),
   ];
+  return options.actions === false ? items.filter(item => item.action === undefined) : items;
 }
 
 /** Readout of one vector element; undefined when the hit is unknown. */
@@ -127,12 +147,27 @@ function describePositionLines(position: PointerSample, info: MapInfo): readonly
   if (dimensions) {
     const meters = cellOriginMeters(dimensions, position.x, position.y);
     lines.push({
-      label: 'Distance',
       x: `X ${formatMeters(meters.xMeters)} m`,
       y: `Y ${formatMeters(meters.yMeters)} m`,
     });
   }
   return lines;
+}
+
+/** Straight-line distance of an active measurement, in the fitting unit. */
+function measuredItem(measurement: Measurement, info: MapInfo): ReadoutItem | undefined {
+  const dimensions = worldDimensions(info);
+  if (!dimensions) {
+    return undefined;
+  }
+  const dx = (measurement.end.u - measurement.start.u) * dimensions.widthMeters;
+  const dy = (measurement.end.v - measurement.start.v) * dimensions.heightMeters;
+  return {
+    id: 'distance',
+    label: 'Distance',
+    value: formatDistance(Math.hypot(dx, dy)),
+    separated: true,
+  };
 }
 
 function describeValue(inspection: MapInspection | undefined): string {
