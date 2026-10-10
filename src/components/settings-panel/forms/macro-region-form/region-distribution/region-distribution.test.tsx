@@ -27,7 +27,11 @@ describe('RegionDistribution', () => {
   it('renders the bar, one handle per boundary and the hint', () => {
     render(
       <Theme>
-        <RegionDistribution segments={segments} draft={createDraft()} />
+        <RegionDistribution
+          segments={segments}
+          draft={createDraft()}
+          header={{ label: 'Ring thickness', description: 'Not an area share.' }}
+        />
       </Theme>
     );
 
@@ -35,6 +39,9 @@ describe('RegionDistribution', () => {
     expect(within(screen.getByLabelText('Region boundaries')).getAllByRole('slider')).toHaveLength(
       3
     );
-    expect(screen.getByText(/drag a boundary/i)).toBeInTheDocument();
+    expect(
+      screen.getByText('Drag a boundary on the bar to resize the two neighbouring regions.')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Ring thickness')).toBeInTheDocument();
   });
 });

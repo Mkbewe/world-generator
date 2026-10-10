@@ -35,6 +35,7 @@ describe('RegionDistribution', () => {
     renderDistribution();
 
     expect(screen.getByLabelText('Geology region areas')).toBeInTheDocument();
+    expect(screen.getByText('Area share')).toBeInTheDocument();
     expect(screen.getByTitle('Region 1: Ordinary (60%)')).toBeInTheDocument();
     expect(screen.getByTitle('Region 2: Atoll (40%)')).toBeInTheDocument();
     expect(screen.getAllByRole('slider')).toHaveLength(1);

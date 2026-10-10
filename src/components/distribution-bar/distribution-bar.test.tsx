@@ -54,4 +54,18 @@ describe('DistributionBar', () => {
 
     expect(draft.step).toHaveBeenCalledWith(0, 1);
   });
+
+  it('renders the share header when given', () => {
+    render(
+      <Theme>
+        <DistributionBar
+          segments={segments}
+          draft={createDraft()}
+          header={{ label: 'Ring thickness', description: 'Not an area share.' }}
+        />
+      </Theme>
+    );
+
+    expect(screen.getByText('Ring thickness')).toBeInTheDocument();
+  });
 });

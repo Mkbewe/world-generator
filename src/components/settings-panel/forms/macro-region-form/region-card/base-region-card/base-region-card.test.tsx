@@ -9,17 +9,15 @@ describe('BaseRegionCard', () => {
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
   });
 
-  it('shows the region header, width and danger', () => {
+  it('shows the region header and danger', () => {
     const region = useMacroRegionFormStore.getState().regions[0];
     render(
       <Theme>
-        <BaseRegionCard region={region} index={0} percent={25} canRemove />
+        <BaseRegionCard region={region} index={0} canRemove />
       </Theme>
     );
 
     expect(screen.getByLabelText('Region label')).toHaveValue(region.label);
-    expect(screen.getByText('Width')).toBeInTheDocument();
-    expect(screen.getByText('25%')).toBeInTheDocument();
     expect(within(screen.getByLabelText('Danger')).getByRole('slider')).toBeInTheDocument();
   });
 });

@@ -10,6 +10,7 @@ import {
   regionSegments,
 } from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import { useBoundaryDraft } from '../../../../distribution-bar';
+import { macroRegionShareCopy } from '../../lib/share-copy';
 import { BaseRegionCard } from '../region-card';
 import { RegionDistribution } from '../region-distribution';
 
@@ -31,6 +32,8 @@ export function BaseRegionSection() {
     setRegionBoundaries
   );
   const atLimit = regions.length >= MAX_MACRO_REGIONS;
+  const radial = layout === 'radial';
+  const shareCopy = macroRegionShareCopy(radial ? 'ring' : 'band');
 
   return (
     <Flex direction='column' gap='2'>
@@ -42,15 +45,9 @@ export function BaseRegionSection() {
           <PlusIcon /> Add region
         </Button>
       </Flex>
-      <RegionDistribution segments={segments} draft={draft} />
+      <RegionDistribution segments={segments} draft={draft} header={shareCopy} />
       {base.map((region, index) => (
-        <BaseRegionCard
-          key={region.id}
-          region={region}
-          index={index}
-          percent={draft.shares[index]}
-          canRemove={base.length > 1}
-        />
+        <BaseRegionCard key={region.id} region={region} index={index} canRemove={base.length > 1} />
       ))}
     </Flex>
   );
