@@ -21,7 +21,6 @@ import {
   type MapRasters,
 } from '../../../utils/map-layers';
 import {
-  DATA_CONTRACT_VERSION,
   type GeneratedMapSnapshot,
   layerRegistry,
   mapPersistence,
@@ -89,13 +88,9 @@ export class WorldGenerationSession {
   ): Promise<GenerationStatistics | undefined> {
     this.cancel();
     const saved = mapRepository.get();
-    if (
-      saved &&
-      (saved.contractVersion !== DATA_CONTRACT_VERSION || !hasCurrentRasterOutputs(saved.layers))
-    ) {
-      // A snapshot from another data contract or with keys outside the
-      // persistent output set is dropped with its regeneration baseline
-      // instead of being migrated or re-saved; the run starts from scratch.
+    if (saved && !hasCurrentRasterOutputs(saved.layers)) {
+      // A snapshot with keys outside the persistent output set is dropped with
+      // its regeneration baseline; the run starts from scratch.
       this.reset();
     }
     const generation = new AbortController();
@@ -129,7 +124,6 @@ export class WorldGenerationSession {
       const run: RunSnapshot = {
         width: config.world.dimensions.sampleWidth,
         height: config.world.dimensions.sampleHeight,
-        contractVersion: DATA_CONTRACT_VERSION,
         seed: String(config.world.seed),
         shape: config.world.shape,
         regionGeometry,

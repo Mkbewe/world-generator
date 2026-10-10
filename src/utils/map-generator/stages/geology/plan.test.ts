@@ -21,6 +21,9 @@ function config(regionCount = 5): GeologyConfig {
         preset.regions[0] ?? {
           type: 'ordinary' as const,
           size: 1,
+          concentration: 0.5,
+          mountainousness: 0.5,
+          landShare: 0.4,
         }
     ),
   };
@@ -92,6 +95,24 @@ describe('buildGeologyPlan', () => {
     for (let index = 0; index < plan.regions.length; index++) {
       expect(ownedCells(plan.regionOwnerMap, index)).toBeGreaterThan(0);
     }
+  });
+
+  it('carries the region terrain metadata into the plan', () => {
+    const source = config(5);
+    const plan = buildGeologyPlan(
+      source,
+      new RandomFactory(17),
+      'disc',
+      DIMENSIONS,
+      createWorldSpace(DIMENSIONS)
+    );
+
+    plan.regions.forEach((region, index) => {
+      const expected = source.regions[index];
+      expect(region.concentration).toBe(expected?.concentration);
+      expect(region.mountainousness).toBe(expected?.mountainousness);
+      expect(region.landShare).toBe(expected?.landShare);
+    });
   });
 
   it('generates a partition for every supported region count', () => {
@@ -253,14 +274,26 @@ describe('buildGeologyPlan', () => {
 
   it('matches the configured shares for the extreme sizes', () => {
     expectSharesMatch(
-      Array.from({ length: 4 }, () => ({ type: 'ordinary' as const, size: MIN_REGION_SIZE })),
+      Array.from({ length: 4 }, () => ({
+        type: 'ordinary' as const,
+        size: MIN_REGION_SIZE,
+        concentration: 0.5,
+        mountainousness: 0.5,
+        landShare: 0.4,
+      })),
       'disc',
       0.45,
       DIMENSIONS,
       [17]
     );
     expectSharesMatch(
-      Array.from({ length: 3 }, () => ({ type: 'atoll' as const, size: MAX_REGION_SIZE })),
+      Array.from({ length: 3 }, () => ({
+        type: 'atoll' as const,
+        size: MAX_REGION_SIZE,
+        concentration: 0.5,
+        mountainousness: 0.5,
+        landShare: 0.4,
+      })),
       'disc',
       0.45,
       DIMENSIONS,
@@ -269,7 +302,13 @@ describe('buildGeologyPlan', () => {
   });
 
   it('matches the configured shares for one, two and ten regions', () => {
-    expectSharesMatch([{ type: 'ordinary', size: 1 }], 'disc', 0.45, DIMENSIONS, [17]);
+    expectSharesMatch(
+      [{ type: 'ordinary', size: 1, concentration: 0.5, mountainousness: 0.5, landShare: 0.4 }],
+      'disc',
+      0.45,
+      DIMENSIONS,
+      [17]
+    );
     expectSharesMatch(config(2).regions, 'disc', 0.45, DIMENSIONS, [17, 410]);
     expectSharesMatch(config(10).regions, 'disc', 0.45, DIMENSIONS, [17, 410]);
   });

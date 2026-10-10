@@ -17,7 +17,15 @@ const DIMENSIONS: WorldDimensions = {
 };
 
 function region(index: number, x: number, y: number, weight: number): RegionMarker {
-  return { id: `region-${index + 1}`, type: 'ordinary', centre: { x, y }, weight };
+  return {
+    id: `region-${index + 1}`,
+    type: 'ordinary',
+    centre: { x, y },
+    weight,
+    concentration: 0.5,
+    mountainousness: 0.5,
+    landShare: 0.4,
+  };
 }
 
 function build(regions: readonly RegionMarker[]): {
