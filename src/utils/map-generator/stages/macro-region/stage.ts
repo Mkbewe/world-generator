@@ -23,20 +23,20 @@ export class MacroRegionStage implements MapStage<
   MapConfig,
   MapState,
   PipelineStageId,
-  { macroRegionIdMap: Uint8Array }
+  { macroRegionIdMap: Uint8Array; macroRegionAreas: readonly number[] }
 > {
   readonly id: PipelineStageId = MACRO_REGION_STAGE.id;
   readonly name = MACRO_REGION_STAGE.name;
   readonly configKeys = MACRO_REGION_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask'];
-  readonly writes = ['macroRegionIdMap'] as const;
+  readonly writes = ['macroRegionIdMap', 'macroRegionAreas'] as const;
   readonly progressStep = 0.25;
 
   async execute(
     context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ macroRegionIdMap: Uint8Array }> {
+  ): Promise<{ macroRegionIdMap: Uint8Array; macroRegionAreas: readonly number[] }> {
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const regions = context.config.macroRegions ?? DEFAULT_MACRO_REGIONS;
     const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
@@ -55,6 +55,7 @@ export class MacroRegionStage implements MapStage<
     );
 
     const macroRegionIdMap = new Uint8Array(sampleWidth * sampleHeight);
+    const cellCounts = new Uint32Array(regions.length);
     const space = spaceOf(context);
 
     for (let y = 0; y < sampleHeight; y++) {
@@ -68,13 +69,15 @@ export class MacroRegionStage implements MapStage<
           continue;
         }
         const normalized = space.cellToNormalized(x, y);
-        macroRegionIdMap[cell] = regionAt(normalized.x, normalized.y);
+        const owner = regionAt(normalized.x, normalized.y);
+        macroRegionIdMap[cell] = owner;
+        cellCounts[owner] += 1;
       }
 
       report((y + 1) / sampleHeight);
     }
 
-    return { macroRegionIdMap };
+    return { macroRegionIdMap, macroRegionAreas: toAreas(cellCounts, context) };
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
@@ -144,6 +147,16 @@ export class MacroRegionStage implements MapStage<
       }
     }
   }
+}
+
+/** Ground area of every region, in square metres; counts cover the masked cells only. */
+function toAreas(
+  cellCounts: Uint32Array,
+  context: MapContext<MapConfig, MapState, PipelineStageId>
+): readonly number[] {
+  const { sampleWidth, sampleHeight, widthMeters, heightMeters } = context.config.world.dimensions;
+  const cellArea = (widthMeters / sampleWidth) * (heightMeters / sampleHeight);
+  return Array.from(cellCounts, count => count * cellArea);
 }
 
 /** Shared continuous classification for generation and screen-space painting. */

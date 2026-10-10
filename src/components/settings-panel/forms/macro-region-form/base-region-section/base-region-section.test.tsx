@@ -38,7 +38,7 @@ describe('BaseRegionSection', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows the base regions with the shared distribution editor', () => {
+  it('shows the base regions with the share editor and tabs', () => {
     renderSection();
 
     expect(screen.getByText('Base regions (4)')).toBeInTheDocument();
@@ -47,14 +47,23 @@ describe('BaseRegionSection', () => {
       3
     );
     expect(screen.getByText('Ring thickness')).toBeInTheDocument();
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(screen.getByRole('tab', { name: 'Region 1' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(screen.getByLabelText('Danger')).getByRole('slider')).toBeInTheDocument();
   });
 
-  it('names the share as band width in the flat layouts', () => {
-    useMacroRegionFormStore.setState({ layout: 'horizontal' });
+  it('edits the region chosen on the tabs', async () => {
+    const user = userEvent.setup();
     renderSection();
 
-    expect(screen.getByText('Band width')).toBeInTheDocument();
-    expect(screen.queryByText('Ring thickness')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Region 3' }));
+
+    expect(screen.getByRole('tab', { name: 'Region 3' })).toHaveAttribute('aria-selected', 'true');
+    const label = screen.getByLabelText('Region label');
+    await user.clear(label);
+    await user.type(label, 'Wasteland');
+
+    expect(useMacroRegionFormStore.getState().regions[2].label).toBe('Wasteland');
   });
 
   it('resizes regions with the keyboard on a boundary handle', async () => {
@@ -116,6 +125,7 @@ describe('BaseRegionSection', () => {
     await user.click(screen.getByRole('button', { name: /Add region/ }));
 
     expect(screen.getByText('Base regions (5)')).toBeInTheDocument();
+    expect(screen.getAllByRole('tab')).toHaveLength(5);
   });
 
   it('stops adding regions at the limit', () => {

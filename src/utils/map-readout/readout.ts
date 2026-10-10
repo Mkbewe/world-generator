@@ -1,7 +1,14 @@
-import { formatArea } from '../format';
+import { formatArea, formatMeasure } from '../format';
+import type { MacroRegionInfo } from '../map-generator/info-definitions';
 import type { GeologicalRegionPlan } from '../map-generator/types';
 import { regionStyle } from '../map-layers';
-import type { MapBaseLayerId, MapInfo, MapInspection, VectorMapInspection } from '../map-renderer';
+import type {
+  MapBaseLayerId,
+  MapInfo,
+  MapInspection,
+  RasterMapInspection,
+  VectorMapInspection,
+} from '../map-renderer';
 import { cellOriginMeters, type WorldDimensions } from '../world-dimensions';
 
 export interface PointerSample {
@@ -43,6 +50,9 @@ export interface ReadoutItem {
 
 const EMPTY = '—';
 
+/** Share names of the macro region form; the readout keeps its own short pair. */
+const WIDTH_LABELS = { ring: 'Ring thickness', band: 'Band width' } as const;
+
 export function readoutItems(
   readout: InspectorReadout | undefined,
   info: MapInfo = {}
@@ -65,9 +75,20 @@ type VectorReadout = (
   info: MapInfo
 ) => readonly ReadoutItem[] | undefined;
 
+/** Readout of one raster element; undefined falls back to the plain value item. */
+type RasterReadout = (
+  inspection: RasterMapInspection,
+  info: MapInfo
+) => readonly ReadoutItem[] | undefined;
+
 /** One provider per vector layer; a new layer adds an entry, not a branch. */
 const VECTOR_READOUTS: Partial<Record<MapBaseLayerId, VectorReadout>> = {
   geology: geologyReadout,
+};
+
+/** One provider per raster layer; a new layer adds an entry, not a branch. */
+const RASTER_READOUTS: Partial<Record<MapBaseLayerId, RasterReadout>> = {
+  'macro-region': macroRegionReadout,
 };
 
 /** Raster layers report their value; vector layers name the hovered element. */
@@ -82,11 +103,17 @@ function inspectionItems(
     }
     return [{ id: 'name', label: 'Name', value: inspection.hit?.id ?? EMPTY }];
   }
+  if (inspection?.kind === 'raster') {
+    const items = RASTER_READOUTS[inspection.layerId]?.(inspection, info);
+    if (items) {
+      return items;
+    }
+  }
   return [
     {
       id: 'value',
       label: inspection?.label ?? 'Value',
-      value: describeValue(inspection, info),
+      value: describeValue(inspection),
     },
   ];
 }
@@ -108,7 +135,7 @@ function describePositionLines(position: PointerSample, info: MapInfo): readonly
   return lines;
 }
 
-function describeValue(inspection: MapInspection | undefined, info: MapInfo): string {
+function describeValue(inspection: MapInspection | undefined): string {
   if (!inspection || inspection.kind === 'vector') {
     return EMPTY;
   }
@@ -118,13 +145,114 @@ function describeValue(inspection: MapInspection | undefined, info: MapInfo): st
   switch (inspection.layerId) {
     case 'world-shape':
       return inspection.value === 1 ? 'Inside' : 'Outside';
-    case 'macro-region': {
-      const label = labelAt(info, 'macroRegionLabels', inspection.value);
-      return label ?? `Region ${inspection.value}`;
-    }
+    case 'macro-region':
+      return `Region ${inspection.value}`;
     default:
       return inspection.value.toFixed(3);
   }
+}
+
+/** Label, range, width, danger and area of the macro region under the pointer. */
+function macroRegionReadout(
+  inspection: RasterMapInspection,
+  info: MapInfo
+): readonly ReadoutItem[] | undefined {
+  const index = inspection.value;
+  if (index === undefined) {
+    return undefined;
+  }
+  const region = macroRegionAt(info, index);
+  if (!region) {
+    return undefined;
+  }
+  const items: ReadoutItem[] = [
+    { id: 'region', label: 'Region', value: region.label.trim() || `Region ${index}` },
+    { id: 'range', label: 'Range', value: rangeText(region) },
+    { id: 'width', label: WIDTH_LABELS[region.kind], value: widthText(region, info) },
+    { id: 'danger', label: 'Danger', value: region.danger.toFixed(2) },
+  ];
+  const area = areaItem(info, index);
+  if (area) {
+    items.push(area);
+  }
+  return items;
+}
+
+/** Normalized range as percentages: of the radius for rings, of the axis for bands. */
+function rangeText(region: MacroRegionInfo): string {
+  const scale = region.kind === 'ring' ? 200 : 100;
+  const unit = region.kind === 'ring' ? 'radius' : 'axis';
+  return `${percent(region.range[0] * scale)}–${percent(region.range[1] * scale)}% of the ${unit}`;
+}
+
+/** Base regions share the layout; an overlay band reports its coverage of the axis. */
+function widthText(region: MacroRegionInfo, info: MapInfo): string {
+  const extent = region.range[1] - region.range[0];
+  if (region.role === 'overlay') {
+    return `${percent(extent * 100)}%`;
+  }
+  const baseExtent = baseRegionsExtent(info);
+  return baseExtent > 0 ? `${percent((extent / baseExtent) * 100)}%` : EMPTY;
+}
+
+/** Ground area of the region and its share of the world, when measured. */
+function areaItem(info: MapInfo, index: number): ReadoutItem | undefined {
+  const areas = info.macroRegionAreas;
+  if (!Array.isArray(areas)) {
+    return undefined;
+  }
+  const area: unknown = areas[index];
+  if (typeof area !== 'number' || !Number.isFinite(area)) {
+    return undefined;
+  }
+  const total = areas.reduce(
+    (sum, entry) => sum + (typeof entry === 'number' && Number.isFinite(entry) ? entry : 0),
+    0
+  );
+  const share = total > 0 ? ` · ${((area / total) * 100).toFixed(1)}%` : '';
+  return { id: 'area', label: 'Area', value: `${formatArea(area)}${share}` };
+}
+
+/** Sum of the base region extents, used as the denominator of their width share. */
+function baseRegionsExtent(info: MapInfo): number {
+  const list = info.macroRegionInfo;
+  if (!Array.isArray(list)) {
+    return 0;
+  }
+  let total = 0;
+  for (const entry of list) {
+    if (isMacroRegionInfo(entry) && entry.role === 'base') {
+      total += entry.range[1] - entry.range[0];
+    }
+  }
+  return total;
+}
+
+/** One macro region captured with the map, read without re-validating the whole list. */
+function macroRegionAt(info: MapInfo, index: number): MacroRegionInfo | undefined {
+  const list = info.macroRegionInfo;
+  if (!Array.isArray(list)) {
+    return undefined;
+  }
+  const entry: unknown = list[index];
+  return isMacroRegionInfo(entry) ? entry : undefined;
+}
+
+function isMacroRegionInfo(value: unknown): value is MacroRegionInfo {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const { label, role, danger, kind, range } = value as Record<string, unknown>;
+  return (
+    typeof label === 'string' &&
+    (role === 'base' || role === 'overlay') &&
+    typeof danger === 'number' &&
+    Number.isFinite(danger) &&
+    (kind === 'ring' || kind === 'band') &&
+    Array.isArray(range) &&
+    range.length === 2 &&
+    range.every(entry => typeof entry === 'number' && Number.isFinite(entry))
+  );
 }
 
 /** Readout of the geological region under the pointer. */
@@ -191,16 +319,6 @@ function hasRegionList(value: unknown): value is {
   return Array.isArray((value as { readonly regions?: unknown }).regions);
 }
 
-/** Reads the label captured with the generated map at the given label index. */
-function labelAt(info: MapInfo, source: string, index: number): string | undefined {
-  const labels = info[source];
-  if (!Array.isArray(labels)) {
-    return undefined;
-  }
-  const label: unknown = labels[index];
-  return typeof label === 'string' && label.trim().length > 0 ? label : undefined;
-}
-
 /** Reads the world dimensions captured with the generated map, if they are well formed. */
 function worldDimensions(info: MapInfo): WorldDimensions | undefined {
   const value: unknown = info.worldDimensions;
@@ -216,6 +334,11 @@ function worldDimensions(info: MapInfo): WorldDimensions | undefined {
     return undefined;
   }
   return { widthMeters, heightMeters, sampleWidth, sampleHeight };
+}
+
+/** Number with at most one decimal, e.g. "25" or "18.7". */
+function percent(value: number): string {
+  return formatMeasure(value, 1);
 }
 
 function formatMeters(value: number): string {

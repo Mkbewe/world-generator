@@ -149,6 +149,8 @@ export interface MapState {
   worldMask?: Uint8Array;
   /** Produced by the macro-region stage. */
   macroRegionIdMap?: Uint8Array;
+  /** Produced by the macro-region stage: ground area per region, in square metres. */
+  macroRegionAreas?: readonly number[];
   /**
    * Produced by the geology stage. Resolved regions with their owner and border
    * rasters; island shapes are not derived from this plan.

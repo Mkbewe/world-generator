@@ -19,7 +19,15 @@ describe('OverlayRegionSection', () => {
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
   });
 
-  it('adds horizontal and vertical bands as overlay regions', async () => {
+  it('shows the overlay add actions without tabs or a band editor', () => {
+    renderSection();
+
+    expect(screen.getByText('Overlay regions (0)')).toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Region label')).not.toBeInTheDocument();
+  });
+
+  it('adds horizontal and vertical bands and edits the chosen overlay', async () => {
     const user = userEvent.setup();
     renderSection();
 
@@ -33,12 +41,15 @@ describe('OverlayRegionSection', () => {
       { kind: 'band', axis: 'x', center: 0.5, width: 0.16 },
     ]);
     expect(screen.getByText('Overlay regions (2)')).toBeInTheDocument();
-    expect(screen.getAllByText('Position')).toHaveLength(2);
-    expect(screen.getAllByText('Overlay irregularity')).toHaveLength(2);
-    expect(screen.getByText('North')).toBeInTheDocument();
-    expect(screen.getByText('South')).toBeInTheDocument();
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+
+    await user.click(screen.getByRole('tab', { name: 'Region 6' }));
+
+    expect(screen.getByText('Direction')).toBeInTheDocument();
+    expect(screen.getByText('Position')).toBeInTheDocument();
     expect(screen.getByText('West')).toBeInTheDocument();
     expect(screen.getByText('East')).toBeInTheDocument();
+    expect(screen.getByText('Overlay irregularity')).toBeInTheDocument();
   });
 
   it('stops adding overlays at the limit', () => {

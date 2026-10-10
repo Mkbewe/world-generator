@@ -5,7 +5,7 @@ import type { MapState, StageData } from '../types';
 export const RASTER_OUTPUT_KEYS = ['worldMask', 'macroRegionIdMap'] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
-export const DOMAIN_OUTPUT_KEYS = ['geologyPlan'] as const;
+export const DOMAIN_OUTPUT_KEYS = ['geologyPlan', 'macroRegionAreas'] as const;
 
 export type RasterOutputKey = (typeof RASTER_OUTPUT_KEYS)[number];
 export type DomainOutputKey = (typeof DOMAIN_OUTPUT_KEYS)[number];
@@ -75,9 +75,18 @@ function assignRasterOutput<Key extends RasterOutputKey>(
 
 const domainReaders = {
   geologyPlan: isGeologyPlan,
+  macroRegionAreas: isMacroRegionAreas,
 } satisfies {
   [Key in DomainOutputKey]: (value: unknown) => value is NonNullable<MapState[Key]>;
 };
+
+/** Per-region ground areas: a finite, non-negative number per region. */
+function isMacroRegionAreas(value: unknown): value is readonly number[] {
+  return (
+    Array.isArray(value) &&
+    value.every(entry => typeof entry === 'number' && Number.isFinite(entry) && entry >= 0)
+  );
+}
 
 /** Domain outputs present in stage data or a saved info record. Unknown shapes are dropped. */
 export function selectDomainOutputs(data: object): Partial<Pick<MapState, DomainOutputKey>> {

@@ -219,6 +219,18 @@ describe('MacroRegionStage', () => {
     expect(result.context.state.macroRegionIdMap).toHaveLength(9);
   });
 
+  it('measures the ground area of every region', async () => {
+    const regions = createRadialLayout(3);
+    const result = await generate(config(regions, 10, 10));
+    const areas = result.context.state.macroRegionAreas;
+    if (!areas) {
+      throw new Error('Expected measured region areas.');
+    }
+
+    expect(areas).toHaveLength(regions.length);
+    expect(areas.reduce((total, area) => total + area, 0)).toBeCloseTo(100);
+  });
+
   it('validates output size and reports region counts', async () => {
     const stage = new MacroRegionStage();
     const source = config(createRadialPolesLayout(6), 4, 3);
