@@ -1,21 +1,19 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { Button, Card, Flex, Heading, Text } from '@radix-ui/themes';
 
+import { useStatisticsSnapshot } from './hooks/use-statistics-snapshot';
+import { downloadStatisticsExport, statisticsExportFileName } from './lib/statistics-export';
+import { ExportDialog } from '../../components/export-dialog';
 import { GenerationStatisticsPanel } from '../../components/generation-statistics';
 import { MapStatisticsPanel } from '../../components/map-statistics';
 import { RenderStatisticsPanel } from '../../components/render-statistics';
-import {
-  useGenerationStatisticsStore,
-  useMapConfigStore,
-  useRenderStatisticsStore,
-} from '../../stores';
 
 export function StatisticsPage() {
-  const generation = useGenerationStatisticsStore(state => state.result);
-  const config = useMapConfigStore(state => state.config);
-  const renderStatistics = useRenderStatisticsStore(state => state.statistics);
+  const snapshot = useStatisticsSnapshot();
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
-  if (!generation || generation.statistics.length === 0) {
+  if (!snapshot || snapshot.generation.statistics.length === 0) {
     return (
       <Card size={{ initial: '2', sm: '3' }}>
         <Flex direction='column' align='center' gap='4'>
@@ -33,16 +31,34 @@ export function StatisticsPage() {
     );
   }
 
+  const handleExport = (format: string): void => {
+    if (format !== 'json') {
+      return;
+    }
+    downloadStatisticsExport(snapshot, statisticsExportFileName(snapshot.world));
+  };
+
   return (
     <Flex direction='column' gap='5'>
-      {config && (
-        <MapStatisticsPanel
-          world={config.world}
-          totalDurationMs={renderStatistics?.elapsedDurationMs ?? generation.totalDurationMs}
-        />
-      )}
-      <GenerationStatisticsPanel statistics={generation} />
-      {renderStatistics && <RenderStatisticsPanel statistics={renderStatistics} />}
+      <Flex justify='end'>
+        <Button onClick={() => setIsExportOpen(true)}>Export</Button>
+      </Flex>
+      <MapStatisticsPanel
+        world={snapshot.world}
+        totalDurationMs={
+          snapshot.rendering?.elapsedDurationMs ?? snapshot.generation.totalDurationMs
+        }
+      />
+      <GenerationStatisticsPanel statistics={snapshot.generation} />
+      {snapshot.rendering && <RenderStatisticsPanel statistics={snapshot.rendering} />}
+      <ExportDialog
+        isOpen={isExportOpen}
+        onOpenChange={setIsExportOpen}
+        title='Export Statistics'
+        description='Download the map configuration, generation statistics and render statistics as JSON?'
+        formats={[{ id: 'json', label: 'JSON file' }]}
+        onExport={handleExport}
+      />
     </Flex>
   );
 }

@@ -91,6 +91,13 @@ export function createRadialPolesLayout(count = 6): MacroRegionConfig[] {
 
 export const MACRO_REGION_PRESETS: readonly MacroRegionPresetDefinition[] = [
   {
+    id: 'rings-with-poles',
+    label: 'Rings + poles',
+    description: 'Four concentric regions crossed by dangerous bands at both poles.',
+    layout: 'radial',
+    createRegions: () => createRadialPolesLayout(6),
+  },
+  {
     id: 'rings',
     label: 'Rings',
     description: 'Four concentric regions with danger increasing towards the rim.',
@@ -110,13 +117,6 @@ export const MACRO_REGION_PRESETS: readonly MacroRegionPresetDefinition[] = [
     description: 'Five vertical regions with a safer middle and dangerous edges.',
     layout: 'vertical',
     createRegions: () => createVerticalLayout(5),
-  },
-  {
-    id: 'rings-with-poles',
-    label: 'Rings + poles',
-    description: 'Four concentric regions crossed by dangerous bands at both poles.',
-    layout: 'radial',
-    createRegions: () => createRadialPolesLayout(6),
   },
 ];
 

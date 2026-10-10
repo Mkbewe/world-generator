@@ -85,10 +85,10 @@ describe('macro region presets', () => {
 
   it('exposes reusable starting presets built from the same region model', () => {
     expect(MACRO_REGION_PRESETS.map(preset => preset.id)).toEqual([
+      'rings-with-poles',
       'rings',
       'horizontal',
       'vertical',
-      'rings-with-poles',
     ]);
 
     const ringsWithPoles = macroRegionPreset('rings-with-poles');

@@ -1,6 +1,5 @@
 import {
   DEFAULT_MACRO_DEFORMATION,
-  DEFAULT_MACRO_REGIONS,
   MAX_MACRO_REGIONS,
 } from '../../../utils/map-generator/stages/macro-region/defaults';
 import {
@@ -20,11 +19,13 @@ import {
 import type { MacroRegionConfig, MacroRegionDeformation } from '../../../utils/map-generator/types';
 import { createStore } from '../../create-store';
 
+const DEFAULT_PRESET = macroRegionPreset('rings-with-poles');
+
 export const MACRO_REGION_FORM_DEFAULTS = {
-  regions: DEFAULT_MACRO_REGIONS,
-  layout: 'radial' as const,
+  regions: DEFAULT_PRESET.createRegions(),
+  layout: DEFAULT_PRESET.layout,
   deformation: DEFAULT_MACRO_DEFORMATION,
-  activePreset: 'rings' as MacroRegionPresetId,
+  activePreset: DEFAULT_PRESET.id,
 };
 
 interface MacroRegionFormState {

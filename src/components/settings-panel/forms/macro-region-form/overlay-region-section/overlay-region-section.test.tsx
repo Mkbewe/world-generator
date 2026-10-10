@@ -19,12 +19,13 @@ describe('OverlayRegionSection', () => {
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
   });
 
-  it('shows the overlay add actions without tabs or a band editor', () => {
+  it('shows the default pole bands on tabs with the selected band fields', () => {
     renderSection();
 
-    expect(screen.getByText('Overlay regions (0)')).toBeInTheDocument();
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Region label')).not.toBeInTheDocument();
+    expect(screen.getByText('Overlay regions (2)')).toBeInTheDocument();
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(screen.getByText('Direction')).toBeInTheDocument();
+    expect(screen.getByText('Position')).toBeInTheDocument();
   });
 
   it('adds horizontal and vertical bands and edits the chosen overlay', async () => {
@@ -35,20 +36,18 @@ describe('OverlayRegionSection', () => {
     await user.click(screen.getByRole('button', { name: 'Add vertical overlay' }));
 
     const overlays = overlayRegions(useMacroRegionFormStore.getState().regions);
-    expect(overlays).toHaveLength(2);
-    expect(overlays.map(region => region.geometry)).toMatchObject([
+    expect(overlays).toHaveLength(4);
+    expect(overlays.slice(-2).map(region => region.geometry)).toMatchObject([
       { kind: 'band', axis: 'y', center: 0.5, width: 0.16 },
       { kind: 'band', axis: 'x', center: 0.5, width: 0.16 },
     ]);
-    expect(screen.getByText('Overlay regions (2)')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(screen.getByText('Overlay regions (4)')).toBeInTheDocument();
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
 
-    await user.click(screen.getByRole('tab', { name: 'Region 6' }));
+    await user.click(screen.getByRole('tab', { name: 'Region 7' }));
 
-    expect(screen.getByText('Direction')).toBeInTheDocument();
-    expect(screen.getByText('Position')).toBeInTheDocument();
-    expect(screen.getByText('West')).toBeInTheDocument();
-    expect(screen.getByText('East')).toBeInTheDocument();
+    expect(screen.getByText('North')).toBeInTheDocument();
+    expect(screen.getByText('South')).toBeInTheDocument();
     expect(screen.getByText('Overlay irregularity')).toBeInTheDocument();
   });
 
