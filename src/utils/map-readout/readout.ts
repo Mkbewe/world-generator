@@ -320,7 +320,7 @@ function hasRegionList(value: unknown): value is {
 }
 
 /** Reads the world dimensions captured with the generated map, if they are well formed. */
-function worldDimensions(info: MapInfo): WorldDimensions | undefined {
+export function worldDimensions(info: MapInfo): WorldDimensions | undefined {
   const value: unknown = info.worldDimensions;
   if (!value || typeof value !== 'object') {
     return undefined;

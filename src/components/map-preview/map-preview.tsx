@@ -12,7 +12,7 @@ import {
   usePreviewStore,
   useViewSyncStore,
 } from '../../stores';
-import { readoutItems } from '../../utils/map-readout';
+import { readoutItems, worldDimensions } from '../../utils/map-readout';
 import {
   layerRegistry,
   type MapBaseLayerId,
@@ -23,6 +23,7 @@ import { GenerationProgress } from '../generation-progress';
 import { LayerTabs } from '../layer-tabs';
 import { MapCanvas } from '../map-canvas';
 import { MapSidebar } from '../map-sidebar';
+import { ScaleBar } from '../scale-bar';
 import styles from './map-preview.module.scss';
 
 interface MapPreviewProps {
@@ -43,6 +44,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
   const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer, layerTree);
   const readout = useMapReadout(rendererRef, canvasRef, preview, { zoomable: isFullscreen });
   const hasMap = preview.layers.some(layer => layer.available);
+  const dimensions = worldDimensions(preview.info);
   const selectedRegionId = useViewSyncStore(state => state.selectedRegionId);
 
   useEffect(() => {
@@ -142,7 +144,11 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             ready={hasMap}
             panning={readout.panning}
             expanded={isFullscreen}
-          />
+          >
+            {dimensions && (
+              <ScaleBar containerRef={wrapperRef} zoom={preview.zoom} dimensions={dimensions} />
+            )}
+          </MapCanvas>
           <div className={styles.spacer} aria-hidden='true' />
           <MapSidebar
             preview={preview}

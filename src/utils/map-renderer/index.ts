@@ -5,7 +5,8 @@ export { DATA_CONTRACT_VERSION, mapRepository, MapRepository } from './repositor
 export type { GeneratedMapSnapshot } from './repository';
 export { LayerRegistry, layerRegistry } from './layer';
 export type { MapSize } from './layer';
-export { FIT_VIEW_SCALE, MAX_VIEW_SCALE, MIN_VIEW_SCALE } from './view';
+export { FIT_VIEW_SCALE, MAX_VIEW_SCALE, MIN_VIEW_SCALE, project } from './view';
+export { PRESENTATION_MARGIN } from './preview-targets';
 export type {
   LayerGroupNode,
   LayerHit,
