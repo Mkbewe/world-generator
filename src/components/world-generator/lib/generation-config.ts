@@ -3,7 +3,6 @@ import type {
   MacroRegionConfig,
   MacroRegionDeformation,
   MapConfig,
-  NoiseConfig,
 } from '../../../utils/map-generator';
 import { summarizeWorldGrid } from '../../../utils/world-grid';
 
@@ -12,7 +11,6 @@ export interface GenerationConfigInput {
   shape: MapConfig['world']['shape'];
   sizeMeters: number;
   metersPerSample: number;
-  noise: NoiseConfig;
   macroRegions: readonly MacroRegionConfig[];
   macroRegionDeformation: MacroRegionDeformation;
   geology: GeologyConfig;
@@ -31,7 +29,6 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
   return {
     config: {
       world: { dimensions: grid.dimensions, seed: parsedSeed, shape: input.shape },
-      noise: input.noise,
       macroRegions: input.macroRegions,
       macroRegionDeformation: input.macroRegionDeformation,
       geology: input.geology,

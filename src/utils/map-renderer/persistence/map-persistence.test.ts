@@ -7,7 +7,6 @@ describe('MapPersistence', () => {
     const persistence = new MapPersistence(repository);
     const layers = {
       worldMask: new Uint8Array(6).fill(1),
-      noiseMap: new Float32Array(6),
       islandMask: new Uint16Array(6),
     };
 

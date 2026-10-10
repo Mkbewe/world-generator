@@ -10,7 +10,6 @@ describe('selectPersistentRasters', () => {
   it('keeps every declared raster output with the right constructor', () => {
     const data = {
       worldMask: new Uint8Array(1),
-      noiseMap: new Float32Array(1),
       macroRegionIdMap: new Uint8Array(1),
     };
 
@@ -30,11 +29,11 @@ describe('selectPersistentRasters', () => {
   });
 
   it('returns a new record over the shared buffers', () => {
-    const data = { noiseMap: new Float32Array(1) };
+    const data = { worldMask: new Uint8Array(1) };
     const selected = selectPersistentRasters(data);
 
     expect(selected).not.toBe(data);
-    expect(selected.noiseMap).toBe(data.noiseMap);
+    expect(selected.worldMask).toBe(data.worldMask);
   });
 
   it('covers every declared key in the constructor table', () => {
@@ -42,9 +41,10 @@ describe('selectPersistentRasters', () => {
   });
 
   it('names raster keys and validates declared values', () => {
-    expect(isRasterOutputKey('noiseMap')).toBe(true);
+    expect(isRasterOutputKey('worldMask')).toBe(true);
+    expect(isRasterOutputKey('noiseMap')).toBe(false);
     expect(isRasterOutputKey('legacyMap')).toBe(false);
-    expect(isPersistentRasterValue('noiseMap', new Float32Array(1))).toBe(true);
-    expect(isPersistentRasterValue('noiseMap', new Uint8Array(1))).toBe(false);
+    expect(isPersistentRasterValue('worldMask', new Uint8Array(1))).toBe(true);
+    expect(isPersistentRasterValue('worldMask', new Float32Array(1))).toBe(false);
   });
 });

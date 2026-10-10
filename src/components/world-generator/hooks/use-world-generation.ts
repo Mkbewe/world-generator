@@ -9,7 +9,6 @@ import {
   useGeologyFormStore,
   useMacroRegionFormStore,
   useMapConfigStore,
-  useNoiseFormStore,
   useWorldShapeFormStore,
 } from '../../../stores';
 import type { MapRenderer } from '../../../utils/map-renderer';
@@ -41,7 +40,6 @@ export function useWorldGeneration(): WorldGeneration {
       shape: shapeForm.shape,
       sizeMeters: shapeForm.sizeMeters,
       metersPerSample: shapeForm.metersPerSample,
-      noise: useNoiseFormStore.getState().noise,
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
       geology: geologyConfigOf(geologyForm),

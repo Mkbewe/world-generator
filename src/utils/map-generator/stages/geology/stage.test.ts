@@ -9,7 +9,6 @@ const CONFIG: MapConfig = {
     seed: 17,
     shape: 'rectangle',
   },
-  noise: { frequency: 4, octaves: 2, persistence: 0.5, lacunarity: 2 },
 };
 
 const GEOLOGY: GeologyConfig = DEFAULT_GEOLOGY_CONFIG;

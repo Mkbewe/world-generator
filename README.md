@@ -45,13 +45,12 @@ Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 ## Generation preview
 
 The home page runs the map generation pipeline in a Web Worker. The pipeline
-contains four implemented stages:
+contains three implemented stages:
 
 1. `WorldShapeStage` creates a disc or rectangular `worldMask`.
-2. `NoiseStage` creates the deterministic `noiseMap` inside that mask.
-3. `MacroRegionStage` assigns every masked cell to exactly one macro region in
-   `macroRegionIdMap`.
-4. `GeologyStage` divides the world into one to ten geological provinces and
+2. `MacroRegionStage` assigns every masked cell to exactly one macro region in
+   `macroRegionIdMap`, with its own deterministic border noise.
+3. `GeologyStage` divides the world into one to ten geological provinces and
    produces the owner raster (`regionOwnerMap`) and the distance from every
    region border (`regionBorderDistanceMap`). Geology plans regions only — it
    creates no heights and no islands.

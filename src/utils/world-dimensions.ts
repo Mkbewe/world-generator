@@ -29,11 +29,11 @@ export interface NormalizedPoint {
 
 /**
  * Bytes one full generator state copy holds per cell: the persistent rasters —
- * world mask 1, noise 4, macro region ids 1 — and the geology plan rasters —
- * region owner 2 and region border distance 4. The plan metadata is negligible
- * next to the rasters.
+ * world mask 1 and macro region ids 1 — and the geology plan rasters — region
+ * owner 2 and region border distance 4. The plan metadata is negligible next
+ * to the rasters.
  */
-export const BYTES_PER_SAMPLE = 12;
+export const BYTES_PER_SAMPLE = 8;
 
 /**
  * Budget for the generator data across both threads, in bytes (decimal

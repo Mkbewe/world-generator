@@ -3,6 +3,23 @@ import type { LayerSpec } from '../../../map-layers';
 import type { RenderTarget } from '../../preview-targets';
 import { layerRegistry } from '../layer-registry';
 
+/** Float ramp layer used by the tests; the catalog ships only integer rasters. */
+const FLOAT_SPEC = {
+  id: 'macro-region',
+  label: 'Float map',
+  kind: 'raster',
+  source: 'floatMap',
+  dataType: 'float32',
+  clipTo: 'world-shape',
+  palette: {
+    kind: 'ramp',
+    stops: [
+      { at: 0, color: [0, 0, 0] },
+      { at: 1, color: [255, 255, 255] },
+    ],
+  },
+} as const satisfies LayerSpec;
+
 /** Output buffer mapped one pixel per source cell. */
 function targetFor(width: number, height: number): RenderTarget {
   return { width, height, projection: { cellSize: 1, left: 0, top: 0, width, height } };
@@ -43,14 +60,13 @@ function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
 describe('CatalogLayer', () => {
   it('validates the typed array constructor and cell count from the spec', () => {
     const world = layerRegistry.raster('world-shape');
-    const noise = layerRegistry.raster('noise');
 
     expect(() => new CatalogLayer(world, { width: 2, height: 2 }, new Float32Array(4))).toThrow(
       'Invalid world mask.'
     );
-    expect(() => new CatalogLayer(noise, { width: 2, height: 2 }, new Float32Array(3))).toThrow(
-      'data size'
-    );
+    expect(
+      () => new CatalogLayer(FLOAT_SPEC, { width: 2, height: 2 }, new Float32Array(3))
+    ).toThrow('data size');
   });
 
   it('counts the precomputed boundary in the layer buffers', () => {
@@ -107,12 +123,7 @@ describe('CatalogLayer', () => {
       size,
       new Uint8Array([1, 0])
     );
-    const noise = new CatalogLayer(
-      layerRegistry.raster('noise'),
-      size,
-      new Float32Array([0.5, 1]),
-      world
-    );
+    const noise = new CatalogLayer(FLOAT_SPEC, size, new Float32Array([0.5, 1]), world);
 
     try {
       expect(noise.sample(0, 0)).toBe(0.5);
@@ -127,7 +138,7 @@ describe('CatalogLayer', () => {
     }
   });
 
-  it('uses the continuous world edge when painting a clipped noise layer', async () => {
+  it('uses the continuous world edge when painting a clipped float layer', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 4, height: 4 };
     const mask = new Uint8Array(16);
@@ -142,7 +153,7 @@ describe('CatalogLayer', () => {
       undefined,
       geometry
     );
-    const noise = new CatalogLayer(layerRegistry.raster('noise'), size, values, world, geometry);
+    const noise = new CatalogLayer(FLOAT_SPEC, size, values, world, geometry);
     const screen: RenderTarget = {
       width: 16,
       height: 16,
@@ -195,7 +206,7 @@ describe('CatalogLayer', () => {
     }
   });
 
-  it('averages float noise when minifying', async () => {
+  it('averages float values when minifying', async () => {
     const { images, restore } = mockCanvasContext();
     const size = { width: 2, height: 1 };
     const world = new CatalogLayer(
@@ -203,12 +214,7 @@ describe('CatalogLayer', () => {
       size,
       new Uint8Array([1, 1])
     );
-    const noise = new CatalogLayer(
-      layerRegistry.raster('noise'),
-      size,
-      new Float32Array([0, 1]),
-      world
-    );
+    const noise = new CatalogLayer(FLOAT_SPEC, size, new Float32Array([0, 1]), world);
 
     try {
       await noise.prepare(new AbortController().signal, targetForHalf());
@@ -228,12 +234,7 @@ describe('CatalogLayer', () => {
       size,
       new Uint8Array([1, 0])
     );
-    const noise = new CatalogLayer(
-      layerRegistry.raster('noise'),
-      size,
-      new Float32Array([1, 1]),
-      world
-    );
+    const noise = new CatalogLayer(FLOAT_SPEC, size, new Float32Array([1, 1]), world);
 
     try {
       await noise.prepare(new AbortController().signal, targetForHalf());
@@ -272,7 +273,7 @@ describe('CatalogLayer', () => {
 
   it('requires a matching mask for clipped layers', () => {
     const clipped = {
-      id: 'noise',
+      id: 'macro-region',
       label: 'Clipped',
       kind: 'raster',
       source: 'clippedMap',

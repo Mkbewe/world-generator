@@ -4,7 +4,7 @@ import type { StageInfo, StageStatistics } from '../../../utils/map-generator';
 
 const stageInfos = [
   { id: 'world-shape', name: 'World shape' },
-  { id: 'noise', name: 'Noise' },
+  { id: 'macro-region', name: 'Macro region' },
 ] as const satisfies readonly StageInfo[];
 
 function statistics(
@@ -48,7 +48,7 @@ describe('ProgressTracker', () => {
       startedAt: expect.any(Number),
       stages: [
         { id: 'world-shape', name: 'World shape', status: 'pending', percentage: 0 },
-        { id: 'noise', name: 'Noise', status: 'pending', percentage: 0 },
+        { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
       ],
     });
   });
@@ -60,7 +60,7 @@ describe('ProgressTracker', () => {
 
     expect(latest().stages).toEqual([
       { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0 },
-      { id: 'noise', name: 'Noise', status: 'pending', percentage: 0 },
+      { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
     ]);
   });
 
@@ -99,8 +99,8 @@ describe('ProgressTracker', () => {
 
     tracker.handle({
       type: 'stage-progress',
-      stageId: 'noise',
-      stageName: 'Noise',
+      stageId: 'macro-region',
+      stageName: 'Macro region',
       stageIndex: 1,
       stageCount: 2,
       progress: 0.42,
@@ -116,15 +116,19 @@ describe('ProgressTracker', () => {
 
     tracker.handle({
       type: 'stage-progress',
-      stageId: 'noise',
-      stageName: 'Noise',
+      stageId: 'macro-region',
+      stageName: 'Macro region',
       stageIndex: 0,
       stageCount: 2,
       progress: 0.42,
     });
 
     expect(latest().stages[0]).toMatchObject({ id: 'world-shape', status: 'pending' });
-    expect(latest().stages[1]).toMatchObject({ id: 'noise', status: 'running', percentage: 42 });
+    expect(latest().stages[1]).toMatchObject({
+      id: 'macro-region',
+      status: 'running',
+      percentage: 42,
+    });
   });
 
   it('marks the whole run failed when a stage fails', () => {
@@ -133,11 +137,11 @@ describe('ProgressTracker', () => {
 
     tracker.handle({
       type: 'stage-failed',
-      stageId: 'noise',
-      stageName: 'Noise',
+      stageId: 'macro-region',
+      stageName: 'Macro region',
       stageIndex: 1,
       stageCount: 2,
-      statistics: statistics('noise', 'failed', 30),
+      statistics: statistics('macro-region', 'failed', 30),
     });
 
     expect(latest().status).toBe('failed');
@@ -177,10 +181,10 @@ describe('planProgress', () => {
     const planned = planProgress(
       [
         { id: 'world-shape', name: 'World shape' },
-        { id: 'noise', name: 'Noise' },
         { id: 'macro-region', name: 'Macro region' },
+        { id: 'geology', name: 'Geology' },
       ],
-      ['world-shape', 'noise']
+      ['world-shape', 'macro-region']
     );
 
     expect(planned).toEqual({
@@ -188,8 +192,8 @@ describe('planProgress', () => {
       startedAt: expect.any(Number),
       stages: [
         { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0 },
-        { id: 'noise', name: 'Noise', status: 'skipped', percentage: 0 },
-        { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
+        { id: 'macro-region', name: 'Macro region', status: 'skipped', percentage: 0 },
+        { id: 'geology', name: 'Geology', status: 'pending', percentage: 0 },
       ],
     });
   });

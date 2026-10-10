@@ -48,23 +48,20 @@ warstw, renderer z inspekcją oraz formularze ustawień.
 
 - `WorldShapeStage` — maska świata w `worldMask`: dysk (`disc`) albo prostokąt
   (`rectangle`). Nie implementuje jeszcze zawijania krawędzi.
-- `NoiseStage` — deterministyczna mapa szumu w `noiseMap`, liczona wewnątrz
-  maski świata.
 - `MacroRegionStage` — każda komórka wewnątrz maski trafia do dokładnie jednego
   regionu w `macroRegionIdMap`; poza maską wartości pozostają zerowe (#256).
   Docelowe zagrożenie (`danger`) jest właściwością definicji regionu, a nie
   osobnym rastrem. Łączny limit 10 regionów bazowych i nakładanych obowiązuje
-  w formularzu oraz generatorze. Domyślnie granice korzystają z własnego,
-  deterministycznego szumu; przełącznik „Border noise" w formularzu (pole
-  `macroRegionDeformation.source`) wybiera interpolowane `noiseMap` (#313).
-  `irregularity` regionów nakładanych może nadpisać wspólną amplitudę.
+  w formularzu oraz generatorze. Granice korzystają z własnego,
+  deterministycznego szumu regionów; `irregularity` regionów nakładanych może
+  nadpisać wspólną amplitudę.
 - `GeologyStage` — plan prowincji: 1–10 regionów o typie, względnej wielkości
   i wspólnym układzie; raster właściciela `regionOwnerMap` oraz odległość od
   granicy `regionBorderDistanceMap`. Udziały powierzchni są dopasowywane do
   ustawionych wielkości, a etap nie tworzy wysokości ani lądów.
 - Kolejność etapów jest zdefiniowana raz w `PIPELINE_STAGES`
-  (`stage-definitions.ts`) i steruje generatorem, zakładkami formularza oraz
-  kolejnością warstw w podglądzie.
+  (`stage-definitions.ts`) i steruje generatorem oraz kolejnością warstw
+  w podglądzie; zakładki formularza wynikają z katalogu warstw.
 - `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia etapów wraz
   z danymi i postępem; wynik zawiera statystyki i łączny czas. Budżet wymiarów
   jest sprawdzany na wejściu generatora, zanim etapy cokolwiek zaalokują.
@@ -77,11 +74,10 @@ runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
 
 ### 2.2. Ustawienia — [działa]
 
-- Formularze: general (seed), world shape (kształt, rozmiar i detal), noise,
-  macro regions i geology; kolejność zakładek wynika z `PIPELINE_STAGES`.
-- Formularz makroregionów ma na górze przełącznik „Border noise" (własny szum
-  albo `noiseMap`), a pod nim presety, układ bazowy, ustawienia granic i sekcje
-  regionów.
+- Formularze: general (seed), world shape (kształt, rozmiar i detal),
+  macro regions i geology; kolejność zakładek wynika z katalogu warstw.
+- Formularz makroregionów ma na górze presety, a pod nimi układ bazowy,
+  ustawienia granic i sekcje regionów.
 - Formularz geologii ma cztery presety startowe (Varied, Oceanic, Vast,
   Mosaic), liczbę prowincji, równomierność rozmieszczenia, nieregularność
   granic oraz pasek udziałów powierzchni; aktywna prowincja ma typ i kolor,
@@ -97,12 +93,13 @@ Rastry renderowalne są wyprowadzane z deklaratywnego katalogu
 
 ```ts
 {
-  id: 'noise',
-  label: 'Noise',
-  source: 'noiseMap',
-  dataType: 'float32',
+  id: 'macro-region',
+  label: 'Macro regions',
+  source: 'macroRegionIdMap',
+  dataType: 'uint8',
   clipTo: 'world-shape',
-  palette: { kind: 'ramp', stops: [...] },
+  boundarySource: 'region',
+  palette: { kind: 'discrete', colors: [...], overflow: 'cycle' },
 }
 ```
 
@@ -132,8 +129,8 @@ canvas, natomiast granica świata jest rysowana na drugim canvasie nad nią. UI
 utrzymuje jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
 traktować każdą kombinację jako osobny typ mapy.
 
-- Główne zakładki to `World shape`, `Noise`, `Macro regions` i `Geology`
-  (kolejność z `PIPELINE_STAGES`), a nakładka `World boundary` jest rysowana nad
+- Główne zakładki to `World shape`, `Macro regions` i `Geology`
+  (kolejność z katalogu warstw), a nakładka `World boundary` jest rysowana nad
   warstwą bazową.
 - Definicje warstw mogą grupować kilka podwidoków pod jedną zakładką; przełącznik
   pokazuje się dopiero dla grupy z co najmniej dwoma podwidokami. `Macro regions`
@@ -246,12 +243,10 @@ konfiguracji, a reszta jest reużyta:
 
 - każdy etap deklaruje w `stage-definitions.ts` ścieżki konfiguracji, od których
   zależy jego wynik (`configKeys`), wraz z tym, co dziedziczy przez rastry
-  wcześniejszych etapów — np. noise deklaruje `world.shape`, bo omija komórki
-  poza maską, a makroregiony dodatkowo `noise`, bo źródło `noise-map` próbkuje
-  jego raster (`selectDirtyStageIds`),
+  wcześniejszych etapów — np. makroregiony deklarują `world.shape`, bo omijają
+  komórki poza maską (`selectDirtyStageIds`),
 - przeliczają się dokładnie te etapy, których ścieżka się zmieniła; zmiana
-  makroregionów nie rusza geologii, a zmiana noise nie rusza ani makroregionów
-  w trybie `dedicated`, ani geologii,
+  makroregionów nie rusza geologii,
 - pierwszy run, zmiana seedu, rozmiaru lub kształtu unieważniają wszystko,
 - worker dostaje brudny zbiór i rastrowe dane zapisanej mapy, seeduje nimi stan
   i pomija czyste etapy, emitując dla nich `stage-skipped` (bez odsyłania
@@ -364,24 +359,23 @@ oraz kopie `postMessage` opisuje sekcja 9.
 
 ## 4. Kolejne etapy pipeline'u — [częściowo]
 
-Docelowy pipeline rozszerza obecne cztery etapy. Kolejność może być później
+Docelowy pipeline rozszerza obecne trzy etapy. Kolejność może być później
 doprecyzowana, szczególnie w przypadku wzajemnego wpływu hydrologii, erozji
 i formacji terenu. Kanoniczna kolejność jest zdefiniowana w jednym miejscu —
 `PIPELINE_STAGES` w `src/utils/map-generator/stage-definitions.ts` — i steruje
-generatorem, zakładkami formularza oraz kolejnością warstw w podglądzie.
+generatorem oraz kolejnością warstw w podglądzie.
 
 1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu. **[działa]**
-2. `NoiseStage` — deterministyczne warstwy szumu. **[działa]**
-3. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
-4. `GeologyStage` — podział świata na prowincje geologiczne, raster właściciela i odległość od granicy. **[działa]**
-5. ~~`LandmassLayoutStage` i `StructureCharacterStage`~~ — usunięte z kodu; zastąpił je podział na prowincje w `GeologyStage`.
-6. `HeightmapStage` — jedno ciągłe, nieujemne pole wysokości z planu Geologii; podział ląd/woda należy do `LandOceanStage`. **[odłożone]**
-7. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
-8. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
-9. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów. **[planowane]**
-10. `TerrainFeaturesStage` — klify, plaże, doliny, płaskowyże i inne formacje. **[planowane]**
-11. `BiomeStage` — biomy wynikające z warunków środowiskowych. **[planowane]**
-12. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje. **[planowane]**
+2. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
+3. `GeologyStage` — podział świata na prowincje geologiczne, raster właściciela i odległość od granicy. **[działa]**
+4. ~~`LandmassLayoutStage` i `StructureCharacterStage`~~ — usunięte z kodu; zastąpił je podział na prowincje w `GeologyStage`.
+5. `HeightmapStage` — jedno ciągłe, nieujemne pole wysokości z planu Geologii; podział ląd/woda należy do `LandOceanStage`. **[odłożone]**
+6. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
+7. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
+8. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów. **[planowane]**
+9. `TerrainFeaturesStage` — klify, plaże, doliny, płaskowyże i inne formacje. **[planowane]**
+10. `BiomeStage` — biomy wynikające z warunków środowiskowych. **[planowane]**
+11. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje. **[planowane]**
 
 ### 4.1. Podział pracy między etapami — [planowane]
 

@@ -4,7 +4,6 @@ import { useWorldGeneration } from './hooks/use-world-generation';
 import {
   useGeneralFormStore,
   useGenerationProgressStore,
-  useNoiseFormStore,
   useWorldShapeFormStore,
 } from '../../stores';
 import { useHeaderActions } from '../header';
@@ -20,8 +19,6 @@ export function WorldGenerator() {
   const setShape = useWorldShapeFormStore(state => state.setShape);
   const setSizeMeters = useWorldShapeFormStore(state => state.setSizeMeters);
   const setMetersPerSample = useWorldShapeFormStore(state => state.setMetersPerSample);
-  const noise = useNoiseFormStore(state => state.noise);
-  const setNoise = useNoiseFormStore(state => state.setNoise);
   const progress = useGenerationProgressStore(state => state.progress);
   const { isGenerating, generationRun, error, onRendererReady, generate } = useWorldGeneration();
   const { isFullscreen } = useHeaderActions();
@@ -41,8 +38,6 @@ export function WorldGenerator() {
             onShapeChange={setShape}
             onSizeChange={setSizeMeters}
             onDetailChange={setMetersPerSample}
-            noise={noise}
-            onNoiseChange={setNoise}
           />
         </div>
         <MapPreview onReady={onRendererReady} progress={progress} progressKey={generationRun} />

@@ -9,7 +9,6 @@ function createSnapshot(seed: string): GeneratedMapSnapshot {
     shape: 'disc',
     layers: {
       worldMask: new Uint8Array(4).fill(1),
-      noiseMap: new Float32Array(4),
     },
   };
 }

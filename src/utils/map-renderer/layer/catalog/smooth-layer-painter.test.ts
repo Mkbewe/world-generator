@@ -10,6 +10,15 @@ const target: RenderTarget = {
   projection: { cellSize: 4, left: 0, top: 0, width: 16, height: 16 },
 };
 
+/** Float ramp palette used by the tests; the catalog ships only integer rasters. */
+const RAMP_PALETTE = {
+  kind: 'ramp',
+  stops: [
+    { at: 0, color: [0, 0, 0] },
+    { at: 1, color: [255, 255, 255] },
+  ],
+} as const;
+
 function pixel(pixels: Uint8ClampedArray, x: number, y: number): number[] {
   return [...pixels.slice((y * target.width + x) * 4, (y * target.width + x + 1) * 4)];
 }
@@ -101,7 +110,7 @@ describe('SmoothLayerPainter', () => {
     ).toBe(true);
   });
 
-  it('gives a clipped noise pixel partial coverage without sampling black outside cells', () => {
+  it('gives a clipped float pixel partial coverage without sampling black outside cells', () => {
     const mask = new Uint8Array(16);
     mask[5] = mask[6] = mask[9] = mask[10] = 1;
     const noise = new Float32Array(16);
@@ -113,7 +122,7 @@ describe('SmoothLayerPainter', () => {
       noise,
       { size, contains: (x, y) => mask[y * size.width + x] === 1 },
       undefined,
-      compilePalette(layerRegistry.raster('noise').palette),
+      compilePalette(RAMP_PALETTE),
       { shape: 'disc' },
       'clipped'
     );
@@ -138,7 +147,7 @@ describe('SmoothLayerPainter', () => {
       values,
       { size, contains: () => true },
       undefined,
-      compilePalette(layerRegistry.raster('noise').palette),
+      compilePalette(RAMP_PALETTE),
       { shape: 'rectangle' },
       'clipped'
     );

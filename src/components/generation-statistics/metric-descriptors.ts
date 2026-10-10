@@ -19,43 +19,6 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'ratio',
     description: 'Share of the grid that lies inside the world shape.',
   },
-  frequency: {
-    label: 'Frequency',
-    kind: 'number',
-    precision: 2,
-    description: 'Base noise frequency — how many cycles fit across the world.',
-  },
-  octaves: {
-    label: 'Octaves',
-    kind: 'number',
-    description: 'Number of noise layers summed together for detail.',
-  },
-  persistence: {
-    label: 'Persistence',
-    kind: 'number',
-    precision: 2,
-    description: 'How much each octave contributes relative to the previous one.',
-  },
-  lacunarity: {
-    label: 'Lacunarity',
-    kind: 'number',
-    precision: 2,
-    description: 'Frequency multiplier between consecutive octaves.',
-  },
-  samples: {
-    label: 'Samples',
-    kind: 'number',
-    description: 'Number of cells the noise statistics were computed over.',
-  },
-  min: { label: 'Min', kind: 'number', precision: 3, description: 'Lowest noise value.' },
-  max: { label: 'Max', kind: 'number', precision: 3, description: 'Highest noise value.' },
-  mean: { label: 'Mean', kind: 'number', precision: 3, description: 'Average noise value.' },
-  stdDev: {
-    label: 'Std dev',
-    kind: 'number',
-    precision: 3,
-    description: 'Standard deviation — how spread out the noise values are.',
-  },
   regions: {
     label: 'Regions',
     kind: 'number',
@@ -71,11 +34,6 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'number',
     precision: 2,
     description: 'Strength of the macro-region border displacement.',
-  },
-  deformationSource: {
-    label: 'Deformation source',
-    kind: 'text',
-    description: 'Noise source used to bend macro-region borders.',
   },
   ordinary: {
     label: 'Ordinary',

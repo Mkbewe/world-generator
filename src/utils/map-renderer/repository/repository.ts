@@ -5,7 +5,7 @@ import type { MapInfo, MapMetadata, MapRasters } from '../types';
  * Version of the generated map data contract. A snapshot from another version
  * is dropped with its regeneration baseline instead of being migrated.
  */
-export const DATA_CONTRACT_VERSION = 4;
+export const DATA_CONTRACT_VERSION = 5;
 
 export interface GeneratedMapSnapshot extends MapSize, MapMetadata {
   /** Data contract the snapshot was generated with. */

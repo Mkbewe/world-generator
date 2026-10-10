@@ -3,12 +3,7 @@ import {
   createRegionDisplacement,
   type RegionDisplacement,
 } from './border-displacement';
-import {
-  DEFAULT_MACRO_DEFORMATION,
-  DEFAULT_MACRO_REGIONS,
-  DEFAULT_REGION_NOISE_SOURCE,
-  MAX_MACRO_REGIONS,
-} from './defaults';
+import { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS, MAX_MACRO_REGIONS } from './defaults';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { assertStageOutput, type MapStage } from '../../pipeline/stage';
@@ -34,7 +29,6 @@ export class MacroRegionStage implements MapStage<
   readonly name = MACRO_REGION_STAGE.name;
   readonly configKeys = MACRO_REGION_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask'];
-  readonly conditionalReads = MACRO_REGION_STAGE.conditionalReads;
   readonly writes = ['macroRegionIdMap'] as const;
   readonly progressStep = 0.25;
 
@@ -46,7 +40,6 @@ export class MacroRegionStage implements MapStage<
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
     const regions = context.config.macroRegions ?? DEFAULT_MACRO_REGIONS;
     const deformation = context.config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION;
-    const source = deformation.source ?? DEFAULT_REGION_NOISE_SOURCE;
     this.validateConfig(regions);
     this.validateDeformation(deformation);
 
@@ -54,26 +47,11 @@ export class MacroRegionStage implements MapStage<
     if (!worldMask || worldMask.length !== sampleWidth * sampleHeight) {
       throw new Error('A valid world mask must be generated before macro regions.');
     }
-    const noiseMap = context.state.noiseMap;
-    if (source === 'noise-map' && (!noiseMap || noiseMap.length !== sampleWidth * sampleHeight)) {
-      throw new Error('A valid noise map must be generated before macro regions.');
-    }
 
     const regionAt = createMacroRegionSampler(
       regions,
       deformation,
-      createRegionDisplacement({
-        source,
-        seed: context.config.world.seed,
-        width: sampleWidth,
-        height: sampleHeight,
-        noiseAt: noiseMap
-          ? (cellX, cellY) => {
-              const index = cellY * sampleWidth + cellX;
-              return worldMask[index] === 1 ? noiseMap[index] : undefined;
-            }
-          : undefined,
-      })
+      createRegionDisplacement(context.config.world.seed)
     );
 
     const macroRegionIdMap = new Uint8Array(sampleWidth * sampleHeight);
@@ -121,7 +99,6 @@ export class MacroRegionStage implements MapStage<
       regions: regions.length,
       overlays,
       deformationAmplitude: deformation.amplitude,
-      deformationSource: deformation.source ?? DEFAULT_REGION_NOISE_SOURCE,
       bytes: regionIdMap.byteLength,
     } satisfies StageMetrics;
   }
@@ -129,13 +106,6 @@ export class MacroRegionStage implements MapStage<
   private validateDeformation(deformation: MacroRegionDeformation): void {
     if (!Number.isFinite(deformation.amplitude) || deformation.amplitude < 0) {
       throw new RangeError('Macro region deformation amplitude must be zero or greater.');
-    }
-    if (
-      deformation.source !== undefined &&
-      deformation.source !== 'dedicated' &&
-      deformation.source !== 'noise-map'
-    ) {
-      throw new RangeError('Macro region noise source must be dedicated or noise-map.');
     }
   }
 

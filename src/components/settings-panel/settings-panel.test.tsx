@@ -23,8 +23,6 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
         onShapeChange={() => {}}
         onSizeChange={() => {}}
         onDetailChange={() => {}}
-        noise={{ frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 }}
-        onNoiseChange={() => {}}
       />
     </Theme>
   );
@@ -39,9 +37,9 @@ describe('SettingsPanel', () => {
     const user = userEvent.setup();
     renderPanel();
 
-    await user.click(screen.getByRole('tab', { name: 'Noise' }));
+    await user.click(screen.getByRole('tab', { name: 'Geology' }));
 
-    expect(useViewSyncStore.getState().settingsTab).toBe('noise');
+    expect(useViewSyncStore.getState().settingsTab).toBe('geology');
   });
 
   it('renders the general tab with the seed field and the shared generate action', () => {
@@ -50,19 +48,19 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('heading', { name: 'Map Settings' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'General' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'World shape' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Noise' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Macro regions' })).toBeInTheDocument();
     expect(screen.getByLabelText('Seed:')).toHaveValue('123456');
     expect(screen.getByTestId('generate-map-button')).toHaveTextContent('Generate Map');
   });
 
-  it('orders the stage tabs by the pipeline order', () => {
+  it('orders the form tabs by the layer catalog order', () => {
     renderPanel();
 
     const tabs = within(screen.getByRole('tablist', { name: 'Generation settings' }))
       .getAllByRole('tab')
       .map(tab => tab.getAttribute('aria-label'));
 
-    expect(tabs).toEqual(['General', 'World shape', 'Noise', 'Macro regions', 'Geology']);
+    expect(tabs).toEqual(['General', 'World shape', 'Macro regions', 'Geology']);
   });
 
   it('shows the normal label with a loader and disables the action while generating', () => {

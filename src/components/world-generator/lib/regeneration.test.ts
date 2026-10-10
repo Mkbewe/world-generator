@@ -13,13 +13,12 @@ const config: MapConfig = {
     seed: 17,
     shape: 'disc',
   },
-  noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
 };
 
 const stages: readonly StageInfo[] = [
   { id: 'world-shape', name: 'World shape' },
-  { id: 'noise', name: 'Noise' },
   { id: 'macro-region', name: 'Macro region' },
+  { id: 'geology', name: 'Geology' },
 ];
 
 function stageStatistics(
@@ -59,16 +58,16 @@ describe('SelectiveRegeneration', () => {
     const plan = regeneration.plan({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, {});
 
     expect(plan.dirtyStageIds).toEqual(['macro-region']);
-    expect(regeneration.reusedStageIds).toEqual(['world-shape', 'noise']);
+    expect(regeneration.reusedStageIds).toEqual(['world-shape', 'geology']);
   });
 
   it('keeps the real costs of the stages a run reuses', () => {
     const regeneration = new SelectiveRegeneration();
     const real = stageStatistics('world-shape', 'completed', 120);
 
-    expect(regeneration.mergeStatistics([real, stageStatistics('noise', 'skipped', 0)])).toEqual([
+    expect(regeneration.mergeStatistics([real, stageStatistics('geology', 'skipped', 0)])).toEqual([
       real,
-      stageStatistics('noise', 'skipped', 0),
+      stageStatistics('geology', 'skipped', 0),
     ]);
 
     expect(regeneration.mergeStatistics([stageStatistics('world-shape', 'skipped', 0)])).toEqual([

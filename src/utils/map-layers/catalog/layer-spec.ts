@@ -45,8 +45,6 @@ export interface RasterLayerSpec<TId extends string = string> extends LayerSpecB
    * matching sampler from the map geometry.
    */
   readonly boundarySource?: 'region';
-  /** Catalog layers whose rasters are sampled while painting this layer. */
-  readonly samples?: readonly TId[];
   readonly providesMask?: { readonly insideValue: number };
   /** Cells holding this value stay transparent, e.g. "no structure" in an id map. */
   readonly skipValue?: number;

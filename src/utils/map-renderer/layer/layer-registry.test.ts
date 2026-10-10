@@ -2,7 +2,7 @@ import { LayerRegistry, layerRegistry } from './layer-registry';
 import type { RasterLayerSpec } from '../../map-layers';
 
 const world = layerRegistry.raster('world-shape');
-const noise = layerRegistry.raster('noise');
+const regions = layerRegistry.raster('macro-region');
 
 function solid(id: string, overrides: Partial<RasterLayerSpec> = {}): RasterLayerSpec {
   return {
@@ -18,21 +18,21 @@ function solid(id: string, overrides: Partial<RasterLayerSpec> = {}): RasterLaye
 
 describe('LayerRegistry', () => {
   it('keeps catalog order separate from dependency build order', () => {
-    const registry = new LayerRegistry([noise, world]);
+    const registry = new LayerRegistry([regions, world]);
 
-    expect(registry.order).toEqual(['noise', 'world-shape']);
-    expect(registry.buildOrder).toEqual(['world-shape', 'noise']);
+    expect(registry.order).toEqual(['macro-region', 'world-shape']);
+    expect(registry.buildOrder).toEqual(['world-shape', 'macro-region']);
     expect(
-      registry.presentIn({ noiseMap: new Float32Array(4), worldMask: new Uint8Array(4) })
-    ).toEqual(['world-shape', 'noise']);
-    expect(registry.presentIn({ noiseMap: undefined })).toEqual([]);
+      registry.presentIn({ macroRegionIdMap: new Uint8Array(4), worldMask: new Uint8Array(4) })
+    ).toEqual(['world-shape', 'macro-region']);
+    expect(registry.presentIn({ macroRegionIdMap: undefined })).toEqual([]);
     expect(registry.has('toString')).toBe(false);
     expect(() => registry.get('missing')).toThrow('Unknown layer');
   });
 
   it('rejects unknown, non-mask and cyclic clipping dependencies', () => {
-    expect(() => new LayerRegistry([{ ...noise, clipTo: 'missing' }])).toThrow('Unknown layer');
-    expect(() => new LayerRegistry([solid('plain'), { ...noise, clipTo: 'plain' }])).toThrow(
+    expect(() => new LayerRegistry([{ ...regions, clipTo: 'missing' }])).toThrow('Unknown layer');
+    expect(() => new LayerRegistry([solid('plain'), { ...regions, clipTo: 'plain' }])).toThrow(
       'non-mask layer'
     );
 
@@ -49,7 +49,7 @@ describe('LayerRegistry', () => {
 
   it('rejects duplicate IDs and data sources', () => {
     expect(() => new LayerRegistry([world, world])).toThrow('Duplicate layer ID');
-    expect(() => new LayerRegistry([world, { ...noise, source: world.source }])).toThrow(
+    expect(() => new LayerRegistry([world, { ...regions, source: world.source }])).toThrow(
       'Duplicate layer source'
     );
   });

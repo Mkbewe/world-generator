@@ -12,8 +12,8 @@ import type { StageStatistics } from '../../utils/map-generator';
 
 function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
-    stageId: 'noise',
-    stageName: 'Noise',
+    stageId: 'macro-region',
+    stageName: 'Macro region',
     status: 'completed',
     startedAt: 0,
     finishedAt: 20.4,
@@ -72,7 +72,6 @@ describe('StatisticsPage', () => {
           seed: 123456,
           shape: 'disc',
         },
-        noise: { frequency: 4, octaves: 4, persistence: 0.5, lacunarity: 2 },
       },
     });
 
@@ -83,7 +82,7 @@ describe('StatisticsPage', () => {
     expect(screen.getByText('10 × 10 m')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Generation' })).toBeInTheDocument();
     expect(screen.getByText('World shape')).toBeInTheDocument();
-    expect(screen.getByText('Noise')).toBeInTheDocument();
+    expect(screen.getByText('Macro region')).toBeInTheDocument();
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();
     expect(screen.getAllByText('40.0 ms')).toHaveLength(2);
     expect(screen.queryByText('No statistics yet')).not.toBeInTheDocument();

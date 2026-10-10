@@ -33,7 +33,6 @@ const CATALOG_ENTRIES = [
     dataType: 'uint8',
     clipTo: 'world-shape',
     boundarySource: 'region',
-    samples: ['noise'],
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
   },
   {
@@ -42,21 +41,6 @@ const CATALOG_ENTRIES = [
     kind: 'vector',
     source: 'geologyPlan',
     clipTo: 'world-shape',
-  },
-  {
-    id: 'noise',
-    label: 'Noise',
-    kind: 'raster',
-    source: 'noiseMap',
-    dataType: 'float32',
-    clipTo: 'world-shape',
-    palette: {
-      kind: 'ramp',
-      stops: [
-        { at: 0, color: [0, 0, 0] },
-        { at: 1, color: [255, 255, 255] },
-      ],
-    },
   },
 ] as const satisfies readonly BoundLayerSpec[];
 

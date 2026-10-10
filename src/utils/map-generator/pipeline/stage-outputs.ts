@@ -2,7 +2,7 @@ import { isGeologyPlan } from '../stages/geology';
 import type { MapState, StageData } from '../types';
 
 /** Raster keys the generator owns. The layer catalog may display them, not define them. */
-export const RASTER_OUTPUT_KEYS = ['worldMask', 'noiseMap', 'macroRegionIdMap'] as const;
+export const RASTER_OUTPUT_KEYS = ['worldMask', 'macroRegionIdMap'] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
 export const DOMAIN_OUTPUT_KEYS = ['geologyPlan'] as const;
@@ -18,7 +18,6 @@ export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
  */
 export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32'> = {
   worldMask: 'uint8',
-  noiseMap: 'float32',
   macroRegionIdMap: 'uint8',
 };
 

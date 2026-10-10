@@ -1,5 +1,5 @@
 import { MapContext } from './context';
-import { type MapStage, resolveReads } from './stage';
+import { type MapStage } from './stage';
 import { commitStageWrites } from './stage-outputs';
 import { GenerationCancelledError, GenerationStageError } from '../errors';
 import type { WorldSpace } from '../space';
@@ -107,7 +107,7 @@ export class MapGenerator<
 
       let data;
       try {
-        this.assertReads(stage, context.state, context.config);
+        this.assertReads(stage, context.state);
         data = await stage.execute(context, signal, report);
         this.throwIfCancelled(signal);
         commitStageWrites(context.state, stage.id, stage.writes, data);
@@ -169,12 +169,8 @@ export class MapGenerator<
     await new Promise(resolve => globalThis.setTimeout(resolve, durationMs));
   }
 
-  private assertReads(
-    stage: MapStage<TConfig, TState, TId, StageData>,
-    state: TState,
-    config: Readonly<TConfig>
-  ): void {
-    for (const key of resolveReads(stage, config)) {
+  private assertReads(stage: MapStage<TConfig, TState, TId, StageData>, state: TState): void {
+    for (const key of stage.reads ?? []) {
       if (state[key] === undefined) {
         throw new Error(`Stage "${stage.id}" is missing input "${String(key)}".`);
       }

@@ -6,13 +6,11 @@ import { worldGenerationSession } from './lib/world-generation-session';
 import {
   GENERAL_FORM_DEFAULTS,
   MACRO_REGION_FORM_DEFAULTS,
-  NOISE_FORM_DEFAULTS,
   PREVIEW_DEFAULTS,
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
   useMacroRegionFormStore,
-  useNoiseFormStore,
   usePreviewStore,
   useWorldShapeFormStore,
   WORLD_SHAPE_FORM_DEFAULTS,
@@ -82,7 +80,6 @@ describe('WorldGenerator', () => {
     mapRepository.clear();
     useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
-    useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
     useGenerationProgressStore.getState().setProgress(undefined);
     useGenerationStatisticsStore.getState().setResult(undefined);
@@ -102,7 +99,6 @@ describe('WorldGenerator', () => {
       mapRepository.clear();
       useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
       useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
-      useNoiseFormStore.setState({ ...NOISE_FORM_DEFAULTS });
       useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
       useGenerationProgressStore.getState().setProgress(undefined);
       useGenerationStatisticsStore.getState().setResult(undefined);
@@ -187,7 +183,7 @@ describe('WorldGenerator', () => {
       const count = config.world.dimensions.sampleWidth * config.world.dimensions.sampleHeight;
       options.onStages([
         { id: 'world-shape', name: 'World shape' },
-        { id: 'noise', name: 'Noise' },
+        { id: 'macro-region', name: 'Macro region' },
       ]);
       options.onEvent({
         type: 'stage-completed',
@@ -200,12 +196,12 @@ describe('WorldGenerator', () => {
       });
       options.onEvent({
         type: 'stage-completed',
-        stageId: 'noise',
-        stageName: 'Noise',
+        stageId: 'macro-region',
+        stageName: 'Macro region',
         stageIndex: 1,
         stageCount: 2,
         statistics: {},
-        data: { noiseMap: new Float32Array(count).fill(0.5) },
+        data: { macroRegionIdMap: new Uint8Array(count) },
       });
       return Promise.resolve({
         statistics: [],
@@ -237,13 +233,13 @@ describe('WorldGenerator', () => {
           status: 'completed',
           percentage: 100,
         },
-        { id: 'noise', name: 'Noise', status: 'completed', percentage: 100 },
+        { id: 'macro-region', name: 'Macro region', status: 'completed', percentage: 100 },
       ],
     });
     runGenerationMock.mockImplementation((_config, options) => {
       options?.onStages?.([
         { id: 'world-shape', name: 'World shape' },
-        { id: 'noise', name: 'Noise' },
+        { id: 'macro-region', name: 'Macro region' },
       ]);
       return pendingRun(options);
     });
@@ -261,7 +257,7 @@ describe('WorldGenerator', () => {
       startedAt: expect.any(Number),
       stages: [
         { id: 'world-shape', name: 'World shape', status: 'pending', percentage: 0 },
-        { id: 'noise', name: 'Noise', status: 'pending', percentage: 0 },
+        { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
       ],
     });
     expect(screen.getByText('Generating')).toBeInTheDocument();
@@ -280,8 +276,8 @@ describe('WorldGenerator', () => {
           durationMs: 1,
         },
         {
-          id: 'noise',
-          name: 'Noise',
+          id: 'macro-region',
+          name: 'Macro region',
           status: 'completed',
           percentage: 100,
           durationMs: 2,
