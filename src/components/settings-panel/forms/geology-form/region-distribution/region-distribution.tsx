@@ -4,6 +4,7 @@ import type { GeologicalRegionType } from '../../../../../utils/map-generator/ty
 import { geologyRegionColor, regionStyle } from '../../../../../utils/map-layers';
 import { type BoundaryDraft, DistributionBar } from '../../../../distribution-bar';
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
+import { GEOLOGY_SHARE_COPY } from '../../lib/share-copy';
 
 interface RegionDistributionProps {
   segments: readonly DistributionSegment[];
@@ -27,6 +28,7 @@ export function RegionDistribution({
           draft={draft}
           minShare={minShare}
           ariaLabel='Geology region area distribution'
+          header={GEOLOGY_SHARE_COPY}
           colorForIndex={index => geologyRegionColor(types[index], index)}
           labelForIndex={index =>
             `Region ${index + 1}: ${regionStyle(types[index]).label} (${Math.round(draft.shares[index] ?? 0)}%)`

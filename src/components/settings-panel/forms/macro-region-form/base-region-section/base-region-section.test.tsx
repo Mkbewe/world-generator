@@ -46,7 +46,15 @@ describe('BaseRegionSection', () => {
     expect(within(screen.getByLabelText('Region boundaries')).getAllByRole('slider')).toHaveLength(
       3
     );
-    expect(screen.getAllByText('Width')).toHaveLength(4);
+    expect(screen.getByText('Ring thickness')).toBeInTheDocument();
+  });
+
+  it('names the share as band width in the flat layouts', () => {
+    useMacroRegionFormStore.setState({ layout: 'horizontal' });
+    renderSection();
+
+    expect(screen.getByText('Band width')).toBeInTheDocument();
+    expect(screen.queryByText('Ring thickness')).not.toBeInTheDocument();
   });
 
   it('resizes regions with the keyboard on a boundary handle', async () => {
@@ -72,7 +80,7 @@ describe('BaseRegionSection', () => {
     fireEvent.pointerMove(firstHandle, { pointerId: 1, clientX: 40 });
 
     expect(firstHandle).toHaveAttribute('aria-valuenow', '40');
-    expect(screen.getAllByText('40%')).toHaveLength(2);
+    expect(screen.getByText('40%')).toBeInTheDocument();
     expect(regionSegments('radial', useMacroRegionFormStore.getState().regions)[0].percent).toBe(
       25
     );
