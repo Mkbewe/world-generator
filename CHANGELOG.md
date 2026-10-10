@@ -1,5 +1,80 @@
 # Changelog
 
+## [0.11.1](https://github.com/Mkbewe/world-generator/compare/v0.11.0...v0.11.1) (2026-10-10)
+
+### Features
+
+* **[284](https://github.com/Mkbewe/world-generator/issues/284):** export the statistics page as json ([#470](https://github.com/Mkbewe/world-generator/issues/470)) ([5a54d14](https://github.com/Mkbewe/world-generator/commit/5a54d14f9f6b7053808c7003a2cc86855bb65e47))
+
+  - add an Export action to the statistics page that downloads the
+  snapshot as JSON
+  - build the file from one statistics snapshot: the whole world,
+  generation and render data
+  - generalize the export dialog to a format list and an
+  `onExport(format)` callback
+  - move the legacy export dialog into its page and trim the header
+  context to fullscreen
+  - hide the page scrollbar while a dialog locks the body and mirror the
+  theme on the canvas
+  - reorder the macro region presets and default to `Rings + poles`
+* **[327](https://github.com/Mkbewe/world-generator/issues/327):** name the macro region share as ring thickness ([#468](https://github.com/Mkbewe/world-generator/issues/468)) ([321cbc5](https://github.com/Mkbewe/world-generator/commit/321cbc50455d20b4ee8c6c27f7d67af69ab811ee)), references [#416](https://github.com/Mkbewe/world-generator/issues/416)
+
+  - add a shared form copy module with the share names and explanations
+  - show a share header with its explanation on the distribution bar
+  - label macro region shares as `Ring thickness` / `Band width`, geology
+  as `Area share`
+  - remove the per-card `Width` row and the bar note; the bar segments
+  show the percents
+  - no geometry or map-output changes; the wording is reused by #416
+* **[382](https://github.com/Mkbewe/world-generator/issues/382):** measure distances on the preview ([#472](https://github.com/Mkbewe/world-generator/issues/472)) ([a80fe11](https://github.com/Mkbewe/world-generator/commit/a80fe11ed2b44d64641b8e49511bcfe109942038))
+
+  - add a fullscreen measure mode: drag draws a ruler line with round tick
+  divisions and end labels
+  - pan the preview with the middle mouse button so the left drag stays
+  free
+  - show the measured distance right under the position rows in the
+  readout
+  - anchor the fullscreen panel by its top so a growing readout no longer
+  moves it
+  - drop the readout actions in fullscreen and clear the measurement when
+  it closes
+* **[384](https://github.com/Mkbewe/world-generator/issues/384):** show a scale bar next to the preview ([#471](https://github.com/Mkbewe/world-generator/issues/471)) ([0f9711b](https://github.com/Mkbewe/world-generator/commit/0f9711bf1bb44cbe0e5ea887e70fdc96408ca528))
+
+  - draw a round 1/2/5 distance bar over the preview corner, sized to the
+  measured map area
+  - compute metres per CSS pixel with the renderer's own projection and
+  presentation margin
+  - follow the zoom and stay hidden while the map area is not measurable
+  - reuse the readout's world dimensions guard and the shared metre
+  formatting
+  - keep the bar inside the map wrapper so it works in normal and
+  fullscreen mode
+* **[416](https://github.com/Mkbewe/world-generator/issues/416):** macro region readout details and region tabs ([#469](https://github.com/Mkbewe/world-generator/issues/469)) ([7577d1a](https://github.com/Mkbewe/world-generator/commit/7577d1a69e4943d4d6b71a9d9d3f9124d341ba3b))
+
+  - show the region label, range, width, danger and area in the cursor
+  readout
+  - count per-region areas in the macro-region stage and ship them with
+  the map
+  - replace `macroRegionLabels` with the richer `macroRegionInfo` map info
+  - keep base and overlay sections, each editing its regions through tabs
+  - extract the shared region tabs and reuse them in the geology form
+  - leave the optional outline highlight to a follow-up task
+
+### Code Refactoring
+
+* **[458](https://github.com/Mkbewe/world-generator/issues/458):** remove the noise stage, layer, form and preview ([#465](https://github.com/Mkbewe/world-generator/issues/465)) ([ff2f4ef](https://github.com/Mkbewe/world-generator/commit/ff2f4ef9aca6d87ac62821f9e46d81c86827ad57))
+
+  - drop NoiseStage and the noise-map source from the macro-region
+  deformation
+  - remove NoiseConfig, MapState.noiseMap and the noise raster key
+  - delete the Noise catalog layer, form, store and settings tab
+  - derive form tabs from the layer catalog instead of pipeline stages
+  - remove the conditional stage-dependency machinery
+  - count the state budget without the noise raster (BYTES_PER_SAMPLE 12
+  -> 8)
+  - bump the map data contract to 5 and refresh docs and tests
+* **[466](https://github.com/Mkbewe/world-generator/issues/466):** add noise source and migrate stage noise onto it ([#467](https://github.com/Mkbewe/world-generator/issues/467)) ([97bdc08](https://github.com/Mkbewe/world-generator/commit/97bdc08cb0a7c3761d32ffad2f3dff751d3292c7))
+
 ## [0.11.0](https://github.com/Mkbewe/world-generator/compare/v0.10.0...v0.11.0) (2026-10-09)
 
 ### Features
