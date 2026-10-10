@@ -369,8 +369,8 @@ generatorem oraz kolejnością warstw w podglądzie.
 2. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
 3. `GeologyStage` — podział świata na prowincje geologiczne, raster właściciela i odległość od granicy. **[działa]**
 4. ~~`LandmassLayoutStage` i `StructureCharacterStage`~~ — usunięte z kodu; zastąpił je podział na prowincje w `GeologyStage`.
-5. `HeightmapStage` — jedno ciągłe, nieujemne pole wysokości z planu Geologii; podział ląd/woda należy do `LandOceanStage`. **[odłożone]**
-6. `LandOceanStage` — przecięcie wysokości poziomem morza i klasyfikacja faktycznych wysp, oceanu, linii brzegowej oraz płytkich wód szelfowych. **[planowane]**
+5. `HeightmapStage` — jedno ciągłe pole wysokości z planu Geologii; wartości mogą być ujemne (głębiny). Podgląd stosuje poziom morza jako próg renderingu — komórki poniżej progu kolorowane są na niebiesko, bez udziału pipeline'u. Następne etapy wymagające maski lądu (`ClimateStage`, `HydrologyStage`) mogą ją wyliczyć z `heightmap` i `seaLevel` na wejściu. **[odłożone]**
+6. ~~`LandOceanStage`~~ — usunięty jako osobny etap. Poziom morza to suwak w formularzu `HeightmapStage`; renderer nakłada wodę na gotową heightmapę bez regneracji. Jeśli w przyszłości konieczna okaże się linia brzegowa jako osobny raster, można wrócić do tej decyzji.
 7. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
 8. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów. **[planowane]**
 9. `TerrainFeaturesStage` — klify, plaże, doliny, płaskowyże i inne formacje. **[planowane]**
@@ -381,11 +381,14 @@ generatorem oraz kolejnością warstw w podglądzie.
 
 Jednym źródłem podziału świata jest `GeologyStage`: prowincje z typem
 i docelowym udziałem powierzchni, bez wysokości i bez lądów. `HeightmapStage`
-zamieni ten plan na jedno ciągłe, nieujemne pole wysokości, a `LandOceanStage`
-przetnie je poziomem morza i wyznaczy faktyczne wyspy, linię brzegową oraz
-płytkie wody szelfowe. `BiomeStage` sklasyfikuje biom na podstawie faktycznej
-głębokości i pozostałych warunków. Każdy etap losujący formy ma własny strumień
-szumu; współdzielimy funkcję i układ współrzędnych, nie jedną mapę szumu.
+zamieni ten plan na jedno ciągłe pole wysokości — wartości mogą być ujemne
+(głębiny oceanu). Poziom morza to parametr renderingu, a nie etapu: renderer
+koloruje komórki poniżej progu na niebiesko bez uruchamiania pipeline'u.
+`ClimateStage` i `HydrologyStage` wymagające maski lądu wyliczają ją lokalnie
+z `heightmap` i `seaLevel` przekazanego przez konfigurację. `BiomeStage`
+sklasyfikuje biom na podstawie wysokości, klimatu i hydrologii. Każdy etap
+losujący formy ma własny strumień szumu; współdzielimy funkcję i układ
+współrzędnych, nie jedną mapę szumu.
 
 Formularz geologii ma cztery presety startowe (Varied, Oceanic, Vast, Mosaic),
 które jednorazowo wypełniają liczbę, typy, wielkości i układ prowincji.

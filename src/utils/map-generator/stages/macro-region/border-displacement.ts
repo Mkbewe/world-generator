@@ -1,5 +1,4 @@
-import { createNoise2D } from 'simplex-noise';
-
+import { NoiseSource } from '../../random';
 import { RandomFactory } from '../../random/random-factory';
 import { planarDistance } from '../../space';
 import type { MacroRegionPoint } from '../../types';
@@ -24,30 +23,32 @@ export interface CellDeformation {
   bandPosition(axis: 'x' | 'y', amplitude: number): number;
 }
 
+/** Two octaves at three base cycles across the normalized world. */
+const REGION_NOISE_SPEC = {
+  frequency: 3,
+  octaves: 2,
+  persistence: 0.5,
+  lacunarity: 2,
+} as const;
+
 /** One selection point shared by the worker and the preview renderer. */
 export function createRegionDisplacement(seed: number): RegionDisplacement {
-  const random = new RandomFactory(seed).create('macro-region');
-  const displacementX = createNoise2D(() => random.next());
-  const displacementY = createNoise2D(() => random.next());
+  const noise = new NoiseSource(new RandomFactory(seed), 'macro-region');
+  const shiftX = noise.scalar(REGION_NOISE_SPEC, 'x');
+  const shiftY = noise.scalar(REGION_NOISE_SPEC, 'y');
 
   return {
     at: (x, y) => {
-      const shiftX = fbm(displacementX, x * 3, y * 3);
-      const shiftY = fbm(displacementY, x * 3, y * 3);
+      const offsetX = shiftX(x, y);
+      const offsetY = shiftY(x, y);
       return {
         ringRadius(center, amplitude) {
-          return planarDistance({ x: x + shiftX * amplitude, y: y + shiftY * amplitude }, center);
+          return planarDistance({ x: x + offsetX * amplitude, y: y + offsetY * amplitude }, center);
         },
         bandPosition(axis, amplitude) {
-          return axis === 'x' ? x + shiftX * amplitude : y + shiftY * amplitude;
+          return axis === 'x' ? x + offsetX * amplitude : y + offsetY * amplitude;
         },
       };
     },
   };
-}
-
-function fbm(noise: (x: number, y: number) => number, x: number, y: number): number {
-  const first = noise(x, y);
-  const second = noise(x * 2, y * 2) * 0.5;
-  return (first + second) / 1.5;
 }

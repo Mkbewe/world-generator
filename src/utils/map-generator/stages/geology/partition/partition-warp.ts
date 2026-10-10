@@ -1,5 +1,5 @@
 import type { RegionPartitionInput } from './partition-types';
-import { createSeededNoise2D, fractalNoise2D } from '../../../random/noise';
+import { NoiseSource } from '../../../random';
 import type { WorldPoint } from '../../../types';
 import { MAX_BORDER_DISPLACEMENT } from '../defaults';
 
@@ -45,8 +45,9 @@ export function createBorderWarp(
     return undefined;
   }
   const spec = { frequency: 3, octaves: 2, persistence: 0.5, lacunarity: 2 };
-  const noiseX = fractalNoise2D(createSeededNoise2D(input.random, 'geology.border-warp.x'), spec);
-  const noiseY = fractalNoise2D(createSeededNoise2D(input.random, 'geology.border-warp.y'), spec);
+  const noise = new NoiseSource(input.random, 'geology.border-warp');
+  const noiseX = noise.scalar(spec, 'x');
+  const noiseY = noise.scalar(spec, 'y');
   return point => ({
     x: point.x + noiseX(point.x, point.y) * amount,
     y: point.y + noiseY(point.x, point.y) * amount,
