@@ -300,10 +300,16 @@ export class MapRenderer {
     this.emitState();
   }
 
-  /** Highlights one domain element in the preview, e.g. the edited region. */
+  /**
+   * Highlights one domain element in the preview, e.g. the edited region. A
+   * selection repaint never takes the view over: the displayed layer is
+   * presented again, a hidden one is prepared quietly and shows its highlight
+   * once the user selects it.
+   */
   setSelectedRegion(regionId: string | undefined): void {
+    const displayed = this.view.displayedLayer;
     for (const layer of this.scene.setSelection(regionId)) {
-      this.queue.enqueue(layer);
+      this.queue.enqueue(layer, layer.id !== displayed);
     }
   }
 

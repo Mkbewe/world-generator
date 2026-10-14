@@ -22,14 +22,15 @@ describe('geology presets', () => {
   });
 
   it('describes the intended spread of every preset', () => {
-    expect(geologyPresetConfig('oceanic').regionCount).toBeGreaterThan(
+    expect(geologyPresetConfig('vast').regionCount).toBeLessThan(
       geologyPresetConfig('varied').regionCount
     );
-    expect(geologyPresetConfig('vast').regionCount).toBeLessThanOrEqual(3);
-    expect(geologyPresetConfig('mosaic').regionCount).toBeGreaterThanOrEqual(8);
+    expect(geologyPresetConfig('mosaic').regionCount).toBeGreaterThan(
+      geologyPresetConfig('varied').regionCount
+    );
 
     const oceanicTypes = geologyPresetConfig('oceanic').regions.map(region => region.type);
-    expect(oceanicTypes).toContain('atoll');
+    expect(oceanicTypes).toContain('lagoon');
     expect(oceanicTypes).toContain('volcanic');
   });
 });

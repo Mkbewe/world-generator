@@ -17,9 +17,6 @@ function planFixture(): GeologyPlan {
         centre: { x: 0.25, y: 0.5 },
         weight: 1,
         type: 'ordinary',
-        concentration: 0.5,
-        mountainousness: 0.5,
-        landShare: 0.4,
         areaSquareMeters: 100,
       },
       {
@@ -27,9 +24,6 @@ function planFixture(): GeologyPlan {
         centre: { x: 0.75, y: 0.5 },
         weight: 1,
         type: 'volcanic',
-        concentration: 0.5,
-        mountainousness: 0.5,
-        landShare: 0.4,
         areaSquareMeters: 100,
       },
     ],
@@ -150,6 +144,7 @@ describe('MapRenderer', () => {
       'world-shape',
       'macro-region',
       'geology',
+      'heightmap',
     ]);
   });
 
@@ -205,6 +200,21 @@ describe('MapRenderer', () => {
 
     expect(preview.state.displayedLayer).toBe('world-shape');
     expect(preview.state.layers.find(layer => layer.id === 'macro-region')?.available).toBe(true);
+    preview.dispose();
+  });
+
+  it('keeps the displayed layer when a selection repaints a hidden layer', async () => {
+    const { preview } = setup();
+    preview.add('world-shape', new Uint8Array(4).fill(1));
+    preview.setInfo({ geologyPlan: planFixture() });
+    await preview.ready;
+    preview.select('world-shape');
+
+    preview.setSelectedRegion('region-2');
+    await preview.ready;
+
+    expect(preview.state.displayedLayer).toBe('world-shape');
+    expect(preview.state.layers.find(layer => layer.id === 'geology')?.available).toBe(true);
     preview.dispose();
   });
 
@@ -284,7 +294,7 @@ describe('MapRenderer', () => {
 
     expect(preview.signal.aborted).toBe(true);
     expect(preview.state.displayedLayer).toBe('macro-region');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false]);
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
     expect(() => preview.add('macro-region', new Uint8Array(4))).toThrow();
     preview.dispose();
   });

@@ -3,10 +3,12 @@ import { useCallback, useState } from 'react';
 import { useGenerationSession } from './use-generation-session';
 import {
   geologyConfigOf,
+  heightmapConfigOf,
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
   useGeologyFormStore,
+  useHeightmapFormStore,
   useMacroRegionFormStore,
   useMapConfigStore,
   useWorldShapeFormStore,
@@ -43,6 +45,7 @@ export function useWorldGeneration(): WorldGeneration {
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
       geology: geologyConfigOf(geologyForm),
+      heightmap: heightmapConfigOf(useHeightmapFormStore.getState(), geologyForm.regionCount),
     });
     if ('error' in built) {
       setError(built.error);

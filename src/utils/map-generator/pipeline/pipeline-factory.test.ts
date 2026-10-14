@@ -10,6 +10,7 @@ describe('createMapGenerator', () => {
       'world-shape',
       'macro-region',
       'geology',
+      'heightmap',
     ]);
 
     const config: MapConfig = {
@@ -26,10 +27,13 @@ describe('createMapGenerator', () => {
       'world-shape',
       'macro-region',
       'geology',
+      'heightmap',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
     expect(result.context.state.geologyPlan?.regions?.length).toBeGreaterThan(0);
+    expect(result.context.state.heightmap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.provenanceMap).toBeInstanceOf(Int16Array);
   });
 
   it('declares the configuration inputs of every stage', () => {
@@ -67,6 +71,12 @@ describe('createMapGenerator', () => {
         writes: ['geologyPlan'],
         configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology'],
       },
+      {
+        id: 'heightmap',
+        reads: ['worldMask', 'geologyPlan'],
+        writes: ['heightmap', 'provenanceMap'],
+        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
+      },
     ]);
   });
 
@@ -82,6 +92,7 @@ describe('createMapGenerator', () => {
     const constructors = {
       uint8: Uint8Array,
       float32: Float32Array,
+      int16: Int16Array,
     } as const;
 
     const result = await pipeline.generate(config, {});

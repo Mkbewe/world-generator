@@ -1,713 +1,91 @@
 # World generation roadmap
 
-> **Aktualizacja kierunku (2026-10-09):** geology dzieli świat na 1–10
-> prowincji geologicznych: raster właściciela i odległość od granicy to wynik
-> etapu, bez wysokości i bez lądów. Etapy korytarzy (`LandmassLayoutStage`,
-> `StructureCharacterStage`) oraz `HeightmapStage` zostały usunięte z kodu;
-> heightmapa wróci jako osobny etap po ustabilizowaniu geologii. Nie
-> porównujemy nowego generatora ze starym jako warunku odbioru.
-
-Dokument opisuje kierunek rozwoju generatora od fundamentów po szczegóły.
-Sekcje są ułożone zgodnie z kolejnością powstawania aplikacji: najpierw
-działający pipeline i podgląd, potem fizyczna skala świata, a na końcu etapy,
-które jeszcze nie istnieją.
-
-Legenda statusów:
-
-- **[działa]** — zaimplementowane i używane w aplikacji,
-- **[częściowo]** — fundament jest, brakuje części zakresu,
-- **[odłożone]** — poza aktywnym pipeline'em; wróci jako osobny etap,
-- **[planowane]** — brak implementacji.
-
-## 1. Cel i zasady ogólne — [działa]
-
 Aplikacja jest narzędziem deweloperskim: generuje i podgląda proceduralne światy,
-a docelowa gra powstanie w Godocie. Obowiązujące zasady:
-
-- Generator działa jako rozszerzalny pipeline niezależny od renderowania i UI.
-- Świat korzysta ze znormalizowanych współrzędnych, aby zachować układ przy różnych rozdzielczościach.
-- Jeden seed świata tworzy niezależne, nazwane strumienie losowości dla
-  poszczególnych etapów.
-- Etapy zapisują osobne warstwy danych; obecnie można wyświetlać maskę świata,
-  makroregiony, szum i prowincje geologiczne.
-- Rozdzielczość danych nie określa fizycznego rozmiaru świata (sekcja 3).
-- Docelowo najpierw może powstawać podgląd w niskiej rozdzielczości, a następnie
-  dokładniejsza wersja tego samego świata. Ten tryb nie jest jeszcze
-  zaimplementowany.
-
-Opcjonalne opóźnienie etapów do ręcznego testowania podglądu ustawia
-`VITE_GENERATION_STAGE_DELAY_MS`. Nie jest to część docelowego czasu generowania
-i powinno pozostać wyłączone w produkcji.
-
-## 2. Fundament: pipeline, podgląd i ustawienia — [działa]
-
-Pierwszy etap rozwoju to działający szkielet: pipeline w workerze, katalog
-warstw, renderer z inspekcją oraz formularze ustawień.
-
-### 2.1. Pipeline i etapy — [działa]
-
-- `WorldShapeStage` — maska świata w `worldMask`: dysk (`disc`) albo prostokąt
-  (`rectangle`). Nie implementuje jeszcze zawijania krawędzi.
-- `MacroRegionStage` — każda komórka wewnątrz maski trafia do dokładnie jednego
-  regionu w `macroRegionIdMap`; poza maską wartości pozostają zerowe (#256).
-  Docelowe zagrożenie (`danger`) jest właściwością definicji regionu, a nie
-  osobnym rastrem. Łączny limit 10 regionów bazowych i nakładanych obowiązuje
-  w formularzu oraz generatorze. Granice korzystają z własnego,
-  deterministycznego szumu regionów; `irregularity` regionów nakładanych może
-  nadpisać wspólną amplitudę.
-- `GeologyStage` — plan prowincji: 1–10 regionów o typie, względnej wielkości
-  i wspólnym układzie; raster właściciela `regionOwnerMap` oraz odległość od
-  granicy `regionBorderDistanceMap`. Udziały powierzchni są dopasowywane do
-  ustawionych wielkości, a etap nie tworzy wysokości ani lądów.
-- Kolejność etapów jest zdefiniowana raz w `PIPELINE_STAGES`
-  (`stage-definitions.ts`) i steruje generatorem oraz kolejnością warstw
-  w podglądzie; zakładki formularza wynikają z katalogu warstw.
-- `MapGenerator` — uruchamia etapy w kolejności i emituje zdarzenia etapów wraz
-  z danymi i postępem; wynik zawiera statystyki i łączny czas. Budżet wymiarów
-  jest sprawdzany na wejściu generatora, zanim etapy cokolwiek zaalokują.
-- worker — każdy run generowania dostaje świeży Web Worker (`runGeneration`).
-  Worker ogłasza swoją listę etapów, a potem strumieniuje zdarzenia etapów.
-  Anulowanie kończy worker.
-
-Sesja generowania żyje poza widokiem: przejście na inną stronę nie przerywa
-runu, a po powrocie podgląd odtwarza zebrane warstwy i ostatni wybór (#279).
-
-### 2.2. Ustawienia — [działa]
-
-- Formularze: general (seed), world shape (kształt, rozmiar i detal),
-  macro regions i geology; kolejność zakładek wynika z katalogu warstw.
-- Formularz makroregionów ma na górze presety, a pod nimi układ bazowy,
-  ustawienia granic i sekcje regionów.
-- Formularz geologii ma cztery presety startowe (Varied, Oceanic, Vast,
-  Mosaic), liczbę prowincji, równomierność rozmieszczenia, nieregularność
-  granic oraz pasek udziałów powierzchni; aktywna prowincja ma typ i kolor,
-  a jej edycja dotyczy tylko tej prowincji.
-- Stan formularza jest pamiętany osobno dla każdej zakładki i przeżywa zmianę
-  widoku.
-- Rozmiar świata i detal ustawia się w metrach; szczegóły w sekcji 3.
-
-### 2.3. Katalog warstw i renderer — [działa]
-
-Rastry renderowalne są wyprowadzane z deklaratywnego katalogu
-(`src/utils/map-layers`). Wpis wygląda tak:
-
-```ts
-{
-  id: 'macro-region',
-  label: 'Macro regions',
-  source: 'macroRegionIdMap',
-  dataType: 'uint8',
-  clipTo: 'world-shape',
-  boundarySource: 'region',
-  palette: { kind: 'discrete', colors: [...], overflow: 'cycle' },
-}
-```
-
-- `LayerSpec` to unia: `RasterLayerSpec` (`id`, `label`, `source`, `dataType`,
-  `clipTo`, `providesMask`, grupa zakładek i paleta `solid`/`ramp`/`discrete`)
-  oraz `VectorLayerSpec` (`id`, `label`, `source`, `clipTo`, grupa) dla warstw
-  z danymi domenowymi, bez typed array i palety.
-- `LayerRegistry` waliduje katalog, wykrywa cykle i wystawia niezależne `order`
-  (UI) oraz `buildOrder` (zależności).
-- `CatalogLayer` waliduje typed array i maluje piksele skompilowaną paletą;
-  warstwy wektorowe powstają w rejestrze fabryk po `layerId`, więc scena nie zna
-  typów domenowych, a nowy wektor to fabryka i klasa warstwy.
-- `MapState` generatora rozszerza `MapRasters` o dane nierastrowe, np. plan
-  geologii, więc etapy nie muszą znać renderera.
-- Nowa warstwa rastrowa to wpis w katalogu, plik stage'a, fabryka w
-  `pipeline-factory.ts` i pozycja w `PIPELINE_STAGES`; kolejność katalogu
-  wynika z kolejności etapów, więc wpisu nie trzeba przestawiać ręcznie.
-
-`utils/map-renderer` odpowiada za scenę, widok, cache warstw, statystyki oraz
-zapis i odtworzenie ostatniej mapy. Katalog opisuje wyłącznie warstwy możliwe do
-pokazania; palety, normalizację i kolejność rysowania trzyma renderer podglądu.
-
-### 2.4. Podgląd: warstwy, nakładki i inspekcja — [działa]
-
-Podgląd rozdziela warstwę bazową od nakładek. Warstwa bazowa zajmuje cały
-canvas, natomiast granica świata jest rysowana na drugim canvasie nad nią. UI
-utrzymuje jeden aktywny wybór bazowy oraz zbiór aktywnych nakładek, zamiast
-traktować każdą kombinację jako osobny typ mapy.
-
-- Główne zakładki to `World shape`, `Macro regions` i `Geology`
-  (kolejność z katalogu warstw), a nakładka `World boundary` jest rysowana nad
-  warstwą bazową.
-- Definicje warstw mogą grupować kilka podwidoków pod jedną zakładką; przełącznik
-  pokazuje się dopiero dla grupy z co najmniej dwoma podwidokami. `Macro regions`
-  jest obecnie pojedynczą warstwą bez podwidoków.
-- Raster może zadeklarować źródło granicy analitycznej (`boundarySource`:
-  `region` dla makroregionów). Malarz rozdziela wtedy granice w rozdzielczości
-  ekranu zamiast po komórkach rastra, a geometrię dostarcza scena z konfiguracji.
-- Warstwa `Geology` jest wektorowa: ciało prowincji w kolorze zależnym od typu
-  i indeksu, białe rowki rozdzielają granice, a podświetlenie zaznaczonej
-  prowincji rysuje pasmo akcentu; na środku ciała leży kropka kotwicy z ikoną
-  typu. Plan geologii jedzie w `MapInfo` i jest zapisywany razem z mapą, więc
-  warstwa działa też po odtworzeniu mapy. Odczyt pod kursorem zwraca id
-  prowincji, jej typ, charakter i udział powierzchni.
-- Rysowanie jest progresywne, a wybór pamiętany między widokami.
-- Przelot przez etapy pokazuje się tylko przy pierwszej mapie (albo po zmianie
-  rozmiaru lub kształtu, która resetuje scenę). Gdy podgląd ma już wyświetloną
-  warstwę, regeneracja zachowuje wybór użytkownika, a nowe dane podmieniają się
-  w miejscu — bez migotania i bez przeskakiwania zakładek.
-- Granica świata jest rysowana analitycznie (`arc`/`rect`) w rozdzielczości
-  ekranu, niezależnie od siatki próbek.
-- Podgląd otwiera się w trybie pełnoekranowym (przełącznik w nagłówku), a zamyka
-  go ten sam przełącznik lub `Esc`, jako nakładka nad stroną; canvas wypełnia
-  wtedy cały obszar roboczy z zachowaniem proporcji mapy, więc na szerokich
-  ekranach zoom 1x-4x (kółko myszy oraz kroki `-`/`+` w sekcji `View`) odsłania
-  więcej mapy po bokach.
-- Przeciągnięcie myszą lub palcem przesuwa mapę, a tap lub klik przypina odczyt
-  (również poza trybem pełnoekranowym); widok wraca do całości przy wyjściu
-  z trybu pełnoekranowego.
-- Inspekcja mapy pokazuje pod kursorem pozycję w komórkach (`cell`) i odległość
-  w metrach (wiersze `Position` i `Distance`, wspólne kolumny `X`/`Y`) oraz
-  wartość wybranej warstwy; odczyt można przypiąć na urządzeniach dotykowych.
-- Ostatnia ukończona mapa i jej konfiguracja są trzymane w pamięci na czas
-  działania aplikacji i odtwarzane po powrocie; odświeżenie strony czyści stan.
-
-Obecnie nakładki bazują na przełącznikach (`Switch`) w `OverlayControls`, wybór
-warstw na pionowym pasku `LayerTabs`, a sekcje i odczyt trzyma `MapSidebar`.
-W przyszłości nakładki numeryczne, takie jak temperatura i wilgotność, powinny
-otrzymać także kontrolę przezroczystości oraz ustaloną paletę kolorów.
-Filtrowanie próbkowania i statystyki buforów są już wdrożone (#315); krawędzie
-świata i regionów są wygładzane w rozdzielczości ekranu (#319), a obwódka
-świata jest rysowana na zewnątrz mapy (#306).
-
-### 2.5. Statystyki i progres — [działa]
-
-- Progres pokazuje aktualny etap, numer etapu i procent raportowany z wnętrza
-  etapów; postęp przeżywa zmianę widoku.
-- Segmentowany wskaźnik pokazuje stan każdego etapu (oczekuje, trwa, ukończony,
-  pominięty, błąd) i odróżnia generowanie danych od renderowania podglądu.
-- Etapy pominięte przy selektywnym przeliczaniu mają szary segment z podpisem
-  `skipped`, a licznik je wymienia (np. `2 / 3, 1 skipped`).
-- Statystyki generowania i renderowania zbierane są w globalnych store'ach
-  i pokazywane na stronie `/statistics`. Reużyte etapy zachowują tam realny czas
-  i metryki z runu, który je wyliczył, z oznaczeniem `reused`.
-- Sekcja `Map` na `/statistics` pokazuje wymiary fizyczne (`1,000 × 1,000 m`),
-  detal terenu (metry na komórkę) i pole powierzchni w km²; `Seed`, `Shape`,
-  `Cells` i `Total time` zostają bez zmian.
-
-### 2.6. Opcjonalne spięcie zakładek ustawień i podglądu — [działa]
-
-Użytkownik może włączyć i wyłączyć synchronizację zakładek w obu kierunkach.
-Przełącznik z ikoną łańcucha (`TabLinkToggle`) siedzi w nagłówku formularza
-ustawień i ma czytelny stan (`aria-pressed`), tooltip oraz nazwę dostępną dla
-czytników ekranu.
-
-- Domyślnie spięcie jest wyłączone. Stan żyje w `useViewSyncStore` i przeżywa
-  zmianę widoku aplikacji, tak jak pozostałe preferencje podglądu.
-- Po włączeniu kliknięcie zakładki formularza wybiera odpowiadającą warstwę
-  podglądu, a kliknięcie warstwy w podglądzie wybiera zakładkę formularza. Samo
-  włączenie wyrównuje podgląd do aktywnej zakładki, jeśli jej dane są dostępne;
-  wyłączenie pozostawia oba bieżące wybory bez zmian.
-- Powiązanie opiera się na identyfikatorach etapów (`layerForTab`/`tabForLayer`),
-  nie indeksach ani etykietach. `General` nie ma odpowiednika w podglądzie,
-  a wybór formularza bez dostępnych danych nie czyści obrazu i nie generuje.
-- Synchronizację wywołują działania użytkownika. Automatyczne przechodzenie
-  podglądu przez etapy podczas generowania nie przełącza formularzy i nie
-  powoduje pętli wzajemnych aktualizacji.
-
-### 2.7. Automatyczne odświeżanie podglądu po zmianie kontrolek — [odłożone]
-
-Zależności są gotowe: rasteryzacja warstw do rozdzielczości viewportu × DPR
-(sekcja 9, „Wydajność i pamięć") oraz selektywne przeliczanie etapów z
-prezentacją pominiętych etapów (§2.8). Samo odświeżanie po zmianie kontrolek
-jest decyzją produktową i zostało odłożone do Backlogu — wróci, jeśli okaże się
-potrzebne w codziennej pracy z generatorem, razem z osobą rozdzielczością
-danych roboczego podglądu.
-
-- Zmiana poprawnej wartości w formularzu automatycznie odświeża powiązany
-  podgląd po krótkim debounce, początkowo około 150 ms. Nie wymaga kliknięcia
-  `Generate Map`; niepełne lub niepoprawne wartości nie uruchamiają obliczeń.
-- Przeliczany jest zmieniony etap oraz wymagane zależności, z ponownym użyciem
-  nadal aktualnych danych. Zmiana makroregionów nie przelicza niezależnego
-  szumu. Zmiany wspólnego seedu lub wymiarów unieważniają odpowiednie zależności.
-- Obliczenia działają w workerze, z ograniczoną rozdzielczością próbkowania
-  podglądu. Ten sam seed i znormalizowane współrzędne zachowują układ świata;
-  roboczy podgląd nie zastępuje pełnych danych ostatniego wygenerowanego świata.
-- Nowsza zmiana anuluje lub zastępuje starsze zlecenie. Spóźniony wynik nie
-  może nadpisać nowszego podglądu ani pełnego wyniku `Generate Map`.
-- UI zachowuje aktywną zakładkę, podwidok i nakładki, pokazuje stan odświeżania
-  oraz odróżnia roboczy podgląd od wyniku w docelowej jakości. Nieaktualne
-  wyniki zależnych etapów są oznaczane jako wymagające ponownego wygenerowania.
-- `Generate Map` nadal uruchamia pełny pipeline w docelowej rozdzielczości.
-  Zmiana samego sposobu wyświetlania lub nakładek nie uruchamia generatora.
-- Weryfikacja obejmuje serię szybkich zmian kontrolek, anulowanie oraz
-  zgodność seedu i układu przy różnych rozdzielczościach.
-
-### 2.8. Selektywne przeliczanie etapów — [działa]
-
-Przy ponownym generowaniu uruchamiają się tylko etapy, których dotyczy zmiana
-konfiguracji, a reszta jest reużyta:
-
-- każdy etap deklaruje w `stage-definitions.ts` ścieżki konfiguracji, od których
-  zależy jego wynik (`configKeys`), wraz z tym, co dziedziczy przez rastry
-  wcześniejszych etapów — np. makroregiony deklarują `world.shape`, bo omijają
-  komórki poza maską (`selectDirtyStageIds`),
-- przeliczają się dokładnie te etapy, których ścieżka się zmieniła; zmiana
-  makroregionów nie rusza geologii,
-- pierwszy run, zmiana seedu, rozmiaru lub kształtu unieważniają wszystko,
-- worker dostaje brudny zbiór i rastrowe dane zapisanej mapy, seeduje nimi stan
-  i pomija czyste etapy, emitując dla nich `stage-skipped` (bez odsyłania
-  rastrów z powrotem),
-- sesja scala reużyte rastry do snapshotu i wysyła do podglądu tylko nowe
-  warstwy; pominięte etapy nie ruszają wyboru w podglądzie, a w statystykach
-  zachowują realny czas i metryki z runu, który je wyliczył.
-
-Zapisana mapa i jej baseline żyją do momentu, gdy nowy run się powiedzie —
-anulowanie albo błąd nie kasuje ostatniej mapy. Automatyczne odświeżanie
-kontrolek (§2.7) pozostaje odłożone.
-
-### 2.9. Odświeżenie wyglądu shella — [planowane]
-
-Aplikacja działa, ale warstwa wizualna jest płaska (nieprzezroczyste panele,
-pas `gray-1`/`gray-2` z 1px liniami, dużo pustego miejsca). Kierunek zmian
-(#288):
-
-- header niższy i kompaktowy, spójny z trybem fullscreen (`p='compact'`),
-  **bez zmiany szerokości** — kontener 1600 px zostaje,
-- mniej pasów chromu; do rozważenia scalenie nawigacji z headerem,
-- głębia: `panelBackground='translucent'` z `Card variant='surface'`, spójna
-  skala odstępów i delikatne cienie; ewentualnie powrót do `radius='large'`,
-- typografia: mniejsze nagłówki sekcji, drobne etykiety z rozstrzeleniem,
-  jeden akcent do akcji (teal pozostaje kolorem brandu).
-
-Poza zakresem: dekoracyjne tło (#286). Placeholder pustego podglądu został już
-wdrożony osobno (#289/#290).
-
-### 2.10. Spostrzeżenia z testów — [propozycje]
-
-Uwagi z sesji testowej z generatorem. Na razie bez zadań — zapisujemy kierunek,
-do którego wrócimy przy kolejnych iteracjach formularzy i podglądu.
-
-- **Udziały regionów bazowych** — w układzie radialnym procent to grubość
-  pierścienia, nie pole, więc `20%` na zewnętrznym regionie zajmuje widocznie
-  więcej (równe 25% daje pola 6,25/18,75/31,25/43,75%), a poza pierścieniami
-  (np. rogi kwadratu) komórki trafiają do najbliższego regionu — stąd wrażenie
-  zmiany proporcji przy zmianie kształtu świata. Rozstrzygnięcie i wdrożenie:
-  #327 (wariant A/B/C). Do tego kopia w formularzu: `Width` vs „grubość
-  pierścienia" i ewentualne pokazanie efektywnego udziału pola obok procentu.
-- **Reset ustawień** — przycisk „wróć do domyślnych" dla całego formularza lub
-  pojedynczej zakładki, z potwierdzeniem; dziś makroregiony mają tylko stan
-  „edited manually" z podpowiedzią, żeby wybrać preset od nowa.
-- **Kolejność regionów** — dla regionów bazowych kolejność jest kosmetyczna,
-  dla nakładek oznacza priorytet malowania („ostatnia pasująca wygrywa"), więc
-  zamiana miejscami to decyzja o semantyce, a nie tylko UI. Osobno: paleta
-  mogłaby iść za `danger` (gradient bezpieczny → groźny) zamiast za indeks
-  regionu, co częściowo realizuje intencję „zamiany miejscami".
-- **Spięcie zakładek a przelot podglądu** — przy włączonym spięciu zmiana
-  rozmiaru lub kształtu nadal uruchamia przelot przez etapy (#342), bo reset
-  sceny włącza podążanie. Proponowana reguła: spięcie wyłącza przelot —
-  renderer prezentuje wyłącznie wskazaną warstwę, a podążanie działa tylko bez
-  spięcia.
-
-## 3. Fizyczna skala świata — [działa]
-
-Kanonicznym elementem `WorldConfig` jest `dimensions`, a etapy korzystają
-z `sampleWidth` i `sampleHeight` bez rekonstruowania wymiarów.
-`WorldDimensions` w `src/utils/world-dimensions.ts` niesie metry i rozmiar siatki:
-
-- `dimensionsFromMeters` wylicza liczby próbek z metrów i detalu,
-- `validateDimensions` pilnuje dodatnich wymiarów i budżetu próbek, a
-  `MapGenerator` uruchamia ją na wejściu, zanim etapy cokolwiek zaalokują,
-- `metersPerSample`, `metersToCell`, `cellCenterMeters`, `cellOriginMeters`,
-  `metersToNormalized`, `normalizedToMeters` i `normalizedToCell` pokrywają
-  przeliczenia między metrami, komórkami i współrzędnymi znormalizowanymi.
-
-Formularz świata przyjmuje rozmiar w metrach (presety 3, 6 i 12 km oraz własny
-rozmiar od 3000 do 12 000 m) i osobny „terrain detail" (1 / 2 / 4 / 8 / 16 m na
-próbkę). Pokazuje wyliczoną siatkę `samples` i szacowany rozmiar danych generacji
-(MB dziesiętne, tak jak statystyki). Budżet `864 MB` (`MEMORY_BUDGET_BYTES`)
-dotyczy danych generatora: rastrów etapów w workerze i kopii wysyłanej do
-głównego wątku. Przy `12 B` na próbkę (maska, szum, makroregiony, właściciel
-prowincji i odległość od granicy) daje limit `36 000 000` komórek
-(`SAMPLE_BUDGET`, czyli siatka do `6000 × 6000`). `summarizeWorldGrid` wylicza
-siatkę, efektywny `m/sample` i szacowany rozmiar danych, a gdy żądany detal
-przekracza budżet, formularz przycina rozdzielczość i pokazuje ostrzeżenie —
-rozmiar fizyczny zostaje, rośnie `m/sample`.
-
-Przykładowo świat `4000 × 4000 m` może mieć bazową `heightmap` o rozdzielczości
-`2000 × 2000`, co daje około `2 m` na komórkę. Podgląd tego samego świata może
-mieć tylko `512 × 512 px`, a kamera gry może wyrenderować aktualnie widoczny
-fragment w rozdzielczości ekranu. Zmiana rozdzielczości PNG nie zmienia wtedy
-wielkości wyspy w grze. PNG pozostaje wizualizacją albo formatem eksportu, a nie
-źródłem prawdy dla świata; źródłem prawdy są seed, konfiguracja i numeryczne
-warstwy generatora.
-
-Wymiary trafiają też do kanału informacji jako `worldDimensions`, więc snapshot
-i odczyt pod kursorem znają skalę. Rozdzielczość podglądu i eksportowanego obrazu
-pozostaje niezależna od rozdzielczości danych.
-
-Pamięć renderera jest poza tym budżetem: od #285 warstwy i prezentacja są
-rasteryzowane w rozmiarze viewportu × DPR (z limitem DPR 2), a nie w rozmiarze
-rastra. Od #319 każda warstwa maluje w rozdzielczości ekranu z marginesem na
-gesty także przy powiększeniu, żeby ciągłe granice regionów i świata były
-gładkie; przy pomniejszeniu próbkowanie szumu pozostaje filtrowane, żeby
-ograniczyć aliasing. Każda warstwa trzyma stabilną klatkę (`canvas`) i mały
-`overview` całej mapy (~512 px); bufor renderu w toku (`stage`) istnieje tylko
-na czas malowania i jest zwalniany po commicie. Canvas prezentacji pozostaje
-viewportowy. Dane generatora nadal mają pełną rozdzielczość. Efekt: rozmiar
-canvasu warstwy zależy od viewportu i DPR, nie od rastra; przy 600 × 600 CSS px
-i DPR 2 to ~14 MB na warstwę (canvas ~13 MB + `overview` ~1 MB), dawniej 400 MB
-przy mapie 10 000 × 10 000. Szczyt całej
-aplikacji jest wyższy od budżetu generatora i widać go w statystykach
-renderowania, razem z rozdzielczością źródłową i wynikową każdej warstwy.
-Świadomie nie uwalniamy canvasów nieaktywnych warstw — przełączanie warstw ma
-być natychmiastowe, bez migania. Zwolnienie `stage` po commicie, budżet cache
-oraz kopie `postMessage` opisuje sekcja 9.
-
-## 4. Kolejne etapy pipeline'u — [częściowo]
-
-Docelowy pipeline rozszerza obecne trzy etapy. Kolejność może być później
-doprecyzowana, szczególnie w przypadku wzajemnego wpływu hydrologii, erozji
-i formacji terenu. Kanoniczna kolejność jest zdefiniowana w jednym miejscu —
-`PIPELINE_STAGES` w `src/utils/map-generator/stage-definitions.ts` — i steruje
-generatorem oraz kolejnością warstw w podglądzie.
-
-1. `WorldShapeStage` — wyznaczenie obszaru świata zgodnie z kształtem i topologią presetu. **[działa]**
-2. `MacroRegionStage` — rozłączne makroregiony oraz ich narracyjne wymagania, w tym docelowe zagrożenie. **[działa]**
-3. `GeologyStage` — podział świata na prowincje geologiczne, raster właściciela i odległość od granicy. **[działa]**
-4. ~~`LandmassLayoutStage` i `StructureCharacterStage`~~ — usunięte z kodu; zastąpił je podział na prowincje w `GeologyStage`.
-5. `HeightmapStage` — jedno ciągłe pole wysokości z planu Geologii; wartości mogą być ujemne (głębiny). Podgląd stosuje poziom morza jako próg renderingu — komórki poniżej progu kolorowane są na niebiesko, bez udziału pipeline'u. Następne etapy wymagające maski lądu (`ClimateStage`, `HydrologyStage`) mogą ją wyliczyć z `heightmap` i `seaLevel` na wejściu. **[odłożone]**
-6. ~~`LandOceanStage`~~ — usunięty jako osobny etap. Poziom morza to suwak w formularzu `HeightmapStage`; renderer nakłada wodę na gotową heightmapę bez regneracji. Jeśli w przyszłości konieczna okaże się linia brzegowa jako osobny raster, można wrócić do tej decyzji.
-7. `ClimateStage` — temperatura, opady, wilgotność i pozostałe warunki klimatyczne. **[planowane]**
-8. `HydrologyStage` — przepływ wody, rzeki, jeziora i zlewiska wynikające między innymi z opadów. **[planowane]**
-9. `TerrainFeaturesStage` — klify, plaże, doliny, płaskowyże i inne formacje. **[planowane]**
-10. `BiomeStage` — biomy wynikające z warunków środowiskowych. **[planowane]**
-11. `LocationStage` — spawn, zasoby, bossowie i pozostałe lokacje. **[planowane]**
-
-### 4.1. Podział pracy między etapami — [planowane]
-
-Jednym źródłem podziału świata jest `GeologyStage`: prowincje z typem
-i docelowym udziałem powierzchni, bez wysokości i bez lądów. `HeightmapStage`
-zamieni ten plan na jedno ciągłe pole wysokości — wartości mogą być ujemne
-(głębiny oceanu). Poziom morza to parametr renderingu, a nie etapu: renderer
-koloruje komórki poniżej progu na niebiesko bez uruchamiania pipeline'u.
-`ClimateStage` i `HydrologyStage` wymagające maski lądu wyliczają ją lokalnie
-z `heightmap` i `seaLevel` przekazanego przez konfigurację. `BiomeStage`
-sklasyfikuje biom na podstawie wysokości, klimatu i hydrologii. Każdy etap
-losujący formy ma własny strumień szumu; współdzielimy funkcję i układ
-współrzędnych, nie jedną mapę szumu.
-
-Formularz geologii ma cztery presety startowe (Varied, Oceanic, Vast, Mosaic),
-które jednorazowo wypełniają liczbę, typy, wielkości i układ prowincji.
-Geologia nie obiecuje konkretnej linii brzegowej — nie generuje lądów ani
-wysokości.
-
-## 5. Hydrologia, biomy i klimat — [planowane]
-
-### 5.1. Hydrologia i biomy — [planowane]
-
-Jeziora i rzeki powinny wynikać z wysokości, spadków, zlewisk i wilgotności.
-Wysoki `lakePotential` zwiększa szansę na jeziora, ale nie powinien tworzyć ich
-w miejscach fizycznie niepasujących.
-
-Biomy powinny korzystać z faktycznych warunków komórki:
-
-```ts
-interface CellEnvironment {
-  elevation: number;
-  slope: number;
-  moisture: number;
-  temperature: number;
-  waterDistance: number;
-  drainage: number;
-}
-```
-
-Przykładowo bagno wymaga płaskiego, wilgotnego i nisko położonego obszaru.
-Profil struktury wpływa na teren, a rzeczywisty teren określa, które biomy są
-możliwe.
-
-### 5.2. Klimat, wilgotność i niebezpieczeństwo — [planowane]
-
-`ClimateStage` powinien tworzyć ciągłe pola środowiskowe, przynajmniej
-`temperatureMap` i `moistureMap`. W przyszłości mogą dojść `volcanicActivityMap`,
-`windMap` oraz pola sezonowe. `BiomeStage` klasyfikuje biomy na podstawie
-kombinacji tych wartości, wysokości, nachylenia, odległości od wody i hydrologii.
-
-Przykładowe kombinacje:
-
-| Temperatura | Wilgotność | Przykładowy biom |
-| --- | --- | --- |
-| gorąco | sucho | pustynia |
-| gorąco | mokro | las deszczowy |
-| umiarkowanie | sucho | step |
-| umiarkowanie | średnio | równiny |
-| umiarkowanie | mokro | las |
-| zimno | sucho | tundra |
-| zimno | mokro | tajga, śnieg lub lodowiec |
-
-Wilgotność nie powinna być prostym podziałem na suchy zachód i mokry wschód.
-Kierunkowy gradient może być jedynie słabym wpływem bazowym. Na niego należy
-nałożyć wielkoskalowy noise, kilka suchych i mokrych centrów wpływu, odległość od
-oceanu, dominujące wiatry oraz cień opadowy gór. W efekcie powstaną nieregularne
-wyspy wilgotności i suchości, które miejscami przenikają na przeciwną stronę
-świata. Granice powinny być dodatkowo deformowane przez domain warping.
-
-Klimat należy oddzielić od docelowego poziomu niebezpieczeństwa. Dwie strefy
-umiarkowane w realistycznym świecie nie muszą być równoważne. Jedna może
-zawierać bezpieczne równiny i lasy, a druga niebezpieczne warianty wynikające
-z silnego wulkanizmu, toksycznych mokradeł, gwałtownych burz albo odmiennej
-geologii. Podobnie oba zimne krańce mogą różnić się charakterem, mimo podobnej
-temperatury.
-
-Każda definicja makroregionu zawiera `danger` w zakresie `0..1`. Późniejsze etapy
-odczytują tę wartość przez `macroRegionIdMap`; nie powstaje osobny raster danger.
-`BiomeStage` najpierw wyznacza bazowy biom na podstawie warunków fizycznych,
-a następnie używa danger jako ograniczenia dla jego wariantu gameplayowego.
-`LocationStage` używa tego samego parametru przy rozmieszczaniu przeciwników,
-bossów, zasobów i nagród. Dzięki temu fabuła może wymagać niebezpiecznego
-południowego regionu bez sztucznego zmieniania całej jego temperatury.
-
-## 6. Presety świata i konfiguracja makroregionów — [częściowo]
-
-### 6.1. Makroregiony — [działa]
-
-Układ bazowy dzieli cały świat na przylegające regiony radialne, poziome albo
-pionowe. Region nakładany jest poziomym lub pionowym pasem, który wycina swój
-obszar z układu bazowego i ma własny `danger`. Dzięki temu dwa pasy na brzegach
-świata mogą tworzyć bieguny, a pojedynczy pas może przeciąć układ pierścieni.
-Nakładanie nie tworzy wielu przynależności komórki: ostatni pas obejmujący punkt
-wygrywa, a `macroRegionIdMap` nadal przechowuje dokładnie jeden identyfikator.
-
-Formularz rozdziela bazowy układ od nakładanych regionów pasmowych, a wspólny
-edytor granic zmienia rozmiar dwóch sąsiednich regionów bez tworzenia luk.
-Picker presetów podświetla ten, który dokładnie odpowiada bieżącemu układowi
-i regionom (wariant `solid` + `aria-pressed`); po ręcznej edycji żaden preset nie
-pasuje i formularz pokazuje stan „edited manually". Kontrolki segmentowane
-w wąskich formularzach przewijają się poziomo, zamiast rozjeżdżać układ.
-Makroregiony są rozłączne: płynne przejścia należą do pól środowiskowych
-i wynikowych biomów, a nie do tożsamości makroregionu.
-
-### 6.2. Etykiety regionów — generyczny kanał informacji (#255) — [działa]
-
-Nazwy regionów z formularza są metadanymi podglądu, a nie rastrem:
-`macroRegionIdMap` przechowuje indeks regionu. Zamiast pól per funkcja działa
-generyczny kanał `MapInfo`: `MAP_INFO_CATALOG` w `map-generator` wyprowadza
-informacje nierastrowe z konfiguracji generacji (`macroRegionLabels`,
-`worldDimensions`), a snapshot i stan renderera niosą ten sam rekord. Odczyt pod
-kursorem rozwiązuje etykietę po indeksie regionu z fallbackiem `Region N`, więc
-nazwy pasują do wygenerowanego obrazu, nawet gdy formularz zmieni się bez
-ponownej generacji.
-
-Nowa informacja to wpis w katalogu i jej użycie — bez zmian w repository,
-rendererze i persistence. Docelowo ten sam kanał mogą zasilać metadane emitowane
-przez pipeline (plan B), bez zmian w UI.
-
-### 6.3. Presety świata — [planowane]
-
-Preset powinien być gotową konfiguracją tych samych etapów generatora, a nie
-osobną implementacją. Presety działają na dwóch poziomach:
-
-- preset świata definiuje budowę całego świata: topologię, układ i charakter stref
-  klimatycznych, źródła ciepła i wilgoci, obrót osi klimatu, gradienty oraz
-  rozkład `danger`; nie opisuje pojedynczych lądów,
-- preset geografii definiuje samą geografię: listę prowincji geologicznych
-  z typami, wielkościami i układem (`GeologyStage`); można go łączyć z dowolnym
-  presetem świata, np. archipelag na `Earth-like` albo pojedynczy kontynent na
-  `Mythic Moon`.
-
-„Preset geografii” oznacza listę prowincji geologicznych z ustawieniami, którą
-można ręcznie edytować. Preset świata i geografii pozostają oddzielnymi
-wyborami; zmiana pierwszego nie nadpisuje edytowanej listy bez jawnego działania
-użytkownika. Przy tworzeniu nowej konfiguracji preset świata może wskazać
-domyślny preset geografii, bez przechowywania własnej kopii prowincji.
-
-Użytkownik może rozpocząć od presetu, zmienić jego parametry, a następnie zapisać
-wynik jako własny profil.
-
-Planowane presety świata:
-
-1. `Mythic Moon` — zamieszkały księżyc gazowego giganta z bezpiecznym centrum, zimną północą, wulkanicznym południem i zagrożeniem rosnącym wraz z odległością od środka. Długie dni i noce, regularne zaćmienia oraz wulkanizm pływowy wspierają fabułę, ale model może świadomie upraszczać astrofizykę na rzecz czytelnego świata.
-2. `Earth-like` — zwykła obracająca się planeta, zimne bieguny, strefy umiarkowane, gorący równik oraz normalny cykl dnia i nocy.
-3. `Engineered Rings` — sztuczny albo magiczny świat z konfigurowalnymi pierścieniami klimatycznymi wokół centralnego sanktuarium.
-
-Przykładowe presety geografii: `Archipelago`, `Large Continent`, `Many Islands`,
-`Mountainous`.
-
-Tryb zaawansowany może pozwalać zmieniać układ makroregionów, szerokość stref,
-źródła ciepła i wilgoci, obrót osi klimatu, siłę gradientów oraz deformację
-granic.
-
-```ts
-interface WorldPreset {
-  id: string;
-  topology: WorldTopologyConfig;
-  climate: ClimateConfig;
-  macroRegions: MacroRegionConfig[];
-  starterRegion: StarterRegionConfig;
-  defaultGeographyPresetId?: string; // wybór początkowy, bez kopii obszarów
-}
-```
-
-Podglądy koncepcyjne:
-
-- [trzy presety świata](world-presets.jpg).
-
-### 6.4. Pierścienie dzielone z rotacją — [planowane]
-
-Układ radialny można rozszerzyć o pierścienie dzielone na dwa naprzemienne
-regiony. Krzyż z dwóch prostopadłych średnic tnie pierścień na cztery wycinki
-90°, a przeciwległe wycinki należą do tego samego regionu. Pierścień tworzą więc
-dwa regiony, każdy zajmujący połowę jego powierzchni.
-
-- Podział i rotacja są konfigurowane osobno dla każdego pierścienia; obrót np.
-  o 45° ustawia granice niezależnie od osi świata.
-- Każda połowa jest osobnym `MacroRegionConfig` z własną etykietą i `danger`, więc
-  jeden pierścień może mieć naprzemiennie bezpieczne i niebezpieczne wycinki.
-- Pierścień niepodzielony pozostaje jednym regionem; podział nie zmienia
-  niezmiennika partycji — wycinki przylegają do siebie i pokrywają cały
-  pierścień.
-- Limit 10 regionów oznacza maksymalnie 5 podzielonych pierścieni; dodawanie
-  i usuwanie działa na pierścieniach, nie na pojedynczych połowach.
-- Edytor szerokości nadal operuje na promieniach pierścieni, a procent regionu to
-  połowa udziału pierścienia.
-- Testy powinny objąć zawijanie kątów wokół 0/360, rotację inną niż 0/45/90 oraz
-  partycję każdej komórki dokładnie do jednego regionu bazowego.
-
-Geometria pierścienia zyskałaby opcjonalny podział, np. `split: { rotation, side }`,
-gdzie `side` wybiera jedną z dwóch par przeciwległych wycinków. `contains` dodaje
-wtedy warunek na kąt (`atan2`), a domain warping granic działa jak dotychczas,
-więc krzyż również falowałby spójnie z resztą mapy.
-
-Preset pokrewny: „Crossed rings” z naprzemiennym `danger` w obrębie pierścienia.
-
-## 7. Topologia i krawędzie świata — [planowane]
-
-Kształt mapy należy oddzielić od sposobu działania jej krawędzi oraz od presetu
-klimatu. Docelowo użytkownik będzie mógł wybrać świat radialny w formie dysku
-albo świat cylindryczny, niezależnie od wybranego układu temperatury i wilgotności.
-
-Obecnie dostępny jest tylko wybór maski `disc`/`rectangle`. Prostokąt nie zawija
-się na osi X ani Y; `WorldTopologyConfig`, okresowy szum i reguły krawędzi są
-planowane.
-
-```ts
-interface WorldTopologyConfig {
-  shape: 'disc' | 'rectangle';
-  wrapX: boolean;
-  wrapY: boolean;
-  closedEdge: 'cliff' | 'ocean' | 'ice-wall';
-  seamOffset: number;
-}
-```
-
-- Świat radialny lub ringowy może być dyskiem bez zawijania, zakończonym
-  urwiskiem opadającym poza granicę mapy.
-- Świat cylindryczny korzysta z prostokątnej mapy zawijanej na osi X. Przejście
-  przez zachodnią krawędź przenosi wtedy na wschodnią, natomiast północ i południe
-  pozostają zamknięte. Taka mapa nie posiada wyróżnionego środka na osi
-  wschód–zachód.
-- Noise, hydrologia, lądy i wszystkie inne warstwy muszą być okresowe na zawijanej
-  osi, aby na łączeniu mapy nie powstawał szew.
-- Okrągła maska i pełne zawijanie lewo–prawo nie tworzą naturalnej geometrii,
-  dlatego nie powinny być łączone w realistycznym presecie.
-
-### 7.1. Bezszwowe łączenie cylindra — [planowane]
-
-Świata cylindrycznego nie należy najpierw generować jako zwykłego prostokąta,
-a następnie sklejać jego boków. Okresowość musi obowiązywać od początku pipeline'u:
-
-- współrzędna X jest normalizowana modulo szerokość świata,
-- odległość pozioma korzysta z krótszej drogi przez lewą albo prawą krawędź,
-- noise jest okresowy na osi X; można go próbkować po okręgu za pomocą
-  `cos(2πx)` i `sin(2πx)`,
-- rasteryzacja lądu uwzględnia kopie struktur przesunięte o `-worldWidth`
-  i `+worldWidth`,
-- hydrologia oraz pozostałe operacje sąsiedztwa traktują lewą i prawą kolumnę
-  jako bezpośrednich sąsiadów,
-- wykrywanie spójnych wysp nadaje jeden identyfikator lądowi przecinającemu szew,
-- renderer normalizuje pozycję gracza i kamery oraz rysuje brakujący fragment
-  mapy z jej przeciwnej strony.
-
-```ts
-const directDx = Math.abs(x1 - x2);
-const wrappedDx = Math.min(directDx, worldWidth - directDx);
-const wrappedX = ((x % worldWidth) + worldWidth) % worldWidth;
-```
-
-Wyspa leżąca na szwie może wyglądać jak dwie połówki na płaskim eksporcie PNG,
-ale w świecie i podczas eksploracji pozostaje jedną ciągłą wyspą. Dla czytelniejszej
-minimapy można po wygenerowaniu wybrać `seamOffset` przechodzący przez największy
-obszar oceanu i tylko przesunąć miejsce rozcięcia wizualizacji, bez zmiany danych
-świata. Prostszym wariantem pierwszej wersji jest wymuszenie oceanicznego pasa na
-szwie, ale docelowo generator powinien poprawnie obsługiwać przecinające go wyspy.
-
-## 8. Eksploracja i eksport danych — [planowane]
-
-### 8.1. Demo eksploracji świata — [planowane]
-
-Planowana osobna podstrona, np. `/explore/:seed`, otwiera wygenerowany świat
-w trybie zwiedzania z kamerą z góry. To proste demo: docelowa gra powstanie
-w Godocie, a ta aplikacja jest rozgrzewką i generatorem danych, nie pełnym
-silnikiem gry.
-
-Zakres pierwszej wersji:
-
-1. Przejście z generatora do podstrony z seedem i konfiguracją świata.
-2. Jednorazowe wygenerowanie mapy i jej warstw numerycznych.
-3. Postać to na razie prosty znacznik (np. kółko) w naturalnej skali świata,
-   sterowany klawiaturą, poruszający się we współrzędnych w metrach.
-4. Kamera z góry śledząca postać oraz zoom.
-5. Renderowanie tylko obszaru widocznego przez kamerę, mimo że dane pozostają
-   w pamięci.
-
-Poza zakresem na teraz: kolizje, minimapa, animacje, ekwipunek, NPC i zapisywanie
-stanu. Kolizje, punkt startowy z `LocationStage` i minimapa wrócą, gdy powstaną
-warstwy terenu i lokacji. Chunkowanie oraz poziomy szczegółowości pozostają
-opcjonalną optymalizacją dla większych map. Skala postaci i kamery wynika
-z metrów świata oraz zoomu, a nie z liczby pikseli źródłowego obrazu.
-
-### 8.2. Eksport danych do Godota — [planowane, pomysł bez tasków]
-
-Jeśli kiedyś okaże się potrzebny, eksport to paczka danych, nie integracja:
-warstwy jako pliki (np. 16-bit PNG albo binaria) oraz `manifest.json` z seedem,
-wymiarami w metrach, `m/sample`, listą warstw, paletą, regionami, biomami
-i lokacjami w metrach. Godot budowałby teren i kolizje z tych samych danych,
-a nasz podgląd pozostałby narzędziem deweloperskim. Na razie bez zadań.
-
-## 9. Wydajność i pamięć — [częściowo]
-
-Techniczne podstawy i pomysły (formaty danych, kopie, canvasy, koszty etapów)
-zbiera ten rozdział.
-
-Już działa: sekwencyjny pipeline w jednym Web Workerze, dane w typed arrays,
-progresywne rysowanie podglądu, postęp raportowany z wnętrza etapów oraz
-statystyki generowania i renderowania pokazywane na stronie statystyk. Anulowanie
-kończy worker, cache warstw jest kluczowany tożsamością danych i współdzielony
-przez renderery, a renderer przerywa nieaktualne rysowanie przy starcie nowego
-przebiegu. `MacroRegionStage` liczy tylko komórki wewnątrz maski świata (#256).
-Warstwy renderują się bezpośrednio w buforze viewportu × DPR z marginesem i
-małym `overview` całej mapy, a render w tle nie wyciera wyświetlanej klatki
-(double buffer, anulowanie nieaktualnych przebiegów) — #285. Od #319 każda
-warstwa maluje w rozdzielczości ekranu z marginesem, także przy powiększeniu
-(gładkie granice), próbkowanie szumu jest filtrowane przy pomniejszeniu,
-a statystyki renderowania pokazują rozdzielczość źródłową i wynikową oraz
-rozmiar buforów każdej warstwy.
-Bufor renderu w toku jest zwalniany po commicie, więc w spoczynku warstwa trzyma
-tylko klatkę i `overview`. Selektywne przeliczanie etapów (§2.8) pomija czyste
-etapy i nie odsyła ich rastrów z workera, a podgląd nie przygotowuje ich
-ponownie.
-
-Pozostałe zadania:
-
-- Zmniejszyć szczyt pamięci poza budżetem generatora: pełnowymiarowe canvasy już
-  zniknęły (#285); zostały kopie `postMessage` — usuwa je jednorazowa wysyłka
-  wyników albo `SharedArrayBuffer` (nagłówki COOP/COEP). Transfer buforów per
-  etap nie wchodzi w grę, bo worker potrzebuje ich w kolejnych etapach.
-- Automatyczne odświeżanie po zmianie kontrolek jest odłożone (§2.7); zależności
-  — rasteryzacja do viewportu i selektywne przeliczanie — są gotowe.
-- Wprowadzić budżet pamięci cache i uzależnić przygotowanie nieaktywnych warstw
-  od dostępnego budżetu (#158) — odłożone do czasu, gdy warstw będzie więcej
-  (kolejne etapy pipeline'u) albo przy pracy w pełnoekranowej rozdzielczości 4K.
-- Selektywne przeliczanie etapów jest wdrożone (§2.8): deklaracje `configKeys`,
-  diff konfiguracji i ponowne użycie wyników z `stage-skipped` w progressie
-  (#257, #258).
-- Rozważyć reużycie workera (zamiast świeżego na run), jeśli koszt startu okaże
-  się istotny.
-- Rozważyć wykonywanie etapów łatwych do podziału pasami lub kafelkami w puli
-  workerów. Hydrologię i inne globalnie zależne etapy dzielić dopiero po
-  zaprojektowaniu ich przepływu danych.
-- Rozważyć WebGL lub WebGPU dopiero, gdy będzie realna potrzeba.
+a docelowa gra powstanie w Godocie. Ten dokument zbiera ogólny kierunek rozwoju;
+szczegóły implementacji żyją w kodzie i zadaniach, nie tutaj.
+
+Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament jest,
+**[planowane]** — brak implementacji, **[odłożone]** — poza aktywnym planem.
+
+## 1. Zasady — [działa]
+
+- Generator to rozszerzalny pipeline niezależny od renderowania i UI; kolejność
+  etapów jest zdefiniowana w jednym miejscu.
+- Świat używa jednego układu współrzędnych i jednej miary odległości; jeden seed
+  daje niezależne, nazwane strumienie losowości dla etapów.
+- Rozdzielczość danych nie określa fizycznego rozmiaru świata: świat ma metry,
+  a podgląd i eksport to wizualizacje tych samych danych.
+- Etapy deklarują wejścia i wyjścia; zmiana konfiguracji przelicza tylko
+  potrzebne etapy, a generowanie działa w tle (Web Worker).
+
+## 2. Stan: co już działa
+
+- **Pipeline** — etapy World shape, Macro regions, Geology i Heightmap działają
+  w workerze, z postępem, statystykami, selektywnym przeliczaniem i pamięcią
+  sesji między widokami.
+- **Geologia** — świat dzieli się na prowincje o typie i charakterze
+  (ordinary, volcanic, lagoon, fjord), z granicami, presetami i udziałami
+  powierzchni; parametry rzeźby regionu wędrują do planu geologii.
+- **Heightmapa** — rzeźba powstaje z form wysp na region: od archipelagu po
+  jedną skupioną wyspę, z płaskimi i górzystymi masami, klifami, kraterami
+  i lagunami; poziom wody jest stały w rastrze (bez suwaka poziomu morza),
+  a wysepki pojawiają się tylko na płytkim szelfie przy brzegach.
+- **Ustawienia** — zakładka na etap: kształt i rozmiar świata, makroregiony,
+  geologia (typ regionu) oraz heightmapa (rzeźba globalna i suwaki regionów);
+  stan formularzy jest pamiętany, a spięcie zakładek z podglądem opcjonalne.
+- **Podgląd** — katalog warstw (shape, macro, geology, heightmap), nakładki,
+  odczyt pod kursorem, zoom/pan, tryb pełnoekranowy, miarka i skala; warstwy
+  rysują się progresywnie, w rozdzielczości ekranu.
+- **Statystyki** — czasy i metryki etapów oraz renderowania, osobna strona
+  statystyk.
+
+## 3. Rzeźba terenu — co zostaje — [częściowo]
+
+- Kalibracja archetypów i wieku regionów po testach wzrokowych: kratery,
+  pierścienie lagun, wcięcia fjordów, erozja starych regionów.
+- Mierzalna walidacja wariacji wysp, spójności między rozdzielczościami oraz
+  czasu i pamięci generowania.
+
+## 4. Kolejne etapy pipeline'u — [planowane]
+
+Kolejność może się jeszcze zmienić; każdy etap czyta wyniki poprzednich.
+
+1. **Klimat** — temperatura, opady i wilgotność; maska lądu wynika z heightmapy.
+2. **Hydrologia** — rzeki, jeziora i zlewiska z wysokości i opadów.
+3. **Formacje terenu** — klify, plaże, doliny i płaskowyże wynikające z nachyleń.
+4. **Biomy** — klasyfikacja z warunków środowiskowych, z wariantami gameplayowymi
+   zależnymi od zagrożenia regionu.
+5. **Lokacje** — punkt startowy, zasoby, przeciwnicy i nagrody.
+
+## 5. Presety świata i geografia — [planowane]
+
+Preset świata (topologia, strefy klimatyczne, zagrożenie) i preset geografii
+(lista prowincji) będą niezależnymi wyborami, które można łączyć i edytować.
+Na start kilka gotowych światów i geografii, później tryb zaawansowany.
+
+## 6. Topologia i krawędzie — [planowane]
+
+Na razie dysk albo prostokąt bez zawijania. Docelowo: świat cylindryczny
+z bezszwowym zawijaniem, konfigurowalne krawędzie (klif, ocean, lodowa ściana)
+oraz spójna okresowość szumu i sąsiedztw.
+
+## 7. Eksploracja i eksport — [planowane]
+
+- Prosta podstrona zwiedzania świata z kamerą i znacznikiem postaci; to demo,
+  nie silnik gry.
+- Eksport paczki danych dla Godota (rastry i manifest z seedem, wymiarami,
+  warstwami i lokacjami) jako pomysł na przyszłość, bez integracji.
+
+## 8. Wydajność i pamięć — [częściowo]
+
+Podgląd rysuje w rozdzielczości okna i nie trzyma pełnowymiarowych canvasów.
+Otwarte tematy: kopie danych przy `postMessage` (albo SharedArrayBuffer),
+budżet pamięci cache warstw, reużycie workera i — dopiero po pomiarach —
+przeniesienie ciężkiego rysowania na WebGL/WebGPU.
+
+## 9. Pozostałe kierunki — [planowane / odłożone]
+
+- Odświeżanie podglądu po zmianie kontrolek (odłożone).
+- Odświeżenie wyglądu shella i ewentualne dekoracyjne tło.
+- Udostępnianie świata linkiem, samouczek i strona o projekcie.
+- Wsparcie innych języków interfejsu (odległe).

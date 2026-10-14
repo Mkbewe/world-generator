@@ -141,7 +141,8 @@ describe('GenerationStatisticsPanel', () => {
             regions: 5,
             ordinary: 3,
             volcanic: 2,
-            atoll: 0,
+            lagoon: 0,
+            fjord: 0,
           },
         }),
       ],
@@ -154,8 +155,9 @@ describe('GenerationStatisticsPanel', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('Volcanic')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('Atoll')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText('Lagoon')).toBeInTheDocument();
+    expect(screen.getByText('Fjord')).toBeInTheDocument();
+    expect(screen.getAllByText('0').length).toBeGreaterThan(0);
     expect(screen.queryByText('5.000')).not.toBeInTheDocument();
     expect(screen.queryByText('0.000')).not.toBeInTheDocument();
   });

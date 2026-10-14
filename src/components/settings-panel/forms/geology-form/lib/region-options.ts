@@ -1,4 +1,7 @@
-import type { GeologicalRegionType } from '../../../../../utils/map-generator';
+import {
+  GEOLOGICAL_REGION_TYPES,
+  type GeologicalRegionType,
+} from '../../../../../utils/map-generator';
 import { REGION_STYLES } from '../../../../../utils/map-layers';
 
 export interface RegionTypeOption {
@@ -7,10 +10,8 @@ export interface RegionTypeOption {
   readonly description: string;
 }
 
-const TYPES: readonly GeologicalRegionType[] = ['ordinary', 'volcanic', 'atoll'];
-
 /** Radio options of the region type; labels match the map legend. */
-export const REGION_TYPE_OPTIONS: readonly RegionTypeOption[] = TYPES.map(id => ({
+export const REGION_TYPE_OPTIONS: readonly RegionTypeOption[] = GEOLOGICAL_REGION_TYPES.map(id => ({
   id,
   label: REGION_STYLES[id].label,
   description: REGION_STYLES[id].description,

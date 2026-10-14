@@ -22,7 +22,7 @@ function createDraft(): BoundaryDraft {
   };
 }
 
-function renderDistribution(types: readonly GeologicalRegionType[] = ['ordinary', 'atoll']) {
+function renderDistribution(types: readonly GeologicalRegionType[] = ['ordinary', 'lagoon']) {
   render(
     <Theme>
       <RegionDistribution segments={SEGMENTS} draft={createDraft()} minShare={10} types={types} />
@@ -37,7 +37,7 @@ describe('RegionDistribution', () => {
     expect(screen.getByLabelText('Geology region areas')).toBeInTheDocument();
     expect(screen.getByText('Area share')).toBeInTheDocument();
     expect(screen.getByTitle('Region 1: Ordinary (60%)')).toBeInTheDocument();
-    expect(screen.getByTitle('Region 2: Atoll (40%)')).toBeInTheDocument();
+    expect(screen.getByTitle('Region 2: Lagoon (40%)')).toBeInTheDocument();
     expect(screen.getAllByRole('slider')).toHaveLength(1);
   });
 

@@ -2,6 +2,7 @@ import { buildGenerationConfig, type GenerationConfigInput } from './generation-
 import {
   GEOLOGY_FORM_DEFAULTS,
   geologyConfigOf,
+  HEIGHTMAP_FORM_DEFAULTS,
   MACRO_REGION_FORM_DEFAULTS,
 } from '../../../stores';
 
@@ -14,6 +15,7 @@ function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfig
     macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
     macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
     geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
+    heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
     ...overrides,
   };
 }
@@ -38,6 +40,7 @@ describe('buildGenerationConfig', () => {
         macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
         macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
         geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
+        heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
       },
     });
   });

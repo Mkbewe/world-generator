@@ -20,10 +20,15 @@ export const REGION_STYLES: Readonly<Record<GeologicalRegionType, RegionStyle>> 
     description: 'Cones and ridges',
     color: [196, 88, 72],
   },
-  atoll: {
-    label: 'Atoll',
-    description: 'Low reef platforms and lagoons',
+  lagoon: {
+    label: 'Lagoon',
+    description: 'Low reef rings, lagoons and sandy islets',
     color: [72, 158, 170],
+  },
+  fjord: {
+    label: 'Fjord',
+    description: 'Steep notched coasts and deep channels',
+    color: [92, 118, 156],
   },
 };
 

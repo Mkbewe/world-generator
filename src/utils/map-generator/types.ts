@@ -67,18 +67,24 @@ export interface WorldPoint {
 
 /**
  * What kind of ground a region tends to express: ordinary ground, volcanic
- * relief or lagoons and reefs. The type is a label for the future heightmap;
- * the partition itself reads sizes and distances, never the name.
+ * relief, lagoons and reefs or fjord coasts. The type labels the region for
+ * the heightmap; the partition itself reads sizes and distances, never the
+ * name.
  */
-export const GEOLOGICAL_REGION_TYPES = ['ordinary', 'volcanic', 'atoll'] as const;
+export const GEOLOGICAL_REGION_TYPES = ['ordinary', 'volcanic', 'lagoon', 'fjord'] as const;
 
 export type GeologicalRegionType = (typeof GEOLOGICAL_REGION_TYPES)[number];
 
 /**
- * Terrain parameters stored with every region and read by the heightmap; the
- * geology stage carries them but never uses them.
+ * Terrain parameters of the heightmap's region slots; the geology stage never
+ * reads them.
  */
-export const REGION_TERRAIN_PARAMETERS = ['concentration', 'mountainousness', 'landShare'] as const;
+export const REGION_TERRAIN_PARAMETERS = [
+  'landShare',
+  'concentration',
+  'age',
+  'mountainousness',
+] as const;
 
 export type RegionTerrainParameter = (typeof REGION_TERRAIN_PARAMETERS)[number];
 
@@ -87,12 +93,21 @@ export interface GeologicalRegionConfig {
   readonly type: GeologicalRegionType;
   /** Relative area share: 1 is the even share of the world, higher grows it. */
   readonly size: number;
-  /** Land concentration: 0 gathers one large island, 1 scatters an archipelago. */
+}
+
+/** Terrain parameters of one region, read only by the heightmap stage. */
+export interface RegionTerrainConfig {
+  /** Target share of the region's surface above the water, 0..1. */
+  readonly landShare: number;
+  /** Land concentration: 0 scatters an archipelago, 1 gathers one large island. */
   readonly concentration: number;
+  /**
+   * Geological age, 0..1: 0 keeps young, steep and cliffed relief, 1 erodes
+   * and softens it.
+   */
+  readonly age: number;
   /** How mountainous the land is; used only by region types that support it. */
   readonly mountainousness: number;
-  /** Target share of the region above the sea level, 0..1. */
-  readonly landShare: number;
 }
 
 /** Whole-map arrangement of the regions: anchor spread and border noise. */
@@ -124,10 +139,6 @@ export interface GeologicalRegionPlan {
   readonly weight: number;
   /** Rasterized area of the region, in square metres. */
   readonly areaSquareMeters: number;
-  /** Terrain metadata carried from the configuration for the heightmap. */
-  readonly concentration: number;
-  readonly mountainousness: number;
-  readonly landShare: number;
 }
 
 /**
@@ -147,6 +158,19 @@ export interface GeologyPlan {
   readonly worldAreaSquareMeters: number;
 }
 
+/** Global heightmap settings, including the per-region terrain slots. */
+export interface HeightmapConfig {
+  /** How high the land rises, 0..1. */
+  readonly relief: number;
+  /** Chance of small emergences: islets and rocks, 0..1. */
+  readonly isletFrequency: number;
+  /**
+   * Terrain parameters per region, in plan order; a missing or shorter list
+   * falls back to the default terrain of the region's type.
+   */
+  readonly regions?: readonly RegionTerrainConfig[];
+}
+
 export interface MapConfig extends SeededWorldConfig {
   world: WorldConfig;
   macroRegions?: readonly MacroRegionConfig[];
@@ -156,6 +180,11 @@ export interface MapConfig extends SeededWorldConfig {
    * and the stage falls back to `DEFAULT_GEOLOGY_CONFIG`.
    */
   geology?: GeologyConfig;
+  /**
+   * Global heightmap settings; programmatic configs may omit them and the
+   * stage falls back to `DEFAULT_HEIGHTMAP_CONFIG`.
+   */
+  heightmap?: HeightmapConfig;
 }
 
 /**
@@ -174,6 +203,10 @@ export interface MapState {
    * rasters; island shapes are not derived from this plan.
    */
   geologyPlan?: GeologyPlan;
+  /** Produced by the heightmap stage: non-negative heights in metres. */
+  heightmap?: Float32Array;
+  /** Produced by the heightmap stage: owning region index per cell, -1 outside. */
+  provenanceMap?: Int16Array;
 }
 
 export type StageMetric = number | string;

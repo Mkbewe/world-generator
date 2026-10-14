@@ -1,9 +1,10 @@
-import { GearIcon, GlobeIcon, LayersIcon, SewingPinIcon } from '@radix-ui/react-icons';
+import { FrameIcon, GearIcon, GlobeIcon, LayersIcon, SewingPinIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
   GeneralForm,
   GeologyForm,
+  HeightmapForm,
   MacroRegionForm,
   type WorldShape,
   WorldShapeForm,
@@ -66,6 +67,11 @@ export function SettingsPanel({
       label: 'Geology',
       icon: <SewingPinIcon />,
       content: <GeologyForm />,
+    },
+    heightmap: {
+      label: 'Heightmap',
+      icon: <FrameIcon />,
+      content: <HeightmapForm />,
     },
   };
   const tabs: readonly VerticalTabItem[] = [

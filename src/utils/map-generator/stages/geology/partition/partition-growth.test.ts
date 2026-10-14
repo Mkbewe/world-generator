@@ -21,9 +21,6 @@ function marker(index: number, x: number, y: number): RegionMarker {
     type: 'ordinary',
     centre: { x, y },
     weight: 1,
-    concentration: 0.5,
-    mountainousness: 0.5,
-    landShare: 0.4,
   };
 }
 

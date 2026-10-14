@@ -1,5 +1,10 @@
 export { GENERAL_FORM_DEFAULTS, DEFAULT_SEED, useGeneralFormStore } from './general-form';
 export { GEOLOGY_FORM_DEFAULTS, geologyConfigOf, useGeologyFormStore } from './geology-form';
+export {
+  HEIGHTMAP_FORM_DEFAULTS,
+  heightmapConfigOf,
+  useHeightmapFormStore,
+} from './heightmap-form';
 export { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from './macro-region-form';
 export {
   DEFAULT_WORLD_SIZE,

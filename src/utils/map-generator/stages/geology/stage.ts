@@ -71,7 +71,12 @@ export class GeologyStage implements MapStage<
     data: { geologyPlan: GeologyPlan }
   ): StageMetrics {
     const regions = data.geologyPlan.regions;
-    const counts: Record<GeologicalRegionType, number> = { ordinary: 0, volcanic: 0, atoll: 0 };
+    const counts: Record<GeologicalRegionType, number> = {
+      ordinary: 0,
+      volcanic: 0,
+      lagoon: 0,
+      fjord: 0,
+    };
     for (const region of regions) {
       counts[region.type]++;
     }
