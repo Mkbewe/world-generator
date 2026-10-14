@@ -45,6 +45,7 @@ export type {
   PipelineWorkerReuse,
   RunGeneration,
 } from './worker';
+export { GEOLOGICAL_REGION_TYPES } from './types';
 export type {
   GenerationEvent,
   GenerationOptions,
@@ -55,6 +56,7 @@ export type {
   GeologyConfig,
   GeologyLayoutConfig,
   GeologyPlan,
+  HeightmapConfig,
   MacroRegionConfig,
   MacroRegionDeformation,
   MacroRegionGeometry,
@@ -62,6 +64,7 @@ export type {
   MapGeneratorOptions,
   MapConfig,
   MapState,
+  RegionTerrainConfig,
   RegionTerrainParameter,
   StageMetric,
   StageMetrics,

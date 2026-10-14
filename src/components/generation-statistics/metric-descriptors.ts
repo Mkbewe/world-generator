@@ -45,10 +45,44 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
     kind: 'number',
     description: 'Regions seeded as volcanic ground.',
   },
-  atoll: {
-    label: 'Atoll',
+  lagoon: {
+    label: 'Lagoon',
     kind: 'number',
-    description: 'Regions seeded as atoll ground.',
+    description: 'Regions seeded as lagoon ground.',
+  },
+  fjord: {
+    label: 'Fjord',
+    kind: 'number',
+    description: 'Regions seeded as fjord ground.',
+  },
+  min: {
+    label: 'Lowest height',
+    kind: 'number',
+    precision: 1,
+    description: 'Lowest cell height in metres.',
+  },
+  max: {
+    label: 'Highest height',
+    kind: 'number',
+    precision: 1,
+    description: 'Highest cell height in metres.',
+  },
+  mean: {
+    label: 'Mean height',
+    kind: 'number',
+    precision: 1,
+    description: 'Average cell height in metres.',
+  },
+  stdDev: {
+    label: 'Height spread',
+    kind: 'number',
+    precision: 1,
+    description: 'Standard deviation of the cell heights, in metres.',
+  },
+  landShare: {
+    label: 'Land share',
+    kind: 'ratio',
+    description: 'Share of the world above the sea level.',
   },
   bytes: {
     label: 'Data',

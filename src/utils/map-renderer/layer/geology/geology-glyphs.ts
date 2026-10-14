@@ -40,13 +40,24 @@ const TYPE_ICONS: Readonly<
     context.arc(x + size * 0.42, y - size * 0.95, size * 0.16, 0, Math.PI * 2);
   },
   /** Reef ring with a pass and an islet on the reef. */
-  atoll(context, x, y, size) {
+  lagoon(context, x, y, size) {
     context.beginPath();
     context.arc(x, y, size * 0.85, 0.5, Math.PI * 2 - 0.2);
     context.arc(x, y, size * 0.42, Math.PI * 2 - 0.2, 0.5, true);
     context.closePath();
     context.moveTo(x + size * 0.6, y - size * 0.45);
     context.arc(x + size * 0.45, y - size * 0.45, size * 0.15, 0, Math.PI * 2);
+  },
+  /** Two steep peaks with a deep V notch: a fjord channel between them. */
+  fjord(context, x, y, size) {
+    context.beginPath();
+    context.moveTo(x - size, y + size * 0.8);
+    context.lineTo(x - size * 0.45, y - size * 0.9);
+    context.lineTo(x - size * 0.1, y + size * 0.1);
+    context.lineTo(x + size * 0.1, y + size * 0.1);
+    context.lineTo(x + size * 0.45, y - size * 0.9);
+    context.lineTo(x + size, y + size * 0.8);
+    context.closePath();
   },
 };
 

@@ -12,9 +12,6 @@ export interface RegionMarker {
   readonly type: GeologicalRegionType;
   readonly centre: WorldPoint;
   readonly weight: number;
-  readonly concentration: number;
-  readonly mountainousness: number;
-  readonly landShare: number;
 }
 
 export interface MarkerPlacementInput {
@@ -91,9 +88,6 @@ export function placePartitionMarkers(input: MarkerPlacementInput): RegionMarker
       type: region.type,
       centre,
       weight: region.size,
-      concentration: region.concentration,
-      mountainousness: region.mountainousness,
-      landShare: region.landShare,
     });
     input.report?.((index + 1) / count);
   }

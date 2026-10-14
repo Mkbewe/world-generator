@@ -8,6 +8,7 @@ export {
   compilePalette,
   GEOLOGY_REGION_PALETTES,
   geologyRegionColor,
+  HEIGHTMAP_STOPS,
   regionColor,
   validatePalette,
 } from './palettes/palettes';

@@ -17,7 +17,7 @@ describe('geology form store', () => {
   });
 
   it('keeps edits of a slot when the count drops and rises again', () => {
-    useGeologyFormStore.getState().setRegion(4, { size: 1.7, type: 'atoll' });
+    useGeologyFormStore.getState().setRegion(4, { size: 1.7, type: 'lagoon' });
     useGeologyFormStore.getState().setRegionCount(3);
 
     expect(geologyConfigOf(useGeologyFormStore.getState()).regions).toHaveLength(3);
@@ -25,7 +25,7 @@ describe('geology form store', () => {
     useGeologyFormStore.getState().setRegionCount(5);
     expect(geologyConfigOf(useGeologyFormStore.getState()).regions[4]).toMatchObject({
       size: 1.7,
-      type: 'atoll',
+      type: 'lagoon',
     });
   });
 
@@ -33,9 +33,9 @@ describe('geology form store', () => {
     useGeologyFormStore.getState().applyPreset('mosaic');
     const state = useGeologyFormStore.getState();
 
-    expect(state.regionCount).toBe(9);
+    expect(state.regionCount).toBe(5);
     expect(state.slots).toHaveLength(MAX_GEOLOGICAL_REGIONS);
-    expect(geologyConfigOf(state).regions).toHaveLength(9);
+    expect(geologyConfigOf(state).regions).toHaveLength(5);
   });
 
   it('clamps the count to the supported range', () => {
@@ -48,11 +48,11 @@ describe('geology form store', () => {
 
   it('moves only the two shares beside a dragged boundary', () => {
     const before = useGeologyFormStore.getState().slots;
-    useGeologyFormStore.getState().setRegionShareBoundary(0, 30);
+    useGeologyFormStore.getState().setRegionShareBoundary(0, 40);
 
     const slots = useGeologyFormStore.getState().slots;
-    expect(slots[0]?.size).toBeCloseTo(1.5);
-    expect(slots[1]?.size).toBeCloseTo(0.6);
+    expect(slots[0]?.size).toBeCloseTo(1.6);
+    expect(slots[1]?.size).toBeCloseTo(0.5);
     expect(slots.slice(2)).toEqual(before.slice(2));
   });
 });

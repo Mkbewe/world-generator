@@ -15,7 +15,7 @@ const request: PipelineWorkerGenerateRequest = {
     },
   },
   reuse: {
-    dirtyStageIds: ['world-shape', 'macro-region', 'geology'],
+    dirtyStageIds: ['world-shape', 'macro-region', 'geology', 'heightmap'],
     cachedState: {},
   },
 };
@@ -61,6 +61,7 @@ describe('generation worker', () => {
         { id: 'world-shape', name: 'World shape' },
         { id: 'macro-region', name: 'Macro region' },
         { id: 'geology', name: 'Geology' },
+        { id: 'heightmap', name: 'Heightmap' },
       ],
       skippedStageIds: [],
     });
@@ -70,6 +71,7 @@ describe('generation worker', () => {
     }
     expect(message.result).not.toHaveProperty('layers');
     expect(message.result.statistics.map(stage => stage.status)).toEqual([
+      'completed',
       'completed',
       'completed',
       'completed',
@@ -98,6 +100,7 @@ describe('generation worker', () => {
       'skipped',
       'completed',
       'skipped',
+      'completed',
     ]);
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
       ['world-shape', 'geology']
@@ -120,6 +123,7 @@ describe('generation worker', () => {
     expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
       'skipped',
       'completed',
+      'skipped',
       'skipped',
     ]);
   });
@@ -168,6 +172,7 @@ describe('generation worker', () => {
     expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
       'skipped',
       'completed',
+      'skipped',
       'skipped',
     ]);
   });

@@ -16,8 +16,9 @@ export const REGION_COLORS = [
 
 /**
  * Body shades of every geological region type: greens for ordinary ground,
- * browns for volcanic relief and blues for atoll waters. The region index
- * picks the shade, so neighbours of one type still differ.
+ * browns for volcanic relief, blues for lagoon waters and slates for fjord
+ * coasts. The region index picks the shade, so neighbours of one type still
+ * differ.
  */
 export const GEOLOGY_REGION_PALETTES: Readonly<Record<GeologicalRegionType, readonly Color[]>> = {
   ordinary: [
@@ -44,7 +45,7 @@ export const GEOLOGY_REGION_PALETTES: Readonly<Record<GeologicalRegionType, read
     [118, 76, 52],
     [208, 158, 132],
   ],
-  atoll: [
+  lagoon: [
     [96, 165, 220],
     [72, 140, 196],
     [122, 186, 232],
@@ -56,7 +57,38 @@ export const GEOLOGY_REGION_PALETTES: Readonly<Record<GeologicalRegionType, read
     [112, 172, 214],
     [88, 148, 176],
   ],
+  fjord: [
+    [92, 118, 156],
+    [76, 102, 140],
+    [110, 134, 170],
+    [64, 88, 124],
+    [84, 112, 148],
+    [124, 148, 182],
+    [70, 96, 132],
+    [56, 78, 112],
+    [102, 126, 162],
+    [80, 106, 138],
+  ],
 };
+
+/**
+ * Hypsometric ramp of the heightmap, relative to the sea level: 0 is the
+ * waterline, so the raster needs no second normalization and the sea level
+ * slider floods and exposes the same terrain. Deep water, shallow water, the
+ * shoreline, lowland greens, highlands, rock and snow.
+ */
+export const HEIGHTMAP_STOPS = [
+  { at: -400, color: [12, 26, 58] },
+  { at: -120, color: [24, 58, 110] },
+  { at: -40, color: [40, 96, 156] },
+  { at: -8, color: [86, 150, 196] },
+  { at: 0, color: [214, 200, 160] },
+  { at: 25, color: [120, 168, 96] },
+  { at: 150, color: [96, 140, 72] },
+  { at: 350, color: [156, 128, 84] },
+  { at: 700, color: [150, 150, 150] },
+  { at: 1000, color: [240, 240, 240] },
+] as const satisfies readonly RampStop[];
 
 const UNKNOWN_COLOR = [120, 120, 120] as const satisfies Color;
 

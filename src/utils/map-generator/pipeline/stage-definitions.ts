@@ -6,6 +6,7 @@ export const MAP_CONFIG_KEYS = [
   'macroRegions',
   'macroRegionDeformation',
   'geology',
+  'heightmap',
 ] as const;
 
 export type MapConfigKey = (typeof MAP_CONFIG_KEYS)[number];
@@ -48,12 +49,28 @@ export const GEOLOGY_STAGE = {
 } as const satisfies DeclaredStage;
 
 /**
+ * The heightmap stage turns the geology plan into one continuous height field:
+ * shared noise below the sea level plus the region relief, gated before the
+ * region borders. Heights, water, land and islets all come from this stage.
+ */
+export const HEIGHTMAP_STAGE = {
+  id: 'heightmap',
+  name: 'Heightmap',
+  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
+} as const satisfies DeclaredStage;
+
+/**
  * Presentation order of the canonical pipeline: settings tabs, preview layers
  * and the layer catalog follow this list. Execution order is derived from the
  * stages' declared reads/writes (see pipeline-factory), so moving an entry
  * here never breaks the data flow.
  */
-export const PIPELINE_STAGES = [WORLD_SHAPE_STAGE, MACRO_REGION_STAGE, GEOLOGY_STAGE] as const;
+export const PIPELINE_STAGES = [
+  WORLD_SHAPE_STAGE,
+  MACRO_REGION_STAGE,
+  GEOLOGY_STAGE,
+  HEIGHTMAP_STAGE,
+] as const;
 
 export type PipelineStageId = (typeof PIPELINE_STAGES)[number]['id'];
 

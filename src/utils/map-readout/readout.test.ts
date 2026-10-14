@@ -212,7 +212,7 @@ describe('readoutItems', () => {
             id: 'region-2',
             centre: { x: 0.5, y: 0.5 },
             weight: 1,
-            type: 'atoll',
+            type: 'lagoon',
             areaSquareMeters: 2_000_000,
           },
         ],
@@ -224,9 +224,9 @@ describe('readoutItems', () => {
     };
 
     expect(itemValue(readout(inspection), 'region', info)).toBe('region-2');
-    expect(itemValue(readout(inspection), 'type', info)).toBe('Atoll');
+    expect(itemValue(readout(inspection), 'type', info)).toBe('Lagoon');
     expect(itemValue(readout(inspection), 'character', info)).toBe(
-      'Low reef platforms and lagoons'
+      'Low reef rings, lagoons and sandy islets'
     );
     expect(itemValue(readout(inspection), 'area', info)).toBe('2 km² · 20.0%');
     expect(item(readout(inspection), 'edit-region', info)?.action).toEqual({
@@ -249,7 +249,7 @@ describe('readoutItems', () => {
             id: 'region-2',
             centre: { x: 0.5, y: 0.5 },
             weight: 1,
-            type: 'atoll',
+            type: 'lagoon',
             areaSquareMeters: 2_000_000,
           },
         ],

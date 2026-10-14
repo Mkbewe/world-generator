@@ -43,16 +43,13 @@ export function validateGeologyConfig(config: unknown): asserts config is Geolog
 
 function validateRegionConfig(value: unknown, index: number): void {
   if (!isRecord(value) || !isRegionType(value.type)) {
-    throw new Error(`Region ${index + 1} needs an ordinary, volcanic or atoll type.`);
+    throw new Error(`Region ${index + 1} needs an ordinary, volcanic, lagoon or fjord type.`);
   }
   if (!isWithinNumber(value.size, MIN_REGION_SIZE, MAX_REGION_SIZE)) {
     throw new Error(
       `Region ${index + 1} size must be a number from ${MIN_REGION_SIZE} to ${MAX_REGION_SIZE}.`
     );
   }
-  validateUnit(value.concentration, `Region ${index + 1} concentration`);
-  validateUnit(value.mountainousness, `Region ${index + 1} mountainousness`);
-  validateUnit(value.landShare, `Region ${index + 1} land share`);
 }
 
 function validateUnit(value: unknown, label: string): void {
@@ -129,13 +126,6 @@ function validateRegionPlan(value: unknown, index: number): void {
   }
   if (!isNonNegativeNumber(value.areaSquareMeters)) {
     throw new Error(`Region plan "${value.id}" has an invalid area.`);
-  }
-  if (
-    !isWithinNumber(value.concentration, 0, 1) ||
-    !isWithinNumber(value.mountainousness, 0, 1) ||
-    !isWithinNumber(value.landShare, 0, 1)
-  ) {
-    throw new Error(`Region plan "${value.id}" has invalid terrain metadata.`);
   }
 }
 

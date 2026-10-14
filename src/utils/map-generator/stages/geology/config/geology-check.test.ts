@@ -9,7 +9,7 @@ describe('isGeologyConfig', () => {
   it('rejects a count outside the supported range or a mismatched list', () => {
     expect(isGeologyConfig({ ...DEFAULT_GEOLOGY_CONFIG, regionCount: 0 })).toBe(false);
     expect(isGeologyConfig({ ...DEFAULT_GEOLOGY_CONFIG, regionCount: 11 })).toBe(false);
-    expect(isGeologyConfig({ ...DEFAULT_GEOLOGY_CONFIG, regionCount: 4 })).toBe(false);
+    expect(isGeologyConfig({ ...DEFAULT_GEOLOGY_CONFIG, regionCount: 3 })).toBe(false);
   });
 
   it('rejects unknown types and out-of-range region settings', () => {
@@ -24,12 +24,6 @@ describe('isGeologyConfig', () => {
       isGeologyConfig({
         ...DEFAULT_GEOLOGY_CONFIG,
         regions: [{ ...first, size: 4 }, ...rest],
-      })
-    ).toBe(false);
-    expect(
-      isGeologyConfig({
-        ...DEFAULT_GEOLOGY_CONFIG,
-        regions: [{ ...first, landShare: 2 }, ...rest],
       })
     ).toBe(false);
   });
@@ -53,9 +47,6 @@ describe('isGeologyPlan', () => {
           type: 'ordinary',
           centre: { x: 0.5, y: 0.5 },
           weight: 1,
-          concentration: 0.5,
-          mountainousness: 0.5,
-          landShare: 0.4,
           areaSquareMeters: 100,
         },
       ],
@@ -88,10 +79,5 @@ describe('isGeologyPlan', () => {
     const [region] = plan().regions;
     expect(isGeologyPlan(plan({ regions: [{ ...region, id: 'region-2' }] }))).toBe(false);
     expect(isGeologyPlan(plan({ regions: [{ ...region, type: 'lava' }] }))).toBe(false);
-  });
-
-  it('rejects terrain metadata outside the 0..1 range', () => {
-    const [region] = plan().regions;
-    expect(isGeologyPlan(plan({ regions: [{ ...region, mountainousness: 1.5 }] }))).toBe(false);
   });
 });

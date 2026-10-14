@@ -1,4 +1,3 @@
-import { defaultRegionTerrain } from './region-terrain';
 import type {
   GeologicalRegionConfig,
   GeologicalRegionType,
@@ -22,33 +21,25 @@ const PRESET_REGIONS: Readonly<Record<GeologyPreset, readonly PresetRegion[]>> =
   varied: [
     { type: 'ordinary', size: 1.2 },
     { type: 'volcanic', size: 0.9 },
-    { type: 'ordinary', size: 1 },
-    { type: 'atoll', size: 0.8 },
-    { type: 'ordinary', size: 1.1 },
+    { type: 'lagoon', size: 0.8 },
+    { type: 'fjord', size: 1.1 },
   ],
   oceanic: [
-    { type: 'atoll', size: 0.8 },
-    { type: 'ordinary', size: 0.9 },
-    { type: 'volcanic', size: 0.7 },
-    { type: 'atoll', size: 0.9 },
+    { type: 'lagoon', size: 1.1 },
     { type: 'volcanic', size: 0.8 },
-    { type: 'ordinary', size: 1 },
-    { type: 'atoll', size: 0.7 },
+    { type: 'lagoon', size: 0.9 },
+    { type: 'ordinary', size: 0.8 },
   ],
   vast: [
     { type: 'ordinary', size: 1.4 },
-    { type: 'volcanic', size: 1 },
+    { type: 'fjord', size: 1 },
   ],
   mosaic: [
-    { type: 'ordinary', size: 0.8 },
-    { type: 'volcanic', size: 1.1 },
-    { type: 'atoll', size: 0.9 },
-    { type: 'ordinary', size: 1.3 },
-    { type: 'volcanic', size: 0.85 },
-    { type: 'atoll', size: 1 },
-    { type: 'ordinary', size: 1.2 },
-    { type: 'volcanic', size: 0.75 },
-    { type: 'atoll', size: 1.05 },
+    { type: 'ordinary', size: 1 },
+    { type: 'volcanic', size: 0.9 },
+    { type: 'lagoon', size: 0.85 },
+    { type: 'fjord', size: 1.1 },
+    { type: 'ordinary', size: 0.95 },
   ],
 };
 
@@ -71,14 +62,13 @@ export function geologyPresetConfig(preset: GeologyPreset): GeologyConfig {
     regions: regions.map(region => ({
       type: region.type,
       size: region.size,
-      ...defaultRegionTerrain(region.type),
     })),
   };
 }
 
 /** One neutral region used by slots the user has not edited yet. */
 export function defaultRegionConfig(): GeologicalRegionConfig {
-  return { type: 'ordinary', size: 1, ...defaultRegionTerrain('ordinary') };
+  return { type: 'ordinary', size: 1 };
 }
 
 /** Editable slots of a fresh configuration: the default preset padded to the limit. */

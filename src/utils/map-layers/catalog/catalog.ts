@@ -6,7 +6,7 @@ import {
   RASTER_OUTPUT_KEYS,
   type RasterOutputKey,
 } from '../../map-generator/pipeline/stage-outputs';
-import { REGION_COLORS } from '../palettes/palettes';
+import { HEIGHTMAP_STOPS, REGION_COLORS } from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
   PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)
@@ -41,6 +41,15 @@ const CATALOG_ENTRIES = [
     kind: 'vector',
     source: 'geologyPlan',
     clipTo: 'world-shape',
+  },
+  {
+    id: 'heightmap',
+    label: 'Heightmap',
+    kind: 'raster',
+    source: 'heightmap',
+    dataType: 'float32',
+    clipTo: 'world-shape',
+    palette: { kind: 'ramp', stops: HEIGHTMAP_STOPS },
   },
 ] as const satisfies readonly BoundLayerSpec[];
 

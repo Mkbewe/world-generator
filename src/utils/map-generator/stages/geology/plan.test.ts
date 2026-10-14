@@ -21,9 +21,6 @@ function config(regionCount = 5): GeologyConfig {
         preset.regions[0] ?? {
           type: 'ordinary' as const,
           size: 1,
-          concentration: 0.5,
-          mountainousness: 0.5,
-          landShare: 0.4,
         }
     ),
   };
@@ -97,7 +94,7 @@ describe('buildGeologyPlan', () => {
     }
   });
 
-  it('carries the region terrain metadata into the plan', () => {
+  it('carries the region types and sizes into the plan', () => {
     const source = config(5);
     const plan = buildGeologyPlan(
       source,
@@ -109,9 +106,8 @@ describe('buildGeologyPlan', () => {
 
     plan.regions.forEach((region, index) => {
       const expected = source.regions[index];
-      expect(region.concentration).toBe(expected?.concentration);
-      expect(region.mountainousness).toBe(expected?.mountainousness);
-      expect(region.landShare).toBe(expected?.landShare);
+      expect(region.type).toBe(expected?.type);
+      expect(region.weight).toBe(expected?.size);
     });
   });
 
@@ -169,7 +165,7 @@ describe('buildGeologyPlan', () => {
     const edited: GeologyConfig = {
       ...base,
       regions: base.regions.map((region, index) =>
-        index === 1 ? { ...region, type: 'atoll' as const, size: 1.9 } : region
+        index === 1 ? { ...region, type: 'lagoon' as const, size: 1.9 } : region
       ),
     };
     const first = buildGeologyPlan(
@@ -203,7 +199,7 @@ describe('buildGeologyPlan', () => {
     expect(geometry(second.regions[3] ?? base.regions[3])).toEqual(
       geometry(first.regions[3] ?? base.regions[3])
     );
-    expect(second.regions[1]).toMatchObject({ type: 'atoll', weight: 1.9 });
+    expect(second.regions[1]).toMatchObject({ type: 'lagoon', weight: 1.9 });
     expect(second.regions[1]?.centre).toEqual(first.regions[1]?.centre);
   });
 
@@ -277,9 +273,6 @@ describe('buildGeologyPlan', () => {
       Array.from({ length: 4 }, () => ({
         type: 'ordinary' as const,
         size: MIN_REGION_SIZE,
-        concentration: 0.5,
-        mountainousness: 0.5,
-        landShare: 0.4,
       })),
       'disc',
       0.45,
@@ -288,11 +281,8 @@ describe('buildGeologyPlan', () => {
     );
     expectSharesMatch(
       Array.from({ length: 3 }, () => ({
-        type: 'atoll' as const,
+        type: 'lagoon' as const,
         size: MAX_REGION_SIZE,
-        concentration: 0.5,
-        mountainousness: 0.5,
-        landShare: 0.4,
       })),
       'disc',
       0.45,
@@ -303,7 +293,12 @@ describe('buildGeologyPlan', () => {
 
   it('matches the configured shares for one, two and ten regions', () => {
     expectSharesMatch(
-      [{ type: 'ordinary', size: 1, concentration: 0.5, mountainousness: 0.5, landShare: 0.4 }],
+      [
+        {
+          type: 'ordinary',
+          size: 1,
+        },
+      ],
       'disc',
       0.45,
       DIMENSIONS,

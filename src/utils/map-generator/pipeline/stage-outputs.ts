@@ -2,7 +2,12 @@ import { isGeologyPlan } from '../stages/geology';
 import type { MapState, StageData } from '../types';
 
 /** Raster keys the generator owns. The layer catalog may display them, not define them. */
-export const RASTER_OUTPUT_KEYS = ['worldMask', 'macroRegionIdMap'] as const;
+export const RASTER_OUTPUT_KEYS = [
+  'worldMask',
+  'macroRegionIdMap',
+  'heightmap',
+  'provenanceMap',
+] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
 export const DOMAIN_OUTPUT_KEYS = ['geologyPlan', 'macroRegionAreas'] as const;
@@ -16,14 +21,17 @@ export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
  * in `./stage`: a stage changing its output type must update both, pinned by
  * the cross-check test over a real run.
  */
-export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32'> = {
+export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32' | 'int16'> = {
   worldMask: 'uint8',
   macroRegionIdMap: 'uint8',
+  heightmap: 'float32',
+  provenanceMap: 'int16',
 };
 
 const rasterConstructors = {
   uint8: Uint8Array,
   float32: Float32Array,
+  int16: Int16Array,
 } as const;
 
 /** Whether a state key names one of the persistent raster outputs. */

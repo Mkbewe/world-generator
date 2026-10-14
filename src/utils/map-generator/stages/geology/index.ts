@@ -20,4 +20,3 @@ export {
   MIN_GEOLOGICAL_REGIONS,
   MIN_REGION_SIZE,
 } from './defaults';
-export { REGION_TERRAIN_SUPPORT, defaultRegionTerrain } from './config/region-terrain';

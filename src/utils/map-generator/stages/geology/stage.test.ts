@@ -22,7 +22,7 @@ describe('GeologyStage', () => {
     const stage = new GeologyStage();
     const data = await stage.execute(context(), new AbortController().signal, () => {});
 
-    expect(data.geologyPlan.regions).toHaveLength(5);
+    expect(data.geologyPlan.regions).toHaveLength(4);
     expect(data.geologyPlan.regionOwnerMap).toHaveLength(64 * 64);
     expect(() => stage.validate({ geologyPlan: data.geologyPlan }, CONFIG)).not.toThrow();
   });
@@ -30,7 +30,7 @@ describe('GeologyStage', () => {
   it('rejects an invalid configuration before planning', async () => {
     await expect(
       new GeologyStage().execute(
-        context({ ...GEOLOGY, regionCount: 4 }),
+        context({ ...GEOLOGY, regionCount: 3 }),
         new AbortController().signal,
         () => {}
       )
@@ -54,9 +54,12 @@ describe('GeologyStage', () => {
     const data = await stage.execute(source, new AbortController().signal, () => {});
 
     const summary = stage.summarize?.(source, data);
-    expect(summary).toMatchObject({ regions: 5 });
+    expect(summary).toMatchObject({ regions: 4 });
     const total =
-      Number(summary?.ordinary ?? 0) + Number(summary?.volcanic ?? 0) + Number(summary?.atoll ?? 0);
-    expect(total).toBe(5);
+      Number(summary?.ordinary ?? 0) +
+      Number(summary?.volcanic ?? 0) +
+      Number(summary?.lagoon ?? 0) +
+      Number(summary?.fjord ?? 0);
+    expect(total).toBe(4);
   });
 });

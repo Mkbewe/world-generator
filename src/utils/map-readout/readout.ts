@@ -109,7 +109,20 @@ const VECTOR_READOUTS: Partial<Record<MapBaseLayerId, VectorReadout>> = {
 /** One provider per raster layer; a new layer adds an entry, not a branch. */
 const RASTER_READOUTS: Partial<Record<MapBaseLayerId, RasterReadout>> = {
   'macro-region': macroRegionReadout,
+  heightmap: heightmapReadout,
 };
+
+/** Height under the pointer relative to the sea level; 0 is the waterline. */
+function heightmapReadout(inspection: RasterMapInspection): readonly ReadoutItem[] | undefined {
+  const height = inspection.value;
+  if (height === undefined) {
+    return undefined;
+  }
+  return [
+    { id: 'surface', label: 'Surface', value: height > 0 ? 'Land' : 'Water' },
+    { id: 'height', label: 'Height', value: `${formatMeters(height)} m` },
+  ];
+}
 
 /** Raster layers report their value; vector layers name the hovered element. */
 function inspectionItems(
