@@ -1,4 +1,4 @@
-import type { GeologicalRegionType } from '../../types';
+import type { GeologicalRegionType } from '../../../types';
 
 /**
  * How one region type builds its islands from stamped forms. The numbers are
@@ -15,7 +15,7 @@ export interface RegionShape {
   readonly amplitudeFactor: number;
   /** Base exponent of the radial height profile (lower = steeper dome/bluff, higher = flatter lowland with sharp peak). */
   readonly heightCurve: number;
-  /** How strongly the ridge/peak may shift toward one shore to form coastal cliffs, 0..1. */
+  /** How strongly the summit shore narrows into a steep coastal cliff, 0..1. */
   readonly cliffShare: number;
   /** Multiplier of the domain warp around the island contour. */
   readonly warpFactor: number;
@@ -31,74 +31,96 @@ export interface RegionShape {
   readonly cavityShare: number;
   /** Relative radius of the inner cavity (lagoon or crater) as a fraction of the form radius, 0..1. */
   readonly cavityRadiusShare: number;
-  /** Floor height of the cavity relative to the waterline (-1 = submerged lagoon, >0 = high crater). */
+  /**
+   * Floor height of the cavity: >= 0 carves a crater around `form.peak` at
+   * `peakMeters * cavityFloorShare`; < 0 builds a reef ring around `form.centre`
+   * with a submerged lagoon floor at `SHELF_DEPTH_METERS * cavityFloorShare`.
+   */
   readonly cavityFloorShare: number;
+  /** Angular frequency of radial coastal channels (fjords); 0 disables channels. */
+  readonly chuteCount: number;
+  /** How deeply the coastal channels cut into the island margin, 0..1. */
+  readonly chuteStrength: number;
+  /** Ocean floor depth multiplier of the region, 1 is the shared deep ocean. */
+  readonly oceanFloorShare: number;
 }
 
 /** One shape recipe per region kind; the kind carries the behaviour. */
 export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> = {
   ordinary: {
-    coverageFactor: 0.42,
+    coverageFactor: 0.11,
     minForms: 2,
     maxForms: 10,
-    amplitudeFactor: 1,
-    heightCurve: 1.25,
-    cliffShare: 0.45,
-    warpFactor: 1.15,
+    amplitudeFactor: 0.9,
+    heightCurve: 1.2,
+    cliffShare: 0.5,
+    warpFactor: 1.5,
     modulationShare: 0.45,
-    ridgeShare: 0.25,
+    ridgeShare: 0.3,
     shelfFactor: 1.75,
     usesMountainousness: true,
     cavityShare: 0,
     cavityRadiusShare: 0,
     cavityFloorShare: 0,
+    chuteCount: 0,
+    chuteStrength: 0,
+    oceanFloorShare: 1,
   },
   volcanic: {
-    coverageFactor: 0.34,
+    coverageFactor: 0.09,
     minForms: 1,
     maxForms: 7,
-    amplitudeFactor: 2.3,
-    heightCurve: 1.55,
+    amplitudeFactor: 1.8,
+    heightCurve: 1.45,
     cliffShare: 0.55,
-    warpFactor: 0.65,
+    warpFactor: 0.85,
     modulationShare: 0.35,
     ridgeShare: 0.55,
     shelfFactor: 1.35,
     usesMountainousness: false,
-    cavityShare: 0.6,
-    cavityRadiusShare: 0.22,
-    cavityFloorShare: 0.55,
+    cavityShare: 0.85,
+    cavityRadiusShare: 0.32,
+    cavityFloorShare: 0.12,
+    chuteCount: 0,
+    chuteStrength: 0,
+    oceanFloorShare: 1.1,
   },
   lagoon: {
-    coverageFactor: 0.24,
+    coverageFactor: 0.09,
     minForms: 3,
-    maxForms: 12,
-    amplitudeFactor: 0.14,
-    heightCurve: 0.85,
+    maxForms: 11,
+    amplitudeFactor: 0.018,
+    heightCurve: 0.75,
     cliffShare: 0.05,
-    warpFactor: 0.9,
+    warpFactor: 0.5,
     modulationShare: 0.15,
     ridgeShare: 0,
-    shelfFactor: 1.9,
+    shelfFactor: 2.35,
     usesMountainousness: false,
-    cavityShare: 0.65,
-    cavityRadiusShare: 0.58,
-    cavityFloorShare: -0.35,
+    cavityShare: 0.8,
+    cavityRadiusShare: 0.74,
+    cavityFloorShare: -0.06,
+    chuteCount: 0,
+    chuteStrength: 0,
+    oceanFloorShare: 0.28,
   },
   fjord: {
-    coverageFactor: 0.46,
+    coverageFactor: 0.12,
     minForms: 2,
-    maxForms: 9,
-    amplitudeFactor: 1.5,
-    heightCurve: 1.1,
-    cliffShare: 0.75,
-    warpFactor: 1.45,
+    maxForms: 8,
+    amplitudeFactor: 1.35,
+    heightCurve: 0.85,
+    cliffShare: 0.5,
+    warpFactor: 1.6,
     modulationShare: 0.5,
-    ridgeShare: 0.6,
-    shelfFactor: 1.4,
+    ridgeShare: 0.65,
+    shelfFactor: 1.35,
     usesMountainousness: false,
     cavityShare: 0,
     cavityRadiusShare: 0,
     cavityFloorShare: 0,
+    chuteCount: 4,
+    chuteStrength: 0.9,
+    oceanFloorShare: 1,
   },
 };

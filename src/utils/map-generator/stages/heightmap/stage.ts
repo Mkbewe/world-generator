@@ -1,7 +1,7 @@
+import { isHeightmapConfig } from './config/heightmap-check';
 import { createHeightmapNoiseBands } from './bands';
 import { DEFAULT_HEIGHTMAP_CONFIG } from './defaults';
 import { buildHeightField } from './field';
-import { isHeightmapConfig } from './heightmap-check';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { assertStageOutput, type MapStage } from '../../pipeline/stage';

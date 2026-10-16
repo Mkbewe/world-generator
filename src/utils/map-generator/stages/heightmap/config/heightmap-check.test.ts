@@ -1,5 +1,5 @@
-import { DEFAULT_HEIGHTMAP_CONFIG } from './defaults';
 import { isHeightmapConfig } from './heightmap-check';
+import { DEFAULT_HEIGHTMAP_CONFIG } from '../defaults';
 
 describe('isHeightmapConfig', () => {
   it('accepts the default configuration', () => {
@@ -12,7 +12,14 @@ describe('isHeightmapConfig', () => {
   });
 
   it('checks the optional per-region terrain list', () => {
-    const terrain = { landShare: 0.5, concentration: 0.5, age: 0.5, mountainousness: 0.5 };
+    const terrain = {
+      landShare: 0.5,
+      concentration: 0.5,
+      clustering: 0.5,
+      age: 0.5,
+      mountainousness: 0.5,
+      ringShare: 0.5,
+    };
 
     expect(isHeightmapConfig({ ...DEFAULT_HEIGHTMAP_CONFIG, regions: [] })).toBe(true);
     expect(isHeightmapConfig({ ...DEFAULT_HEIGHTMAP_CONFIG, regions: [terrain] })).toBe(true);

@@ -7,6 +7,7 @@ import {
 } from './defaults';
 import { buildHeightField } from './field';
 import type { WorldDimensions } from '../../../world-dimensions';
+import { containsNormalized } from '../../../world-shape';
 import { RandomFactory } from '../../random';
 import { createWorldSpace } from '../../space';
 import type {
@@ -32,6 +33,14 @@ const FINE_DIMENSIONS: WorldDimensions = {
   sampleHeight: 128,
 };
 
+/** The real app samples at 4 m; this raster matches that density closely. */
+const DETAIL_DIMENSIONS: WorldDimensions = {
+  widthMeters: 4000,
+  heightMeters: 2000,
+  sampleWidth: 1024,
+  sampleHeight: 512,
+};
+
 const CELLS = DIMENSIONS.sampleWidth * DIMENSIONS.sampleHeight;
 
 function region(index: number, type: GeologicalRegionType): GeologicalRegionPlan {
@@ -46,7 +55,15 @@ function region(index: number, type: GeologicalRegionType): GeologicalRegionPlan
 
 /** One region's terrain overrides; the rest falls back to neutral values. */
 function terrain(overrides: Partial<RegionTerrainConfig> = {}): RegionTerrainConfig {
-  return { landShare: 0.5, concentration: 0.5, age: 0.5, mountainousness: 0.6, ...overrides };
+  return {
+    landShare: 0.5,
+    concentration: 0.5,
+    clustering: 0.35,
+    age: 0.5,
+    mountainousness: 0.6,
+    ringShare: 0,
+    ...overrides,
+  };
 }
 
 /** One-region plans use a far border; two-region plans split the world in half. */
@@ -191,6 +208,95 @@ describe('buildHeightField', () => {
     }
   });
 
+  it('keeps land away from the world mask edge', () => {
+    const space = createWorldSpace(FINE_DIMENSIONS);
+    const cells = FINE_DIMENSIONS.sampleWidth * FINE_DIMENSIONS.sampleHeight;
+    const mask = new Uint8Array(cells);
+    for (let y = 0; y < FINE_DIMENSIONS.sampleHeight; y++) {
+      for (let x = 0; x < FINE_DIMENSIONS.sampleWidth; x++) {
+        if (containsNormalized('disc', space.cellToNormalized(x, y))) {
+          mask[y * FINE_DIMENSIONS.sampleWidth + x] = 1;
+        }
+      }
+    }
+    const heightmap = build(
+      plan([region(0, 'ordinary')], mask, FINE_DIMENSIONS),
+      mask,
+      { isletFrequency: 0 },
+      FINE_DIMENSIONS
+    );
+    const rawMargin = BORDER_GATE_METERS * (1 - BORDER_GATE_WARP_SHARE);
+    const window = 4;
+
+    for (let y = 0; y < FINE_DIMENSIONS.sampleHeight; y++) {
+      for (let x = 0; x < FINE_DIMENSIONS.sampleWidth; x++) {
+        const index = y * FINE_DIMENSIONS.sampleWidth + x;
+        if (mask[index] === 0) {
+          continue;
+        }
+        let nearest = Infinity;
+        for (let dy = -window; dy <= window; dy++) {
+          for (let dx = -window; dx <= window; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (
+              nx < 0 ||
+              ny < 0 ||
+              nx >= FINE_DIMENSIONS.sampleWidth ||
+              ny >= FINE_DIMENSIONS.sampleHeight ||
+              mask[ny * FINE_DIMENSIONS.sampleWidth + nx] !== 0
+            ) {
+              continue;
+            }
+            nearest = Math.min(
+              nearest,
+              space.distanceMeters(space.cellToNormalized(x, y), space.cellToNormalized(nx, ny))
+            );
+          }
+        }
+        if (nearest < rawMargin) {
+          expect(heightmap[index], `cell ${x},${y}`).toBeLessThanOrEqual(0);
+        }
+      }
+    }
+  });
+
+  it('drops a sheer coast straight into the water', () => {
+    const heightmap = build(
+      plan([region(0, 'ordinary')], undefined, FINE_DIMENSIONS),
+      undefined,
+      { isletFrequency: 0 },
+      FINE_DIMENSIONS
+    );
+    let tallest = 0;
+    for (const value of heightmap) {
+      tallest = Math.max(tallest, value);
+    }
+    let wall = false;
+    for (let y = 1; y < FINE_DIMENSIONS.sampleHeight - 1 && !wall; y++) {
+      for (let x = 1; x < FINE_DIMENSIONS.sampleWidth - 1; x++) {
+        const index = y * FINE_DIMENSIONS.sampleWidth + x;
+        const value = heightmap[index] ?? 0;
+        if (value < tallest * 0.3) {
+          continue;
+        }
+        const neighbours = [
+          index - 1,
+          index + 1,
+          index - FINE_DIMENSIONS.sampleWidth,
+          index + FINE_DIMENSIONS.sampleWidth,
+        ];
+        // The summit shore reaches the waterline as a wall: a land cell tall
+        // enough to be a real cliff, directly beside open water.
+        if (neighbours.some(neighbour => (heightmap[neighbour] ?? 0) <= 0)) {
+          wall = true;
+          break;
+        }
+      }
+    }
+    expect(wall).toBe(true);
+  });
+
   it('raises more land with the land-share tendency', () => {
     const low = build(plan([region(0, 'ordinary')]), undefined, {
       isletFrequency: 0,
@@ -236,10 +342,64 @@ describe('buildHeightField', () => {
     expect(maxHeight(lagoon)).toBeLessThan(maxHeight(ordinary) * 0.5);
   });
 
+  it('shapes lagoon regions into reef rings around shallow water', () => {
+    const heightmap = build(
+      plan([region(0, 'lagoon')], undefined, FINE_DIMENSIONS),
+      undefined,
+      {},
+      FINE_DIMENSIONS
+    );
+    let shallowWater = 0;
+
+    for (const value of heightmap) {
+      if (value < 0 && value > -20) {
+        shallowWater++;
+      }
+    }
+
+    expect(countLand(heightmap)).toBeGreaterThan(0);
+    expect(shallowWater).toBeGreaterThan(0);
+    // Sandy atolls and motu islets stay a few metres above the waterline.
+    expect(maxHeight(heightmap)).toBeLessThan(15);
+  });
+
+  it('cuts fjord regions with submerged coastal channels', () => {
+    const heightmap = build(
+      plan([region(0, 'fjord')], undefined, FINE_DIMENSIONS),
+      undefined,
+      {},
+      FINE_DIMENSIONS
+    );
+    let channels = 0;
+
+    for (let y = 1; y < FINE_DIMENSIONS.sampleHeight - 1; y++) {
+      for (let x = 1; x < FINE_DIMENSIONS.sampleWidth - 1; x++) {
+        const index = y * FINE_DIMENSIONS.sampleWidth + x;
+        const value = heightmap[index] ?? 0;
+        if (value >= -1 || value <= -18) {
+          continue;
+        }
+        const left = heightmap[index - 1] ?? 0;
+        const right = heightmap[index + 1] ?? 0;
+        const up = heightmap[index - FINE_DIMENSIONS.sampleWidth] ?? 0;
+        const down = heightmap[index + FINE_DIMENSIONS.sampleWidth] ?? 0;
+        if ((left > 0 && right > 0) || (up > 0 && down > 0)) {
+          channels++;
+        }
+      }
+    }
+
+    expect(countLand(heightmap)).toBeGreaterThan(0);
+    expect(maxHeight(heightmap)).toBeGreaterThan(100);
+    expect(channels).toBeGreaterThan(0);
+  });
+
   it('adds more emergencies with the islet frequency', () => {
-    const fine = plan([region(0, 'ordinary')], undefined, FINE_DIMENSIONS);
-    const none = build(fine, undefined, { isletFrequency: 0 }, FINE_DIMENSIONS);
-    const many = build(fine, undefined, { isletFrequency: 1 }, FINE_DIMENSIONS);
+    // The islet shelf is a few cells wide only; a dense raster gives the
+    // feature room to show, like the real 4 m sampling does.
+    const source = plan([region(0, 'ordinary')], undefined, DETAIL_DIMENSIONS);
+    const none = build(source, undefined, { isletFrequency: 0 }, DETAIL_DIMENSIONS);
+    const many = build(source, undefined, { isletFrequency: 1 }, DETAIL_DIMENSIONS);
 
     expect(countLand(many)).toBeGreaterThan(countLand(none));
   });

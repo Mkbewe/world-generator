@@ -9,8 +9,10 @@ import type { RegionTerrainConfig } from '../../../../../utils/map-generator/typ
 const TERRAIN: RegionTerrainConfig = {
   landShare: 0.3,
   concentration: 0.6,
+  clustering: 0.4,
   age: 0.5,
   mountainousness: 0.5,
+  ringShare: 0.4,
 };
 
 describe('RegionTerrainEditor', () => {
@@ -32,10 +34,12 @@ describe('RegionTerrainEditor', () => {
       </Theme>
     );
 
-    expect(screen.getAllByRole('slider')).toHaveLength(3);
+    expect(screen.getAllByRole('slider')).toHaveLength(5);
     expect(screen.getByText('Land share')).toBeInTheDocument();
-    expect(screen.getByText('Land concentration')).toBeInTheDocument();
+    expect(screen.getByText('Island division')).toBeInTheDocument();
+    expect(screen.getByText('Island clustering')).toBeInTheDocument();
     expect(screen.getByText('Geological age')).toBeInTheDocument();
+    expect(screen.getByText('Lagoon rings')).toBeInTheDocument();
     expect(screen.queryByText('Mountainousness')).not.toBeInTheDocument();
   });
 
@@ -47,7 +51,7 @@ describe('RegionTerrainEditor', () => {
     );
 
     expect(screen.getByText('Mountainousness')).toBeInTheDocument();
-    expect(screen.getAllByRole('slider')).toHaveLength(4);
+    expect(screen.getAllByRole('slider')).toHaveLength(5);
   });
 
   it('patches a single terrain value from the slider', async () => {

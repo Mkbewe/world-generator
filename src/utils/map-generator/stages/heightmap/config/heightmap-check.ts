@@ -1,5 +1,5 @@
-import { MAX_ISLET_FREQUENCY, MAX_RELIEF, MIN_ISLET_FREQUENCY, MIN_RELIEF } from './defaults';
-import type { HeightmapConfig } from '../../types';
+import type { HeightmapConfig } from '../../../types';
+import { MAX_ISLET_FREQUENCY, MAX_RELIEF, MIN_ISLET_FREQUENCY, MIN_RELIEF } from '../defaults';
 
 /** Whether unknown data is a heightmap configuration within its domain limits. */
 export function isHeightmapConfig(value: unknown): value is HeightmapConfig {
@@ -30,8 +30,10 @@ function isRegionTerrain(value: unknown): boolean {
   return (
     isWithin(terrain.landShare, 0, 1) &&
     isWithin(terrain.concentration, 0, 1) &&
+    isWithin(terrain.clustering, 0, 1) &&
     isWithin(terrain.age, 0, 1) &&
-    isWithin(terrain.mountainousness, 0, 1)
+    isWithin(terrain.mountainousness, 0, 1) &&
+    isWithin(terrain.ringShare, 0, 1)
   );
 }
 
