@@ -7,14 +7,14 @@ export {
   MIN_RELIEF,
 } from './defaults';
 export type { HeightmapBand, HeightmapBandName } from './defaults';
-export { REGION_SHAPES } from './region-shape';
-export type { RegionShape } from './region-shape';
+export { REGION_SHAPES } from './config/region-shape';
+export type { RegionShape } from './config/region-shape';
 export {
   REGION_TERRAIN_SUPPORT,
   defaultRegionTerrain,
   defaultRegionTerrainSlots,
-} from './region-terrain';
-export { isHeightmapConfig } from './heightmap-check';
+} from './config/region-terrain';
+export { isHeightmapConfig } from './config/heightmap-check';
 export { createHeightmapNoiseBands } from './bands';
 export type { HeightmapNoiseBands } from './bands';
 export { buildHeightField } from './field';

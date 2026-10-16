@@ -82,8 +82,10 @@ export type GeologicalRegionType = (typeof GEOLOGICAL_REGION_TYPES)[number];
 export const REGION_TERRAIN_PARAMETERS = [
   'landShare',
   'concentration',
+  'clustering',
   'age',
   'mountainousness',
+  'ringShare',
 ] as const;
 
 export type RegionTerrainParameter = (typeof REGION_TERRAIN_PARAMETERS)[number];
@@ -99,8 +101,10 @@ export interface GeologicalRegionConfig {
 export interface RegionTerrainConfig {
   /** Target share of the region's surface above the water, 0..1. */
   readonly landShare: number;
-  /** Land concentration: 0 scatters an archipelago, 1 gathers one large island. */
+  /** Island division: 0 splits the land into many islands, 1 gathers one main island. */
   readonly concentration: number;
+  /** Island clustering: 0 spreads islands over the region, 1 groups them together. */
+  readonly clustering: number;
   /**
    * Geological age, 0..1: 0 keeps young, steep and cliffed relief, 1 erodes
    * and softens it.
@@ -108,6 +112,8 @@ export interface RegionTerrainConfig {
   readonly age: number;
   /** How mountainous the land is; used only by region types that support it. */
   readonly mountainousness: number;
+  /** Share of forms shaped as atoll rings with a lagoon; used by lagoon. */
+  readonly ringShare: number;
 }
 
 /** Whole-map arrangement of the regions: anchor spread and border noise. */

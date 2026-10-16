@@ -88,7 +88,16 @@ describe('selectDirtyStageIds', () => {
       ...config,
       heightmap: {
         ...heightmap,
-        regions: [{ landShare: 0.4, concentration: 0.5, age: 0.5, mountainousness: 0.5 }],
+        regions: [
+          {
+            landShare: 0.4,
+            concentration: 0.5,
+            clustering: 0.4,
+            age: 0.5,
+            mountainousness: 0.5,
+            ringShare: 0,
+          },
+        ],
       },
     };
 

@@ -42,14 +42,14 @@ export const COAST_DETAIL_SHARE = 0.18;
  * regions scale their radius up, which reads as erosion.
  */
 export const FIELD_SMOOTH_PASSES = 2;
-export const FIELD_SMOOTH_SHARE = 0.04;
+export const FIELD_SMOOTH_SHARE = 0.022;
 
 /** Smallest island radius and the cap on distinct forms per region. */
-export const MIN_ISLAND_RADIUS_METERS = 140;
+export const MIN_ISLAND_RADIUS_METERS = 95;
 export const MAX_FORMS_PER_REGION = 14;
 
 /** Islets appear only on shelf water shallower than this, never in the ocean. */
-export const ISLET_MAX_DEPTH_METERS = 18;
+export const ISLET_MAX_DEPTH_METERS = 24;
 
 /** Tallest islet bump on top of the local seabed, in metres. */
 export const ISLET_BUMP_METERS = 26;
@@ -75,7 +75,7 @@ export const DEFAULT_HEIGHTMAP_CONFIG: HeightmapConfig = {
 };
 
 /** Names of the heightmap's own noise bands. */
-export type HeightmapBandName = 'large' | 'medium' | 'fine';
+export type HeightmapBandName = 'large' | 'warpX' | 'warpY' | 'coast' | 'ridge' | 'fine';
 
 /** One band: physical wavelength, octaves and the fractal shape of its stack. */
 export interface HeightmapBand extends WorldNoiseBandSpec {
@@ -88,24 +88,44 @@ export interface HeightmapBand extends WorldNoiseBandSpec {
 
 /**
  * The heightmap's own bands, independent of the Noise stage raster and config.
- * `large` shapes the ocean floor and the border gate, `medium` warps contours
- * and bends the coast, `fine` textures the land and raises the islets.
+ * Every mechanism draws from its own uncorrelated stream: `large` shapes the
+ * ocean floor and the border gate, `warpX`/`warpY` displace sample points,
+ * `coast` carves the coastline, `ridge` forms the interior ridges and the
+ * channels, `fine` adds roughness, islets and reef detail.
  */
 export const HEIGHTMAP_BANDS: Readonly<Record<HeightmapBandName, HeightmapBand>> = {
   large: {
-    wavelengthMeters: 3000,
+    wavelengthMeters: 2800,
     octaves: 2,
     persistence: 0.5,
     lacunarity: 2,
   },
-  medium: {
-    wavelengthMeters: 700,
+  warpX: {
+    wavelengthMeters: 420,
+    octaves: 3,
+    persistence: 0.55,
+    lacunarity: 2.1,
+  },
+  warpY: {
+    wavelengthMeters: 420,
+    octaves: 3,
+    persistence: 0.55,
+    lacunarity: 2.1,
+  },
+  coast: {
+    wavelengthMeters: 260,
+    octaves: 3,
+    persistence: 0.55,
+    lacunarity: 2.2,
+  },
+  ridge: {
+    wavelengthMeters: 650,
     octaves: 3,
     persistence: 0.5,
     lacunarity: 2,
   },
   fine: {
-    wavelengthMeters: 150,
+    wavelengthMeters: 120,
     octaves: 2,
     persistence: 0.5,
     lacunarity: 2,

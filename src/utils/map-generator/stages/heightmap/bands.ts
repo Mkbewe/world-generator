@@ -6,12 +6,15 @@ import type { WorldPoint } from '../../types';
 /** The heightmap's own noise in the -1..1 range the port returns. */
 export interface HeightmapNoiseBands {
   readonly large: (point: WorldPoint) => number;
-  readonly medium: (point: WorldPoint) => number;
+  readonly warpX: (point: WorldPoint) => number;
+  readonly warpY: (point: WorldPoint) => number;
+  readonly coast: (point: WorldPoint) => number;
+  readonly ridge: (point: WorldPoint) => number;
   readonly fine: (point: WorldPoint) => number;
 }
 
 /**
- * Builds the three standard bands from one named stream family. The world
+ * Builds the standard bands from one named stream family. The world
  * background and the border gate use the default family; every region gets
  * its own, so two regions never repeat the same shapes.
  */
@@ -22,7 +25,10 @@ export function createHeightmapNoiseBands(
 ): HeightmapNoiseBands {
   return {
     large: signedBand(random, `${namespace}.large`, dimensions, HEIGHTMAP_BANDS.large),
-    medium: signedBand(random, `${namespace}.medium`, dimensions, HEIGHTMAP_BANDS.medium),
+    warpX: signedBand(random, `${namespace}.warpX`, dimensions, HEIGHTMAP_BANDS.warpX),
+    warpY: signedBand(random, `${namespace}.warpY`, dimensions, HEIGHTMAP_BANDS.warpY),
+    coast: signedBand(random, `${namespace}.coast`, dimensions, HEIGHTMAP_BANDS.coast),
+    ridge: signedBand(random, `${namespace}.ridge`, dimensions, HEIGHTMAP_BANDS.ridge),
     fine: signedBand(random, `${namespace}.fine`, dimensions, HEIGHTMAP_BANDS.fine),
   };
 }
