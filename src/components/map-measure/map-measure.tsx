@@ -2,14 +2,14 @@ import type { RefObject } from 'react';
 
 import { useElementSize } from '../../hooks/use-element-size';
 import { formatDistance } from '../../utils/format';
-import type { Measurement } from '../../utils/map-readout';
+import { type Measurement, measurementMeters, segmentMeters } from '../../utils/map-readout';
 import { PRESENTATION_MARGIN, project, type ViewTransform } from '../../utils/map-renderer';
 import { roundDistance } from '../../utils/measure';
-import { normalizedToMeters, type WorldDimensions } from '../../utils/world-dimensions';
+import type { WorldDimensions } from '../../utils/world-dimensions';
 import styles from './map-measure.module.scss';
 
 export interface MapMeasureProps {
-  /** The map area the line is drawn over. */
+  /** The map area the measured path is drawn over. */
   containerRef: RefObject<HTMLElement | null>;
   /** Current placement of the map in the preview. */
   viewTransform: ViewTransform;
@@ -22,10 +22,19 @@ const TICK_TARGET_PIXELS = 60;
 /** Tick half-length and the label offset from the line, in CSS pixels. */
 const TICK_HALF = 4;
 const LABEL_OFFSET = 12;
+/** Segment lengths sit this far below their segment, in CSS pixels. */
+const SEGMENT_LABEL_OFFSET = 18;
 
 interface Point {
   readonly x: number;
   readonly y: number;
+}
+
+interface Segment {
+  readonly start: Point;
+  readonly end: Point;
+  readonly preview: boolean;
+  readonly meters: number;
 }
 
 interface Tick {
@@ -35,7 +44,7 @@ interface Tick {
   readonly y2: number;
 }
 
-/** Start and end markers with the ruler line, ticks and distances, over the map. */
+/** Committed points with the live preview, as ruler segments, markers and labels. */
 export function MapMeasure({
   containerRef,
   viewTransform,
@@ -43,7 +52,7 @@ export function MapMeasure({
   measurement,
 }: MapMeasureProps) {
   const { width, height } = useElementSize(containerRef);
-  if (!measurement || width <= 0 || height <= 0) {
+  if (!measurement || width <= 0 || height <= 0 || measurement.points.length === 0) {
     return null;
   }
   const padding = Math.min(PRESENTATION_MARGIN, width * 0.1, height * 0.1);
@@ -53,66 +62,120 @@ export function MapMeasure({
     { width: dimensions.sampleWidth, height: dimensions.sampleHeight },
     padding
   );
-  const start = {
-    x: projection.left + measurement.start.u * projection.width,
-    y: projection.top + measurement.start.v * projection.height,
-  };
-  const end = {
-    x: projection.left + measurement.end.u * projection.width,
-    y: projection.top + measurement.end.v * projection.height,
-  };
-  const length = Math.hypot(end.x - start.x, end.y - start.y);
+  const toPixel = (sample: { readonly u: number; readonly v: number }): Point => ({
+    x: projection.left + sample.u * projection.width,
+    y: projection.top + sample.v * projection.height,
+  });
+  const points = measurement.points.map(toPixel);
+  const preview = measurement.preview ? toPixel(measurement.preview) : undefined;
+  const samples = measurement.preview
+    ? [...measurement.points, measurement.preview]
+    : measurement.points;
+  const path = samples.map(toPixel);
+  const segments: Segment[] = [];
+  for (let index = 1; index < samples.length; index++) {
+    const startSample = samples[index - 1];
+    const endSample = samples[index];
+    const start = path[index - 1];
+    const end = path[index];
+    if (startSample && endSample && start && end) {
+      segments.push({
+        start,
+        end,
+        preview: index === samples.length - 1 && preview !== undefined,
+        meters: segmentMeters(dimensions, startSample, endSample),
+      });
+    }
+  }
   const metersPerPixel = dimensions.widthMeters / dimensions.sampleWidth / projection.cellSize;
-  const startMeters = normalizedToMeters(dimensions, measurement.start.u, measurement.start.v);
-  const endMeters = normalizedToMeters(dimensions, measurement.end.u, measurement.end.v);
-  const totalMeters = Math.hypot(
-    endMeters.xMeters - startMeters.xMeters,
-    endMeters.yMeters - startMeters.yMeters
-  );
-  const normal =
-    length > 0
-      ? { x: (end.y - start.y) / length, y: -(end.x - start.x) / length }
-      : { x: 0, y: -1 };
+  const totalMeters = measurementMeters(dimensions, measurement);
+  const last = path[path.length - 1];
+  const previous = path[path.length - 2] ?? last;
+  const normal = last ? normalOf(previous, last) : { x: 0, y: -1 };
+  const first = points[0];
+  const second = points[1];
+  // The start label follows the first committed segment, never the live
+  // preview, so it stays put while the pointer turns around the start point.
+  const startNormal = first && second ? normalOf(first, second) : { x: 0, y: -1 };
 
   return (
     <svg className={styles.overlay} aria-hidden='true'>
-      <line className={styles.line} x1={start.x} y1={start.y} x2={end.x} y2={end.y} />
-      {rulerTicks(start, end, length, metersPerPixel).map(tick => (
-        <line
-          key={`${tick.x1}:${tick.y1}`}
-          className={styles.tick}
-          x1={tick.x1}
-          y1={tick.y1}
-          x2={tick.x2}
-          y2={tick.y2}
-        />
+      {segments.map((segment, index) => (
+        <g key={`segment-${index}`}>
+          <line
+            className={segment.preview ? styles.preview : styles.line}
+            x1={segment.start.x}
+            y1={segment.start.y}
+            x2={segment.end.x}
+            y2={segment.end.y}
+          />
+          {rulerTicks(segment.start, segment.end, metersPerPixel).map(tick => (
+            <line
+              key={`${tick.x1}:${tick.y1}`}
+              className={styles.tick}
+              x1={tick.x1}
+              y1={tick.y1}
+              x2={tick.x2}
+              y2={tick.y2}
+            />
+          ))}
+        </g>
       ))}
-      <circle className={styles.marker} cx={start.x} cy={start.y} r={4} />
-      <circle className={styles.marker} cx={end.x} cy={end.y} r={4} />
+      {segments.map((segment, index) => {
+        const normal = normalOf(segment.start, segment.end);
+        return (
+          <text
+            key={`segment-label-${index}`}
+            className={styles.label}
+            x={(segment.start.x + segment.end.x) / 2 - normal.x * SEGMENT_LABEL_OFFSET}
+            y={(segment.start.y + segment.end.y) / 2 - normal.y * SEGMENT_LABEL_OFFSET}
+            textAnchor='middle'
+            dominantBaseline='central'
+          >
+            {formatDistance(segment.meters)}
+          </text>
+        );
+      })}
+      {points.map((point, index) => (
+        <circle key={`point-${index}`} className={styles.marker} cx={point.x} cy={point.y} r={4} />
+      ))}
+      {preview && <circle className={styles.previewMarker} cx={preview.x} cy={preview.y} r={3} />}
       <text
         className={styles.label}
-        x={start.x + normal.x * LABEL_OFFSET}
-        y={start.y + normal.y * LABEL_OFFSET}
+        x={points[0].x + startNormal.x * LABEL_OFFSET}
+        y={points[0].y + startNormal.y * LABEL_OFFSET}
         textAnchor='middle'
         dominantBaseline='central'
       >
         0 m
       </text>
-      <text
-        className={styles.label}
-        x={end.x + normal.x * LABEL_OFFSET}
-        y={end.y + normal.y * LABEL_OFFSET}
-        textAnchor='middle'
-        dominantBaseline='central'
-      >
-        {formatDistance(totalMeters)}
-      </text>
+      {last && segments.length > 0 && (
+        <text
+          className={styles.label}
+          x={last.x + normal.x * LABEL_OFFSET}
+          y={last.y + normal.y * LABEL_OFFSET}
+          textAnchor='middle'
+          dominantBaseline='central'
+        >
+          {formatDistance(totalMeters)}
+        </text>
+      )}
     </svg>
   );
 }
 
-/** Ruler ticks across the line, every round distance at the current zoom. */
-function rulerTicks(start: Point, end: Point, length: number, metersPerPixel: number): Tick[] {
+/** Unit normal of a segment; a vertical fallback for a zero-length one. */
+function normalOf(start: Point, end: Point): Point {
+  const length = Math.hypot(end.x - start.x, end.y - start.y);
+  if (length <= 0) {
+    return { x: 0, y: -1 };
+  }
+  return { x: (end.y - start.y) / length, y: -(end.x - start.x) / length };
+}
+
+/** Ruler ticks across one segment, every round distance at the current zoom. */
+function rulerTicks(start: Point, end: Point, metersPerPixel: number): Tick[] {
+  const length = Math.hypot(end.x - start.x, end.y - start.y);
   if (length <= 0 || !Number.isFinite(metersPerPixel) || metersPerPixel <= 0) {
     return [];
   }

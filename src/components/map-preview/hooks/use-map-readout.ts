@@ -1,4 +1,5 @@
 import {
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type RefObject,
   useCallback,
@@ -16,7 +17,7 @@ const WHEEL_ZOOM_SPEED = 0.0015;
 interface ReadoutOptions {
   /** Zoom and pan are part of the fullscreen mode; outside it the map stays fitted. */
   zoomable: boolean;
-  /** Whether dragging the map measures a distance instead of panning. */
+  /** Whether clicks add measurement points instead of panning. */
   measuring: boolean;
 }
 
@@ -52,6 +53,34 @@ export function useMapReadout(
   const [measurement, setMeasurement] = useState<Measurement | undefined>(undefined);
 
   const clearMeasurement = useCallback((): void => setMeasurement(undefined), []);
+
+  useEffect(() => {
+    if (!measuring) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Backspace' && event.key !== 'Delete') {
+        return;
+      }
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      setMeasurement(current => {
+        if (!current || current.points.length === 0) {
+          return current;
+        }
+        const points = current.points.slice(0, -1);
+        return points.length > 0 ? { points, finished: false } : undefined;
+      });
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [measuring]);
 
   const refreshReadout = useCallback(
     (position: PointerSample): void => {
@@ -117,8 +146,8 @@ export function useMapReadout(
   };
 
   /**
-   * The measure mode drags a distance line, the middle mouse button pans and a
-   * plain left click or tap pins the readout. Touch pans when not measuring.
+   * The measure mode adds a point on every click, the middle mouse button pans
+   * and a plain left click or tap pins the readout. Touch pans when not measuring.
    */
   const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
     if (gestureRef.current) {
@@ -157,7 +186,11 @@ export function useMapReadout(
         gestureRef.current = undefined;
         return;
       }
-      setMeasurement({ start: position, end: position });
+      setMeasurement(current =>
+        current && !current.finished
+          ? { points: [...current.points, position], preview: position }
+          : { points: [position], preview: position }
+      );
       trackReadout(event);
       return;
     }
@@ -179,16 +212,6 @@ export function useMapReadout(
           setPanning(true);
         }
       }
-      if (gesture.kind === 'measure') {
-        gesture.lastX = event.clientX;
-        gesture.lastY = event.clientY;
-        const position = sampleAt(event);
-        if (position) {
-          setMeasurement(current => (current ? { ...current, end: position } : current));
-        }
-        trackReadout(event);
-        return;
-      }
       if (gesture.moved && gesture.kind === 'pan') {
         gesture.lastX = event.clientX;
         gesture.lastY = event.clientY;
@@ -197,10 +220,24 @@ export function useMapReadout(
         return;
       }
     }
+    if (measuring && gesture?.kind !== 'pan') {
+      const position = sampleAt(event);
+      if (position) {
+        setMeasurement(current => {
+          if (!current || current.finished) {
+            return current;
+          }
+          if (current.preview?.x === position.x && current.preview.y === position.y) {
+            return current;
+          }
+          return { ...current, preview: position };
+        });
+      }
+    }
     trackReadout(event);
   };
 
-  /** A tap toggles the pin; a drag pans the map or keeps the measurement. */
+  /** A tap toggles the pin; a drag pans the map. Measure clicks only add points. */
   const handlePointerUp = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
     const gesture = gestureRef.current;
     if (gesture?.pointerId !== event.pointerId) {
@@ -208,11 +245,8 @@ export function useMapReadout(
     }
     gestureRef.current = undefined;
     setPanning(false);
-    if (gesture.kind === 'measure' && gesture.moved) {
-      return;
-    }
     if (gesture.kind === 'measure') {
-      setMeasurement(undefined);
+      return;
     }
     if (gesture.moved || gesture.button === 1) {
       return;
@@ -228,7 +262,7 @@ export function useMapReadout(
 
   const handlePointerCancel = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
     if (gestureRef.current?.kind === 'measure') {
-      setMeasurement(undefined);
+      setMeasurement(current => (current ? { ...current, preview: undefined } : current));
     }
     gestureRef.current = undefined;
     setPanning(false);
@@ -237,6 +271,27 @@ export function useMapReadout(
     }
     positionRef.current = undefined;
     setReadout(undefined);
+  };
+
+  /** Right-click finishes the path; right-clicking a finished path clears it. */
+  const handleContextMenu = (event: ReactMouseEvent<HTMLCanvasElement>): void => {
+    if (!measuring) {
+      return;
+    }
+    event.preventDefault();
+    setMeasurement(current => {
+      if (!current) {
+        return current;
+      }
+      if (current.finished) {
+        return undefined;
+      }
+      const points = current.preview ? [...current.points, current.preview] : current.points;
+      if (points.length < 2) {
+        return undefined;
+      }
+      return { points, finished: true };
+    });
   };
 
   /** Keeps the readout while the pointer moves onto the panels; clears it outside. */
@@ -260,6 +315,7 @@ export function useMapReadout(
       onPointerDown: handlePointerDown,
       onPointerUp: handlePointerUp,
       onPointerCancel: handlePointerCancel,
+      onContextMenu: handleContextMenu,
     },
   };
 }

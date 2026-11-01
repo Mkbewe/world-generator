@@ -4,7 +4,7 @@ import { Button, Flex, Text } from '@radix-ui/themes';
 import styles from './measure-controls.module.scss';
 
 interface MeasureControlsProps {
-  /** Whether dragging the map measures a distance. */
+  /** Whether clicks on the map add measurement points. */
   measuring: boolean;
   onToggleMeasuring: () => void;
 }
@@ -32,7 +32,7 @@ export function MeasureControls({ measuring, onToggleMeasuring }: MeasureControl
         </Button>
       </Flex>
       <Text size='1' color='gray'>
-        Drag on the map to measure a distance.
+        Click to add points. Right-click to finish, again to clear; Backspace to undo.
       </Text>
     </Flex>
   );

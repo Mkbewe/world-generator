@@ -96,8 +96,10 @@ describe('readoutItems', () => {
       },
     };
     const measurement: Measurement = {
-      start: { x: 0, y: 0, u: 0, v: 0 },
-      end: { x: 0, y: 0, u: 0.5, v: 0.5 },
+      points: [
+        { x: 0, y: 0, u: 0, v: 0 },
+        { x: 0, y: 0, u: 0.5, v: 0.5 },
+      ],
     };
     const measured = (value: Measurement | undefined, mapInfo: MapInfo = info) =>
       readoutItems(readout(), mapInfo, value).find(entry => entry.id === 'distance');
@@ -107,7 +109,23 @@ describe('readoutItems', () => {
       value: '2.24 km',
       separated: true,
     });
-    expect(measured({ ...measurement, end: { x: 0, y: 0, u: 0.05, v: 0 } })?.value).toBe('200 m');
+    expect(
+      measured({
+        points: [
+          { x: 0, y: 0, u: 0, v: 0 },
+          { x: 0, y: 0, u: 0.05, v: 0 },
+        ],
+      })?.value
+    ).toBe('200 m');
+    expect(
+      measured({
+        points: [
+          { x: 0, y: 0, u: 0, v: 0 },
+          { x: 0, y: 0, u: 0.5, v: 0 },
+          { x: 0, y: 0, u: 0.5, v: 0.5 },
+        ],
+      })?.value
+    ).toBe('3 km');
     expect(measured(measurement, {})).toBeUndefined();
     expect(readoutItems(readout(), info, measurement).map(entry => entry.id)).toEqual([
       'position',
