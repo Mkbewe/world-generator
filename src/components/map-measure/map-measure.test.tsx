@@ -11,9 +11,10 @@ const DIMENSIONS: WorldDimensions = {
   sampleHeight: 100,
 };
 const VIEW = { scale: 1, centerX: 0.5, centerY: 0.5 };
+const START = { x: 25, y: 50, u: 0.25, v: 0.5 };
+const MIDDLE = { x: 50, y: 50, u: 0.5, v: 0.5 };
 const MEASUREMENT: Measurement = {
-  start: { x: 25, y: 50, u: 0.25, v: 0.5 },
-  end: { x: 75, y: 50, u: 0.75, v: 0.5 },
+  points: [START, { x: 75, y: 50, u: 0.75, v: 0.5 }],
 };
 
 function mockRect(width: number, height: number): void {
@@ -60,13 +61,68 @@ describe('MapMeasure', () => {
     expect(line).toHaveAttribute('y2', '200');
     expect(container.querySelectorAll('circle')).toHaveLength(2);
     expect(screen.getByText('0 m')).toBeInTheDocument();
-    expect(screen.getByText('500 m')).toBeInTheDocument();
+    expect(screen.getAllByText('500 m')).toHaveLength(2);
 
     const ticks = [...container.querySelectorAll('line')].slice(1);
     expect(ticks.length).toBeGreaterThan(0);
     for (const tick of ticks) {
       expect(tick.getAttribute('x1')).toBe(tick.getAttribute('x2'));
     }
+  });
+
+  it('draws every committed segment, marker and the path total', () => {
+    mockRect(400, 400);
+    const { container } = renderMeasure({
+      points: [
+        { x: 25, y: 25, u: 0.25, v: 0.25 },
+        { x: 75, y: 25, u: 0.75, v: 0.25 },
+        { x: 75, y: 75, u: 0.75, v: 0.75 },
+      ],
+    });
+
+    expect(container.querySelectorAll('circle')).toHaveLength(3);
+    expect(container.querySelectorAll('line').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('1 km')).toBeInTheDocument();
+  });
+
+  it('keeps the start label fixed while the preview turns', () => {
+    mockRect(400, 400);
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const props = {
+      containerRef: { current: container },
+      viewTransform: VIEW,
+      dimensions: DIMENSIONS,
+    };
+    const points = [START, MIDDLE];
+    const view = render(
+      <MapMeasure
+        {...props}
+        measurement={{ points, preview: { x: 75, y: 25, u: 0.75, v: 0.25 } }}
+      />
+    );
+    const before = screen.getByText('0 m');
+    const beforeX = before.getAttribute('x');
+    const beforeY = before.getAttribute('y');
+
+    view.rerender(
+      <MapMeasure {...props} measurement={{ points, preview: { x: 50, y: 75, u: 0.5, v: 0.75 } }} />
+    );
+    const after = screen.getByText('0 m');
+
+    expect(after.getAttribute('x')).toBe(beforeX);
+    expect(after.getAttribute('y')).toBe(beforeY);
+  });
+
+  it('draws the preview segment to the pointer', () => {
+    mockRect(400, 400);
+    const { container } = renderMeasure({
+      points: [{ x: 25, y: 50, u: 0.25, v: 0.5 }],
+      preview: { x: 75, y: 50, u: 0.75, v: 0.5 },
+    });
+
+    expect(container.querySelectorAll('circle')).toHaveLength(2);
+    expect(screen.getAllByText('500 m')).toHaveLength(2);
   });
 
   it('stays hidden without a measurement', () => {

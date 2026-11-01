@@ -337,7 +337,7 @@ describe('MapPreview readout', () => {
     expect(renderer.current?.viewTransform.centerX).toBe(centerAfterRelease);
   });
 
-  it('measures a drag in metres in the fullscreen mode', async () => {
+  it('measures clicked points, finishes on right-click and undoes with Backspace', async () => {
     const user = userEvent.setup();
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
       left: 0,
@@ -381,10 +381,33 @@ describe('MapPreview readout', () => {
     ).toBeInTheDocument();
     expect(canvas.parentElement?.querySelector('line')).not.toBeNull();
 
-    await user.click(screen.getByRole('button', { name: /measure/i }));
+    fireEvent.contextMenu(canvas);
+    fireEvent.pointerMove(canvas, { clientX: 350, clientY: 250 });
+
+    expect(
+      within(screen.getByRole('group', { name: 'Cursor readout' })).getByText('2.89 km')
+    ).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Backspace' });
 
     expect(screen.queryByText('Distance:')).toBeNull();
     expect(canvas.parentElement?.querySelector('line')).toBeNull();
+
+    fireEvent.pointerMove(canvas, { clientX: 300, clientY: 300 });
+    fireEvent.contextMenu(canvas);
+
+    expect(
+      within(screen.getByRole('group', { name: 'Cursor readout' })).getByText('2.89 km')
+    ).toBeInTheDocument();
+
+    fireEvent.contextMenu(canvas);
+
+    expect(screen.queryByText('Distance:')).toBeNull();
+    expect(canvas.parentElement?.querySelector('line')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: /measure/i }));
+
+    expect(screen.queryByText('Distance:')).toBeNull();
   });
 
   it('keeps measuring out of the normal view', async () => {

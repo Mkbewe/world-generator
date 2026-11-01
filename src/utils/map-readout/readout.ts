@@ -25,10 +25,12 @@ export interface InspectorReadout {
   readonly inspection?: MapInspection;
 }
 
-/** Two map points of an active distance measurement. */
+/** Ordered map points of a measurement; the preview is the next segment. */
 export interface Measurement {
-  readonly start: PointerSample;
-  readonly end: PointerSample;
+  readonly points: readonly PointerSample[];
+  readonly preview?: PointerSample;
+  /** True after the user finishes the path; pointer movement stops following. */
+  readonly finished?: boolean;
 }
 
 /** Labelled pair of X/Y values rendered as aligned columns. */
@@ -167,18 +169,46 @@ function describePositionLines(position: PointerSample, info: MapInfo): readonly
   return lines;
 }
 
-/** Straight-line distance of an active measurement, in the fitting unit. */
+/** Total length of a measured path, including its preview segment. */
+export function segmentMeters(
+  dimensions: WorldDimensions,
+  from: PointerSample,
+  to: PointerSample
+): number {
+  const dx = (to.u - from.u) * dimensions.widthMeters;
+  const dy = (to.v - from.v) * dimensions.heightMeters;
+  return Math.hypot(dx, dy);
+}
+
+export function measurementMeters(dimensions: WorldDimensions, measurement: Measurement): number {
+  const points = measurement.preview
+    ? [...measurement.points, measurement.preview]
+    : measurement.points;
+  let total = 0;
+  for (let index = 1; index < points.length; index++) {
+    const from = points[index - 1];
+    const to = points[index];
+    if (from && to) {
+      total += segmentMeters(dimensions, from, to);
+    }
+  }
+  return total;
+}
+
+/** Total distance of an active measurement, in the fitting unit. */
 function measuredItem(measurement: Measurement, info: MapInfo): ReadoutItem | undefined {
   const dimensions = worldDimensions(info);
   if (!dimensions) {
     return undefined;
   }
-  const dx = (measurement.end.u - measurement.start.u) * dimensions.widthMeters;
-  const dy = (measurement.end.v - measurement.start.v) * dimensions.heightMeters;
+  const total = measurementMeters(dimensions, measurement);
+  if (total <= 0) {
+    return undefined;
+  }
   return {
     id: 'distance',
     label: 'Distance',
-    value: formatDistance(Math.hypot(dx, dy)),
+    value: formatDistance(total),
     separated: true,
   };
 }

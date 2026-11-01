@@ -12,6 +12,13 @@
   stroke-width: 2;
 }
 
+.preview {
+  stroke: var(--violet-9);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  opacity: 0.7;
+}
+
 .tick {
   stroke: var(--violet-9);
   stroke-width: 1.5;
@@ -20,6 +27,12 @@
 .marker {
   fill: var(--violet-9);
   stroke: var(--color-background);
+  stroke-width: 1.5;
+}
+
+.previewMarker {
+  fill: var(--color-background);
+  stroke: var(--violet-9);
   stroke-width: 1.5;
 }
 

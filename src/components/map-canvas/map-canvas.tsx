@@ -1,4 +1,5 @@
 import {
+  type MouseEventHandler,
   type PointerEventHandler,
   type ReactNode,
   type RefObject,
@@ -16,6 +17,7 @@ export interface MapCanvasHandlers {
   onPointerDown: PointerEventHandler<HTMLCanvasElement>;
   onPointerUp: PointerEventHandler<HTMLCanvasElement>;
   onPointerCancel: PointerEventHandler<HTMLCanvasElement>;
+  onContextMenu: MouseEventHandler<HTMLCanvasElement>;
 }
 
 interface MapCanvasProps {

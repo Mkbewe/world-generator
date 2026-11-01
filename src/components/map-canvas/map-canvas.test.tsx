@@ -9,6 +9,7 @@ const HANDLERS: MapCanvasHandlers = {
   onPointerDown: () => {},
   onPointerUp: () => {},
   onPointerCancel: () => {},
+  onContextMenu: () => {},
 };
 
 function renderCanvas(ready: boolean) {
