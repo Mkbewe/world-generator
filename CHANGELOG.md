@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.12.0](https://github.com/Mkbewe/world-generator/compare/v0.11.1...v0.12.0) (2026-11-01)
+
+### Features
+
+* **[462](https://github.com/Mkbewe/world-generator/issues/462):** rebuild the heightmap with island forms and region terrain ([#477](https://github.com/Mkbewe/world-generator/issues/477)) ([704ccb6](https://github.com/Mkbewe/world-generator/commit/704ccb60ba3b7a18a23c39da45cc4eb585af6471)), references [#475](https://github.com/Mkbewe/world-generator/issues/475) [#474](https://github.com/Mkbewe/world-generator/issues/474)
+
+  - replace the thresholded noise engine with seeded island forms stamped
+  over bounding boxes: concentration and land share drive their count,
+  size and coverage, age softens relief, mountainousness varies island
+  height
+  - generate heights in metres around a fixed waterline of 0 m; drop the
+  sea level setting from the config and the form
+  - give each form an asymmetric peak (cliffs), an optional cavity
+  (volcano crater or submerged lagoon) and a shelf footprint; islets rise
+  only on shallow shelf water near the shores
+  - restore the heightmap stage in the pipeline with selective
+  regeneration and persisted outputs, and analyse connected land and land
+  share
+  - preview the heightmap layer with its hypso palette, readout and
+  statistics descriptors; add lagoon and fjord palettes, glyphs and
+  metrics
+  - rename the atoll region type to lagoon, add fjord, invert the
+  concentration scale and slim the geology presets to 2-5 regions
+  - move the region terrain sliders to the Heightmap tab (region tabs plus
+  editor) and reduce the geology editor to the type picker and character
+  text
+  - move the terrain parameters out of the geology config and plan into
+  the heightmap config regions, so terrain edits rebuild only the
+  heightmap stage
+  - keep the displayed preview layer when a selection repaint changes only
+  the highlight of a hidden layer
+
+  Part of #475. Follows #474.
+* **[474](https://github.com/Mkbewe/world-generator/issues/474):** add per-region terrain sliders to the geology editor ([#476](https://github.com/Mkbewe/world-generator/issues/476)) ([9abe4d2](https://github.com/Mkbewe/world-generator/commit/9abe4d2b6ebdf01a0e1436dcf733731c4e7a3cb3))
+
+  - store land concentration, mountainousness and land share with every
+  region
+  - carry the terrain metadata through the region markers and the resolved
+  plan
+  - show only the sliders a region type declares support for
+  - validate the values and cover them in presets, plan and editor tests
+* **[478](https://github.com/Mkbewe/world-generator/issues/478):** calibrate island shapes, cliffs, atolls and shore waters ([#479](https://github.com/Mkbewe/world-generator/issues/479)) ([31e9c31](https://github.com/Mkbewe/world-generator/commit/31e9c31d3153c6c401ee33c24a01e00ad49cde08))
+
+  - islands: three bays per island, peninsulas and straits between
+  neighbours, summit offset toward the short axis (never past the shore)
+  - cliffs: sheer summit-facing shores with rare landing spots, walled
+  channel and bay banks, deep water reaching the wall
+  - fjord: channels deepen right away and cut only into the mountainous
+  side, banks hold height, valley floors stay well above the sea
+  - shore water: measured shallow belt scaled with world size, linear fade
+  into the deep floor, shared shelf bank under island groups
+  - atolls: rings submerge in stretches instead of one cut mouth, shallow
+  lagoon basin, ring rim keeps its depth, sandy islets stay low
+  - palette: hard water/land boundary below 0 m, saturated shallows
+  - per-region terrain: island clustering and lagoon rings sliders
+  - refactor: split the heightmap field into profiles, stamping, compose
+  and placement; group the stage under config/forms/relief folders and
+  colocate tests with their modules
+* **[482](https://github.com/Mkbewe/world-generator/issues/482):** add multi-point measurement to the preview ([#483](https://github.com/Mkbewe/world-generator/issues/483)) ([fa3f830](https://github.com/Mkbewe/world-generator/commit/fa3f8301afb77b6a4f5dc0524f370823c36d557f))
+
+  - replace drag-to-measure with click-added points and a live preview
+  segment
+  - finish with right-click, clear with a second right-click, undo with
+  Backspace
+  - show every segment length and the total, keep the start label fixed
+  - remove the fullscreen card focus outline
+
+### Bug Fixes
+
+* **[480](https://github.com/Mkbewe/world-generator/issues/480):** make islet and skerry relief readable ([#481](https://github.com/Mkbewe/world-generator/issues/481)) ([addaee4](https://github.com/Mkbewe/world-generator/commit/addaee44269ee45707ed5c68fda78e5d4c29dad7))
+
 ## [0.11.1](https://github.com/Mkbewe/world-generator/compare/v0.11.0...v0.11.1) (2026-10-10)
 
 ### Features
