@@ -11,6 +11,7 @@ export interface HeightmapNoiseBands {
   readonly coast: (point: WorldPoint) => number;
   readonly ridge: (point: WorldPoint) => number;
   readonly fine: (point: WorldPoint) => number;
+  readonly bank: (point: WorldPoint) => number;
 }
 
 /**
@@ -30,6 +31,7 @@ export function createHeightmapNoiseBands(
     coast: signedBand(random, `${namespace}.coast`, dimensions, HEIGHTMAP_BANDS.coast),
     ridge: signedBand(random, `${namespace}.ridge`, dimensions, HEIGHTMAP_BANDS.ridge),
     fine: signedBand(random, `${namespace}.fine`, dimensions, HEIGHTMAP_BANDS.fine),
+    bank: signedBand(random, `${namespace}.bank`, dimensions, HEIGHTMAP_BANDS.bank),
   };
 }
 

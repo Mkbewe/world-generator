@@ -1,5 +1,6 @@
 import { createHeightmapNoiseBands } from './bands';
 import {
+  BANK_START_DEPTH_METERS,
   BORDER_GATE_METERS,
   BORDER_GATE_WARP_SHARE,
   DEFAULT_HEIGHTMAP_CONFIG,
@@ -33,23 +34,27 @@ const FINE_DIMENSIONS: WorldDimensions = {
   sampleHeight: 128,
 };
 
-/** The real app samples at 4 m; this raster matches that density closely. */
+/** The real app samples at 4 m; a smaller world keeps the test quick. */
 const DETAIL_DIMENSIONS: WorldDimensions = {
-  widthMeters: 4000,
-  heightMeters: 2000,
-  sampleWidth: 1024,
-  sampleHeight: 512,
+  widthMeters: 2048,
+  heightMeters: 1024,
+  sampleWidth: 512,
+  sampleHeight: 256,
 };
 
 const CELLS = DIMENSIONS.sampleWidth * DIMENSIONS.sampleHeight;
 
-function region(index: number, type: GeologicalRegionType): GeologicalRegionPlan {
+function region(
+  index: number,
+  type: GeologicalRegionType,
+  dimensions: WorldDimensions = DIMENSIONS
+): GeologicalRegionPlan {
   return {
     id: `region-${index + 1}`,
     type,
     centre: { x: (index + 0.5) / 2, y: 0.5 },
     weight: 1,
-    areaSquareMeters: DIMENSIONS.widthMeters * DIMENSIONS.heightMeters,
+    areaSquareMeters: dimensions.widthMeters * dimensions.heightMeters,
   };
 }
 
@@ -106,9 +111,9 @@ function plan(
 }
 
 /** Every region gets its own noise families, exactly like the stage builds them. */
-function regionBandsFor(source: GeologyPlan, dimensions: WorldDimensions = DIMENSIONS) {
+function regionBandsFor(source: GeologyPlan, dimensions: WorldDimensions = DIMENSIONS, seed = 17) {
   return source.regions.map(region =>
-    createHeightmapNoiseBands(new RandomFactory(17), dimensions, `heightmap.${region.id}`)
+    createHeightmapNoiseBands(new RandomFactory(seed), dimensions, `heightmap.${region.id}`)
   );
 }
 
@@ -116,15 +121,16 @@ function build(
   source: GeologyPlan,
   mask?: Uint8Array,
   config: Partial<HeightmapConfig> = {},
-  dimensions: WorldDimensions = DIMENSIONS
+  dimensions: WorldDimensions = DIMENSIONS,
+  seed = 17
 ): Float32Array {
   const worldMask =
     mask ?? new Uint8Array(dimensions.sampleWidth * dimensions.sampleHeight).fill(1);
   return buildHeightField({
     plan: source,
-    bands: createHeightmapNoiseBands(new RandomFactory(17), dimensions),
-    regionBands: regionBandsFor(source, dimensions),
-    random: new RandomFactory(17),
+    bands: createHeightmapNoiseBands(new RandomFactory(seed), dimensions),
+    regionBands: regionBandsFor(source, dimensions, seed),
+    random: new RandomFactory(seed),
     worldMask,
     dimensions,
     space: createWorldSpace(dimensions),
@@ -149,6 +155,17 @@ function maxHeight(heightmap: Float32Array): number {
     max = Math.max(max, value);
   }
   return max;
+}
+
+/** Cells deeper than the given positive depth, in metres. */
+function countDeeperThan(heightmap: Float32Array, depth: number): number {
+  let cells = 0;
+  for (const value of heightmap) {
+    if (value < -depth) {
+      cells++;
+    }
+  }
+  return cells;
 }
 
 describe('buildHeightField', () => {
@@ -395,11 +412,29 @@ describe('buildHeightField', () => {
   });
 
   it('adds more emergencies with the islet frequency', () => {
-    // The islet shelf is a few cells wide only; a dense raster gives the
-    // feature room to show, like the real 4 m sampling does.
-    const source = plan([region(0, 'ordinary')], undefined, DETAIL_DIMENSIONS);
+    const source = plan([region(0, 'ordinary', DETAIL_DIMENSIONS)], undefined, DETAIL_DIMENSIONS);
     const none = build(source, undefined, { isletFrequency: 0 }, DETAIL_DIMENSIONS);
-    const many = build(source, undefined, { isletFrequency: 1 }, DETAIL_DIMENSIONS);
+    const sparse = build(source, undefined, { isletFrequency: 0.1 }, DETAIL_DIMENSIONS);
+    const defaults = build(source, undefined, {}, DETAIL_DIMENSIONS);
+    const many = build(source, undefined, { isletFrequency: 0.9 }, DETAIL_DIMENSIONS);
+    const base = countLand(none);
+    const sparseRaised = countLand(sparse) - base;
+    const defaultRaised = countLand(defaults) - base;
+    const maxRaised = countLand(many) - base;
+    expect(sparseRaised).toBeGreaterThan(0);
+    expect(defaultRaised).toBeGreaterThan(0);
+    expect(maxRaised).toBeGreaterThan(defaultRaised);
+    expect(maxRaised).toBeGreaterThan(sparseRaised * 3);
+    // The same slider also lifts open-sea banks, so the deep ocean shrinks.
+    const deepNone = countDeeperThan(none, BANK_START_DEPTH_METERS);
+    expect(countDeeperThan(defaults, BANK_START_DEPTH_METERS)).toBeLessThan(deepNone);
+    expect(countDeeperThan(many, BANK_START_DEPTH_METERS)).toBeLessThan(deepNone);
+  });
+
+  it.each([1, 17, 42])('adds islets for seed %i', seed => {
+    const source = plan([region(0, 'ordinary', DETAIL_DIMENSIONS)], undefined, DETAIL_DIMENSIONS);
+    const none = build(source, undefined, { isletFrequency: 0 }, DETAIL_DIMENSIONS, seed);
+    const many = build(source, undefined, { isletFrequency: 0.9 }, DETAIL_DIMENSIONS, seed);
 
     expect(countLand(many)).toBeGreaterThan(countLand(none));
   });

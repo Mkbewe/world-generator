@@ -104,9 +104,9 @@ const CAVITY_MIN_CELLS = 1.5;
 const MIN_PEAK_METERS = 3.5;
 /** Cavity forms keep their summit near the centre so the crater sits on it. */
 const CAVITY_PEAK_OFFSET_SHARE = 0.15;
-/** Plain forms carry only this share of the type's shelf: a ring lives on a
- * wide bank, a solid island does not. */
-const PLAIN_SHELF_SHARE = 0.4;
+/** Plain forms carry most of the type's shelf: a ring lives on a wide bank,
+ * a solid island keeps a narrower one. */
+const PLAIN_SHELF_SHARE = 0.85;
 /** Share of the short semi-axis a plain island's summit may travel. */
 const PLAIN_PEAK_SHORT_SHARE = 0.85;
 

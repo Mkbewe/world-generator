@@ -1,3 +1,4 @@
+import { IsletRelief } from './islet-relief';
 import { gridDistanceTransform } from '../../../../grid-distance';
 import { smoothstep } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
@@ -10,12 +11,6 @@ import {
   BORDER_GATE_METERS,
   BORDER_GATE_WARP_SHARE,
   COAST_DETAIL_SHARE,
-  ISLET_BUMP_METERS,
-  ISLET_MAX_DEPTH_METERS,
-  ISLET_PRACTICAL_MAX,
-  ISLET_ROCK_LEVEL,
-  ISLET_ZONE_LEVEL,
-  ISLET_ZONE_MIN,
   OCEAN_FLOOR_METERS,
   SHELF_DEPTH_METERS,
 } from '../defaults';
@@ -26,10 +21,6 @@ const SHORE_METERS = 0.5;
 /** How fast the near-shore fringe dips below the waterline instead of
  * staying a flat zero shelf. */
 const SHORE_DIP_SHARE = 4;
-/** Islets only rise where the gate has faded in past this share. */
-const ISLET_GATE_MIN = 0.25;
-/** Depth over which an islet bump gathers its whole height, in metres. */
-const ISLET_BUMP_DEPTH_METERS = 8;
 /** Interior texture fades in over this height above the waterline, in metres. */
 const SHORE_FADE_METERS = 8;
 /** Water depth right at the shoreline: the shelf never meets land at 0 m. */
@@ -119,6 +110,7 @@ export function composeSurfaces(
     config,
     borderDistanceMap,
   } = context;
+  const isletRelief = new IsletRelief({ plan, bands, regionBands, config, shoreWidthMeters });
   for (let y = 0; y < space.sampleHeight; y++) {
     if (context.signal?.aborted) {
       throw new GenerationCancelledError();
@@ -158,24 +150,14 @@ export function composeSurfaces(
         // no island ends on a flat zero shelf.
         surface = seabed + (shaped - SHORE_METERS) * SHORE_DIP_SHARE;
       }
-      if (
-        config.isletFrequency > 0 &&
-        surface <= 0 &&
-        surface > -ISLET_MAX_DEPTH_METERS &&
-        gate > ISLET_GATE_MIN
-      ) {
-        const band = regionBands[ownerMap[index]];
-        const isletShape = region ? REGION_SHAPES[region.type] : undefined;
-        if (band && isletShape) {
-          // The bump is a seamount rising from its floor: past the bump depth
-          // it adds its whole height, over a near-zero shelf only a lip. The
-          // region's own scale keeps sandy specks sandy.
-          surface +=
-            isletBump(band, point, config.isletFrequency) *
-            clamp01(-surface / ISLET_BUMP_DEPTH_METERS) *
-            Math.min(1, isletShape.amplitudeFactor);
-        }
-      }
+      surface = isletRelief.apply(surface, {
+        point,
+        owner: ownerMap[index],
+        cavityDepth: cavityDepth[index],
+        distanceToShore: distanceToShore[index],
+        gate,
+        large,
+      });
       heightmap[index] = Math.fround(surface);
       provenanceMap[index] = ownerMap[index];
     }
@@ -197,29 +179,6 @@ function borderGate(distanceMeters: number, warp: number): number {
     return 1;
   }
   return smoothstep((distanceMeters - start) / BORDER_GATE_FADE_METERS);
-}
-
-/**
- * Islets in clusters: the ridge band picks the shoals (sometimes here,
- * sometimes not), the fine band picks the individual rocks inside them.
- */
-function isletBump(band: HeightmapNoiseBands, point: WorldPoint, frequency: number): number {
-  const zoneThreshold = ISLET_ZONE_LEVEL - (ISLET_ZONE_LEVEL - ISLET_ZONE_MIN) * frequency;
-  const zone = band.ridge(point);
-  if (zone <= zoneThreshold) {
-    return 0;
-  }
-  const zoneWeight = smoothstep(
-    clamp01((zone - zoneThreshold) / (ISLET_PRACTICAL_MAX - zoneThreshold))
-  );
-  const rock = band.fine(point);
-  if (rock <= ISLET_ROCK_LEVEL) {
-    return 0;
-  }
-  const rockWeight = smoothstep(
-    clamp01((rock - ISLET_ROCK_LEVEL) / (ISLET_PRACTICAL_MAX - ISLET_ROCK_LEVEL))
-  );
-  return ISLET_BUMP_METERS * zoneWeight * rockWeight;
 }
 
 function clamp01(value: number): number {
