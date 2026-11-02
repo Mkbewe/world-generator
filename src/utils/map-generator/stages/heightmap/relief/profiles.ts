@@ -56,6 +56,10 @@ export interface SampleInput {
   readonly age: number;
   readonly dimensions: WorldDimensions;
   readonly space: WorldSpace;
+  /** Per-cell band samples shared by the radial, coast and profile passes. */
+  readonly coast: number;
+  readonly fine: number;
+  readonly ridge?: number;
 }
 
 export interface ProfileInput extends SampleInput {
@@ -85,13 +89,33 @@ export function formProfile(input: ProfileInput, effectiveRadial: number): FormS
   return chuteProfile(input, effectiveRadial, base);
 }
 
+export interface RadialDistances {
+  /** Radius after the bay cuts: the land and shelf outline. */
+  readonly withBays: number;
+  /** Radius before the bay cuts: the shelf under a bay. */
+  readonly withoutBays: number;
+}
+
+/** Largest possible lobe modulation for a form and its region shape. */
+export function maximumLobeModulation(form: IslandForm, shape: RegionShape): number {
+  return (
+    1 +
+    shape.warpFactor *
+      (Math.abs(form.lobes2) +
+        Math.abs(form.lobes3) +
+        Math.abs(form.lobes4) +
+        COAST_LOBE_SHARE +
+        FINE_LOBE_SHARE)
+  );
+}
+
 /**
- * Modulated relative radius: the 2/3/4 harmonic lobes with their phases and
- * the coast and fine noise bend the outline into peninsulas and bays, so
- * every island differs and the shallow shelf follows the same shape.
+ * Both modulated relative radii in one pass: the 2/3/4 harmonic lobes and
+ * the coast and fine noise bend the outline into peninsulas and bays, while
+ * the shelf under a bay keeps the uncut radial.
  */
-export function modulatedRadial(input: SampleInput, withBays = true): number {
-  const { form, shape, band, point, distMeters } = input;
+export function modulatedRadials(input: SampleInput): RadialDistances {
+  const { form, shape, distMeters, coast, fine } = input;
   const theta = bearingOf(input.warped, input);
   const lobeMod =
     1 +
@@ -99,15 +123,17 @@ export function modulatedRadial(input: SampleInput, withBays = true): number {
       (form.lobes2 * Math.cos(2 * theta + form.phase2) +
         form.lobes3 * Math.cos(3 * theta + form.phase3) +
         form.lobes4 * Math.cos(4 * theta + form.phase4) +
-        COAST_LOBE_SHARE * band.coast(point) +
-        FINE_LOBE_SHARE * band.fine(point));
+        COAST_LOBE_SHARE * coast +
+        FINE_LOBE_SHARE * fine);
   let bayCut = 0;
-  if (withBays) {
-    for (const bay of form.bays) {
-      bayCut += bay.depth * shape.warpFactor * bayBell(theta, bay);
-    }
+  for (const bay of form.bays) {
+    bayCut += bay.depth * shape.warpFactor * bayBell(theta, bay);
   }
-  return distMeters / form.radiusMeters / Math.max(0.35, lobeMod - bayCut);
+  const base = distMeters / form.radiusMeters;
+  return {
+    withBays: base / Math.max(0.35, lobeMod - bayCut),
+    withoutBays: base / Math.max(0.35, lobeMod),
+  };
 }
 
 /**
@@ -118,7 +144,7 @@ export function modulatedRadial(input: SampleInput, withBays = true): number {
  * the island runs between walls instead of sand ramps and a shallow floor.
  */
 export function cliffinessAt(input: SampleInput, radial: number): number {
-  const { form, shape, band, point } = input;
+  const { form, shape, coast } = input;
   const peakDistance = input.space.distanceMeters(input.warped, input.warpedPeak);
   const proximity = clamp01(1 - peakDistance / form.radiusMeters);
   const bank = smoothstep(clamp01(channelNotch(input, radial) / CHANNEL_START));
@@ -133,7 +159,6 @@ export function cliffinessAt(input: SampleInput, radial: number): number {
   // A cliffy type keeps a sheer baseline around its whole coast; the square
   // keeps beachy types beachy.
   const base = shape.cliffShare * shape.cliffShare;
-  const coast = band.coast(point);
   const landing = coast < 0 ? 1 + CLIFF_LANDING_DAMP * coast : 1;
   return clamp01(
     Math.max(proximity, bank, bay, base) * shape.cliffShare * CLIFF_PROXIMITY_GAIN * landing
@@ -147,7 +172,7 @@ export function cliffinessAt(input: SampleInput, radial: number): number {
  * island's mountainousness.
  */
 function domeHeight(input: ProfileInput, radial: number): number {
-  const { form, shape, band, point } = input;
+  const { form, shape } = input;
   const peakRadial =
     input.space.distanceMeters(input.warped, input.warpedPeak) / (form.radiusMeters * 1.15);
   const cliffiness = input.cliffiness;
@@ -155,7 +180,7 @@ function domeHeight(input: ProfileInput, radial: number): number {
   const shorePower = SHEER_POWER_BASE - SHEER_POWER_RANGE * cliffiness;
   const coastWall = Math.pow(clamp01((1 - radial) / Math.max(0.05, shoreWidth)), shorePower);
   const mountainDome = Math.pow(smoothstep(clamp01(1 - peakRadial)), shape.heightCurve);
-  const ridgeWave = clamp01(0.5 + 0.5 * band.ridge(point));
+  const ridgeWave = clamp01(0.5 + 0.5 * ridgeOf(input));
   // Every island keeps valley floors above the shoreline: without them the
   // dome alone would drown the island's far ends.
   const flatShare = Math.max(0.32 * (1 - form.mountainFactor), FLAT_LOWLAND_FLOOR);
@@ -169,11 +194,11 @@ function domeHeight(input: ProfileInput, radial: number): number {
  * the pale summit; the caldera widens and deepens with age.
  */
 function craterHeight(input: ProfileInput, effectiveRadial: number): number {
-  const { shape, form, band, point, age } = input;
+  const { shape, form, age } = input;
   const peakRadial = input.space.distanceMeters(input.warped, input.warpedPeak) / form.radiusMeters;
   const lowland = smoothstep(clamp01((1 - effectiveRadial) / 0.32));
   const dome = Math.pow(smoothstep(clamp01(1 - peakRadial)), shape.heightCurve);
-  const ridgeWave = clamp01(0.5 + 0.5 * band.ridge(point));
+  const ridgeWave = clamp01(0.5 + 0.5 * ridgeOf(input));
   const flatShare = Math.max(0.35 * (1 - form.mountainFactor), FLAT_LOWLAND_FLOOR);
   const mountainShare = (1 - flatShare) * dome * (0.55 + 0.45 * ridgeWave);
   const height = form.peakMeters * lowland * (flatShare + mountainShare);
@@ -192,12 +217,12 @@ function craterHeight(input: ProfileInput, effectiveRadial: number): number {
  * it up, so some atolls stay whole while others break into motu chains.
  */
 function reefProfile(input: ProfileInput, radial: number): FormSample {
-  const { shape, form, band, point } = input;
+  const { shape, form, coast, fine } = input;
   const inner = shape.cavityRadiusShare;
   if (inner <= 0 || radial > 1) {
     return { land: 0, carve: 0 };
   }
-  const texture = 0.6 * band.coast(point) + 0.4 * band.fine(point);
+  const texture = 0.6 * coast + 0.4 * fine;
   if (radial < inner) {
     // A shallow basin: a few metres deep in the middle, rising to the rim,
     // with gentle noise so the floor is never a flat pane.
@@ -227,12 +252,12 @@ function reefProfile(input: ProfileInput, radial: number): FormSample {
  * scaled by the type's channel strength.
  */
 function channelNotch(input: SampleInput, radial: number): number {
-  const { shape, form, band, point, age } = input;
+  const { shape, form, age } = input;
   if (shape.chuteCount <= 0 || shape.chuteStrength <= 0) {
     return 0;
   }
   const theta = bearingOf(input.warped, input);
-  const wave = Math.sin(shape.chuteCount * theta + form.chutePhase + 1.6 * band.ridge(point));
+  const wave = Math.sin(shape.chuteCount * theta + form.chutePhase + 1.6 * ridgeOf(input));
   const reach = smoothstep(clamp01((radial - 0.2) / 0.35));
   // Channels cut only into the mountainous side of the island: the far half
   // keeps its ordinary coast with bays and landings.
@@ -263,6 +288,11 @@ function chuteProfile(input: ProfileInput, radial: number, base: number): FormSa
     land: 0,
     carve: -FJORD_CHANNEL_DEPTH_METERS * Math.pow(channel, CHANNEL_WALL_POWER),
   };
+}
+
+/** Cached ridge sample, or a direct read for callers outside a stamp pass. */
+function ridgeOf(input: SampleInput): number {
+  return input.ridge ?? input.band.ridge(input.point);
 }
 
 /** Bearing of one point around the form centre, in radians. */
