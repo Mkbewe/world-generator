@@ -1,7 +1,8 @@
 import {
   cliffinessAt,
   formProfile,
-  modulatedRadial,
+  maximumLobeModulation,
+  modulatedRadials,
   type ProfileInput,
   type SampleInput,
 } from './profiles';
@@ -23,6 +24,7 @@ import { buildRegionForms, collectRegionInteriors, type IslandForm } from '../fo
 const LOBE_MERGE_SHARE = 0.3;
 /** Sum of every lobe share at its maximum; sizes the stamping bounding box. */
 const LOBE_REACH_SHARE = 1.32;
+
 /** Share of the shelf a sheer coast takes away, so deep water hugs the wall. */
 const SHELF_CLIFF_SHARE = 0.7;
 /** Water descent from the shore to the deep floor spans at least this share
@@ -200,6 +202,10 @@ function stampForm(
   // The summit lives in the same transformed frame as every sampled point;
   // one transform per form keeps the profile loop free of trigonometry.
   const warpedPeak = applyAspect(form.peak, form, dimensions);
+  // Reef rings never read the ridge band; every other profile does.
+  const needsRidge = !(form.hasCavity && shape.cavityFloorShare < 0);
+  const maxLobeMod = maximumLobeModulation(form, shape);
+  const maxShelfSpan = Math.max(shelfFactor - 1, WATER_MIN_SPAN);
   for (let y = minCell.y; y <= maxCell.y; y++) {
     for (let x = minCell.x; x <= maxCell.x; x++) {
       const index = y * space.sampleWidth + x;
@@ -209,6 +215,11 @@ function stampForm(
       const point = space.cellToNormalized(x, y);
       const warped = warpPoint(point, form, band, shape, dimensions);
       const distMeters = space.distanceMeters(warped, form.centre);
+      // The bound is conservative: if even the largest possible modulation
+      // cannot bring this cell inside the shelf, skip before sampling noise.
+      if (distMeters / form.radiusMeters / maxLobeMod > 1 + maxShelfSpan) {
+        continue;
+      }
       const sampleInput: SampleInput = {
         form,
         shape,
@@ -220,11 +231,15 @@ function stampForm(
         age,
         dimensions,
         space,
+        coast: band.coast(point),
+        fine: band.fine(point),
+        ridge: needsRidge ? band.ridge(point) : undefined,
       };
-      const effectiveRadial = modulatedRadial(sampleInput);
       // Bays cut the land outline; their water keeps the shelf of the
       // uncut radial, so a bay fills with shallow water instead of the deep.
-      const shelfRadial = Math.min(effectiveRadial, modulatedRadial(sampleInput, false));
+      const radial = modulatedRadials(sampleInput);
+      const effectiveRadial = radial.withBays;
+      const shelfRadial = Math.min(effectiveRadial, radial.withoutBays);
       // One sheer-coast measure per cell; the profile reads it from here.
       const profileInput: ProfileInput = {
         ...sampleInput,
