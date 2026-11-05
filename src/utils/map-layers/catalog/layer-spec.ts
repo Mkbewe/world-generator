@@ -18,7 +18,7 @@ export type PaletteSpec =
       readonly offset?: number;
     };
 
-export type RasterDataType = 'uint8' | 'float32';
+export type RasterDataType = 'uint8' | 'int16' | 'float32';
 
 export interface LayerGroupSpec {
   readonly id: string;
@@ -33,6 +33,8 @@ interface LayerSpecBase<TId extends string = string> {
   readonly source: string;
   readonly clipTo?: TId;
   readonly group?: LayerGroupSpec;
+  /** Whether the settings panel exposes a form for this layer. */
+  readonly settingsForm?: boolean;
 }
 
 /** Declarative description of one renderable raster. */
@@ -62,6 +64,10 @@ export interface VectorLayerSpec<TId extends string = string> extends LayerSpecB
 
 export type LayerSpec<TId extends string = string> = RasterLayerSpec<TId> | VectorLayerSpec<TId>;
 
-export type RasterData = Uint8Array | Float32Array;
+export type RasterData = Uint8Array | Int16Array | Float32Array;
 
-export type TypedArrayFor<T extends RasterDataType> = T extends 'uint8' ? Uint8Array : Float32Array;
+export type TypedArrayFor<T extends RasterDataType> = T extends 'uint8'
+  ? Uint8Array
+  : T extends 'int16'
+    ? Int16Array
+    : Float32Array;

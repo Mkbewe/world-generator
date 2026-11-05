@@ -1,0 +1,39 @@
+import type { LayerDataRecord } from '../../../../map-layers';
+import type { MapSize } from '../../../layer';
+import type { MapInfo, MapOverlayId, MapOverlayInspection } from '../../../types';
+
+/** Data every overlay inspector receives for one source cell. */
+export interface OverlayInspectionInput {
+  readonly x: number;
+  readonly y: number;
+  readonly mapSize?: MapSize;
+  readonly data: LayerDataRecord;
+  readonly info: MapInfo;
+}
+
+/** One overlay owns its visibility-independent readout. */
+export interface OverlayInspector {
+  readonly overlayId: MapOverlayId;
+  inspect(input: OverlayInspectionInput): MapOverlayInspection | undefined;
+}
+
+/** Resolves the topmost visible overlay that can describe the cell. */
+export class OverlayInspectorRegistry {
+  constructor(private readonly inspectors: readonly OverlayInspector[]) {}
+
+  inspect(
+    input: OverlayInspectionInput,
+    isVisible: (id: MapOverlayId) => boolean
+  ): MapOverlayInspection | undefined {
+    for (const inspector of [...this.inspectors].reverse()) {
+      if (!isVisible(inspector.overlayId)) {
+        continue;
+      }
+      const inspection = inspector.inspect(input);
+      if (inspection) {
+        return inspection;
+      }
+    }
+    return undefined;
+  }
+}

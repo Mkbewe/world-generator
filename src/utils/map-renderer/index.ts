@@ -21,6 +21,7 @@ export type {
   MapRasters,
   MapMetadata,
   MapOverlayId,
+  MapOverlayInspection,
   MapOverlayOption,
   MapSnapshotData,
   RasterMapInspection,

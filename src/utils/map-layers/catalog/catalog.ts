@@ -6,7 +6,7 @@ import {
   RASTER_OUTPUT_KEYS,
   type RasterOutputKey,
 } from '../../map-generator/pipeline/stage-outputs';
-import { HEIGHTMAP_STOPS, REGION_COLORS } from '../palettes/palettes';
+import { BASE_CLIMATE_ZONE_COLORS, HEIGHTMAP_STOPS, REGION_COLORS } from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
   PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)
@@ -23,6 +23,7 @@ const CATALOG_ENTRIES = [
     source: 'worldMask',
     dataType: 'uint8',
     providesMask: { insideValue: 1 },
+    settingsForm: true,
     palette: { kind: 'solid', color: [16, 42, 67] },
   },
   {
@@ -33,7 +34,23 @@ const CATALOG_ENTRIES = [
     dataType: 'uint8',
     clipTo: 'world-shape',
     boundarySource: 'region',
+    settingsForm: true,
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
+  },
+  {
+    id: 'base-climate',
+    label: 'BaseClimate',
+    kind: 'raster',
+    source: 'heatZoneMap',
+    dataType: 'int16',
+    clipTo: 'world-shape',
+    skipValue: -1,
+    settingsForm: false,
+    palette: {
+      kind: 'discrete',
+      colors: BASE_CLIMATE_ZONE_COLORS,
+      overflow: { color: [120, 120, 120] },
+    },
   },
   {
     id: 'geology',
@@ -41,6 +58,7 @@ const CATALOG_ENTRIES = [
     kind: 'vector',
     source: 'geologyPlan',
     clipTo: 'world-shape',
+    settingsForm: true,
   },
   {
     id: 'heightmap',
@@ -49,6 +67,7 @@ const CATALOG_ENTRIES = [
     source: 'heightmap',
     dataType: 'float32',
     clipTo: 'world-shape',
+    settingsForm: true,
     palette: { kind: 'ramp', stops: HEIGHTMAP_STOPS },
   },
 ] as const satisfies readonly BoundLayerSpec[];

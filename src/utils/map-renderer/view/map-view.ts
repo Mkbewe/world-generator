@@ -1,4 +1,4 @@
-import { OverlayController } from './overlay-controller';
+import { OverlayController } from './overlay/overlay-controller';
 import {
   fitView,
   isFitted,
@@ -9,6 +9,7 @@ import {
   withScale,
   zoomAt,
 } from './view-transform';
+import type { LayerDataRecord, MapInfo } from '../../map-layers';
 import type { WorldShape } from '../../world-shape';
 import type { MapLayer, MapSize, TileReporter } from '../layer';
 import { LayerPresenter } from '../layer-presenter';
@@ -42,6 +43,8 @@ export class MapView {
   private readonly viewport: Viewport;
   private mask?: SpatialMask;
   private shape?: WorldShape;
+  private overlayData: LayerDataRecord = {};
+  private overlayInfo: MapInfo = {};
   private size?: MapSize;
   private presented?: MapLayer;
   private view: ViewTransform = fitView();
@@ -71,6 +74,10 @@ export class MapView {
     return this.presented?.id;
   }
 
+  isOverlayVisible(id: MapOverlayId): boolean {
+    return this.overlays.isVisible(id);
+  }
+
   get viewportSize(): ViewportSize | undefined {
     return this.overlays.size();
   }
@@ -93,12 +100,15 @@ export class MapView {
   }
 
   get overlayOptions() {
-    return OVERLAY_IDS.map(id => ({
-      id,
-      label: OVERLAY_LAYERS[id].label,
-      available: this.mask !== undefined,
-      visible: this.overlays.isVisible(id),
-    }));
+    return OVERLAY_IDS.map(id => {
+      const source = OVERLAY_LAYERS[id].source;
+      return {
+        id,
+        label: OVERLAY_LAYERS[id].label,
+        available: id === 'world-boundary' ? this.mask !== undefined : this.hasOverlayData(source),
+        visible: this.overlays.isVisible(id),
+      };
+    });
   }
 
   /**
@@ -114,6 +124,8 @@ export class MapView {
       this.view = fitView();
       this.presented = undefined;
       this.presenter.reset();
+      this.overlayData = {};
+      this.overlayInfo = {};
     }
     this.progressive = !continuing;
     if (this.presented) {
@@ -137,7 +149,17 @@ export class MapView {
 
   setMasks(masks: ReadonlyMap<MapBaseLayerId, SpatialMask>): void {
     this.mask = masks.get(OVERLAY_LAYERS['world-boundary'].source);
-    this.overlays.render(this.mask, this.shape, this.view);
+    this.renderOverlays();
+  }
+
+  setOverlayData(data: LayerDataRecord): void {
+    this.overlayData = data;
+    this.renderOverlays();
+  }
+
+  setOverlayInfo(info: MapInfo): void {
+    this.overlayInfo = info;
+    this.renderOverlays();
   }
 
   begin(layer: MapLayer): void {
@@ -161,7 +183,7 @@ export class MapView {
 
   setOverlay(id: MapOverlayId, visible: boolean): void {
     this.overlays.setVisible(id, visible);
-    this.overlays.render(this.mask, this.shape, this.view);
+    this.renderOverlays();
   }
 
   /** Zooms around a client point; returns whether the view changed. */
@@ -243,6 +265,8 @@ export class MapView {
     this.presenter.reset();
     this.mask = undefined;
     this.shape = undefined;
+    this.overlayData = {};
+    this.overlayInfo = {};
     this.size = undefined;
     this.presented = undefined;
     this.view = fitView();
@@ -261,7 +285,15 @@ export class MapView {
       this.presenter.draw();
       this.presenter.ensure(this.presented);
     }
-    this.overlays.render(this.mask, this.shape, this.view);
+    this.renderOverlays();
+  }
+
+  private renderOverlays(): void {
+    this.overlays.render(this.mask, this.shape, this.view, this.overlayData, this.overlayInfo);
+  }
+
+  private hasOverlayData(source: string): boolean {
+    return this.overlayData[source] !== undefined;
   }
 
   /** Whether a layer may be drawn now: every stage while walking, one when continuing. */
@@ -288,7 +320,7 @@ export class MapView {
       this.presenter.draw();
       this.presenter.ensure(this.presented);
     }
-    this.overlays.render(this.mask, this.shape, this.view);
+    this.renderOverlays();
     return true;
   }
 

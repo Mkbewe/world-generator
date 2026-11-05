@@ -5,7 +5,10 @@ import { createStore } from '../create-store';
 /** Settings form tabs: the shared general tab plus one per map layer with a form. */
 export type SettingsTab = 'general' | MapBaseLayerId;
 
-const SETTINGS_TABS: readonly SettingsTab[] = ['general', ...LAYER_CATALOG.map(layer => layer.id)];
+const SETTINGS_TABS: readonly SettingsTab[] = [
+  'general',
+  ...LAYER_CATALOG.filter(layer => layer.settingsForm !== false).map(layer => layer.id),
+];
 
 export interface ViewSyncValues {
   /** Active settings form tab; remembered across navigation. */
@@ -37,7 +40,7 @@ export const useViewSyncStore = createStore<ViewSyncState>(set => ({
 
 /** Preview layer a settings tab drives; the general tab has no counterpart. */
 export function layerForTab(tab: SettingsTab): MapBaseLayerId | undefined {
-  return tab === 'general' ? undefined : tab;
+  return SETTINGS_TABS.includes(tab) && tab !== 'general' ? tab : undefined;
 }
 
 /** Settings tab that owns a preview layer. */

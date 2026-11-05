@@ -1,3 +1,4 @@
+import { HeatZoneOverlayInspector, OverlayInspectorRegistry } from './view/overlay/inspection';
 import { fitView, isFitted, type ViewTransform } from './view/view-transform';
 import {
   isLayerHit,
@@ -16,6 +17,7 @@ import {
   type MapLayerOption,
   type MapMetadata,
   type MapOverlayId,
+  type MapOverlayInspection,
   type MapOverlayOption,
   type MapSnapshotData,
   OVERLAY_IDS,
@@ -23,6 +25,7 @@ import {
   type RenderStatistics,
 } from './types';
 import { type MapPointerSample, MapView, type MapViewElements } from './view';
+import type { LayerDataRecord } from '../map-layers';
 import type { WorldShape } from '../world-shape';
 
 export interface MapRendererState {
@@ -77,6 +80,10 @@ export class MapRenderer {
   private error?: string;
   private mapSize?: MapSize;
   private info: MapInfo = {};
+  private overlayData: LayerDataRecord = {};
+  private readonly overlayInspectors = new OverlayInspectorRegistry([
+    new HeatZoneOverlayInspector(),
+  ]);
 
   constructor(
     elements: MapViewElements,
@@ -168,6 +175,7 @@ export class MapRenderer {
   load(snapshot: MapSnapshotData): void {
     this.start(snapshot, snapshot.shape, snapshot.regionGeometry, snapshot.dimensionsMeters);
     this.setInfo(snapshot.info ?? {});
+    this.setOverlayData(snapshot.layers);
     this.metrics.reset();
     const layers = this.scene.load(snapshot.layers);
     const rasters = layers.filter(layer => this.registry.get(layer.id).kind === 'raster');
@@ -217,6 +225,20 @@ export class MapRenderer {
       label: spec.label,
       value: typeof sample === 'number' ? sample : undefined,
     };
+  }
+
+  /** Named overlay value under the pointer, e.g. the BaseClimate heat zone. */
+  inspectOverlay(x: number, y: number): MapOverlayInspection | undefined {
+    return this.overlayInspectors.inspect(
+      {
+        x,
+        y,
+        mapSize: this.mapSize,
+        data: this.overlayData,
+        info: this.info,
+      },
+      id => this.view.isOverlayVisible(id)
+    );
   }
 
   /** Silent layers are prepared without becoming the displayed one; used for replays. */
@@ -292,6 +314,7 @@ export class MapRenderer {
   /** Keeps non-raster information captured with the current map. */
   setInfo(info: MapInfo): void {
     this.info = info;
+    this.view.setOverlayInfo(info);
     // Vector layers join the run like any other layer: the view follows them
     // while a fresh map is being built and leaves an existing selection alone.
     for (const layer of this.scene.setInfo(info)) {
@@ -313,6 +336,13 @@ export class MapRenderer {
     }
   }
 
+  /** Updates the rasters painted by the overlay canvas; independent of base layers. */
+  setOverlayData(data: LayerDataRecord): void {
+    this.overlayData = data;
+    this.view.setOverlayData(data);
+    this.emitState();
+  }
+
   /** Stops drawing and accepting data for this run, keeping the current preview. */
   cancel(): void {
     this.lifetime.abort();
@@ -324,6 +354,7 @@ export class MapRenderer {
     this.scene.reset();
     this.mapSize = undefined;
     this.info = {};
+    this.overlayData = {};
     this.error = undefined;
     this.metrics.reset();
     this.view.reset();

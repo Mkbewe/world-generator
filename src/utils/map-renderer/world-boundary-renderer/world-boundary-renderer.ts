@@ -79,16 +79,20 @@ export class WorldBoundaryRenderer {
   }
 
   render(world: SpatialMask, viewport: ViewportSize, shape: WorldShape, view: ViewTransform): void {
+    const ratio = effectivePixelRatio(viewport.devicePixelRatio);
+    this.canvas.width = Math.max(1, Math.round(viewport.width * ratio));
+    this.canvas.height = Math.max(1, Math.round(viewport.height * ratio));
+    this.stroke(world, viewport, shape, view);
+  }
+
+  /** Draws into an already sized overlay canvas, leaving other overlays intact. */
+  stroke(world: SpatialMask, viewport: ViewportSize, shape: WorldShape, view: ViewTransform): void {
     const context = this.canvas.getContext('2d');
     if (!context) {
       throw new Error('Overlay canvas is not available.');
     }
     const ratio = effectivePixelRatio(viewport.devicePixelRatio);
-    const width = Math.max(1, Math.round(viewport.width * ratio));
-    const height = Math.max(1, Math.round(viewport.height * ratio));
-    this.canvas.width = width;
-    this.canvas.height = height;
-    this.strokeShape(context, shape, width, height, ratio, view, world);
+    this.strokeShape(context, shape, this.canvas.width, this.canvas.height, ratio, view, world);
   }
 
   private strokeShape(

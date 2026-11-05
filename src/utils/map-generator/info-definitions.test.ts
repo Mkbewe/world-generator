@@ -1,3 +1,4 @@
+import { DEFAULT_BASE_CLIMATE_CONFIG } from './stages/base-climate';
 import { DEFAULT_MACRO_REGIONS } from './stages/macro-region';
 import { MAP_INFO_CATALOG, selectMapInfo } from './info-definitions';
 import type { MapConfig } from './types';
@@ -31,9 +32,22 @@ describe('selectMapInfo', () => {
     expect(selectMapInfo(baseConfig).macroRegionInfo).toHaveLength(DEFAULT_MACRO_REGIONS.length);
   });
 
+  it('captures the heat-zone labels and classes in zone order', () => {
+    const info = selectMapInfo(baseConfig);
+
+    expect(info.heatZoneInfo).toEqual(
+      DEFAULT_BASE_CLIMATE_CONFIG.zones.map(zone => ({
+        id: zone.id,
+        label: zone.label,
+        thermal: zone.thermal,
+      }))
+    );
+  });
+
   it('exposes stable source keys', () => {
     expect(MAP_INFO_CATALOG.map(spec => spec.source)).toEqual([
       'macroRegionInfo',
+      'heatZoneInfo',
       'worldDimensions',
     ]);
   });
