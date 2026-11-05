@@ -39,4 +39,26 @@ describe('OverlayControls', () => {
 
     expect(screen.getByRole('switch', { name: 'World boundary' })).toBeDisabled();
   });
+
+  it('disables overlays suppressed by their own base layer', () => {
+    const moisture: MapOverlayOption = {
+      id: 'moisture',
+      label: 'Moisture baseline',
+      visible: true,
+      available: true,
+      disabled: true,
+    };
+    render(
+      <Theme>
+        <OverlayControls
+          preview={{ ...emptyRenderState(), overlays: [moisture] }}
+          onOverlayChange={() => {}}
+        />
+      </Theme>
+    );
+
+    const control = screen.getByRole('switch', { name: 'Moisture baseline' });
+    expect(control).toBeDisabled();
+    expect(control).toHaveAttribute('title', 'Visible on other layers');
+  });
 });

@@ -350,9 +350,11 @@ describe('MapRenderer', () => {
     expect(preview.state.overlays.map(overlay => overlay.id)).toEqual([
       'world-boundary',
       'heat-zones',
+      'moisture',
     ]);
     expect(preview.state.overlays[0]).toMatchObject({ available: true, visible: true });
-    expect(preview.state.overlays[1]).toMatchObject({ available: false, visible: true });
+    expect(preview.state.overlays[1]).toMatchObject({ available: false, visible: false });
+    expect(preview.state.overlays[2]).toMatchObject({ available: false, visible: false });
   });
 
   it('honours the preferred layer option on restore', async () => {
@@ -605,6 +607,7 @@ describe('MapRenderer', () => {
       ],
     });
     preview.setOverlayData({ heatZoneMap: new Int16Array([0, 1, 2, -1]) });
+    preview.setOverlay('heat-zones', true);
 
     expect(preview.state.overlays.find(overlay => overlay.id === 'heat-zones')).toMatchObject({
       available: true,

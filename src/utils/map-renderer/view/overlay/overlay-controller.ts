@@ -1,4 +1,5 @@
 import { HeatZoneOverlayRenderer } from './heat-zone-overlay-renderer';
+import { MoistureOverlayRenderer } from './moisture-overlay-renderer';
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
 import { WorldBoundaryOverlayRenderer } from './world-boundary-overlay-renderer';
 import type { LayerDataRecord } from '../../../map-layers';
@@ -10,12 +11,14 @@ import type { ViewTransform } from '../view-transform';
 
 const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = {
   'world-boundary': true,
-  'heat-zones': true,
+  'heat-zones': false,
+  moisture: false,
 };
 
 const EMPTY_INFO: MapInfo = {};
+const EMPTY_SUPPRESSED: ReadonlySet<MapOverlayId> = new Set();
 
-/** Composites the visible overlays in painter order: heat zones, then the outline. */
+/** Composites the visible overlays in painter order: fields, then the outline. */
 export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly renderers: readonly OverlayRenderer[];
@@ -26,6 +29,7 @@ export class OverlayController {
     shape: WorldShape;
     view: ViewTransform;
     heatMap?: Int16Array;
+    moistureMap?: Float32Array;
     info: MapInfo;
     activeIds: readonly MapOverlayId[];
   };
@@ -38,6 +42,7 @@ export class OverlayController {
     this.boundary = new WorldBoundaryRenderer(canvas);
     this.renderers = [
       new HeatZoneOverlayRenderer(),
+      new MoistureOverlayRenderer(),
       new WorldBoundaryOverlayRenderer(this.boundary),
     ];
   }
@@ -62,7 +67,8 @@ export class OverlayController {
     shape: WorldShape | undefined,
     view: ViewTransform,
     data: LayerDataRecord = {},
-    info: MapInfo = EMPTY_INFO
+    info: MapInfo = EMPTY_INFO,
+    suppressed: ReadonlySet<MapOverlayId> = EMPTY_SUPPRESSED
   ): void {
     const viewport = this.size();
     if (!viewport || !world || !shape) {
@@ -71,14 +77,16 @@ export class OverlayController {
     }
     const frame: OverlayFrame = { canvas: this.canvas, world, shape, viewport, view, data, info };
     const active = this.renderers.filter(
-      renderer => this.visible[renderer.id] && renderer.isAvailable(frame)
+      renderer =>
+        this.visible[renderer.id] && !suppressed.has(renderer.id) && renderer.isAvailable(frame)
     );
     if (active.length === 0) {
       this.clear();
       return;
     }
     const heatMap = heatZoneMapOf(data);
-    if (this.isUnchanged(frame, active, heatMap)) {
+    const moistureMap = moistureMapOf(data);
+    if (this.isUnchanged(frame, active, heatMap, moistureMap)) {
       return;
     }
 
@@ -95,6 +103,7 @@ export class OverlayController {
         shape,
         view,
         heatMap,
+        moistureMap,
         info,
         activeIds: active.map(renderer => renderer.id),
       };
@@ -116,7 +125,8 @@ export class OverlayController {
   private isUnchanged(
     frame: OverlayFrame,
     active: readonly OverlayRenderer[],
-    heatMap: Int16Array | undefined
+    heatMap: Int16Array | undefined,
+    moistureMap: Float32Array | undefined
   ): boolean {
     const rendered = this.rendered;
     return (
@@ -129,6 +139,7 @@ export class OverlayController {
       rendered.viewport.height === frame.viewport.height &&
       rendered.viewport.devicePixelRatio === frame.viewport.devicePixelRatio &&
       rendered.heatMap === heatMap &&
+      rendered.moistureMap === moistureMap &&
       rendered.info === frame.info &&
       rendered.activeIds.length === active.length &&
       active.every((renderer, index) => rendered.activeIds[index] === renderer.id)
@@ -156,4 +167,9 @@ export class OverlayController {
 function heatZoneMapOf(data: LayerDataRecord): Int16Array | undefined {
   const value = data.heatZoneMap;
   return value instanceof Int16Array ? value : undefined;
+}
+
+function moistureMapOf(data: LayerDataRecord): Float32Array | undefined {
+  const value = data.moistureBaseMap;
+  return value instanceof Float32Array ? value : undefined;
 }

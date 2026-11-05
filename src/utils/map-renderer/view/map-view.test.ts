@@ -123,6 +123,40 @@ describe('MapView', () => {
     view.dispose();
   });
 
+  it('suppresses the matching overlay while preserving its switch state', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 4,
+      height: 4,
+      devicePixelRatio: 1,
+    });
+    const view = new MapView(createElements(), new RenderMetrics(layerRegistry), vi.fn());
+    const world = createLayer();
+    const moisture = new CatalogLayer(
+      layerRegistry.raster('moisture'),
+      { width: 2, height: 2 },
+      new Float32Array(4),
+      world
+    );
+    view.start({ width: 2, height: 2 }, 'disc');
+    view.setOverlay('moisture', true);
+    view.select(moisture);
+
+    expect(view.overlayOptions.find(option => option.id === 'moisture')).toMatchObject({
+      disabled: true,
+      visible: true,
+    });
+
+    view.select(world);
+
+    expect(view.overlayOptions.find(option => option.id === 'moisture')).toMatchObject({
+      disabled: false,
+      visible: true,
+    });
+    view.dispose();
+    moisture.dispose();
+    world.dispose();
+  });
+
   it('samples the pointer only inside the projected map', () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 4,

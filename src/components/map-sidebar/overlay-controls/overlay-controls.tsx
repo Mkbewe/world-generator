@@ -20,19 +20,23 @@ export function OverlayControls({ preview, onOverlayChange, bare = false }: Over
           Overlays
         </Text>
       </Flex>
-      {preview.overlays.map(overlay => (
-        <Flex key={overlay.id} justify='between' align='center' gap='3'>
-          <Text size='2' color={overlay.available ? undefined : 'gray'}>
-            {overlay.label}
-          </Text>
-          <Switch
-            checked={overlay.visible}
-            disabled={!overlay.available}
-            onCheckedChange={visible => onOverlayChange(overlay.id, visible)}
-            aria-label={overlay.label}
-          />
-        </Flex>
-      ))}
+      {preview.overlays.map(overlay => {
+        const inactive = !overlay.available || overlay.disabled;
+        return (
+          <Flex key={overlay.id} justify='between' align='center' gap='3'>
+            <Text size='2' color={inactive ? 'gray' : undefined}>
+              {overlay.label}
+            </Text>
+            <Switch
+              checked={overlay.visible}
+              disabled={inactive}
+              title={overlay.disabled ? 'Visible on other layers' : undefined}
+              onCheckedChange={visible => onOverlayChange(overlay.id, visible)}
+              aria-label={overlay.label}
+            />
+          </Flex>
+        );
+      })}
     </Flex>
   );
 

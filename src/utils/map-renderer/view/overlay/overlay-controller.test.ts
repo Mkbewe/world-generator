@@ -1,4 +1,5 @@
 import { HeatZoneOverlayRenderer } from './heat-zone-overlay-renderer';
+import { MoistureOverlayRenderer } from './moisture-overlay-renderer';
 import { OverlayController } from './overlay-controller';
 import type { SpatialMask } from '../../types';
 import { Viewport } from '../../viewport';
@@ -46,15 +47,18 @@ describe('OverlayController', () => {
     vi.restoreAllMocks();
   });
 
-  it('is visible by default and toggles visibility', () => {
+  it('keeps the boundary on and the data overlays off by default', () => {
     const controller = setup();
 
     expect(controller.isVisible('world-boundary')).toBe(true);
-    expect(controller.isVisible('heat-zones')).toBe(true);
-    controller.setVisible('world-boundary', false);
-    controller.setVisible('heat-zones', false);
-    expect(controller.isVisible('world-boundary')).toBe(false);
     expect(controller.isVisible('heat-zones')).toBe(false);
+    expect(controller.isVisible('moisture')).toBe(false);
+    controller.setVisible('world-boundary', false);
+    controller.setVisible('heat-zones', true);
+    controller.setVisible('moisture', true);
+    expect(controller.isVisible('world-boundary')).toBe(false);
+    expect(controller.isVisible('heat-zones')).toBe(true);
+    expect(controller.isVisible('moisture')).toBe(true);
   });
 
   it('draws heat zones over the boundary when their data is available', () => {
@@ -82,6 +86,7 @@ describe('OverlayController', () => {
       heatZoneInfo: [{ id: 'cold', label: 'Cold', thermal: 'cold' as const }],
     };
 
+    controller.setVisible('heat-zones', true);
     controller.render(world, 'disc', fitView(), { heatZoneMap: map }, info);
 
     expect(drawZones).toHaveBeenCalledWith(
@@ -93,6 +98,64 @@ describe('OverlayController', () => {
         viewport: { width: 10, height: 10, devicePixelRatio: 1 },
       })
     );
+  });
+
+  it('skips suppressed overlays without changing visibility', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
+    const drawHeat = vi
+      .spyOn(HeatZoneOverlayRenderer.prototype, 'render')
+      .mockImplementation(() => {});
+    const drawMoisture = vi
+      .spyOn(MoistureOverlayRenderer.prototype, 'render')
+      .mockImplementation(() => {});
+    const controller = setup();
+    const world: SpatialMask = {
+      size: { width: 1, height: 1 },
+      contains: () => true,
+    };
+
+    controller.setVisible('heat-zones', true);
+    controller.setVisible('moisture', true);
+    controller.render(
+      world,
+      'disc',
+      fitView(),
+      { heatZoneMap: new Int16Array([0]), moistureBaseMap: new Float32Array([0.5]) },
+      { heatZoneInfo: [{ id: 'cold', label: 'Cold', thermal: 'cold' as const }] },
+      new Set(['heat-zones', 'moisture'])
+    );
+
+    expect(drawHeat).not.toHaveBeenCalled();
+    expect(drawMoisture).not.toHaveBeenCalled();
+    expect(controller.isVisible('heat-zones')).toBe(true);
+    expect(controller.isVisible('moisture')).toBe(true);
+  });
+
+  it('draws moisture when its data is available', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
+    const drawMoisture = vi
+      .spyOn(MoistureOverlayRenderer.prototype, 'render')
+      .mockImplementation(() => {});
+    const controller = setup();
+    const world: SpatialMask = {
+      size: { width: 1, height: 1 },
+      contains: () => true,
+    };
+
+    controller.setVisible('moisture', true);
+    controller.render(world, 'disc', fitView(), { moistureBaseMap: new Float32Array([0.5]) });
+
+    expect(drawMoisture).toHaveBeenCalledOnce();
   });
 
   it('does not draw hidden heat zones', () => {
@@ -111,6 +174,7 @@ describe('OverlayController', () => {
       contains: () => true,
     };
 
+    controller.setVisible('heat-zones', true);
     controller.setVisible('heat-zones', false);
     controller.render(
       world,
