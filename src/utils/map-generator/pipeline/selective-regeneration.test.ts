@@ -1,11 +1,13 @@
 import { selectDirtyStageIds } from './selective-regeneration';
 import { PIPELINE_STAGES } from './stage-definitions';
+import { DEFAULT_BASE_CLIMATE_CONFIG } from '../stages/base-climate';
 import { DEFAULT_GEOLOGY_CONFIG } from '../stages/geology';
 import { DEFAULT_HEIGHTMAP_CONFIG } from '../stages/heightmap';
 import { createRadialLayout } from '../stages/macro-region';
 import type { MapConfig } from '../types';
 
 const deformation = { amplitude: 0.1 } as const;
+const baseClimate = DEFAULT_BASE_CLIMATE_CONFIG;
 const geology = DEFAULT_GEOLOGY_CONFIG;
 const heightmap = DEFAULT_HEIGHTMAP_CONFIG;
 
@@ -17,6 +19,7 @@ const config: MapConfig = {
   },
   macroRegions: createRadialLayout(2),
   macroRegionDeformation: deformation,
+  baseClimate,
   geology,
   heightmap,
 };
@@ -36,6 +39,16 @@ describe('selectDirtyStageIds', () => {
       world: { ...config.world, dimensions: { ...config.world.dimensions } },
       macroRegions: createRadialLayout(2).map(region => ({ ...region })),
       macroRegionDeformation: { ...deformation },
+      baseClimate: {
+        ...baseClimate,
+        zones: baseClimate.zones.map(zone => ({
+          ...zone,
+          geometry:
+            zone.geometry.kind === 'ring'
+              ? { ...zone.geometry, center: { ...zone.geometry.center } }
+              : { ...zone.geometry },
+        })),
+      },
       geology: {
         ...geology,
         layout: { ...geology.layout },
@@ -51,7 +64,7 @@ describe('selectDirtyStageIds', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
-        ['world-shape', 'macro-region', 'geology', 'heightmap'],
+        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
       ],
       [
         {
@@ -60,7 +73,7 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'macro-region', 'geology', 'heightmap'],
+        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
       ],
       [
         {
@@ -69,11 +82,12 @@ describe('selectDirtyStageIds', () => {
             dimensions: { ...config.world.dimensions, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'macro-region', 'geology', 'heightmap'],
+        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
       ],
       [{ world: { ...config.world, seed: 18 } }, ['macro-region', 'geology', 'heightmap']],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2 } }, ['macro-region']],
+      [{ baseClimate: { ...baseClimate, geologyCoupling: 0.5 } }, ['base-climate']],
       [{ geology: { ...geology, regionCount: 6 } }, ['geology', 'heightmap']],
       [{ heightmap: { ...heightmap, relief: 0.8 } }, ['heightmap']],
     ];

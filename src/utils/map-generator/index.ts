@@ -12,6 +12,13 @@ export { createWorldSpace, planarDistance, spaceOf } from './space';
 export type { SampleGrid, WorldSpace } from './space';
 export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS } from './stages/macro-region';
 export {
+  BASE_CLIMATE_PRESETS,
+  DEFAULT_BASE_CLIMATE_CONFIG,
+  baseClimatePresetConfig,
+  isBaseClimateConfig,
+} from './stages/base-climate';
+export type { BaseClimatePreset } from './stages/base-climate';
+export {
   DEFAULT_GEOLOGY_CONFIG,
   GEOLOGY_PRESETS,
   geologyPresetConfig,
@@ -45,8 +52,12 @@ export type {
   PipelineWorkerReuse,
   RunGeneration,
 } from './worker';
-export { GEOLOGICAL_REGION_TYPES } from './types';
+export { GEOLOGICAL_REGION_TYPES, HEAT_ZONE_CLASSES } from './types';
 export type {
+  BaseClimateConfig,
+  HeatZoneClass,
+  HeatZoneConfig,
+  HeatZoneGeometry,
   GenerationEvent,
   GenerationOptions,
   GenerationResult,

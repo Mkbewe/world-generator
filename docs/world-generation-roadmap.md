@@ -20,9 +20,13 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
 
 ## 2. Stan: co już działa
 
-- **Pipeline** — etapy World shape, Macro regions, Geology i Heightmap działają
-  w workerze, z postępem, statystykami, selektywnym przeliczaniem i pamięcią
-  sesji między widokami.
+- **Pipeline** — etapy World shape, Macro regions, BaseClimate, Geology
+  i Heightmap działają w workerze, z postępem, statystykami, selektywnym
+  przeliczaniem i pamięcią sesji między widokami.
+- **BaseClimate** — domyślny Earth-like układ pasów przypisuje strefy ciepła
+  regionom geologii; bazowa wilgotność i prądy dochodzą w tym samym etapie
+  (osobne zadania), a overlaye Heat zones, Moisture baseline i Ocean currents
+  są kolejnym krokiem.
 - **Geologia** — świat dzieli się na prowincje o typie i charakterze
   (ordinary, volcanic, lagoon, fjord), z granicami, presetami i udziałami
   powierzchni; parametry rzeźby regionu wędrują do planu geologii.
@@ -50,16 +54,16 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
 
 Kolejność może się jeszcze zmienić; każdy etap czyta wyniki poprzednich.
 
-1. **Klimat** — temperatura, opady i wilgotność; maska lądu wynika z heightmapy.
-2. **Hydrologia** — rzeki, jeziora i zlewiska z wysokości i opadów.
-3. **Formacje terenu** — klify, plaże, doliny i płaskowyże wynikające z nachyleń.
-4. **Biomy** — klasyfikacja z warunków środowiskowych, z wariantami gameplayowymi
+1. **Climate** — ciągła temperatura, wilgotność, hydrologia i woda; gradienty
+   stref, wpływ wysokości, wiatru i cienia opadowego.
+2. **Formacje terenu** — klify, plaże, doliny i płaskowyże wynikające z nachyleń.
+3. **Biomy** — klasyfikacja z warunków środowiskowych, z wariantami gameplayowymi
    zależnymi od zagrożenia regionu.
-5. **Lokacje** — punkt startowy, zasoby, przeciwnicy i nagrody.
+4. **Lokacje** — punkt startowy, zasoby, przeciwnicy i nagrody.
 
 ## 5. Presety świata i geografia — [planowane]
 
-Preset świata (topologia, strefy klimatyczne, zagrożenie) i preset geografii
+Preset świata (topologia, strefy ciepła, zagrożenie) i preset geografii
 (lista prowincji) będą niezależnymi wyborami, które można łączyć i edytować.
 Na start kilka gotowych światów i geografii, później tryb zaawansowany.
 

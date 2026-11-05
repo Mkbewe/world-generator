@@ -5,6 +5,7 @@ export const MAP_CONFIG_KEYS = [
   'world.dimensions',
   'macroRegions',
   'macroRegionDeformation',
+  'baseClimate',
   'geology',
   'heightmap',
 ] as const;
@@ -38,6 +39,17 @@ export const MACRO_REGION_STAGE = {
 } as const satisfies DeclaredStage;
 
 /**
+ * The BaseClimate stage turns the configured bands and rings into one zone index
+ * per cell. It reads the world mask only; temperature and moisture belong to a
+ * later refinement stage.
+ */
+export const BASE_CLIMATE_STAGE = {
+  id: 'base-climate',
+  name: 'BaseClimate',
+  configKeys: ['world.shape', 'world.dimensions', 'baseClimate'],
+} as const satisfies DeclaredStage;
+
+/**
  * The geology stage plans the regions and rasterises their owner and border
  * distance maps at the sample resolution; both the sample counts and the
  * physical size shape that raster.
@@ -68,6 +80,7 @@ export const HEIGHTMAP_STAGE = {
 export const PIPELINE_STAGES = [
   WORLD_SHAPE_STAGE,
   MACRO_REGION_STAGE,
+  BASE_CLIMATE_STAGE,
   GEOLOGY_STAGE,
   HEIGHTMAP_STAGE,
 ] as const;
