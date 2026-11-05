@@ -143,7 +143,8 @@ describe('MapRenderer', () => {
     expect(preview.state.layers.map(layer => layer.id)).toEqual([
       'world-shape',
       'macro-region',
-      'base-climate',
+      'heat-zones',
+      'moisture',
       'geology',
       'heightmap',
     ]);
@@ -297,6 +298,7 @@ describe('MapRenderer', () => {
     expect(preview.state.displayedLayer).toBe('macro-region');
     expect(preview.state.layers.map(layer => layer.available)).toEqual([
       true,
+      false,
       false,
       false,
       false,

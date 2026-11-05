@@ -1,12 +1,19 @@
 import type { LayerSpec } from './layer-spec';
 import type { LayerDataRecord, MapRasters } from './types';
+import { isHeatZoneInfoList } from '../../map-generator/info-definitions';
 import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
 import {
   type DomainOutputKey,
   RASTER_OUTPUT_KEYS,
   type RasterOutputKey,
 } from '../../map-generator/pipeline/stage-outputs';
-import { BASE_CLIMATE_ZONE_COLORS, HEIGHTMAP_STOPS, REGION_COLORS } from '../palettes/palettes';
+import {
+  BASE_CLIMATE_ZONE_COLORS,
+  heatZonePalette,
+  HEIGHTMAP_STOPS,
+  MOISTURE_STOPS,
+  REGION_COLORS,
+} from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
   PIPELINE_STAGES.map((stage, index) => [stage.id, index] as const)
@@ -14,6 +21,12 @@ const STAGE_ORDER = new Map<string, number>(
 
 /** A catalog entry bound to a real generator output; a typo fails here, not in the renderer. */
 type BoundLayerSpec = LayerSpec & { readonly source: RasterOutputKey | DomainOutputKey };
+
+const HEAT_ZONE_FALLBACK_PALETTE = {
+  kind: 'discrete' as const,
+  colors: BASE_CLIMATE_ZONE_COLORS,
+  overflow: { color: [120, 120, 120] as const },
+};
 
 const CATALOG_ENTRIES = [
   {
@@ -38,19 +51,31 @@ const CATALOG_ENTRIES = [
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
   },
   {
-    id: 'base-climate',
-    label: 'BaseClimate',
+    id: 'heat-zones',
+    label: 'Heat zones',
     kind: 'raster',
     source: 'heatZoneMap',
     dataType: 'int16',
     clipTo: 'world-shape',
     skipValue: -1,
     settingsForm: false,
-    palette: {
-      kind: 'discrete',
-      colors: BASE_CLIMATE_ZONE_COLORS,
-      overflow: { color: [120, 120, 120] },
-    },
+    group: { id: 'base-climate', label: 'BaseClimate' },
+    palette: HEAT_ZONE_FALLBACK_PALETTE,
+    paletteFromInfo: info =>
+      isHeatZoneInfoList(info.heatZoneInfo)
+        ? heatZonePalette(info.heatZoneInfo)
+        : HEAT_ZONE_FALLBACK_PALETTE,
+  },
+  {
+    id: 'moisture',
+    label: 'Moisture',
+    kind: 'raster',
+    source: 'moistureBaseMap',
+    dataType: 'float32',
+    clipTo: 'world-shape',
+    settingsForm: false,
+    group: { id: 'base-climate', label: 'BaseClimate' },
+    palette: { kind: 'ramp', stops: MOISTURE_STOPS },
   },
   {
     id: 'geology',
@@ -81,7 +106,7 @@ export const LAYER_CATALOG = sortByPipelineOrder(CATALOG_ENTRIES);
 
 function sortByPipelineOrder<T extends readonly LayerSpec[]>(entries: T): T {
   return [...entries].sort(
-    (left, right) => stageIndex(left.id) - stageIndex(right.id)
+    (left, right) => stageIndex(left.group?.id ?? left.id) - stageIndex(right.group?.id ?? right.id)
   ) as unknown as T;
 }
 

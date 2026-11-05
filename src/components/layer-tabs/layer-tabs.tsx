@@ -5,7 +5,7 @@ import { Tabs } from '@radix-ui/themes';
 import type { MapBaseLayerId, MapLayerNavigation } from '../../utils/map-renderer';
 import styles from './layer-tabs.module.scss';
 
-const LAYER_ICONS: Partial<Record<MapBaseLayerId, ReactNode>> = {
+const LAYER_ICONS: Readonly<Record<string, ReactNode>> = {
   'world-shape': <GlobeIcon />,
   'macro-region': <LayersIcon />,
   'base-climate': <SunIcon />,
@@ -56,5 +56,5 @@ export function LayerTabs({ navigation, onLayerChange, expanded = false }: Layer
 
 /** Group tabs use their own ids, so unknown ones fall back to the generic icon. */
 function tabIcon(id: string): ReactNode {
-  return LAYER_ICONS[id as MapBaseLayerId] ?? <FrameIcon />;
+  return LAYER_ICONS[id] ?? <FrameIcon />;
 }

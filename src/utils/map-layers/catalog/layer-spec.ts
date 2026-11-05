@@ -51,6 +51,8 @@ export interface RasterLayerSpec<TId extends string = string> extends LayerSpecB
   /** Cells holding this value stay transparent, e.g. "no structure" in an id map. */
   readonly skipValue?: number;
   readonly palette: PaletteSpec;
+  /** Palette derived from map info, e.g. zone colors from the saved zone list. */
+  readonly paletteFromInfo?: (info: Readonly<Record<string, unknown>>) => PaletteSpec;
 }
 
 /**

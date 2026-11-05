@@ -1,3 +1,4 @@
+import type { HeatZoneInfo } from '../../map-generator/info-definitions';
 import type { GeologicalRegionType, HeatZoneClass } from '../../map-generator/types';
 import type { Color, DiscreteOverflow, PaletteSpec, RampStop } from '../catalog/layer-spec';
 
@@ -77,6 +78,12 @@ export const GEOLOGY_REGION_PALETTES: Readonly<Record<GeologicalRegionType, read
  * slider floods and exposes the same terrain. Deep water, shallow water, the
  * shoreline, lowland greens, highlands, rock and snow.
  */
+export const MOISTURE_STOPS = [
+  { at: 0, color: [180, 145, 90] },
+  { at: 0.5, color: [110, 170, 145] },
+  { at: 1, color: [35, 95, 175] },
+] as const satisfies readonly RampStop[];
+
 export const HEIGHTMAP_STOPS = [
   { at: -400, color: [12, 26, 58] },
   { at: -120, color: [24, 58, 110] },
@@ -100,6 +107,13 @@ export const HEAT_ZONE_COLORS: Readonly<Record<HeatZoneClass, Color>> = {
 
 export function heatZoneColor(thermal: HeatZoneClass): Color {
   return HEAT_ZONE_COLORS[thermal];
+}
+
+/** Preview palette indexed like `heatZoneMap`, using the same colors as the overlay. */
+export function heatZonePalette(zones: readonly HeatZoneInfo[]): PaletteSpec {
+  const colors =
+    zones.length > 0 ? zones.map(zone => heatZoneColor(zone.thermal)) : BASE_CLIMATE_ZONE_COLORS;
+  return { kind: 'discrete', colors, overflow: { color: [120, 120, 120] } };
 }
 
 /** Qualitative zone-index colors for the BaseClimate preview layer. */

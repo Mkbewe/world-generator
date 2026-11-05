@@ -202,7 +202,7 @@ export class MapScene {
         this.geometry?.shape,
         spec.boundarySource === 'region' ? this.regionConfig : undefined,
       ],
-      () => new CatalogLayer(spec, size, value, clipMask, this.geometry)
+      () => new CatalogLayer(spec, size, value, clipMask, this.geometry, this.info)
     );
     this.layers.set(id, layer);
     // A refreshed layer becomes ready again once it is presented.
