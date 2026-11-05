@@ -248,6 +248,8 @@ export interface MapState {
   macroRegionAreas?: readonly number[];
   /** Produced by the BaseClimate stage: zone index per cell, -1 outside the world. */
   heatZoneMap?: Int16Array;
+  /** Produced by the BaseClimate stage: independent base moisture, 0..1. */
+  moistureBaseMap?: Float32Array;
   /**
    * Produced by the geology stage. Resolved regions with their owner and border
    * rasters; island shapes are not derived from this plan.

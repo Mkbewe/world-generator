@@ -6,6 +6,7 @@ export const RASTER_OUTPUT_KEYS = [
   'worldMask',
   'macroRegionIdMap',
   'heatZoneMap',
+  'moistureBaseMap',
   'heightmap',
   'provenanceMap',
 ] as const;
@@ -26,6 +27,7 @@ export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32
   worldMask: 'uint8',
   macroRegionIdMap: 'uint8',
   heatZoneMap: 'int16',
+  moistureBaseMap: 'float32',
   heightmap: 'float32',
   provenanceMap: 'int16',
 };

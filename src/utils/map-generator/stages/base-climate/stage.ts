@@ -1,5 +1,6 @@
 import { isBaseClimateConfig } from './config/base-climate-check';
 import { DEFAULT_BASE_CLIMATE_CONFIG } from './defaults';
+import { createBaseMoistureBand, moistureValue } from './moisture';
 import { createHeatZoneSampler } from './sampler';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
@@ -21,21 +22,22 @@ export class BaseClimateStage implements MapStage<
   MapConfig,
   MapState,
   PipelineStageId,
-  { heatZoneMap: Int16Array }
+  { heatZoneMap: Int16Array; moistureBaseMap: Float32Array }
 > {
   readonly id: PipelineStageId = BASE_CLIMATE_STAGE.id;
   readonly name = BASE_CLIMATE_STAGE.name;
   readonly configKeys = BASE_CLIMATE_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask'];
-  readonly writes = ['heatZoneMap'] as const;
+  readonly writes = ['heatZoneMap', 'moistureBaseMap'] as const;
   readonly progressStep = PROGRESS_STEP;
 
   async execute(
     context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ heatZoneMap: Int16Array }> {
-    const { sampleWidth, sampleHeight } = context.config.world.dimensions;
+  ): Promise<{ heatZoneMap: Int16Array; moistureBaseMap: Float32Array }> {
+    const dimensions = context.config.world.dimensions;
+    const { sampleWidth, sampleHeight } = dimensions;
     const cells = sampleWidth * sampleHeight;
     const config = context.config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
     if (!isBaseClimateConfig(config)) {
@@ -54,8 +56,10 @@ export class BaseClimateStage implements MapStage<
     const zoneAt = createHeatZoneSampler(config.zones, (left, right) =>
       space.distance(left, right)
     );
+    const moistureBand = createBaseMoistureBand(context.random, dimensions);
     const heatZoneMap = new Int16Array(cells);
     heatZoneMap.fill(-1);
+    const moistureBaseMap = new Float32Array(cells);
 
     for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
@@ -67,14 +71,16 @@ export class BaseClimateStage implements MapStage<
         if (worldMask[cell] === 0) {
           continue;
         }
-        heatZoneMap[cell] = zoneAt(space.cellToNormalized(x, y));
+        const point = space.cellToNormalized(x, y);
+        heatZoneMap[cell] = zoneAt(point);
+        moistureBaseMap[cell] = moistureValue(moistureBand, point);
       }
 
       report((y + 1) / sampleHeight);
     }
 
     report(1);
-    return { heatZoneMap };
+    return { heatZoneMap, moistureBaseMap };
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
@@ -83,16 +89,19 @@ export class BaseClimateStage implements MapStage<
     const baseClimate = config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
     const worldMask = state.worldMask;
     const heatZoneMap = state.heatZoneMap;
+    const moistureBaseMap = state.moistureBaseMap;
     assertStageOutput(heatZoneMap, 'int16', cells);
-    if (!worldMask || worldMask.length !== cells) {
-      throw new Error('Pipeline completed without a valid world mask.');
-    }
-    if (!heatZoneMap) {
+    assertStageOutput(moistureBaseMap, 'float32', cells);
+    if (!worldMask || worldMask.length !== cells || !heatZoneMap || !moistureBaseMap) {
       throw new Error('Pipeline completed without all required map data.');
     }
 
     for (let index = 0; index < cells; index++) {
       const zone = heatZoneMap[index];
+      const moisture = moistureBaseMap[index];
+      if (!Number.isFinite(moisture) || moisture < 0 || moisture > 1) {
+        throw new Error('Base moisture map contains an invalid value.');
+      }
       if (worldMask[index] === 0) {
         if (zone !== -1) {
           throw new Error('Heat-zone map contains a zone outside the world.');
@@ -107,30 +116,52 @@ export class BaseClimateStage implements MapStage<
 
   summarize(
     context: MapContext<MapConfig, MapState, PipelineStageId>,
-    data: { heatZoneMap: Int16Array }
+    data: { heatZoneMap: Int16Array; moistureBaseMap: Float32Array }
   ): StageMetrics | undefined {
     const baseClimate = context.config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
+    const worldMask = context.state.worldMask;
     const counts = new Uint32Array(baseClimate.zones.length);
     let covered = 0;
+    let moistureSum = 0;
+    let moistureSumSquares = 0;
+    let moistureMin = Infinity;
+    let moistureMax = -Infinity;
 
-    for (const zone of data.heatZoneMap) {
-      if (zone >= 0) {
-        counts[zone] += 1;
-        covered++;
+    for (let index = 0; index < data.heatZoneMap.length; index++) {
+      if (worldMask && worldMask[index] === 0) {
+        continue;
       }
+      const zone = data.heatZoneMap[index];
+      if (zone !== undefined && zone >= 0) {
+        counts[zone] += 1;
+      }
+      const moisture = data.moistureBaseMap[index];
+      if (moisture === undefined) {
+        continue;
+      }
+      covered++;
+      moistureSum += moisture;
+      moistureSumSquares += moisture * moisture;
+      moistureMin = Math.min(moistureMin, moisture);
+      moistureMax = Math.max(moistureMax, moisture);
     }
     if (covered === 0) {
       return undefined;
     }
 
     const shares = sharesByThermalClass(baseClimate, counts, covered);
+    const mean = moistureSum / covered;
     return {
       zones: baseClimate.zones.length,
       coveredCells: covered,
       coldShare: shares.cold,
       temperateShare: shares.temperate,
       warmShare: shares.warm,
-      bytes: data.heatZoneMap.byteLength,
+      moistureMin,
+      moistureMax,
+      moistureMean: mean,
+      moistureStdDev: Math.sqrt(Math.max(0, moistureSumSquares / covered - mean * mean)),
+      bytes: data.heatZoneMap.byteLength + data.moistureBaseMap.byteLength,
     };
   }
 }

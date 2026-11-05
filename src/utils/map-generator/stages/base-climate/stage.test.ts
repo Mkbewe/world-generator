@@ -38,6 +38,14 @@ function zoneMap(result: Awaited<ReturnType<typeof generate>>): Int16Array {
   return map;
 }
 
+function moistureMap(result: Awaited<ReturnType<typeof generate>>): Float32Array {
+  const map = result.context.state.moistureBaseMap;
+  if (!map) {
+    throw new Error('Expected a generated base-moisture map.');
+  }
+  return map;
+}
+
 describe('BaseClimateStage', () => {
   it('assigns one valid zone index to every cell', async () => {
     const result = await generate(config());
@@ -68,6 +76,25 @@ describe('BaseClimateStage', () => {
     expect(map[0]).toBe(2);
   });
 
+  it('creates a normalized independent moisture field', async () => {
+    const result = await generate(config());
+    const moisture = moistureMap(result);
+
+    expect(moisture).toHaveLength(25);
+    expect([...moisture].every(value => Number.isFinite(value) && value >= 0 && value <= 1)).toBe(
+      true
+    );
+    expect(new Set(moisture).size).toBeGreaterThan(1);
+  });
+
+  it('keeps the moisture field independent of the heat-zone layout', async () => {
+    const earthLike = await generate(config(baseClimatePresetConfig('earth-like')));
+    const ringWorld = await generate(config(baseClimatePresetConfig('ring-world')));
+
+    expect(moistureMap(earthLike)).toEqual(moistureMap(ringWorld));
+    expect(zoneMap(earthLike)).not.toEqual(zoneMap(ringWorld));
+  });
+
   it('is deterministic for the same configuration', async () => {
     const source = config();
 
@@ -75,6 +102,7 @@ describe('BaseClimateStage', () => {
     const second = await generate(source);
 
     expect(zoneMap(first)).toEqual(zoneMap(second));
+    expect(moistureMap(first)).toEqual(moistureMap(second));
   });
 
   it('reports zone and thermal shares', async () => {
@@ -87,6 +115,10 @@ describe('BaseClimateStage', () => {
       coldShare: 0.4,
       temperateShare: 0.4,
       warmShare: 0.2,
+      moistureMin: expect.any(Number),
+      moistureMax: expect.any(Number),
+      moistureMean: expect.any(Number),
+      moistureStdDev: expect.any(Number),
     });
   });
 
@@ -119,6 +151,7 @@ describe('BaseClimateStage', () => {
         {
           worldMask,
           heatZoneMap: new Int16Array([0, -1]),
+          moistureBaseMap: new Float32Array([0.5, 0]),
         },
         source
       )
@@ -128,6 +161,7 @@ describe('BaseClimateStage', () => {
         {
           worldMask,
           heatZoneMap: new Int16Array([0, 0]),
+          moistureBaseMap: new Float32Array([0.5, 0]),
         },
         source
       )
@@ -137,9 +171,20 @@ describe('BaseClimateStage', () => {
         {
           worldMask,
           heatZoneMap: new Int16Array([9, -1]),
+          moistureBaseMap: new Float32Array([0.5, 0]),
         },
         source
       )
     ).toThrow('invalid zone index');
+    expect(() =>
+      stage.validate(
+        {
+          worldMask,
+          heatZoneMap: new Int16Array([0, -1]),
+          moistureBaseMap: new Float32Array([1.5, 0]),
+        },
+        source
+      )
+    ).toThrow('invalid value');
   });
 });

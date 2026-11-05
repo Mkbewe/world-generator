@@ -4,6 +4,13 @@ import type { BaseClimateConfig, HeatZoneClass, HeatZoneConfig, WorldPoint } fro
 export const MIN_HEAT_ZONES = 1;
 export const MAX_HEAT_ZONES = 32;
 
+/** Independent base-moisture FBM: one broad wave across most of the world. */
+export const BASE_MOISTURE_WAVELENGTH_SHARE = 0.4;
+export const BASE_MOISTURE_OCTAVES = 4;
+export const BASE_MOISTURE_PERSISTENCE = 0.5;
+export const BASE_MOISTURE_LACUNARITY = 2;
+export const BASE_MOISTURE_STREAM = 'base-climate.moisture';
+
 export const BASE_CLIMATE_PRESETS = ['earth-like', 'ring-world', 'cold-core'] as const;
 
 export type BaseClimatePreset = (typeof BASE_CLIMATE_PRESETS)[number];

@@ -87,6 +87,7 @@ describe('generation worker', () => {
       worldMask: full.context.state.worldMask,
       macroRegionIdMap: full.context.state.macroRegionIdMap,
       heatZoneMap: full.context.state.heatZoneMap,
+      moistureBaseMap: full.context.state.moistureBaseMap,
       geologyPlan: full.context.state.geologyPlan,
     };
 
