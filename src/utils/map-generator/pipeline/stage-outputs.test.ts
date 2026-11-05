@@ -11,6 +11,7 @@ describe('selectPersistentRasters', () => {
     const data = {
       worldMask: new Uint8Array(1),
       macroRegionIdMap: new Uint8Array(1),
+      heatZoneMap: new Int16Array(1),
       heightmap: new Float32Array(1),
       provenanceMap: new Int16Array(1),
     };

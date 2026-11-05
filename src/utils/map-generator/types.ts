@@ -65,6 +65,43 @@ export interface WorldPoint {
   readonly y: number;
 }
 
+/** Thermal class of a heat zone; geology maps it to island variants. */
+export const HEAT_ZONE_CLASSES = ['cold', 'temperate', 'warm'] as const;
+
+export type HeatZoneClass = (typeof HEAT_ZONE_CLASSES)[number];
+
+export type HeatZoneGeometry =
+  | {
+      readonly kind: 'ring';
+      readonly center: WorldPoint;
+      readonly innerRadius: number;
+      readonly outerRadius: number;
+    }
+  | {
+      readonly kind: 'band';
+      /** x creates a vertical band; y creates a horizontal band. */
+      readonly axis: 'x' | 'y';
+      /** Position on the selected axis, normalized to 0..1. */
+      readonly center: number;
+      /** Full band width in normalized world units. */
+      readonly width: number;
+    };
+
+/** One editable heat zone: a band or ring with a thermal class. */
+export interface HeatZoneConfig {
+  readonly id: string;
+  readonly label: string;
+  readonly geometry: HeatZoneGeometry;
+  readonly thermal: HeatZoneClass;
+}
+
+/** The world heat-zone layout and how strongly geology follows it. */
+export interface BaseClimateConfig {
+  readonly zones: readonly HeatZoneConfig[];
+  /** 0 leaves the current geology recipes, 1 fully follows the zones. */
+  readonly geologyCoupling: number;
+}
+
 /**
  * What kind of ground a region tends to express: ordinary ground, volcanic
  * relief, lagoons and reefs or fjord coasts. The type labels the region for
@@ -182,6 +219,11 @@ export interface MapConfig extends SeededWorldConfig {
   macroRegions?: readonly MacroRegionConfig[];
   macroRegionDeformation?: MacroRegionDeformation;
   /**
+   * The BaseClimate layout from the BaseClimate form; programmatic configs may
+   * omit it and the stage falls back to `DEFAULT_BASE_CLIMATE_CONFIG`.
+   */
+  baseClimate?: BaseClimateConfig;
+  /**
    * The geology intent from the Geology form; programmatic configs may omit it
    * and the stage falls back to `DEFAULT_GEOLOGY_CONFIG`.
    */
@@ -204,6 +246,8 @@ export interface MapState {
   macroRegionIdMap?: Uint8Array;
   /** Produced by the macro-region stage: ground area per region, in square metres. */
   macroRegionAreas?: readonly number[];
+  /** Produced by the BaseClimate stage: zone index per cell, -1 outside the world. */
+  heatZoneMap?: Int16Array;
   /**
    * Produced by the geology stage. Resolved regions with their owner and border
    * rasters; island shapes are not derived from this plan.

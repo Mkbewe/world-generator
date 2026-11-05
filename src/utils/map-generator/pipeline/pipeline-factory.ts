@@ -3,6 +3,7 @@ import { type MapStage } from './stage';
 import { MAP_CONFIG_KEYS, PIPELINE_STAGES, type PipelineStageId } from './stage-definitions';
 import { validateDimensions } from '../../world-dimensions';
 import { createWorldSpace } from '../space';
+import { BaseClimateStage } from '../stages/base-climate';
 import { GeologyStage } from '../stages/geology';
 import { HeightmapStage } from '../stages/heightmap';
 import { MacroRegionStage } from '../stages/macro-region';
@@ -16,6 +17,7 @@ const STAGE_FACTORIES: Readonly<
 > = {
   'world-shape': () => new WorldShapeStage(),
   'macro-region': () => new MacroRegionStage(),
+  'base-climate': () => new BaseClimateStage(),
   geology: () => new GeologyStage(),
   heightmap: () => new HeightmapStage(),
 };

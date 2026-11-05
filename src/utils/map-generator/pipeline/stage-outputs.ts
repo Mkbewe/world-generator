@@ -5,6 +5,7 @@ import type { MapState, StageData } from '../types';
 export const RASTER_OUTPUT_KEYS = [
   'worldMask',
   'macroRegionIdMap',
+  'heatZoneMap',
   'heightmap',
   'provenanceMap',
 ] as const;
@@ -24,6 +25,7 @@ export type MapRasterOutputs = Pick<MapState, RasterOutputKey>;
 export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32' | 'int16'> = {
   worldMask: 'uint8',
   macroRegionIdMap: 'uint8',
+  heatZoneMap: 'int16',
   heightmap: 'float32',
   provenanceMap: 'int16',
 };
