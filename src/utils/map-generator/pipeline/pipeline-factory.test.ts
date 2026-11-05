@@ -35,6 +35,8 @@ describe('createMapGenerator', () => {
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
     expect(result.context.state.heatZoneMap).toBeInstanceOf(Int16Array);
     expect(result.context.state.moistureBaseMap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.oceanCurrentMap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.oceanCurrentStrength).toBeInstanceOf(Float32Array);
     expect(result.context.state.geologyPlan?.regions?.length).toBeGreaterThan(0);
     expect(result.context.state.heightmap).toBeInstanceOf(Float32Array);
     expect(result.context.state.provenanceMap).toBeInstanceOf(Int16Array);
@@ -72,7 +74,7 @@ describe('createMapGenerator', () => {
       {
         id: 'base-climate',
         reads: ['worldMask'],
-        writes: ['heatZoneMap', 'moistureBaseMap'],
+        writes: ['heatZoneMap', 'moistureBaseMap', 'oceanCurrentMap', 'oceanCurrentStrength'],
         configKeys: ['world.shape', 'world.dimensions', 'baseClimate'],
       },
       {

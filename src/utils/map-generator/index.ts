@@ -52,7 +52,7 @@ export type {
   PipelineWorkerReuse,
   RunGeneration,
 } from './worker';
-export { GEOLOGICAL_REGION_TYPES, HEAT_ZONE_CLASSES } from './types';
+export { GEOLOGICAL_REGION_TYPES, HEAT_ZONE_CLASSES, OCEAN_CURRENT_FLOWS } from './types';
 export type {
   BaseClimateConfig,
   HeatZoneClass,
@@ -75,6 +75,8 @@ export type {
   MapGeneratorOptions,
   MapConfig,
   MapState,
+  OceanCurrentConfig,
+  OceanCurrentFlow,
   RegionTerrainConfig,
   RegionTerrainParameter,
   StageMetric,

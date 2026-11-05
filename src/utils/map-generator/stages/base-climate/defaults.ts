@@ -1,8 +1,18 @@
-import type { BaseClimateConfig, HeatZoneClass, HeatZoneConfig, WorldPoint } from '../../types';
+import type {
+  BaseClimateConfig,
+  HeatZoneClass,
+  HeatZoneConfig,
+  OceanCurrentConfig,
+  WorldPoint,
+} from '../../types';
 
 /** Bounds of the editable heat-zone list. */
 export const MIN_HEAT_ZONES = 1;
 export const MAX_HEAT_ZONES = 32;
+
+/** Bounds of the static ocean-current sources. */
+export const MAX_OCEAN_CURRENT_SOURCES = 16;
+export const MAX_OCEAN_CURRENT_RADIUS = 2;
 
 /** Independent base-moisture FBM: one broad wave across most of the world. */
 export const BASE_MOISTURE_WAVELENGTH_SHARE = 0.4;
@@ -47,6 +57,27 @@ function ring(
   };
 }
 
+function current(
+  x: number,
+  y: number,
+  flow: OceanCurrentConfig['flow'],
+  strength: number,
+  radius: number
+): OceanCurrentConfig {
+  return { center: { x, y }, flow, strength, radius };
+}
+
+const PRESET_CURRENTS: Readonly<Record<BaseClimatePreset, readonly OceanCurrentConfig[]>> = {
+  'earth-like': [
+    current(0.25, 0.3, 'clockwise', 0.8, 0.4),
+    current(0.75, 0.3, 'clockwise', 0.8, 0.4),
+    current(0.25, 0.7, 'counterclockwise', 0.8, 0.4),
+    current(0.75, 0.7, 'counterclockwise', 0.8, 0.4),
+  ],
+  'ring-world': [current(0.5, 0.5, 'outward', 0.8, 0.75)],
+  'cold-core': [current(0.5, 0.5, 'inward', 0.8, 0.75)],
+};
+
 const PRESET_ZONES: Readonly<Record<BaseClimatePreset, readonly HeatZoneConfig[]>> = {
   'earth-like': [
     band('polar-north', 'Polar north', 'cold', 0.1, 0.2),
@@ -77,6 +108,10 @@ export function baseClimatePresetConfig(preset: BaseClimatePreset): BaseClimateC
         zone.geometry.kind === 'ring'
           ? { ...zone.geometry, center: { ...zone.geometry.center } }
           : { ...zone.geometry },
+    })),
+    currents: PRESET_CURRENTS[preset].map(source => ({
+      ...source,
+      center: { ...source.center },
     })),
   };
 }

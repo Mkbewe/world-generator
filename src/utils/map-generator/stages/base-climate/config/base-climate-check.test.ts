@@ -15,12 +15,13 @@ describe('validateBaseClimateConfig', () => {
   });
 
   it('rejects an empty and an oversized zone list', () => {
-    const empty: BaseClimateConfig = { zones: [], geologyCoupling: 1 };
+    const empty: BaseClimateConfig = { zones: [], currents: [], geologyCoupling: 1 };
 
     expect(() => validateBaseClimateConfig(empty)).toThrow('At least one heat zone');
     expect(() =>
       validateBaseClimateConfig({
         geologyCoupling: 1,
+        currents: [],
         zones: Array.from({ length: 33 }, (_, index) => ({
           id: `zone-${index}`,
           label: `Zone ${index}`,
@@ -84,6 +85,45 @@ describe('validateBaseClimateConfig', () => {
         ],
       })
     ).toThrow('valid radial range');
+  });
+
+  it('rejects invalid ocean-current sources', () => {
+    const base = getBaseClimatePresets()[0];
+    const source = base.currents[0];
+
+    expect(() => validateBaseClimateConfig({ ...base, currents: [] })).toThrow(
+      'At least one ocean current source'
+    );
+    expect(() =>
+      validateBaseClimateConfig({
+        ...base,
+        currents: [{ ...source, center: { x: 1.2, y: 0.5 } }],
+      })
+    ).toThrow('centre must be within 0..1');
+    expect(() =>
+      validateBaseClimateConfig({
+        ...base,
+        currents: [{ ...source, flow: 'sideways' as never }],
+      })
+    ).toThrow('flow "sideways" is invalid');
+    expect(() =>
+      validateBaseClimateConfig({
+        ...base,
+        currents: [{ ...source, strength: 1.2 }],
+      })
+    ).toThrow('strength must be within 0..1');
+    expect(() =>
+      validateBaseClimateConfig({
+        ...base,
+        currents: [{ ...source, radius: 0 }],
+      })
+    ).toThrow('radius must be within');
+    expect(() =>
+      validateBaseClimateConfig({
+        ...base,
+        currents: Array.from({ length: 17 }, () => ({ ...source, center: { ...source.center } })),
+      })
+    ).toThrow('At most 16 ocean current sources');
   });
 
   it('rejects a coupling outside 0..1', () => {

@@ -1,4 +1,5 @@
 import { isBaseClimateConfig } from './config/base-climate-check';
+import { createOceanCurrentSampler, type OceanCurrentSample } from './currents';
 import { DEFAULT_BASE_CLIMATE_CONFIG } from './defaults';
 import { createBaseMoistureBand, moistureValue } from './moisture';
 import { createHeatZoneSampler } from './sampler';
@@ -18,35 +19,47 @@ import type {
 
 const PROGRESS_STEP = 0.1;
 
+type BaseClimateOutput = {
+  heatZoneMap: Int16Array;
+  moistureBaseMap: Float32Array;
+  oceanCurrentMap: Float32Array;
+  oceanCurrentStrength: Float32Array;
+};
+
 export class BaseClimateStage implements MapStage<
   MapConfig,
   MapState,
   PipelineStageId,
-  { heatZoneMap: Int16Array; moistureBaseMap: Float32Array }
+  BaseClimateOutput
 > {
   readonly id: PipelineStageId = BASE_CLIMATE_STAGE.id;
   readonly name = BASE_CLIMATE_STAGE.name;
   readonly configKeys = BASE_CLIMATE_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask'];
-  readonly writes = ['heatZoneMap', 'moistureBaseMap'] as const;
+  readonly writes = [
+    'heatZoneMap',
+    'moistureBaseMap',
+    'oceanCurrentMap',
+    'oceanCurrentStrength',
+  ] as const;
   readonly progressStep = PROGRESS_STEP;
 
   async execute(
     context: MapContext<MapConfig, MapState, PipelineStageId>,
     signal: AbortSignal,
     report: StageProgressReporter
-  ): Promise<{ heatZoneMap: Int16Array; moistureBaseMap: Float32Array }> {
+  ): Promise<BaseClimateOutput> {
     const dimensions = context.config.world.dimensions;
     const { sampleWidth, sampleHeight } = dimensions;
     const cells = sampleWidth * sampleHeight;
     const config = context.config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
     if (!isBaseClimateConfig(config)) {
-      throw new RangeError('Heat-zone settings are outside their limits.');
+      throw new RangeError('BaseClimate settings are outside their limits.');
     }
 
     const worldMask = context.state.worldMask;
     if (!worldMask || worldMask.length !== cells) {
-      throw new Error('A valid world mask must be generated before heat zones.');
+      throw new Error('A valid world mask must be generated before BaseClimate.');
     }
     if (signal.aborted) {
       throw new GenerationCancelledError();
@@ -56,10 +69,16 @@ export class BaseClimateStage implements MapStage<
     const zoneAt = createHeatZoneSampler(config.zones, (left, right) =>
       space.distance(left, right)
     );
+    const currentAt = createOceanCurrentSampler(config.currents, (left, right) =>
+      space.distance(left, right)
+    );
     const moistureBand = createBaseMoistureBand(context.random, dimensions);
     const heatZoneMap = new Int16Array(cells);
     heatZoneMap.fill(-1);
     const moistureBaseMap = new Float32Array(cells);
+    const oceanCurrentMap = new Float32Array(cells);
+    const oceanCurrentStrength = new Float32Array(cells);
+    const current: OceanCurrentSample = { angle: 0, strength: 0 };
 
     for (let y = 0; y < sampleHeight; y++) {
       if (signal.aborted) {
@@ -74,13 +93,16 @@ export class BaseClimateStage implements MapStage<
         const point = space.cellToNormalized(x, y);
         heatZoneMap[cell] = zoneAt(point);
         moistureBaseMap[cell] = moistureValue(moistureBand, point);
+        currentAt(point, current);
+        oceanCurrentMap[cell] = current.angle;
+        oceanCurrentStrength[cell] = current.strength;
       }
 
       report((y + 1) / sampleHeight);
     }
 
     report(1);
-    return { heatZoneMap, moistureBaseMap };
+    return { heatZoneMap, moistureBaseMap, oceanCurrentMap, oceanCurrentStrength };
   }
 
   validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
@@ -90,17 +112,40 @@ export class BaseClimateStage implements MapStage<
     const worldMask = state.worldMask;
     const heatZoneMap = state.heatZoneMap;
     const moistureBaseMap = state.moistureBaseMap;
+    const oceanCurrentMap = state.oceanCurrentMap;
+    const oceanCurrentStrength = state.oceanCurrentStrength;
     assertStageOutput(heatZoneMap, 'int16', cells);
     assertStageOutput(moistureBaseMap, 'float32', cells);
-    if (!worldMask || worldMask.length !== cells || !heatZoneMap || !moistureBaseMap) {
+    assertStageOutput(oceanCurrentMap, 'float32', cells);
+    assertStageOutput(oceanCurrentStrength, 'float32', cells);
+    if (
+      !worldMask ||
+      worldMask.length !== cells ||
+      !heatZoneMap ||
+      !moistureBaseMap ||
+      !oceanCurrentMap ||
+      !oceanCurrentStrength
+    ) {
       throw new Error('Pipeline completed without all required map data.');
     }
 
     for (let index = 0; index < cells; index++) {
       const zone = heatZoneMap[index];
       const moisture = moistureBaseMap[index];
+      const currentAngle = oceanCurrentMap[index];
+      const currentStrength = oceanCurrentStrength[index];
       if (!Number.isFinite(moisture) || moisture < 0 || moisture > 1) {
         throw new Error('Base moisture map contains an invalid value.');
+      }
+      if (
+        !Number.isFinite(currentAngle) ||
+        currentAngle < 0 ||
+        currentAngle > Math.PI * 2 ||
+        !Number.isFinite(currentStrength) ||
+        currentStrength < 0 ||
+        currentStrength > 1
+      ) {
+        throw new Error('Base ocean-current map contains an invalid value.');
       }
       if (worldMask[index] === 0) {
         if (zone !== -1) {
@@ -116,7 +161,7 @@ export class BaseClimateStage implements MapStage<
 
   summarize(
     context: MapContext<MapConfig, MapState, PipelineStageId>,
-    data: { heatZoneMap: Int16Array; moistureBaseMap: Float32Array }
+    data: BaseClimateOutput
   ): StageMetrics | undefined {
     const baseClimate = context.config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
     const worldMask = context.state.worldMask;
@@ -161,7 +206,11 @@ export class BaseClimateStage implements MapStage<
       moistureMax,
       moistureMean: mean,
       moistureStdDev: Math.sqrt(Math.max(0, moistureSumSquares / covered - mean * mean)),
-      bytes: data.heatZoneMap.byteLength + data.moistureBaseMap.byteLength,
+      bytes:
+        data.heatZoneMap.byteLength +
+        data.moistureBaseMap.byteLength +
+        data.oceanCurrentMap.byteLength +
+        data.oceanCurrentStrength.byteLength,
     };
   }
 }

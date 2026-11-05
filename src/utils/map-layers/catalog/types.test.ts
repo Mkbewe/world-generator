@@ -9,6 +9,8 @@ describe('catalog-derived types', () => {
     expectTypeOf<MapRasters['macroRegionIdMap']>().toEqualTypeOf<Uint8Array | undefined>();
     expectTypeOf<MapRasters['heatZoneMap']>().toEqualTypeOf<Int16Array | undefined>();
     expectTypeOf<MapRasters['moistureBaseMap']>().toEqualTypeOf<Float32Array | undefined>();
+    expectTypeOf<MapRasters['oceanCurrentMap']>().toEqualTypeOf<Float32Array | undefined>();
+    expectTypeOf<MapRasters['oceanCurrentStrength']>().toEqualTypeOf<Float32Array | undefined>();
     expectTypeOf<MapRasters['heightmap']>().toEqualTypeOf<Float32Array | undefined>();
   });
 });
