@@ -1,4 +1,10 @@
-import { compilePalette, regionColor, validatePalette } from './palettes';
+import {
+  compilePalette,
+  HEAT_ZONE_COLORS,
+  heatZonePalette,
+  regionColor,
+  validatePalette,
+} from './palettes';
 import type { PaletteSpec } from '../catalog/layer-spec';
 
 function color(palette: PaletteSpec, value: number): number[] {
@@ -82,6 +88,18 @@ describe('palette compiler', () => {
     expect(color({ kind: 'discrete', colors, overflow: 'cycle', offset: -1 }, 0)).toEqual([
       120, 120, 120, 255,
     ]);
+  });
+
+  it('matches the heat preview colors to the overlay classes', () => {
+    const palette = heatZonePalette([
+      { id: 'cold', label: 'Cold', thermal: 'cold' },
+      { id: 'warm', label: 'Warm', thermal: 'warm' },
+    ]);
+
+    expect(palette).toMatchObject({
+      kind: 'discrete',
+      colors: [HEAT_ZONE_COLORS.cold, HEAT_ZONE_COLORS.warm],
+    });
   });
 
   it('rejects invalid colors, stops and empty discrete palettes', () => {

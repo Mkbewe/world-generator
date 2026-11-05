@@ -1,5 +1,10 @@
 import { LayerNavigation } from './layer-navigation';
-import type { LayerTreeNode, MapBaseLayerId, MapLayerOption } from '../../../utils/map-renderer';
+import {
+  layerRegistry,
+  type LayerTreeNode,
+  type MapBaseLayerId,
+  type MapLayerOption,
+} from '../../../utils/map-renderer';
 
 const tree: readonly LayerTreeNode[] = [
   { id: 'world-shape', label: 'World shape' },
@@ -99,6 +104,27 @@ describe('LayerNavigation', () => {
     expect(navigation.leadsToSelection('macro-region')).toBe(true);
     expect(navigation.leadsToSelection('geology')).toBe(false);
     expect(navigation.toViewState(layers).tabs[1].selectedLayer).toBe('macro-region');
+  });
+
+  it('keeps the real BaseClimate layers in one switchable group', () => {
+    const navigation = new LayerNavigation(layerRegistry.tree);
+    const available = layerRegistry.order.map(id => ({
+      id,
+      label: id,
+      available: id === 'heat-zones' || id === 'moisture',
+    }));
+
+    const state = navigation.toViewState(available, 'moisture');
+
+    expect(state.activeTab).toBe('base-climate');
+    expect(state.tabs.find(tab => tab.id === 'base-climate')).toMatchObject({
+      selectedChild: 'moisture',
+      selectedLayer: 'moisture',
+      children: [
+        { id: 'heat-zones', available: true },
+        { id: 'moisture', available: true },
+      ],
+    });
   });
 
   it('reflects a displayed view without changing the remembered child', () => {

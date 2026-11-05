@@ -7,7 +7,7 @@ import {
   type RasterLayerSpec,
 } from '../../../map-layers';
 import { type RenderTarget, targetKey } from '../../preview-targets';
-import type { MapBaseLayerId, SpatialMask } from '../../types';
+import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
 import { type LayerTile, MapLayer, type MapSize, type TileReporter } from '../layer';
 
 /** Progressive raster drawing splits the frame into this many tiles per axis. */
@@ -42,7 +42,8 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     size: MapSize,
     value: unknown,
     private readonly clipMask?: SpatialMask,
-    geometry?: SmoothGeometry
+    geometry?: SmoothGeometry,
+    info: MapInfo = {}
   ) {
     super(spec.id, size);
     this.data = validateRasterData(spec, size, value);
@@ -52,7 +53,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     if (clipMask && (clipMask.size.width !== size.width || clipMask.size.height !== size.height)) {
       throw new Error(`Layer "${spec.id}" received an invalid clip mask size.`);
     }
-    this.writePixel = compilePalette(spec.palette);
+    this.writePixel = compilePalette(spec.paletteFromInfo?.(info) ?? spec.palette);
     const boundary = resolveBoundary(spec, geometry);
     const mode = smoothMode(spec, boundary);
     this.smoothInterior = mode !== 'clipped';

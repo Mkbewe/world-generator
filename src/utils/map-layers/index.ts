@@ -12,6 +12,7 @@ export {
   HEAT_ZONE_COLORS,
   heatZoneColor,
   HEIGHTMAP_STOPS,
+  MOISTURE_STOPS,
   regionColor,
   validatePalette,
 } from './palettes/palettes';
