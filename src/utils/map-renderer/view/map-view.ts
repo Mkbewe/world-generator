@@ -24,6 +24,7 @@ import {
 import {
   type MapBaseLayerId,
   type MapOverlayId,
+  OVERLAY_BASE_LAYERS,
   OVERLAY_IDS,
   OVERLAY_LAYERS,
   type SpatialMask,
@@ -100,6 +101,7 @@ export class MapView {
   }
 
   get overlayOptions() {
+    const suppressed = this.suppressedOverlayIds();
     return OVERLAY_IDS.map(id => {
       const source = OVERLAY_LAYERS[id].source;
       return {
@@ -107,6 +109,7 @@ export class MapView {
         label: OVERLAY_LAYERS[id].label,
         available: id === 'world-boundary' ? this.mask !== undefined : this.hasOverlayData(source),
         visible: this.overlays.isVisible(id),
+        disabled: suppressed.has(id),
       };
     });
   }
@@ -289,7 +292,28 @@ export class MapView {
   }
 
   private renderOverlays(): void {
-    this.overlays.render(this.mask, this.shape, this.view, this.overlayData, this.overlayInfo);
+    this.overlays.render(
+      this.mask,
+      this.shape,
+      this.view,
+      this.overlayData,
+      this.overlayInfo,
+      this.suppressedOverlayIds()
+    );
+  }
+
+  private suppressedOverlayIds(): ReadonlySet<MapOverlayId> {
+    const layer = this.presented?.id;
+    const suppressed = new Set<MapOverlayId>();
+    if (!layer) {
+      return suppressed;
+    }
+    for (const id of OVERLAY_IDS) {
+      if (OVERLAY_BASE_LAYERS[id] === layer) {
+        suppressed.add(id);
+      }
+    }
+    return suppressed;
   }
 
   private hasOverlayData(source: string): boolean {
@@ -346,6 +370,7 @@ export class MapView {
     this.presented = layer;
     this.presenter.show(layer);
     this.presenter.ensure(layer);
+    this.renderOverlays();
   }
 
   private canvasSize(): { width: number; height: number } {
