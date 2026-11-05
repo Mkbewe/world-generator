@@ -43,7 +43,7 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const activeTab = useViewSyncStore(state => state.settingsTab);
   const setSettingsTab = useViewSyncStore(state => state.setSettingsTab);
-  const formTabs: Record<MapBaseLayerId, Omit<VerticalTabItem, 'value'>> = {
+  const formTabs: Partial<Record<MapBaseLayerId, Omit<VerticalTabItem, 'value'>>> = {
     'world-shape': {
       label: 'World shape',
       icon: <GlobeIcon />,
@@ -81,8 +81,11 @@ export function SettingsPanel({
       icon: <GearIcon />,
       content: <GeneralForm seed={seed} onSeedChange={onSeedChange} />,
     },
-    // Form tabs follow the layer catalog order.
-    ...LAYER_CATALOG.map(layer => ({ value: layer.id, ...formTabs[layer.id] })),
+    // Form tabs follow the layer catalog order; layers without a form are skipped.
+    ...LAYER_CATALOG.flatMap(layer => {
+      const form = formTabs[layer.id];
+      return form ? [{ value: layer.id, ...form }] : [];
+    }),
   ];
 
   const handleTabChange = (value: string): void => {

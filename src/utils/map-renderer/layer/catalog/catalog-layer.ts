@@ -294,6 +294,11 @@ function validateRasterData(
       throw new Error(`Invalid ${sourceName(spec.source)}.`);
     }
     data = value;
+  } else if (spec.dataType === 'int16') {
+    if (!(value instanceof Int16Array)) {
+      throw new Error(`Invalid ${sourceName(spec.source)}.`);
+    }
+    data = value;
   } else {
     if (!(value instanceof Float32Array)) {
       throw new Error(`Invalid ${sourceName(spec.source)}.`);

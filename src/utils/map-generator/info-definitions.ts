@@ -1,5 +1,6 @@
+import { DEFAULT_BASE_CLIMATE_CONFIG } from './stages/base-climate/defaults';
 import { DEFAULT_MACRO_REGIONS } from './stages/macro-region/defaults';
-import type { MacroRegionGeometry, MapConfig } from './types';
+import type { HeatZoneClass, MacroRegionGeometry, MapConfig } from './types';
 
 /** Non-raster facts derived from the generation config, not from a stage raster. */
 export type ConfigMapInfo = Readonly<Record<string, unknown>>;
@@ -12,6 +13,13 @@ export interface MacroRegionInfo {
   readonly kind: MacroRegionGeometry['kind'];
   /** Normalized start and end: radius for rings, axis position for bands. */
   readonly range: readonly [number, number];
+}
+
+/** What the preview knows about one heat zone; indexed like `heatZoneMap`. */
+export interface HeatZoneInfo {
+  readonly id: string;
+  readonly label: string;
+  readonly thermal: HeatZoneClass;
 }
 
 interface InfoSpec {
@@ -33,6 +41,15 @@ export const MAP_INFO_CATALOG = [
       })),
   },
   {
+    source: 'heatZoneInfo',
+    select: (config: MapConfig) =>
+      (config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG).zones.map(zone => ({
+        id: zone.id,
+        label: zone.label,
+        thermal: zone.thermal,
+      })),
+  },
+  {
     source: 'worldDimensions',
     select: (config: MapConfig) => config.world.dimensions,
   },
@@ -43,6 +60,24 @@ function geometryRange(geometry: MacroRegionGeometry): readonly [number, number]
     return [geometry.innerRadius, geometry.outerRadius];
   }
   return [geometry.center - geometry.width / 2, geometry.center + geometry.width / 2];
+}
+
+/** Narrows one persisted heat-zone entry. */
+export function isHeatZoneInfo(value: unknown): value is HeatZoneInfo {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const { id, label, thermal } = value as Record<string, unknown>;
+  return (
+    typeof id === 'string' &&
+    typeof label === 'string' &&
+    (thermal === 'cold' || thermal === 'temperate' || thermal === 'warm')
+  );
+}
+
+/** Narrows a validated heat-zone list; indices stay stable for `heatZoneMap`. */
+export function isHeatZoneInfoList(value: unknown): value is readonly HeatZoneInfo[] {
+  return Array.isArray(value) && value.every(isHeatZoneInfo);
 }
 
 /** Selects every configured map info entry present in the given config. */

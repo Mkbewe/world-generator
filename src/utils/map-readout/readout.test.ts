@@ -29,6 +29,19 @@ describe('readoutItems', () => {
     expect(readoutItems(undefined).map(value => value.value)).toEqual(['—', '—']);
   });
 
+  it('shows the heat zone under the pointer when the overlay reports one', () => {
+    const items = readoutItems({
+      ...readout(),
+      overlay: { overlayId: 'heat-zones', label: 'Heat zone', value: 'Temperate north' },
+    });
+
+    expect(items).toContainEqual({
+      id: 'overlay',
+      label: 'Heat zone',
+      value: 'Temperate north',
+    });
+  });
+
   it('shows cell coordinates as an X/Y row without a distance', () => {
     const items = readoutItems(readout());
 

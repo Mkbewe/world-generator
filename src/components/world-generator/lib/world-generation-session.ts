@@ -200,6 +200,7 @@ export class WorldGenerationSession {
     if (!renderer || renderer.signal.aborted) {
       return;
     }
+    renderer.setOverlayData(this.layers);
     this.send(renderer, rasters);
   }
 
@@ -224,11 +225,13 @@ export class WorldGenerationSession {
       run.dimensionsMeters
     );
     renderer.setInfo(run.info ?? {});
+    renderer.setOverlayData(this.layers);
   }
 
   /** Replays collected layers without walking the preview through each of them. */
   private replay(renderer: MapRenderer): void {
     const values: LayerDataRecord = this.layers;
+    renderer.setOverlayData(values);
     const ids = layerRegistry.presentIn(values);
     for (const [index, id] of ids.entries()) {
       const silent = index < ids.length - 1;

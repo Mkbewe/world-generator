@@ -6,8 +6,11 @@ export {
 } from './catalog/catalog';
 export {
   compilePalette,
+  BASE_CLIMATE_ZONE_COLORS,
   GEOLOGY_REGION_PALETTES,
   geologyRegionColor,
+  HEAT_ZONE_COLORS,
+  heatZoneColor,
   HEIGHTMAP_STOPS,
   regionColor,
   validatePalette,

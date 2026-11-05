@@ -35,6 +35,7 @@ export interface MapSnapshotData extends MapSize, MapMetadata {
 
 export const OVERLAY_LAYERS = {
   'world-boundary': { label: 'World boundary', source: 'world-shape' },
+  'heat-zones': { label: 'Heat zones', source: 'heatZoneMap' },
 } as const;
 
 export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
@@ -77,6 +78,13 @@ export type MapInspection = RasterMapInspection | VectorMapInspection;
 
 export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
   visible: boolean;
+}
+
+/** Named overlay value under the pointer, e.g. the BaseClimate heat zone. */
+export interface MapOverlayInspection {
+  readonly overlayId: MapOverlayId;
+  readonly label: string;
+  readonly value: string;
 }
 
 export interface LayerLeafNode<TId extends string = MapBaseLayerId> {

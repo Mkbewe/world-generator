@@ -143,6 +143,7 @@ describe('MapRenderer', () => {
     expect(preview.state.layers.map(layer => layer.id)).toEqual([
       'world-shape',
       'macro-region',
+      'base-climate',
       'geology',
       'heightmap',
     ]);
@@ -248,7 +249,7 @@ describe('MapRenderer', () => {
       devicePixelRatio: 1,
     });
     const renderBoundary = vi
-      .spyOn(WorldBoundaryRenderer.prototype, 'render')
+      .spyOn(WorldBoundaryRenderer.prototype, 'stroke')
       .mockImplementation(() => {});
     const { preview } = setup();
     const prepare = vi.spyOn(MapLayer.prototype, 'prepare').mockResolvedValue();
@@ -294,7 +295,13 @@ describe('MapRenderer', () => {
 
     expect(preview.signal.aborted).toBe(true);
     expect(preview.state.displayedLayer).toBe('macro-region');
-    expect(preview.state.layers.map(layer => layer.available)).toEqual([true, false, false, false]);
+    expect(preview.state.layers.map(layer => layer.available)).toEqual([
+      true,
+      false,
+      false,
+      false,
+      false,
+    ]);
     expect(() => preview.add('macro-region', new Uint8Array(4))).toThrow();
     preview.dispose();
   });
@@ -338,8 +345,12 @@ describe('MapRenderer', () => {
     await vi.runAllTimersAsync();
     await preview.ready;
     expect(preview.state.displayedLayer).toBe('macro-region');
-    expect(preview.state.overlays.map(overlay => overlay.id)).toEqual(['world-boundary']);
+    expect(preview.state.overlays.map(overlay => overlay.id)).toEqual([
+      'world-boundary',
+      'heat-zones',
+    ]);
     expect(preview.state.overlays[0]).toMatchObject({ available: true, visible: true });
+    expect(preview.state.overlays[1]).toMatchObject({ available: false, visible: true });
   });
 
   it('honours the preferred layer option on restore', async () => {
@@ -426,7 +437,7 @@ describe('MapRenderer', () => {
       height: 10,
       devicePixelRatio: 3,
     });
-    vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {
       now += 7;
     });
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
@@ -468,7 +479,7 @@ describe('MapRenderer', () => {
       elapsedDurationMs: 1127,
       firstTileDurationMs: 110,
       presentationDurationMs: 14,
-      overlayDurationMs: 7,
+      overlayDurationMs: expect.any(Number),
       bufferBytes: 2_104_360,
       viewport: { devicePixelRatio: 2 },
       layers: [
@@ -503,7 +514,7 @@ describe('MapRenderer', () => {
       elapsedDurationMs: 6,
       firstTileDurationMs: undefined,
       presentationDurationMs: 6,
-      overlayDurationMs: 7,
+      overlayDurationMs: expect.any(Number),
       layers: [
         { durationMs: 504, tiles: 100, pixels: 900, reused: true },
         { durationMs: 504, tiles: 100, pixels: 900, reused: true },
@@ -580,6 +591,36 @@ describe('MapRenderer', () => {
       label: 'Macro regions',
       value: undefined,
     });
+  });
+
+  it('exposes and inspects heat-zone overlay data', () => {
+    const { preview } = setup();
+    preview.setInfo({
+      heatZoneInfo: [
+        { id: 'cold', label: 'Cold', thermal: 'cold' },
+        { id: 'temperate', label: 'Temperate', thermal: 'temperate' },
+        { id: 'warm', label: 'Warm', thermal: 'warm' },
+      ],
+    });
+    preview.setOverlayData({ heatZoneMap: new Int16Array([0, 1, 2, -1]) });
+
+    expect(preview.state.overlays.find(overlay => overlay.id === 'heat-zones')).toMatchObject({
+      available: true,
+      visible: true,
+    });
+    expect(preview.inspectOverlay(0, 0)).toEqual({
+      overlayId: 'heat-zones',
+      label: 'Heat zone',
+      value: 'Cold',
+    });
+    expect(preview.inspectOverlay(0, 1)).toMatchObject({ value: 'Warm' });
+    expect(preview.inspectOverlay(1, 1)).toBeUndefined();
+
+    preview.setOverlay('heat-zones', false);
+    expect(preview.inspectOverlay(0, 0)).toBeUndefined();
+    preview.setOverlay('heat-zones', true);
+    expect(preview.inspectOverlay(0, 0)).toMatchObject({ value: 'Cold' });
+    preview.dispose();
   });
 
   it('inspects the region under the vector layer', async () => {

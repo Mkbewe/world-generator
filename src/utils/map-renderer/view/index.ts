@@ -1,3 +1,4 @@
+export { HeatZoneOverlayRenderer, paintHeatZonePixels } from './overlay/heat-zone-overlay-renderer';
 export { MapView } from './map-view';
 export type { MapViewElements } from './map-view';
 export { pointerAnchor, samplePointer } from '../pointer-sampling';

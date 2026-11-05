@@ -1,4 +1,4 @@
-import type { GeologicalRegionType } from '../../map-generator/types';
+import type { GeologicalRegionType, HeatZoneClass } from '../../map-generator/types';
 import type { Color, DiscreteOverflow, PaletteSpec, RampStop } from '../catalog/layer-spec';
 
 export type PixelWriter = (pixels: Uint8ClampedArray, offset: number, value: number) => void;
@@ -90,6 +90,29 @@ export const HEIGHTMAP_STOPS = [
   { at: 700, color: [150, 150, 150] },
   { at: 1000, color: [240, 240, 240] },
 ] as const satisfies readonly RampStop[];
+
+/** Translucent overlay colours of the BaseClimate thermal classes. */
+export const HEAT_ZONE_COLORS: Readonly<Record<HeatZoneClass, Color>> = {
+  cold: [64, 130, 200],
+  temperate: [112, 178, 96],
+  warm: [224, 116, 64],
+};
+
+export function heatZoneColor(thermal: HeatZoneClass): Color {
+  return HEAT_ZONE_COLORS[thermal];
+}
+
+/** Qualitative zone-index colors for the BaseClimate preview layer. */
+export const BASE_CLIMATE_ZONE_COLORS = [
+  [64, 130, 200],
+  [112, 178, 96],
+  [224, 116, 64],
+  [156, 120, 196],
+  [80, 170, 160],
+  [210, 160, 80],
+  [120, 148, 196],
+  [190, 110, 130],
+] as const satisfies readonly Color[];
 
 const UNKNOWN_COLOR = [120, 120, 120] as const satisfies Color;
 

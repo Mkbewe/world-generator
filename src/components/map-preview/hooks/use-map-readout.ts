@@ -87,6 +87,7 @@ export function useMapReadout(
       setReadout({
         position,
         inspection: rendererRef.current?.inspect(position.x, position.y),
+        overlay: rendererRef.current?.inspectOverlay(position.x, position.y),
       });
     },
     [rendererRef]
@@ -103,7 +104,7 @@ export function useMapReadout(
     if (position && rendererRef.current?.currentSize) {
       refreshReadout(position);
     }
-  }, [pinned, preview.displayedLayer, refreshReadout, rendererRef]);
+  }, [pinned, preview.displayedLayer, preview.overlays, refreshReadout, rendererRef]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

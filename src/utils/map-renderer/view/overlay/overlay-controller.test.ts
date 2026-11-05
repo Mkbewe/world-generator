@@ -1,8 +1,9 @@
+import { HeatZoneOverlayRenderer } from './heat-zone-overlay-renderer';
 import { OverlayController } from './overlay-controller';
-import { fitView } from './view-transform';
-import type { SpatialMask } from '../types';
-import { Viewport } from '../viewport';
-import { WorldBoundaryRenderer } from '../world-boundary-renderer';
+import type { SpatialMask } from '../../types';
+import { Viewport } from '../../viewport';
+import { WorldBoundaryRenderer } from '../../world-boundary-renderer';
+import { fitView } from '../view-transform';
 
 function setup() {
   const viewport = new Viewport(document.createElement('div'), vi.fn());
@@ -20,7 +21,7 @@ describe('OverlayController', () => {
       height: 10,
       devicePixelRatio,
     });
-    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
+    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
     controller.render(world, 'disc', fitView());
@@ -49,8 +50,77 @@ describe('OverlayController', () => {
     const controller = setup();
 
     expect(controller.isVisible('world-boundary')).toBe(true);
+    expect(controller.isVisible('heat-zones')).toBe(true);
     controller.setVisible('world-boundary', false);
+    controller.setVisible('heat-zones', false);
     expect(controller.isVisible('world-boundary')).toBe(false);
+    expect(controller.isVisible('heat-zones')).toBe(false);
+  });
+
+  it('draws heat zones over the boundary when their data is available', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      save: vi.fn(),
+      restore: vi.fn(),
+      clearRect: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const drawZones = vi
+      .spyOn(HeatZoneOverlayRenderer.prototype, 'render')
+      .mockImplementation(() => {});
+    const controller = setup();
+    const world: SpatialMask = {
+      size: { width: 1, height: 1 },
+      contains: () => true,
+    };
+    const map = new Int16Array([0]);
+    const info = {
+      heatZoneInfo: [{ id: 'cold', label: 'Cold', thermal: 'cold' as const }],
+    };
+
+    controller.render(world, 'disc', fitView(), { heatZoneMap: map }, info);
+
+    expect(drawZones).toHaveBeenCalledWith(
+      expect.objectContaining({
+        world,
+        view: fitView(),
+        data: { heatZoneMap: map },
+        info,
+        viewport: { width: 10, height: 10, devicePixelRatio: 1 },
+      })
+    );
+  });
+
+  it('does not draw hidden heat zones', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
+    const drawZones = vi
+      .spyOn(HeatZoneOverlayRenderer.prototype, 'render')
+      .mockImplementation(() => {});
+    const controller = setup();
+    const world: SpatialMask = {
+      size: { width: 1, height: 1 },
+      contains: () => true,
+    };
+
+    controller.setVisible('heat-zones', false);
+    controller.render(
+      world,
+      'disc',
+      fitView(),
+      { heatZoneMap: new Int16Array([0]) },
+      { heatZoneInfo: [{ id: 'cold', label: 'Cold', thermal: 'cold' as const }] }
+    );
+
+    expect(drawZones).not.toHaveBeenCalled();
   });
 
   it('renders the boundary only when a world and viewport are available', () => {
@@ -59,7 +129,7 @@ describe('OverlayController', () => {
       height: 10,
       devicePixelRatio: 1,
     });
-    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
+    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
     const clear = vi.spyOn(WorldBoundaryRenderer.prototype, 'clear').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
@@ -88,7 +158,7 @@ describe('OverlayController', () => {
       height: 10,
       devicePixelRatio: 3,
     });
-    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
+    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
     controller.render(world, 'disc', fitView());
@@ -110,7 +180,7 @@ describe('OverlayController', () => {
   it('redraws after hiding, losing the viewport and resetting', () => {
     const viewport = { width: 10, height: 10, devicePixelRatio: 1 };
     const measure = vi.spyOn(Viewport.prototype, 'measure').mockReturnValue(viewport);
-    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'render').mockImplementation(() => {});
+    const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
     controller.render(world, 'disc', fitView());
@@ -134,7 +204,7 @@ describe('OverlayController', () => {
       devicePixelRatio: 1,
     });
     const render = vi
-      .spyOn(WorldBoundaryRenderer.prototype, 'render')
+      .spyOn(WorldBoundaryRenderer.prototype, 'stroke')
       .mockImplementationOnce(() => {
         throw new Error('Drawing failed');
       })

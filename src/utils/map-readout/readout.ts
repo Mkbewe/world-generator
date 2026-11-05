@@ -6,6 +6,7 @@ import type {
   MapBaseLayerId,
   MapInfo,
   MapInspection,
+  MapOverlayInspection,
   RasterMapInspection,
   VectorMapInspection,
 } from '../map-renderer';
@@ -23,6 +24,7 @@ export interface PointerSample {
 export interface InspectorReadout {
   readonly position: PointerSample;
   readonly inspection?: MapInspection;
+  readonly overlay?: MapOverlayInspection;
 }
 
 /** Ordered map points of a measurement; the preview is the next segment. */
@@ -87,6 +89,9 @@ export function readoutItems(
     },
     ...(measured ? [measured] : []),
     ...inspectionItems(inspection, info),
+    ...(readout?.overlay
+      ? [{ id: 'overlay', label: readout.overlay.label, value: readout.overlay.value }]
+      : []),
   ];
   return options.actions === false ? items.filter(item => item.action === undefined) : items;
 }
