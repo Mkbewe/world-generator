@@ -1,4 +1,5 @@
 import { REGION_SHAPES, type RegionShape } from './region-shape';
+import { clamp01 } from '../../../../math';
 import type { GeologicalRegionType, HeatZoneClass } from '../../../types';
 
 type RegionShapeOverride = Partial<RegionShape>;
@@ -157,7 +158,7 @@ export function regionShapeFor(
   if (!variant) {
     return base;
   }
-  const coupling = clampUnit(geologyCoupling);
+  const coupling = clamp01(geologyCoupling);
   if (coupling === 0) {
     return base;
   }
@@ -199,8 +200,4 @@ function shiftShape(
     chuteStrength: blend(base.chuteStrength, variant.chuteStrength),
     oceanFloorShare: blend(base.oceanFloorShare, variant.oceanFloorShare),
   };
-}
-
-function clampUnit(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

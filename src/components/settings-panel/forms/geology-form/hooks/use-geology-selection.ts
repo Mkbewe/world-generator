@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useViewSyncStore } from '../../../../../stores';
 import { defaultRegionConfig } from '../../../../../utils/map-generator/stages/geology';
 import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
+import { regionId, regionIndex } from '../../lib/region-id';
 
 export interface GeologySelection {
   readonly selectedIndex: number;
@@ -21,7 +22,7 @@ export function useGeologySelection(
   const selectedRegionId = useViewSyncStore(state => state.selectedRegionId);
   const setSelectedRegion = useViewSyncStore(state => state.setSelectedRegion);
   const selectedIndex = activeIndex(selectedRegionId, regionCount);
-  const activeRegionId = `region-${selectedIndex + 1}`;
+  const activeRegionId = regionId(selectedIndex);
 
   useEffect(() => {
     if (selectedRegionId !== undefined && selectedRegionId !== activeRegionId) {
@@ -32,13 +33,12 @@ export function useGeologySelection(
   return {
     selectedIndex,
     region: slots[selectedIndex] ?? defaultRegionConfig(),
-    selectRegion: index => setSelectedRegion(`region-${index + 1}`),
+    selectRegion: index => setSelectedRegion(regionId(index)),
   };
 }
 
 /** Region the form edits: the selected one, or the first when it is out of range. */
-function activeIndex(regionId: string | undefined, count: number): number {
-  const match = regionId ? /^region-(\d+)$/.exec(regionId) : null;
-  const index = match ? Number(match[1]) - 1 : 0;
+function activeIndex(id: string | undefined, count: number): number {
+  const index = regionIndex(id) ?? 0;
   return index >= 0 && index < count ? index : 0;
 }

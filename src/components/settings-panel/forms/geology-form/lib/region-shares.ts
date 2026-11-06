@@ -4,12 +4,13 @@ import {
 } from '../../../../../utils/map-generator/stages/geology';
 import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
+import { regionId } from '../../lib/region-id';
 
 /** Areas shown by the geology bar; together they always make up the whole world. */
 export function regionShares(regions: readonly GeologicalRegionConfig[]): DistributionSegment[] {
   const total = regions.reduce((sum, region) => sum + region.size, 0) || 1;
   return regions.map((region, index) => ({
-    id: `region-${index + 1}`,
+    id: regionId(index),
     percent: (region.size / total) * 100,
   }));
 }

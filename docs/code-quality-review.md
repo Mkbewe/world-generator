@@ -227,3 +227,48 @@ jest jawnie typowana. Jeśli coś, to dopiero po realnym profilowaniu.
 - Brak `console.log`, TODO i komentarza z zamkniętym kodem; są dwa `console.warn`
   w `feature-flags-context.tsx` (dozwolone przez `no-console`) i jeden
   `eslint-disable` w `legacy-generator/world-controls.tsx`.
+
+## 12. Status realizacji #506
+
+Gałąź `refactor/506-code-quality-review`. `pnpm run check:all` przechodzi;
+zachowanie generatora dla tego samego seeda i konfiguracji jest bez zmian.
+
+Zrobione:
+
+- priorytet 7: dodane `space.test.ts` oraz unit testy `relief/profiles`,
+  `relief/compose` i `relief/stamping` (41 testów);
+- priorytet 2: usunięte martwe API (`traceErodedWorldBoundary`,
+  `PipelineWorkerRequest`, aliasy eventów w `map-generator/index.ts`,
+  `sampleSize`, `cellCenterMeters`, `metersToNormalized`, `metersToCell`,
+  `normalizedToMeters`, `normalizedToCell`, `MapView.zoomed`,
+  `AREA_COMPENSATION`, `signedBand`); `cellToCanvas`, `geologyCoupling`
+  i `BASE_CLIMATE_PRESETS` są realnie używane, więc zostały;
+- priorytet 2: `boundary-model` i katalog presetów macro-region przeniesione do
+  `components/settings-panel/forms/macro-region-form/lib`; generator nie
+  re-eksportuje już kodu formularza;
+- priorytet 1: `clamp01` w `utils/math.ts`, wspólny `percent`, wspólny
+  `formatDurationShort`, `matchesSize`, `useEscapeKey`, `projectWithPadding`,
+  `regionId`; kopia `createYieldToBrowser` usunięta;
+- priorytet 3: stabilne handlery i `useMemo` w `map-preview`, `SettingsPanel`
+  czyta seed i kształt świata sam, `MapCanvas` i `LayerTabs` są `memo`;
+- priorytet 6 (część): wspólny `projectWithPadding` dla overlayów; decyzja
+  o `currentsForLayout('vertical')` udokumentowana testem (centra się
+  odbijają, kierunek wiru zostaje);
+- priorytet 8: `eslint-plugin-boundaries` pilnuje kierunku generator ←
+  renderer ← UI; generator nie może importować warstw, renderera ani UI,
+  renderer nie może importować UI, a warstwy i readout nie mogą importować
+  renderera/UI (readout może czytać typy renderera).
+
+Odłożone z jawnym powodem:
+
+- `cellAtPixel`, flood fill, `regionBorderDistances`, geometria ring/band
+  i border warp — wspólny helper wymaga zmiany kontraktu geometrii; odkładane
+  do osobnego PR, żeby nie mieszać go z dedupem;
+- `GeologyStage reads: ['worldMask']` — wymaga przeciągnięcia maski przez
+  `buildGeologyPlan` do `createRegionPartition` i aktualizacji testów
+  partycji; kontrakt bez fallbacku, więc osobny PR;
+- podział `OVERLAY_LAYERS`, provider mapy zamiast `switch`, walidatory przy
+  typach — osobny PR kontraktowy;
+- split `readout.ts` i `use-map-readout.ts` oraz dom sesji generacji —
+  osobny PR (limity 150/200);
+- `legacy-generator` — decyzja: zostaje do odwołania (patrz roadmapa).

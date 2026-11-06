@@ -10,11 +10,11 @@ import {
   MIN_RELIEF,
 } from '../../../../utils/map-generator/stages/heightmap';
 import { geologyRegionColor } from '../../../../utils/map-layers';
+import { percent } from '../../../lib/percent';
 import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';
 import { useGeologySelection } from '../geology-form/hooks/use-geology-selection';
-
-const percent = (value: number): string => `${Math.round(value * 100)}%`;
+import { regionId } from '../lib/region-id';
 
 /** Global heightmap settings and the terrain sliders of every region. */
 export function HeightmapForm(): React.JSX.Element {
@@ -26,7 +26,7 @@ export function HeightmapForm(): React.JSX.Element {
   const regionCount = useGeologyFormStore(state => state.regionCount);
   const slots = useGeologyFormStore(state => state.slots);
   const tabItems: readonly RegionTabItem[] = slots.slice(0, regionCount).map((slot, index) => ({
-    id: `region-${index + 1}`,
+    id: regionId(index),
     label: `Region ${index + 1}`,
     color: geologyRegionColor(slot.type, index),
   }));

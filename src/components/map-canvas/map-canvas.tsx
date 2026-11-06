@@ -1,4 +1,5 @@
 import {
+  memo,
   type MouseEventHandler,
   type PointerEventHandler,
   type ReactNode,
@@ -35,7 +36,7 @@ interface MapCanvasProps {
   children?: ReactNode;
 }
 
-export function MapCanvas({
+export const MapCanvas = memo(function MapCanvas({
   wrapperRef,
   canvasRef,
   overlayRef,
@@ -94,4 +95,4 @@ export function MapCanvas({
       </div>
     </div>
   );
-}
+});

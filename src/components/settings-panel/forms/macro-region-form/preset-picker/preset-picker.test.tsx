@@ -4,11 +4,8 @@ import userEvent from '@testing-library/user-event';
 
 import { PresetPicker } from './preset-picker';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../../stores';
-import {
-  baseRegions,
-  overlayRegions,
-} from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
-import { macroRegionPreset } from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
+import { baseRegions, overlayRegions } from '../lib/boundary-model';
+import { macroRegionPreset } from '../lib/presets';
 
 function renderPicker() {
   render(

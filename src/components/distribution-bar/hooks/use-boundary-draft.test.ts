@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 
 import { useBoundaryDraft } from './use-boundary-draft';
-import { clampBoundaries } from '../../../utils/map-generator/stages/macro-region/editor/boundary-model';
+import { clampBoundaries } from '../../settings-panel/forms/macro-region-form/lib/boundary-model';
 
 const REGION_COUNT = 4;
 

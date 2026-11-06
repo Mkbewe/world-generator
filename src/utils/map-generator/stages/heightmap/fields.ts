@@ -1,3 +1,5 @@
+import { clamp01 } from '../../../math';
+
 /** Land amplitude range, in metres, across worlds and the relief slider. */
 export const MIN_LAND_AMPLITUDE_METERS = 40;
 export const MAX_LAND_AMPLITUDE_METERS = 1200;
@@ -14,8 +16,4 @@ export function landAmplitudeMeters(worldSizeMeters: number, relief: number): nu
     MIN_LAND_AMPLITUDE_METERS +
     (MAX_LAND_AMPLITUDE_METERS - MIN_LAND_AMPLITUDE_METERS) * lean * scale
   );
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

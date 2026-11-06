@@ -1,9 +1,9 @@
 import { Flex, Text } from '@radix-ui/themes';
 
-import { MIN_MACRO_REGION_SHARE } from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import { type BoundaryDraft, DistributionBar } from '../../../../distribution-bar';
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
 import type { ShareCopy } from '../../lib/share-copy';
+import { MIN_MACRO_REGION_SHARE } from '../lib/boundary-model';
 
 interface RegionDistributionProps {
   segments: readonly DistributionSegment[];

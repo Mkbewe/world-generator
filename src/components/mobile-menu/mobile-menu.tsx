@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Flex } from '@radix-ui/themes';
 
-import { useEscapeClose } from './hooks/use-escape-close';
 import { MenuDrawer } from './menu-drawer';
 import { MenuTrigger } from './menu-trigger';
+import { useEscapeKey } from '../../hooks/use-escape-key';
 
 interface MobileMenuProps {
   onToggleTheme?: () => void;
@@ -12,7 +12,7 @@ interface MobileMenuProps {
 
 export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  useEscapeClose(isOpen, () => setIsOpen(false));
+  useEscapeKey(isOpen, () => setIsOpen(false));
 
   return (
     <Flex display={{ initial: 'flex', sm: 'none' }}>

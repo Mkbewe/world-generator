@@ -1,8 +1,6 @@
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
 import { compilePalette, MOISTURE_STOPS } from '../../../map-layers';
-import { presentationPadding } from '../../preview-targets';
-import { effectivePixelRatio } from '../../viewport';
-import { project } from '../view-transform';
+import { projectWithPadding } from '../../preview-targets';
 
 /** Alpha of the moisture tint over the base map. */
 const MOISTURE_ALPHA = 125;
@@ -34,16 +32,11 @@ export class MoistureOverlayRenderer implements OverlayRenderer {
     if (!context) {
       throw new Error('Overlay canvas is not available.');
     }
-    const ratio = effectivePixelRatio(frame.viewport.devicePixelRatio);
-    const padding = presentationPadding(
-      { width: frame.canvas.width, height: frame.canvas.height },
-      ratio
-    );
-    const projection = project(
+    const projection = projectWithPadding(
       frame.view,
-      { width: frame.canvas.width, height: frame.canvas.height },
       frame.world.size,
-      padding
+      { width: frame.canvas.width, height: frame.canvas.height },
+      frame.viewport.devicePixelRatio
     );
 
     context.save();

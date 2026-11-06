@@ -3,17 +3,17 @@ import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
 import { MAX_MACRO_REGIONS } from '../../../../../utils/map-generator/stages/macro-region/defaults';
-import {
-  baseRegions,
-  clampBoundaries,
-  regionBoundaries,
-  regionSegments,
-} from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import { regionColor } from '../../../../../utils/map-layers';
 import { useBoundaryDraft } from '../../../../distribution-bar';
 import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { macroRegionShareCopy } from '../../lib/share-copy';
 import { useMacroRegionSelection } from '../hooks/use-macro-region-selection';
+import {
+  baseRegions,
+  clampBoundaries,
+  regionBoundaries,
+  regionSegments,
+} from '../lib/boundary-model';
 import { BaseRegionCard } from '../region-card';
 import { RegionDistribution } from '../region-distribution';
 

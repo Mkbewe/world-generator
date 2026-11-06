@@ -1,4 +1,5 @@
 import type { IslandForm, RegionFormsInput } from './forms';
+import { clamp01 } from '../../../../math';
 import type { SeededRandom } from '../../../random';
 import type { WorldSpace } from '../../../space';
 import type { WorldPoint } from '../../../types';
@@ -277,8 +278,4 @@ function cellPoint(index: number, space: WorldSpace): WorldPoint {
 function pickCell(stream: SeededRandom, cells: readonly number[]): number {
   const pick = Math.min(cells.length - 1, Math.floor(stream.next() * cells.length));
   return cells[Math.max(0, pick)] ?? 0;
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

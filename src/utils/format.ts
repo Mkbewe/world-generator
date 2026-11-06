@@ -62,6 +62,11 @@ export function formatDuration(ms: number | undefined): string {
   return ms < 1000 ? `${ms.toFixed(1)} ms` : `${(ms / 1000).toFixed(2)} s`;
 }
 
+/** Coarser duration for live progress: whole milliseconds, one decimal of a second. */
+export function formatDurationShort(ms: number): string {
+  return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
+}
+
 export function formatMetric(value: number | string, descriptor: MetricDescriptor): string {
   if (typeof value === 'string') {
     return value;

@@ -1,6 +1,11 @@
 import type { RenderTarget } from './render-target';
 import type { MapSize } from '../layer';
-import { type CanvasSize, project, type ViewTransform } from '../view/view-transform';
+import {
+  type CanvasSize,
+  type MapProjection,
+  project,
+  type ViewTransform,
+} from '../view/view-transform';
 import { effectivePixelRatio, type ViewportSize } from '../viewport';
 
 /** Layer buffers extend this far beyond the viewport per axis, so gestures have spare map. */
@@ -12,6 +17,17 @@ export const PRESENTATION_MARGIN = 4;
 /** Margin in device pixels for a canvas at the given scale, capped for tiny canvases. */
 export function presentationPadding(canvas: CanvasSize, scale: number): number {
   return Math.min(PRESENTATION_MARGIN * scale, canvas.width * 0.1, canvas.height * 0.1);
+}
+
+/** Projection of a canvas that keeps the boundary margin around the world. */
+export function projectWithPadding(
+  view: ViewTransform,
+  size: MapSize,
+  canvas: CanvasSize,
+  devicePixelRatio: number
+): MapProjection {
+  const ratio = effectivePixelRatio(devicePixelRatio);
+  return project(view, canvas, size, presentationPadding(canvas, ratio));
 }
 
 /** Presentation canvas size in device pixels, or the raster size before the first measurement. */

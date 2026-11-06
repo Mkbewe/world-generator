@@ -18,8 +18,8 @@ const STAGE_FACTORIES: Readonly<
   'world-shape': () => new WorldShapeStage(),
   'macro-region': () => new MacroRegionStage(),
   'base-climate': () => new BaseClimateStage(),
-  geology: () => new GeologyStage(),
-  heightmap: () => new HeightmapStage(),
+  'geology': () => new GeologyStage(),
+  'heightmap': () => new HeightmapStage(),
 };
 
 export function createMapGenerator(): MapGenerator<MapConfig, MapState, PipelineStageId> {

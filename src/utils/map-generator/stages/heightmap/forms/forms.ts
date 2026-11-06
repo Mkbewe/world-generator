@@ -1,4 +1,5 @@
 import { mainCentre, nextCentre } from './placement';
+import { clamp01 } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
 import type { RandomFactory, SeededRandom } from '../../../random';
 import type { WorldSpace } from '../../../space';
@@ -81,10 +82,9 @@ export interface RegionFormsInput {
   readonly amplitudeMeters: number;
 }
 
-/** Land area drawn from the slider, and the compensation for overlapping forms. */
+/** Land area drawn from the slider. */
 const LAND_SHARE_FLOOR = 0.03;
 const LAND_SHARE_RANGE = 0.97;
-const AREA_COMPENSATION = 1;
 /** The biggest island of a region, as a share of the region's square root. */
 const MAX_RADIUS_SHARE = 0.2;
 /** Below this land share the form count shrinks to avoid tiny specks. */
@@ -263,10 +263,7 @@ function formRadii(
   return weights.map(weight =>
     Math.min(
       maxRadius,
-      Math.max(
-        MIN_ISLAND_RADIUS_METERS,
-        Math.sqrt((targetLandArea * weight * AREA_COMPENSATION) / Math.PI)
-      )
+      Math.max(MIN_ISLAND_RADIUS_METERS, Math.sqrt((targetLandArea * weight) / Math.PI))
     )
   );
 }
@@ -449,8 +446,4 @@ function islandRelief(
   const mountainousness = clamp01(terrain.mountainousness);
   const mountainFactor = mountainousness * Math.pow(stream.next(), 1.6 - 1.1 * mountainousness);
   return { relief: 0.08 + 1.25 * mountainFactor, mountainFactor };
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

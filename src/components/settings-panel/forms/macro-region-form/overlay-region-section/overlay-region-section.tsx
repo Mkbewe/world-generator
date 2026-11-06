@@ -3,13 +3,10 @@ import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
 import { MAX_MACRO_REGIONS } from '../../../../../utils/map-generator/stages/macro-region/defaults';
-import {
-  baseRegions,
-  overlayRegions,
-} from '../../../../../utils/map-generator/stages/macro-region/editor/boundary-model';
 import { regionColor } from '../../../../../utils/map-layers';
 import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { useMacroRegionSelection } from '../hooks/use-macro-region-selection';
+import { baseRegions, overlayRegions } from '../lib/boundary-model';
 import { OverlayRegionCard } from '../region-card';
 
 /** Overlay bands: their tabs and the selected band fields. */

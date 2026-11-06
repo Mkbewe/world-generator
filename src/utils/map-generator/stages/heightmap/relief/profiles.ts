@@ -1,4 +1,4 @@
-import { smoothstep } from '../../../../math';
+import { clamp01, smoothstep } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
 import type { WorldSpace } from '../../../space';
 import type { WorldPoint } from '../../../types';
@@ -308,8 +308,4 @@ function bearingOf(point: WorldPoint, input: SampleInput): number {
 function bayBell(theta: number, bay: IslandBay): number {
   const angleDelta = Math.atan2(Math.sin(theta - bay.angle), Math.cos(theta - bay.angle));
   return smoothstep(clamp01(1 - Math.abs(angleDelta) / bay.width));
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

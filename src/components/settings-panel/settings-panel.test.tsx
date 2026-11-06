@@ -3,7 +3,14 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { SettingsPanel } from './settings-panel';
-import { useViewSyncStore, VIEW_SYNC_DEFAULTS } from '../../stores';
+import {
+  GENERAL_FORM_DEFAULTS,
+  useGeneralFormStore,
+  useViewSyncStore,
+  useWorldShapeFormStore,
+  VIEW_SYNC_DEFAULTS,
+  WORLD_SHAPE_FORM_DEFAULTS,
+} from '../../stores';
 
 interface RenderPanelOptions {
   isGenerating?: boolean;
@@ -12,18 +19,7 @@ interface RenderPanelOptions {
 function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
   render(
     <Theme>
-      <SettingsPanel
-        seed='123456'
-        onSeedChange={() => {}}
-        isGenerating={isGenerating}
-        onGenerate={() => {}}
-        shape='disc'
-        sizeMeters={300}
-        metersPerSample={2}
-        onShapeChange={() => {}}
-        onSizeChange={() => {}}
-        onDetailChange={() => {}}
-      />
+      <SettingsPanel isGenerating={isGenerating} onGenerate={() => {}} />
     </Theme>
   );
 }
@@ -31,6 +27,8 @@ function renderPanel({ isGenerating = false }: RenderPanelOptions = {}) {
 describe('SettingsPanel', () => {
   beforeEach(() => {
     useViewSyncStore.setState({ ...VIEW_SYNC_DEFAULTS });
+    useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
+    useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
   });
 
   it('remembers the active tab in the shared sync store', async () => {

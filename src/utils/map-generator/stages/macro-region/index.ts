@@ -6,30 +6,11 @@ export { createRegionDisplacement } from './border-displacement';
 export type { CellDeformation, RegionDisplacement } from './border-displacement';
 export { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS, MAX_MACRO_REGIONS } from './defaults';
 export {
-  applyRegionBoundaries,
-  baseRegions,
-  boundariesToShares,
-  clampBoundaries,
-  MIN_MACRO_REGION_SHARE,
-  overlayRegions,
-  regionBoundaries,
-  regionSegments,
-  removeBaseRegion,
-  splitLargestRegion,
-} from './editor/boundary-model';
-export type { MacroRegionLayoutChange } from './editor/boundary-model';
-export {
   createBandOverlay,
   createHorizontalLayout,
   createMacroRegionLayout,
   createRadialLayout,
   createRadialPolesLayout,
   createVerticalLayout,
-  MACRO_REGION_PRESETS,
-  macroRegionPreset,
 } from './editor/presets';
-export type {
-  MacroRegionLayout,
-  MacroRegionPresetDefinition,
-  MacroRegionPresetId,
-} from './editor/presets';
+export type { MacroRegionLayout } from './editor/presets';
