@@ -1,3 +1,8 @@
+export {
+  BASE_CLIMATE_FORM_DEFAULTS,
+  baseClimateConfigOf,
+  useBaseClimateFormStore,
+} from './base-climate-form';
 export { GENERAL_FORM_DEFAULTS, DEFAULT_SEED, useGeneralFormStore } from './general-form';
 export { GEOLOGY_FORM_DEFAULTS, geologyConfigOf, useGeologyFormStore } from './geology-form';
 export {

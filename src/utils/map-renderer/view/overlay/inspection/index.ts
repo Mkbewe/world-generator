@@ -1,4 +1,5 @@
 export { HeatZoneOverlayInspector } from './heat-zone-inspector';
+export { MoistureOverlayInspector } from './moisture-inspector';
 export { OceanCurrentOverlayInspector } from './ocean-current-inspector';
 export {
   OverlayInspectorRegistry,

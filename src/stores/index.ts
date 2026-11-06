@@ -1,5 +1,7 @@
 export { createStore, type StoreCreator } from './create-store';
 export {
+  BASE_CLIMATE_FORM_DEFAULTS,
+  baseClimateConfigOf,
   GENERAL_FORM_DEFAULTS,
   GEOLOGY_FORM_DEFAULTS,
   geologyConfigOf,
@@ -8,6 +10,7 @@ export {
   DEFAULT_SEED,
   DEFAULT_WORLD_SIZE,
   MACRO_REGION_FORM_DEFAULTS,
+  useBaseClimateFormStore,
   useGeneralFormStore,
   useGeologyFormStore,
   useHeightmapFormStore,

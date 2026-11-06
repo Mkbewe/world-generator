@@ -2,7 +2,7 @@ import { Flex, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
 import { SliderField } from '../../../../slider-field';
-import { irregularityLabel, MAX_IRREGULARITY } from '../lib/irregularity';
+import { irregularityLabel, MAX_IRREGULARITY } from '../../lib/irregularity';
 
 export function BorderSettings() {
   const deformation = useMacroRegionFormStore(state => state.deformation);

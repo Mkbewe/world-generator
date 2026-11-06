@@ -135,6 +135,28 @@ describe('validateBaseClimateConfig', () => {
     expect(isBaseClimateConfig({ ...base, geologyCoupling: Number.NaN })).toBe(false);
   });
 
+  it('rejects a moisture outside 0..1', () => {
+    const base = getBaseClimatePresets()[0];
+
+    expect(() => validateBaseClimateConfig({ ...base, moisture: -0.1 })).toThrow('moisture');
+    expect(() => validateBaseClimateConfig({ ...base, moisture: 1.1 })).toThrow('moisture');
+    expect(isBaseClimateConfig({ ...base, moisture: Number.NaN })).toBe(false);
+    expect(isBaseClimateConfig({ ...base, moisture: 0.2 })).toBe(true);
+  });
+
+  it('rejects an invalid heat-zone irregularity', () => {
+    const base = getBaseClimatePresets()[0];
+
+    expect(() => validateBaseClimateConfig({ ...base, zoneIrregularity: -0.1 })).toThrow(
+      'irregularity'
+    );
+    expect(() => validateBaseClimateConfig({ ...base, zoneIrregularity: 0.3 })).toThrow(
+      'irregularity'
+    );
+    expect(isBaseClimateConfig({ ...base, zoneIrregularity: Number.NaN })).toBe(false);
+    expect(isBaseClimateConfig({ ...base, zoneIrregularity: 0.1 })).toBe(true);
+  });
+
   it('narrows only objects that pass validation', () => {
     const base = getBaseClimatePresets()[0];
 

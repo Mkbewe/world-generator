@@ -103,6 +103,40 @@ describe('BaseClimateStage', () => {
     expect(new Set(moisture).size).toBeGreaterThan(1);
   });
 
+  it('bends heat-zone borders with the configured irregularity', async () => {
+    const crisp = baseClimatePresetConfig('earth-like');
+    const bent = { ...crisp, zoneIrregularity: 0.2 };
+    const clean = await generate(config(crisp, 16, 16));
+    const warped = await generate(config(bent, 16, 16));
+    const repeated = await generate(config(bent, 16, 16));
+
+    expect(zoneMap(warped)).not.toEqual(zoneMap(clean));
+    expect(zoneMap(repeated)).toEqual(zoneMap(warped));
+    expect([...zoneMap(warped)].every(zone => zone >= 0 && zone < 5)).toBe(true);
+  });
+
+  it('shifts the moisture field with the world moisture control', async () => {
+    const preset = baseClimatePresetConfig('earth-like');
+    const dry = await generate(config({ ...preset, moisture: 0 }, 16, 16));
+    const balanced = await generate(config({ ...preset, moisture: 0.5 }, 16, 16));
+    const wet = await generate(config({ ...preset, moisture: 1 }, 16, 16));
+    const mean = (map: Float32Array): number =>
+      [...map].reduce((sum, value) => sum + value, 0) / map.length;
+
+    expect(mean(moistureMap(dry))).toBeLessThan(mean(moistureMap(balanced)));
+    expect(mean(moistureMap(balanced))).toBeLessThan(mean(moistureMap(wet)));
+  });
+
+  it('validates the ring preset with the form defaults on a wider raster', async () => {
+    const preset = baseClimatePresetConfig('ring-world');
+    const result = await generate(
+      config({ ...preset, moisture: 0.5, zoneIrregularity: 0.06 }, 64, 32)
+    );
+
+    expect(result.context.state.oceanCurrentMap).toBeDefined();
+    expect(result.context.state.oceanCurrentStrength).toBeDefined();
+  });
+
   it('keeps the moisture field independent of the heat-zone layout', async () => {
     const earthLike = await generate(config(baseClimatePresetConfig('earth-like')));
     const ringWorld = await generate(config(baseClimatePresetConfig('ring-world')));
@@ -127,14 +161,17 @@ describe('BaseClimateStage', () => {
     expect(new Set(strengths).size).toBeGreaterThan(1);
   });
 
-  it('turns ring-world currents outward and cold-core currents inward', async () => {
+  it('turns ring-world currents into an outward spiral and cold-core currents inward', async () => {
     const ringWorld = await generate(config(baseClimatePresetConfig('ring-world')));
     const coldCore = await generate(config(baseClimatePresetConfig('cold-core')));
     const eastOfCentre = 2 * 5 + 3;
+    const spiral = currentMap(ringWorld)[eastOfCentre];
 
-    expect(currentMap(ringWorld)[eastOfCentre]).toBeCloseTo(0);
+    expect(spiral).toBeCloseTo(Math.atan2(0.45, 0.55));
+    expect(spiral).toBeGreaterThan(0);
+    expect(spiral).toBeLessThan(Math.PI / 2);
     expect(currentMap(coldCore)[eastOfCentre]).toBeCloseTo(Math.PI);
-    expect(currentMap(ringWorld)[eastOfCentre]).not.toBeCloseTo(currentMap(coldCore)[eastOfCentre]);
+    expect(spiral).not.toBeCloseTo(currentMap(coldCore)[eastOfCentre]);
   });
 
   it('leaves currents empty outside the world mask', async () => {
@@ -268,5 +305,9 @@ describe('BaseClimateStage', () => {
     expect(() =>
       stage.validate({ ...state, oceanCurrentStrength: new Float32Array([1.2, 0]) }, source)
     ).toThrow('invalid value');
+    // Float32 storage can round a valid angle just below 2π above the double value.
+    expect(() =>
+      stage.validate({ ...state, oceanCurrentMap: new Float32Array([Math.PI * 2, 0]) }, source)
+    ).not.toThrow();
   });
 });

@@ -1,7 +1,7 @@
-import { formatArea, formatDistance, formatMeasure } from '../format';
-import type { MacroRegionInfo } from '../map-generator/info-definitions';
+import { formatArea, formatDistance, formatMeasure, formatPercent } from '../format';
+import { isHeatZoneInfoList, type MacroRegionInfo } from '../map-generator/info-definitions';
 import type { GeologicalRegionPlan } from '../map-generator/types';
-import { regionStyle } from '../map-layers';
+import { heatZoneClassLabel, regionStyle } from '../map-layers';
 import type {
   MapBaseLayerId,
   MapInfo,
@@ -24,7 +24,7 @@ export interface PointerSample {
 export interface InspectorReadout {
   readonly position: PointerSample;
   readonly inspection?: MapInspection;
-  readonly overlay?: MapOverlayInspection;
+  readonly overlays?: readonly MapOverlayInspection[];
 }
 
 /** Ordered map points of a measurement; the preview is the next segment. */
@@ -59,6 +59,10 @@ export interface ReadoutItem {
   readonly action?: ReadoutAction;
   /** When true, the entry ends its group and keeps a margin below it. */
   readonly separated?: boolean;
+  /** When true, the entry starts a new group with a margin above it. */
+  readonly detached?: boolean;
+  /** When true, the entry is a small group heading without a value. */
+  readonly heading?: boolean;
 }
 
 const EMPTY = '—';
@@ -79,6 +83,7 @@ export function readoutItems(
 ): readonly ReadoutItem[] {
   const inspection = readout?.inspection;
   const measured = measurement ? measuredItem(measurement, info) : undefined;
+  const overlays = readout?.overlays ?? [];
   const items: ReadoutItem[] = [
     {
       id: 'position',
@@ -89,8 +94,15 @@ export function readoutItems(
     },
     ...(measured ? [measured] : []),
     ...inspectionItems(inspection, info),
-    ...(readout?.overlay
-      ? [{ id: 'overlay', label: readout.overlay.label, value: readout.overlay.value }]
+    ...(overlays.length > 0
+      ? [
+          { id: 'overlays', label: 'Overlays', value: '', heading: true, detached: true },
+          ...overlays.map(overlay => ({
+            id: `overlay-${overlay.overlayId}`,
+            label: overlay.label,
+            value: overlay.value,
+          })),
+        ]
       : []),
   ];
   return options.actions === false ? items.filter(item => item.action === undefined) : items;
@@ -118,6 +130,8 @@ const VECTOR_READOUTS: Partial<Record<MapBaseLayerId, VectorReadout>> = {
 const RASTER_READOUTS: Partial<Record<MapBaseLayerId, RasterReadout>> = {
   'macro-region': macroRegionReadout,
   heightmap: heightmapReadout,
+  'heat-zones': heatZoneReadout,
+  moisture: moistureReadout,
 };
 
 /** Height under the pointer relative to the sea level; 0 is the waterline. */
@@ -130,6 +144,38 @@ function heightmapReadout(inspection: RasterMapInspection): readonly ReadoutItem
     { id: 'surface', label: 'Surface', value: height > 0 ? 'Land' : 'Water' },
     { id: 'height', label: 'Height', value: `${formatMeters(height)} m` },
   ];
+}
+
+/** Name and thermal class of the heat zone under the pointer. */
+function heatZoneReadout(
+  inspection: RasterMapInspection,
+  info: MapInfo
+): readonly ReadoutItem[] | undefined {
+  const index = inspection.value;
+  if (index === undefined) {
+    return undefined;
+  }
+  const zones = info.heatZoneInfo;
+  if (!isHeatZoneInfoList(zones)) {
+    return undefined;
+  }
+  const zone = zones[index];
+  if (!zone) {
+    return undefined;
+  }
+  return [
+    { id: 'zone', label: 'Heat zone', value: zone.label },
+    { id: 'thermal', label: 'Class', value: heatZoneClassLabel(zone.thermal) },
+  ];
+}
+
+/** Base moisture as a percentage of its 0..1 range. */
+function moistureReadout(inspection: RasterMapInspection): readonly ReadoutItem[] | undefined {
+  const value = inspection.value;
+  if (value === undefined) {
+    return undefined;
+  }
+  return [{ id: 'moisture', label: 'Moisture', value: formatPercent(value) }];
 }
 
 /** Raster layers report their value; vector layers name the hovered element. */
@@ -231,6 +277,8 @@ function describeValue(inspection: MapInspection | undefined): string {
       return inspection.value === 1 ? 'Inside' : 'Outside';
     case 'macro-region':
       return `Region ${inspection.value}`;
+    case 'heat-zones':
+      return String(inspection.value);
     default:
       return inspection.value.toFixed(3);
   }

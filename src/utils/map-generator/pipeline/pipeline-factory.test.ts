@@ -75,7 +75,7 @@ describe('createMapGenerator', () => {
         id: 'base-climate',
         reads: ['worldMask'],
         writes: ['heatZoneMap', 'moistureBaseMap', 'oceanCurrentMap', 'oceanCurrentStrength'],
-        configKeys: ['world.shape', 'world.dimensions', 'baseClimate'],
+        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'baseClimate'],
       },
       {
         id: 'geology',

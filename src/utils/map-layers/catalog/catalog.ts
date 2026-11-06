@@ -58,7 +58,7 @@ const CATALOG_ENTRIES = [
     dataType: 'int16',
     clipTo: 'world-shape',
     skipValue: -1,
-    settingsForm: false,
+    settingsForm: true,
     group: { id: 'base-climate', label: 'BaseClimate' },
     palette: HEAT_ZONE_FALLBACK_PALETTE,
     paletteFromInfo: info =>

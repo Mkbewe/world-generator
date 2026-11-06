@@ -1,5 +1,6 @@
 import {
   HeatZoneOverlayInspector,
+  MoistureOverlayInspector,
   OceanCurrentOverlayInspector,
   OverlayInspectorRegistry,
 } from './view/overlay/inspection';
@@ -87,6 +88,7 @@ export class MapRenderer {
   private overlayData: LayerDataRecord = {};
   private readonly overlayInspectors = new OverlayInspectorRegistry([
     new HeatZoneOverlayInspector(),
+    new MoistureOverlayInspector(),
     new OceanCurrentOverlayInspector(),
   ]);
 
@@ -232,9 +234,9 @@ export class MapRenderer {
     };
   }
 
-  /** Named overlay value under the pointer, e.g. the BaseClimate heat zone. */
-  inspectOverlay(x: number, y: number): MapOverlayInspection | undefined {
-    return this.overlayInspectors.inspect(
+  /** Named overlay values under the pointer, in overlay order. */
+  inspectOverlays(x: number, y: number): readonly MapOverlayInspection[] {
+    return this.overlayInspectors.inspectAll(
       {
         x,
         y,
@@ -242,7 +244,7 @@ export class MapRenderer {
         data: this.overlayData,
         info: this.info,
       },
-      id => this.view.isOverlayVisible(id)
+      id => this.view.isOverlayActive(id)
     );
   }
 

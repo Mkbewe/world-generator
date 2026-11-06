@@ -20,6 +20,33 @@ describe('CursorReadout', () => {
     expect(screen.getByText('X 1')).toBeInTheDocument();
   });
 
+  it('renders an overlay group heading', () => {
+    render(
+      <Theme>
+        <CursorReadout
+          items={[{ id: 'overlays', label: 'Overlays', value: '', heading: true, detached: true }]}
+        />
+      </Theme>
+    );
+
+    expect(screen.getByText('Overlays')).toHaveClass(/heading/);
+  });
+
+  it('separates a detached entry from the stage data', () => {
+    render(
+      <Theme>
+        <CursorReadout
+          items={[
+            { id: 'stage', label: 'Stage', value: 'A' },
+            { id: 'overlay', label: 'Overlay', value: 'B', detached: true },
+          ]}
+        />
+      </Theme>
+    );
+
+    expect(screen.getByText('Overlay:').parentElement).toHaveClass(/detached/);
+  });
+
   it('marks the pinned readout', () => {
     render(
       <Theme>

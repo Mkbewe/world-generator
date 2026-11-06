@@ -2,8 +2,10 @@ import { useCallback, useState } from 'react';
 
 import { useGenerationSession } from './use-generation-session';
 import {
+  baseClimateConfigOf,
   geologyConfigOf,
   heightmapConfigOf,
+  useBaseClimateFormStore,
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
@@ -44,6 +46,7 @@ export function useWorldGeneration(): WorldGeneration {
       metersPerSample: shapeForm.metersPerSample,
       macroRegions: useMacroRegionFormStore.getState().regions,
       macroRegionDeformation: useMacroRegionFormStore.getState().deformation,
+      baseClimate: baseClimateConfigOf(useBaseClimateFormStore.getState()),
       geology: geologyConfigOf(geologyForm),
       heightmap: heightmapConfigOf(useHeightmapFormStore.getState(), geologyForm.regionCount),
     });

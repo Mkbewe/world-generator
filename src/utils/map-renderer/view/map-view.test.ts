@@ -145,6 +145,7 @@ describe('MapView', () => {
       disabled: true,
       visible: true,
     });
+    expect(view.isOverlayActive('moisture')).toBe(false);
 
     view.select(world);
 
@@ -152,6 +153,10 @@ describe('MapView', () => {
       disabled: false,
       visible: true,
     });
+    expect(view.isOverlayActive('moisture')).toBe(true);
+
+    view.setOverlay('moisture', false);
+    expect(view.isOverlayActive('moisture')).toBe(false);
     view.dispose();
     moisture.dispose();
     world.dispose();

@@ -14,6 +14,9 @@ export const MAX_HEAT_ZONES = 32;
 export const MAX_OCEAN_CURRENT_SOURCES = 16;
 export const MAX_OCEAN_CURRENT_RADIUS = 2;
 
+/** How far heat-zone borders may bend; 0 keeps the geometric lines. */
+export const MAX_HEAT_ZONE_IRREGULARITY = 0.2;
+
 /** Independent base-moisture FBM: one broad wave across most of the world. */
 export const BASE_MOISTURE_WAVELENGTH_SHARE = 0.4;
 export const BASE_MOISTURE_OCTAVES = 4;
@@ -74,7 +77,10 @@ const PRESET_CURRENTS: Readonly<Record<BaseClimatePreset, readonly OceanCurrentC
     current(0.25, 0.7, 'counterclockwise', 0.8, 0.4),
     current(0.75, 0.7, 'counterclockwise', 0.8, 0.4),
   ],
-  'ring-world': [current(0.5, 0.5, 'outward', 0.8, 0.75)],
+  'ring-world': [
+    current(0.5, 0.5, 'outward', 0.55, 0.75),
+    current(0.5, 0.5, 'clockwise', 0.45, 0.75),
+  ],
   'cold-core': [current(0.5, 0.5, 'inward', 0.8, 0.75)],
 };
 
@@ -87,14 +93,14 @@ const PRESET_ZONES: Readonly<Record<BaseClimatePreset, readonly HeatZoneConfig[]
     band('polar-south', 'Polar south', 'cold', 0.9, 0.2),
   ],
   'ring-world': [
-    ring('warm-core', 'Warm core', 'warm', 0, 0.35),
-    ring('temperate-ring', 'Temperate ring', 'temperate', 0.35, 0.65),
-    ring('cold-rim', 'Cold rim', 'cold', 0.65, 1.5),
+    ring('temperate-core', 'Temperate core', 'temperate', 0, 0.2),
+    ring('warm-ring', 'Warm ring', 'warm', 0.2, 0.35),
+    ring('cold-rim', 'Cold rim', 'cold', 0.35, 0.5),
   ],
   'cold-core': [
-    ring('cold-core', 'Cold core', 'cold', 0, 0.35),
-    ring('temperate-ring', 'Temperate ring', 'temperate', 0.35, 0.65),
-    ring('warm-rim', 'Warm rim', 'warm', 0.65, 1.5),
+    ring('cold-core', 'Cold core', 'cold', 0, 0.2),
+    ring('temperate-ring', 'Temperate ring', 'temperate', 0.2, 0.35),
+    ring('warm-rim', 'Warm rim', 'warm', 0.35, 0.5),
   ],
 };
 
@@ -102,6 +108,8 @@ const PRESET_ZONES: Readonly<Record<BaseClimatePreset, readonly HeatZoneConfig[]
 export function baseClimatePresetConfig(preset: BaseClimatePreset): BaseClimateConfig {
   return {
     geologyCoupling: 1,
+    moisture: 0.5,
+    zoneIrregularity: 0,
     zones: PRESET_ZONES[preset].map(zone => ({
       ...zone,
       geometry:

@@ -27,11 +27,14 @@ describe('createOceanCurrentSampler', () => {
     expect(sample(config, 0.35, 0.7).angle).toBeCloseTo((Math.PI * 3) / 2);
   });
 
-  it('points ring-world currents outward and cold-core currents inward', () => {
+  it('turns ring-world currents into an outward spiral and cold-core currents inward', () => {
     const ringWorld = baseClimatePresetConfig('ring-world');
     const coldCore = baseClimatePresetConfig('cold-core');
+    const angle = sample(ringWorld, 0.75, 0.5).angle;
 
-    expect(sample(ringWorld, 0.75, 0.5).angle).toBeCloseTo(0);
+    expect(angle).toBeCloseTo(Math.atan2(0.45, 0.55));
+    expect(angle).toBeGreaterThan(0);
+    expect(angle).toBeLessThan(Math.PI / 2);
     expect(sample(coldCore, 0.75, 0.5).angle).toBeCloseTo(Math.PI);
   });
 

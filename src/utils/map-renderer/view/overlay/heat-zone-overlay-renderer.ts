@@ -106,7 +106,7 @@ export function paintHeatZonePixels(
     if (!zoneInfo) {
       continue;
     }
-    const color = heatZoneColor(zoneInfo.thermal);
+    const color = heatZoneColor(zoneInfo.thermal, zoneInfo.id);
     const offset = index * 4;
     pixels[offset] = color[0];
     pixels[offset + 1] = color[1];

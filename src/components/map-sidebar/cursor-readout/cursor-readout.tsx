@@ -59,6 +59,19 @@ interface ReadoutEntryProps {
 
 function ReadoutEntry({ item, onAction }: ReadoutEntryProps) {
   const action = item.action;
+  if (item.heading) {
+    return (
+      <Text
+        size='1'
+        weight='bold'
+        color='gray'
+        as='span'
+        className={[styles.heading, item.detached ? styles.detached : ''].filter(Boolean).join(' ')}
+      >
+        {item.label}
+      </Text>
+    );
+  }
   if (action) {
     return (
       <div className={styles.action}>
@@ -77,6 +90,7 @@ function ReadoutEntry({ item, onAction }: ReadoutEntryProps) {
     styles.item,
     item.lines ? styles.axes : '',
     item.separated ? styles.separated : '',
+    item.detached ? styles.detached : '',
   ]
     .filter(Boolean)
     .join(' ');

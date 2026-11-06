@@ -46,7 +46,7 @@ export const MACRO_REGION_STAGE = {
 export const BASE_CLIMATE_STAGE = {
   id: 'base-climate',
   name: 'BaseClimate',
-  configKeys: ['world.shape', 'world.dimensions', 'baseClimate'],
+  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'baseClimate'],
 } as const satisfies DeclaredStage;
 
 /**

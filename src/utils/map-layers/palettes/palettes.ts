@@ -105,14 +105,39 @@ export const HEAT_ZONE_COLORS: Readonly<Record<HeatZoneClass, Color>> = {
   warm: [224, 116, 64],
 };
 
-export function heatZoneColor(thermal: HeatZoneClass): Color {
-  return HEAT_ZONE_COLORS[thermal];
+/** Display names of the BaseClimate thermal classes. */
+export const HEAT_ZONE_CLASS_LABELS: Readonly<Record<HeatZoneClass, string>> = {
+  cold: 'Cold',
+  temperate: 'Temperate',
+  warm: 'Warm',
+};
+
+export function heatZoneClassLabel(thermal: HeatZoneClass): string {
+  return HEAT_ZONE_CLASS_LABELS[thermal];
+}
+
+/** Small per-zone channel offsets so same-class zones stay distinguishable. */
+const HEAT_ZONE_SHADE_RANGE = 10;
+
+export function heatZoneColor(thermal: HeatZoneClass, zoneId?: string): Color {
+  const base = HEAT_ZONE_COLORS[thermal];
+  if (!zoneId) {
+    return base;
+  }
+  const hash = hashString(zoneId);
+  return [
+    clampChannel(base[0] + channelShade(hash)),
+    clampChannel(base[1] + channelShade(hash >>> 8)),
+    clampChannel(base[2] + channelShade(hash >>> 16)),
+  ];
 }
 
 /** Preview palette indexed like `heatZoneMap`, using the same colors as the overlay. */
 export function heatZonePalette(zones: readonly HeatZoneInfo[]): PaletteSpec {
   const colors =
-    zones.length > 0 ? zones.map(zone => heatZoneColor(zone.thermal)) : BASE_CLIMATE_ZONE_COLORS;
+    zones.length > 0
+      ? zones.map(zone => heatZoneColor(zone.thermal, zone.id))
+      : BASE_CLIMATE_ZONE_COLORS;
   return { kind: 'discrete', colors, overflow: { color: [120, 120, 120] } };
 }
 
@@ -271,6 +296,23 @@ function compileGrayRamp(first: RampStop, last: RampStop): PixelWriter {
 
 function isGray(color: Color): boolean {
   return color[0] === color[1] && color[1] === color[2];
+}
+
+function clampChannel(value: number): number {
+  return Math.min(255, Math.max(0, Math.round(value)));
+}
+
+function channelShade(hash: number): number {
+  return (hash % (HEAT_ZONE_SHADE_RANGE * 2 + 1)) - HEAT_ZONE_SHADE_RANGE;
+}
+
+function hashString(value: string): number {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index++) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
 }
 
 function validateColor(color: Color): void {
