@@ -48,6 +48,10 @@ describe('selectDirtyStageIds', () => {
               ? { ...zone.geometry, center: { ...zone.geometry.center } }
               : { ...zone.geometry },
         })),
+        currents: baseClimate.currents.map(source => ({
+          ...source,
+          center: { ...source.center },
+        })),
       },
       geology: {
         ...geology,
@@ -88,6 +92,15 @@ describe('selectDirtyStageIds', () => {
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2 } }, ['macro-region']],
       [{ baseClimate: { ...baseClimate, geologyCoupling: 0.5 } }, ['base-climate']],
+      [
+        {
+          baseClimate: {
+            ...baseClimate,
+            currents: baseClimate.currents.map(source => ({ ...source, strength: 0.2 })),
+          },
+        },
+        ['base-climate'],
+      ],
       [{ geology: { ...geology, regionCount: 6 } }, ['geology', 'heightmap']],
       [{ heightmap: { ...heightmap, relief: 0.8 } }, ['heightmap']],
     ];

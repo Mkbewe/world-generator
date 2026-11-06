@@ -51,6 +51,7 @@ describe('createHeatZoneSampler', () => {
   it('falls back to the nearest zone outside every geometry', () => {
     const config: BaseClimateConfig = {
       geologyCoupling: 1,
+      currents: [],
       zones: [
         {
           id: 'middle',

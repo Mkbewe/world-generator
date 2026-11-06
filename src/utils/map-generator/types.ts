@@ -95,9 +95,25 @@ export interface HeatZoneConfig {
   readonly thermal: HeatZoneClass;
 }
 
-/** The world heat-zone layout and how strongly geology follows it. */
+/** Flow of one ocean-current source; radial flows point to or away from the centre. */
+export const OCEAN_CURRENT_FLOWS = ['clockwise', 'counterclockwise', 'outward', 'inward'] as const;
+
+export type OceanCurrentFlow = (typeof OCEAN_CURRENT_FLOWS)[number];
+
+/** One static current source: a vortex or a radial flow with a finite reach. */
+export interface OceanCurrentConfig {
+  readonly center: WorldPoint;
+  readonly flow: OceanCurrentFlow;
+  /** Peak vector magnitude before sources are summed, 0..1. */
+  readonly strength: number;
+  /** Reach in normalized world units; the flow fades to zero at this distance. */
+  readonly radius: number;
+}
+
+/** The world heat-zone layout, ocean currents and how strongly geology follows them. */
 export interface BaseClimateConfig {
   readonly zones: readonly HeatZoneConfig[];
+  readonly currents: readonly OceanCurrentConfig[];
   /** 0 leaves the current geology recipes, 1 fully follows the zones. */
   readonly geologyCoupling: number;
 }
@@ -250,6 +266,10 @@ export interface MapState {
   heatZoneMap?: Int16Array;
   /** Produced by the BaseClimate stage: independent base moisture, 0..1. */
   moistureBaseMap?: Float32Array;
+  /** Produced by the BaseClimate stage: base flow direction per cell, 0..2π. */
+  oceanCurrentMap?: Float32Array;
+  /** Produced by the BaseClimate stage: base flow strength per cell, 0..1. */
+  oceanCurrentStrength?: Float32Array;
   /**
    * Produced by the geology stage. Resolved regions with their owner and border
    * rasters; island shapes are not derived from this plan.

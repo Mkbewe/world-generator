@@ -46,6 +46,22 @@ function moistureMap(result: Awaited<ReturnType<typeof generate>>): Float32Array
   return map;
 }
 
+function currentMap(result: Awaited<ReturnType<typeof generate>>): Float32Array {
+  const map = result.context.state.oceanCurrentMap;
+  if (!map) {
+    throw new Error('Expected a generated ocean-current map.');
+  }
+  return map;
+}
+
+function currentStrength(result: Awaited<ReturnType<typeof generate>>): Float32Array {
+  const strength = result.context.state.oceanCurrentStrength;
+  if (!strength) {
+    throw new Error('Expected generated ocean-current strengths.');
+  }
+  return strength;
+}
+
 describe('BaseClimateStage', () => {
   it('assigns one valid zone index to every cell', async () => {
     const result = await generate(config());
@@ -95,6 +111,42 @@ describe('BaseClimateStage', () => {
     expect(zoneMap(earthLike)).not.toEqual(zoneMap(ringWorld));
   });
 
+  it('creates normalized current directions and strengths', async () => {
+    const result = await generate(config());
+    const directions = currentMap(result);
+    const strengths = currentStrength(result);
+
+    expect(directions).toHaveLength(25);
+    expect(strengths).toHaveLength(25);
+    expect(
+      [...directions].every(value => Number.isFinite(value) && value >= 0 && value <= Math.PI * 2)
+    ).toBe(true);
+    expect([...strengths].every(value => Number.isFinite(value) && value >= 0 && value <= 1)).toBe(
+      true
+    );
+    expect(new Set(strengths).size).toBeGreaterThan(1);
+  });
+
+  it('turns ring-world currents outward and cold-core currents inward', async () => {
+    const ringWorld = await generate(config(baseClimatePresetConfig('ring-world')));
+    const coldCore = await generate(config(baseClimatePresetConfig('cold-core')));
+    const eastOfCentre = 2 * 5 + 3;
+
+    expect(currentMap(ringWorld)[eastOfCentre]).toBeCloseTo(0);
+    expect(currentMap(coldCore)[eastOfCentre]).toBeCloseTo(Math.PI);
+    expect(currentMap(ringWorld)[eastOfCentre]).not.toBeCloseTo(currentMap(coldCore)[eastOfCentre]);
+  });
+
+  it('leaves currents empty outside the world mask', async () => {
+    const result = await generate(
+      config(baseClimatePresetConfig('earth-like'), 2, 1),
+      new Uint8Array([1, 0])
+    );
+
+    expect(currentMap(result)[1]).toBe(0);
+    expect(currentStrength(result)[1]).toBe(0);
+  });
+
   it('is deterministic for the same configuration', async () => {
     const source = config();
 
@@ -103,6 +155,8 @@ describe('BaseClimateStage', () => {
 
     expect(zoneMap(first)).toEqual(zoneMap(second));
     expect(moistureMap(first)).toEqual(moistureMap(second));
+    expect(currentMap(first)).toEqual(currentMap(second));
+    expect(currentStrength(first)).toEqual(currentStrength(second));
   });
 
   it('reports zone and thermal shares', async () => {
@@ -137,7 +191,7 @@ describe('BaseClimateStage', () => {
     };
 
     await expect(generate(config(invalid))).rejects.toMatchObject({
-      cause: { message: expect.stringContaining('Heat-zone settings') },
+      cause: { message: expect.stringContaining('BaseClimate settings') },
     });
   });
 
@@ -152,6 +206,8 @@ describe('BaseClimateStage', () => {
           worldMask,
           heatZoneMap: new Int16Array([0, -1]),
           moistureBaseMap: new Float32Array([0.5, 0]),
+          oceanCurrentMap: new Float32Array([0, 0]),
+          oceanCurrentStrength: new Float32Array([0, 0]),
         },
         source
       )
@@ -162,6 +218,8 @@ describe('BaseClimateStage', () => {
           worldMask,
           heatZoneMap: new Int16Array([0, 0]),
           moistureBaseMap: new Float32Array([0.5, 0]),
+          oceanCurrentMap: new Float32Array([0, 0]),
+          oceanCurrentStrength: new Float32Array([0, 0]),
         },
         source
       )
@@ -172,6 +230,8 @@ describe('BaseClimateStage', () => {
           worldMask,
           heatZoneMap: new Int16Array([9, -1]),
           moistureBaseMap: new Float32Array([0.5, 0]),
+          oceanCurrentMap: new Float32Array([0, 0]),
+          oceanCurrentStrength: new Float32Array([0, 0]),
         },
         source
       )
@@ -182,9 +242,31 @@ describe('BaseClimateStage', () => {
           worldMask,
           heatZoneMap: new Int16Array([0, -1]),
           moistureBaseMap: new Float32Array([1.5, 0]),
+          oceanCurrentMap: new Float32Array([0, 0]),
+          oceanCurrentStrength: new Float32Array([0, 0]),
         },
         source
       )
+    ).toThrow('invalid value');
+  });
+
+  it('validates current directions and strengths', () => {
+    const stage = new BaseClimateStage();
+    const source = config(baseClimatePresetConfig('earth-like'), 2, 1);
+    const state = {
+      worldMask: new Uint8Array([1, 0]),
+      heatZoneMap: new Int16Array([0, -1]),
+      moistureBaseMap: new Float32Array([0.5, 0]),
+      oceanCurrentMap: new Float32Array([0, 0]),
+      oceanCurrentStrength: new Float32Array([0.5, 0]),
+    };
+
+    expect(() => stage.validate(state, source)).not.toThrow();
+    expect(() =>
+      stage.validate({ ...state, oceanCurrentMap: new Float32Array([Math.PI * 3, 0]) }, source)
+    ).toThrow('invalid value');
+    expect(() =>
+      stage.validate({ ...state, oceanCurrentStrength: new Float32Array([1.2, 0]) }, source)
     ).toThrow('invalid value');
   });
 });

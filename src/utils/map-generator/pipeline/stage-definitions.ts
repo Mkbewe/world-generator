@@ -39,9 +39,9 @@ export const MACRO_REGION_STAGE = {
 } as const satisfies DeclaredStage;
 
 /**
- * The BaseClimate stage turns the configured bands and rings into one zone index
- * per cell. It reads the world mask only; temperature and moisture belong to a
- * later refinement stage.
+ * The BaseClimate stage turns the configured bands, rings and static current
+ * sources into per-cell base layers. It reads the world mask only; continuous
+ * temperature and moisture belong to a later refinement stage.
  */
 export const BASE_CLIMATE_STAGE = {
   id: 'base-climate',

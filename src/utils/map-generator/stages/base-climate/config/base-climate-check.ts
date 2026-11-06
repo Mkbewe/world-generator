@@ -1,13 +1,29 @@
-import { type BaseClimateConfig, HEAT_ZONE_CLASSES, type HeatZoneGeometry } from '../../../types';
-import { MAX_HEAT_ZONES, MIN_HEAT_ZONES } from '../defaults';
+import {
+  type BaseClimateConfig,
+  HEAT_ZONE_CLASSES,
+  type HeatZoneGeometry,
+  OCEAN_CURRENT_FLOWS,
+} from '../../../types';
+import {
+  MAX_HEAT_ZONES,
+  MAX_OCEAN_CURRENT_RADIUS,
+  MAX_OCEAN_CURRENT_SOURCES,
+  MIN_HEAT_ZONES,
+} from '../defaults';
 
-/** Throws when the zone layout cannot produce a valid heat-zone map. */
+/** Throws when the layout cannot produce valid heat-zone and current maps. */
 export function validateBaseClimateConfig(config: BaseClimateConfig): void {
   if (config.zones.length < MIN_HEAT_ZONES) {
     throw new RangeError('At least one heat zone is required.');
   }
   if (config.zones.length > MAX_HEAT_ZONES) {
     throw new RangeError(`At most ${MAX_HEAT_ZONES} heat zones are allowed.`);
+  }
+  if (!Array.isArray(config.currents) || config.currents.length === 0) {
+    throw new RangeError('At least one ocean current source is required.');
+  }
+  if (config.currents.length > MAX_OCEAN_CURRENT_SOURCES) {
+    throw new RangeError(`At most ${MAX_OCEAN_CURRENT_SOURCES} ocean current sources are allowed.`);
   }
   if (!isNormalized(config.geologyCoupling)) {
     throw new RangeError('Geology coupling must be within 0..1.');
@@ -29,6 +45,27 @@ export function validateBaseClimateConfig(config: BaseClimateConfig): void {
       throw new RangeError(`Heat zone "${zone.id}" has an invalid thermal class.`);
     }
     validateGeometry(zone.id, zone.geometry);
+  }
+
+  for (const source of config.currents) {
+    if (typeof source !== 'object' || source === null) {
+      throw new RangeError('Ocean current source must be an object.');
+    }
+    if (!isNormalized(source.center.x) || !isNormalized(source.center.y)) {
+      throw new RangeError('Ocean current centre must be within 0..1.');
+    }
+    if (!OCEAN_CURRENT_FLOWS.includes(source.flow)) {
+      throw new RangeError(`Ocean current flow "${source.flow}" is invalid.`);
+    }
+    if (!isNormalized(source.strength)) {
+      throw new RangeError('Ocean current strength must be within 0..1.');
+    }
+    if (
+      !Number.isFinite(source.radius) ||
+      !(source.radius > 0 && source.radius <= MAX_OCEAN_CURRENT_RADIUS)
+    ) {
+      throw new RangeError(`Ocean current radius must be within 0..${MAX_OCEAN_CURRENT_RADIUS}.`);
+    }
   }
 }
 

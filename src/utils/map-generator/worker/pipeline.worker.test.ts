@@ -88,6 +88,8 @@ describe('generation worker', () => {
       macroRegionIdMap: full.context.state.macroRegionIdMap,
       heatZoneMap: full.context.state.heatZoneMap,
       moistureBaseMap: full.context.state.moistureBaseMap,
+      oceanCurrentMap: full.context.state.oceanCurrentMap,
+      oceanCurrentStrength: full.context.state.oceanCurrentStrength,
       geologyPlan: full.context.state.geologyPlan,
     };
 
