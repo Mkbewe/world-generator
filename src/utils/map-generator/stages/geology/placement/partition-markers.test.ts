@@ -15,6 +15,8 @@ function place(evenness: number, seed = 17): RegionMarker[] {
     shape: 'disc',
     space: createWorldSpace(DIMENSIONS),
     random: new RandomFactory(seed),
+    thermalAt: () => 'temperate',
+    geologyCoupling: 0,
   });
 }
 
@@ -87,5 +89,68 @@ describe('placePartitionMarkers', () => {
 
   it('changes the placement when the seed changes', () => {
     expect(place(0.6, 18)).not.toEqual(place(0.6, 17));
+  });
+
+  it('ignores thermal anchors when geology coupling is zero', () => {
+    const preset = geologyPresetConfig('varied');
+    const input = {
+      regions: preset.regions,
+      evenness: 0.6,
+      dimensions: DIMENSIONS,
+      shape: 'disc' as const,
+      space: createWorldSpace(DIMENSIONS),
+      random: new RandomFactory(17),
+      thermalAt: () => 'temperate' as const,
+      geologyCoupling: 0,
+    };
+
+    expect(
+      placePartitionMarkers({
+        ...input,
+        thermalAt: () => 'warm',
+        geologyCoupling: 0,
+      })
+    ).toEqual(placePartitionMarkers(input));
+  });
+
+  it('leans toward the matching thermal anchor when coupling is on', () => {
+    const markers = placePartitionMarkers({
+      regions: [
+        { type: 'lagoon', size: 1 },
+        { type: 'lagoon', size: 1 },
+      ],
+      evenness: 0.6,
+      dimensions: DIMENSIONS,
+      shape: 'disc',
+      space: createWorldSpace(DIMENSIONS),
+      random: new RandomFactory(17),
+      thermalAt: point => (point.x > 0.5 ? 'warm' : 'cold'),
+      geologyCoupling: 1,
+    });
+
+    expect(markers[1]?.centre.x).toBeGreaterThan(0.5);
+  });
+
+  it('keeps the thermal anchor bias light', () => {
+    const space = createWorldSpace(DIMENSIONS);
+    const input = {
+      regions: Array.from({ length: 5 }, () => ({ type: 'fjord' as const, size: 1 })),
+      evenness: 0.6,
+      dimensions: DIMENSIONS,
+      shape: 'disc' as const,
+      space,
+      random: new RandomFactory(17),
+      thermalAt: (point: { readonly x: number; readonly y: number }) =>
+        point.y > 0.8 ? ('cold' as const) : ('temperate' as const),
+    };
+    const plain = placePartitionMarkers({ ...input, geologyCoupling: 0 });
+    const biased = placePartitionMarkers({ ...input, geologyCoupling: 1 });
+    const maxShift = Math.max(
+      ...plain.map((marker, index) =>
+        space.distance(marker.centre, biased[index]?.centre ?? marker.centre)
+      )
+    );
+
+    expect(maxShift).toBeLessThan(0.02);
   });
 });

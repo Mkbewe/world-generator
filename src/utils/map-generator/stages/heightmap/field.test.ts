@@ -1,3 +1,4 @@
+import { REGION_SHAPES } from './config/region-shape';
 import { createHeightmapNoiseBands } from './bands';
 import {
   BANK_START_DEPTH_METERS,
@@ -53,6 +54,7 @@ function region(
     id: `region-${index + 1}`,
     type,
     centre: { x: (index + 0.5) / 2, y: 0.5 },
+    thermal: 'temperate',
     weight: 1,
     areaSquareMeters: dimensions.widthMeters * dimensions.heightMeters,
   };
@@ -117,6 +119,14 @@ function regionBandsFor(source: GeologyPlan, dimensions: WorldDimensions = DIMEN
   );
 }
 
+function regionShapesFor(source: GeologyPlan) {
+  return source.regions.map(region => REGION_SHAPES[region.type]);
+}
+
+function shapeAtFor(source: GeologyPlan) {
+  return (regionIndex: number) => REGION_SHAPES[source.regions[regionIndex]?.type ?? 'ordinary'];
+}
+
 function build(
   source: GeologyPlan,
   mask?: Uint8Array,
@@ -130,6 +140,8 @@ function build(
     plan: source,
     bands: createHeightmapNoiseBands(new RandomFactory(seed), dimensions),
     regionBands: regionBandsFor(source, dimensions, seed),
+    regionShapes: regionShapesFor(source),
+    shapeAt: shapeAtFor(source),
     random: new RandomFactory(seed),
     worldMask,
     dimensions,
@@ -183,6 +195,8 @@ describe('buildHeightField', () => {
       plan: two,
       bands: createHeightmapNoiseBands(new RandomFactory(17), DIMENSIONS),
       regionBands: regionBandsFor(two),
+      regionShapes: regionShapesFor(two),
+      shapeAt: shapeAtFor(two),
       random: new RandomFactory(17),
       worldMask: mask,
       dimensions: DIMENSIONS,

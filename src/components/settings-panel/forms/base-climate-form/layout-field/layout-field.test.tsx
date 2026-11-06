@@ -22,16 +22,16 @@ describe('LayoutField', () => {
     const user = userEvent.setup();
     renderField();
 
+    expect(screen.getByRole('radio', { name: 'Ring' })).toHaveAttribute('aria-checked', 'true');
+
+    await user.click(screen.getByRole('radio', { name: 'Horizontal' }));
+
+    expect(useBaseClimateFormStore.getState().layout).toBe('horizontal');
+    expect(useBaseClimateFormStore.getState().activePreset).toBeUndefined();
     expect(screen.getByRole('radio', { name: 'Horizontal' })).toHaveAttribute(
       'aria-checked',
       'true'
     );
-
-    await user.click(screen.getByRole('radio', { name: 'Ring' }));
-
-    expect(useBaseClimateFormStore.getState().layout).toBe('rings');
-    expect(useBaseClimateFormStore.getState().activePreset).toBeUndefined();
-    expect(screen.getByRole('radio', { name: 'Ring' })).toHaveAttribute('aria-checked', 'true');
 
     await user.click(screen.getByRole('radio', { name: 'Vertical' }));
 

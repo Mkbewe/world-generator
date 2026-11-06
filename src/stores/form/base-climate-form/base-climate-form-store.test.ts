@@ -18,21 +18,20 @@ function state() {
 describe('useBaseClimateFormStore', () => {
   beforeEach(reset);
 
-  it('starts from the horizontal preset', () => {
-    expect(state().activePreset).toBe('horizontal');
-    expect(state().layout).toBe('horizontal');
-    expect(state().zones).toHaveLength(5);
+  it('starts from the ring preset', () => {
+    expect(state().activePreset).toBe('ring');
+    expect(state().layout).toBe('rings');
+    expect(state().zones).toHaveLength(3);
     expect(isBaseClimateConfig(baseClimateConfigOf(state()))).toBe(true);
   });
 
-  it('applies the ring preset and keeps its currents', () => {
-    state().applyPreset('ring');
+  it('applies the horizontal preset and keeps its currents', () => {
+    state().applyPreset('horizontal');
 
-    const preset = baseClimatePresetConfig('ring-world');
-    expect(state().activePreset).toBe('ring');
-    expect(state().layout).toBe('rings');
-    expect(state().ringExtent).toBe(0.5);
-    expect(state().zones).toHaveLength(3);
+    const preset = baseClimatePresetConfig('earth-like');
+    expect(state().activePreset).toBe('horizontal');
+    expect(state().layout).toBe('horizontal');
+    expect(state().zones).toHaveLength(5);
     expect(state().currents).toEqual(preset.currents);
     expect(state().geologyCoupling).toBe(preset.geologyCoupling);
   });
@@ -49,6 +48,7 @@ describe('useBaseClimateFormStore', () => {
   });
 
   it('converts the layout while preserving labels, classes and shares', () => {
+    state().applyPreset('horizontal');
     const zone = state().zones[2];
     if (!zone) {
       throw new Error('Expected a third zone.');
@@ -83,7 +83,7 @@ describe('useBaseClimateFormStore', () => {
     state().setIrregularity(0.15);
 
     expect(state().irregularity).toBe(0.15);
-    expect(state().activePreset).toBe('horizontal');
+    expect(state().activePreset).toBe('ring');
     expect(baseClimateConfigOf(state()).zoneIrregularity).toBe(0.15);
   });
 
@@ -91,11 +91,12 @@ describe('useBaseClimateFormStore', () => {
     state().setMoisture(0.8);
 
     expect(state().moisture).toBe(0.8);
-    expect(state().activePreset).toBe('horizontal');
+    expect(state().activePreset).toBe('ring');
     expect(baseClimateConfigOf(state()).moisture).toBe(0.8);
   });
 
   it('resizes zones from the distribution bar', () => {
+    state().applyPreset('horizontal');
     state().setZoneBoundaries([20, 40, 60, 90]);
 
     const shares = zoneShares(state().zones, state().layout, state().ringExtent);
@@ -104,6 +105,7 @@ describe('useBaseClimateFormStore', () => {
   });
 
   it('adds a zone by splitting the widest one and stops at the limit', () => {
+    state().applyPreset('horizontal');
     state().addZone();
     expect(state().zones).toHaveLength(6);
     expect(state().activePreset).toBeUndefined();
@@ -117,6 +119,7 @@ describe('useBaseClimateFormStore', () => {
   });
 
   it('removes a zone and gives its share to the previous one', () => {
+    state().applyPreset('horizontal');
     const currents = state().currents;
     const removed = state().zones[1];
     if (!removed) {
@@ -167,6 +170,7 @@ describe('useBaseClimateFormStore', () => {
   });
 
   it('exposes boundaries that match the edited zones', () => {
+    state().applyPreset('horizontal');
     state().setZoneBoundaries([20, 40, 60, 90]);
 
     expect(

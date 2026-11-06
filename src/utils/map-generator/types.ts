@@ -198,6 +198,8 @@ export interface GeologicalRegionPlan {
   readonly id: string;
   readonly type: GeologicalRegionType;
   readonly centre: WorldPoint;
+  /** Heat-zone class sampled at the centre; selects the island shape variant. */
+  readonly thermal: HeatZoneClass;
   /** Relative size resolved from the configuration; drives the area share. */
   readonly weight: number;
   /** Rasterized area of the region, in square metres. */

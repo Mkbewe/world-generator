@@ -64,7 +64,7 @@ describe('SettingsPanel', () => {
       'General',
       'World shape',
       'Macro regions',
-      'BaseClimate',
+      'Base Climate',
       'Geology',
       'Heightmap',
     ]);

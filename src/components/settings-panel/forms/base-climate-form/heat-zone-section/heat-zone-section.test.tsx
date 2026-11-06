@@ -18,6 +18,7 @@ function renderSection() {
 describe('HeatZoneSection', () => {
   beforeEach(() => {
     useBaseClimateFormStore.setState({ ...BASE_CLIMATE_FORM_DEFAULTS });
+    useBaseClimateFormStore.getState().applyPreset('horizontal');
   });
 
   it('shows the zones, the share bar and the selected zone', () => {

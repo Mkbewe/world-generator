@@ -41,6 +41,8 @@ function placedMarkers(
     shape,
     space: createWorldSpace(dimensions),
     random: new RandomFactory(seed),
+    thermalAt: () => 'temperate',
+    geologyCoupling: 0,
   });
 }
 

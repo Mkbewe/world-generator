@@ -29,6 +29,6 @@ describe('IrregularityField', () => {
     expect(useBaseClimateFormStore.getState().irregularity).toBeGreaterThan(
       BASE_CLIMATE_FORM_DEFAULTS.irregularity
     );
-    expect(useBaseClimateFormStore.getState().activePreset).toBe('horizontal');
+    expect(useBaseClimateFormStore.getState().activePreset).toBe('ring');
   });
 });

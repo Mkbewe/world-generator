@@ -24,6 +24,7 @@ function renderCard() {
 describe('HeatZoneCard', () => {
   beforeEach(() => {
     useBaseClimateFormStore.setState({ ...BASE_CLIMATE_FORM_DEFAULTS });
+    useBaseClimateFormStore.getState().applyPreset('horizontal');
   });
 
   it('edits the label and thermal class', async () => {

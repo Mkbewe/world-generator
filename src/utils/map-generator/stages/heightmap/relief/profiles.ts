@@ -79,7 +79,7 @@ export interface FormSample {
  * dome cut by radial coastal channels (fjords).
  */
 export function formProfile(input: ProfileInput, effectiveRadial: number): FormSample {
-  if (input.form.hasCavity && input.shape.cavityFloorShare < 0) {
+  if (input.form.hasCavity && input.shape.buildsReef) {
     return reefProfile(input, effectiveRadial);
   }
   if (input.form.hasCavity) {

@@ -1,6 +1,7 @@
 import { IsletRelief } from './islet-relief';
 import type { GeologyPlan, HeightmapConfig } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
+import { REGION_SHAPES } from '../config/region-shape';
 
 const POINT = { x: 0.5, y: 0.5 };
 const CELL = {
@@ -19,6 +20,7 @@ function plan(): GeologyPlan {
         id: 'region-1',
         type: 'ordinary',
         centre: POINT,
+        thermal: 'temperate',
         weight: 1,
         areaSquareMeters: 16,
       },
@@ -46,6 +48,7 @@ function relief(overrides: Partial<HeightmapNoiseBands> = {}, shoreWidthMeters =
     plan: plan(),
     bands,
     regionBands: [bands],
+    shapeAt: () => REGION_SHAPES.ordinary,
     config,
     shoreWidthMeters,
   });

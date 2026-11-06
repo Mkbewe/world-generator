@@ -17,7 +17,7 @@ export function PresetPicker() {
         columns='2'
         gap='2'
         size='1'
-        aria-label='BaseClimate preset'
+        aria-label='Base Climate preset'
         value={activePreset ?? ''}
         onValueChange={value => {
           const preset = BASE_CLIMATE_PRESET_OPTIONS.find(option => option.id === value);

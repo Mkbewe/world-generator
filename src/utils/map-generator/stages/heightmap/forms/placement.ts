@@ -89,7 +89,7 @@ export function nextCentre(
 ): WorldPoint {
   // Reef regions gather plain islets into small groups on one shoal, while
   // atolls never glue to each other and keep the open lagoon between them.
-  if (shape.cavityFloorShare < 0 && !hasCavity && placed.length > 0) {
+  if (shape.buildsReef && !hasCavity && placed.length > 0) {
     if (stream.next() < ISLET_GROUP_CHANCE) {
       const group = isletGroupCentre(stream, input, placed);
       if (group) {
@@ -98,11 +98,10 @@ export function nextCentre(
     }
     return separateCentre(stream, cells, input, placed, radiusMeters, count);
   }
-  const lobeChance =
-    shape.cavityFloorShare < 0
-      ? 0
-      : LOBE_BASE_CHANCE +
-        LOBE_CHANCE_GROWTH * Math.pow(clamp01(input.terrain.concentration), LOBE_CHANCE_POWER);
+  const lobeChance = shape.buildsReef
+    ? 0
+    : LOBE_BASE_CHANCE +
+      LOBE_CHANCE_GROWTH * Math.pow(clamp01(input.terrain.concentration), LOBE_CHANCE_POWER);
   if (placed.length > 0 && lobeChance > 0 && stream.next() < lobeChance) {
     const lobe = lobeCentre(stream, input, placed, radiusMeters);
     if (lobe) {

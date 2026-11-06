@@ -1,7 +1,7 @@
 import { smoothstep } from '../../../../math';
 import type { GeologyPlan, HeightmapConfig, WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
-import { REGION_SHAPES, type RegionShape } from '../config/region-shape';
+import type { RegionShape } from '../config/region-shape';
 import {
   BANK_DEPTH_FADE_METERS,
   BANK_DEPTH_METERS,
@@ -39,6 +39,7 @@ export interface IsletReliefInput {
   readonly plan: GeologyPlan;
   readonly bands: HeightmapNoiseBands;
   readonly regionBands: readonly HeightmapNoiseBands[];
+  readonly shapeAt: (regionIndex: number, point: WorldPoint) => RegionShape;
   readonly config: HeightmapConfig;
   readonly shoreWidthMeters: number;
 }
@@ -52,6 +53,7 @@ export class IsletRelief {
   private readonly plan: GeologyPlan;
   private readonly bands: HeightmapNoiseBands;
   private readonly regionBands: readonly HeightmapNoiseBands[];
+  private readonly shapeAt: (regionIndex: number, point: WorldPoint) => RegionShape;
   private readonly opened: number;
   private readonly shoreDistanceGate: number;
 
@@ -59,6 +61,7 @@ export class IsletRelief {
     this.plan = input.plan;
     this.bands = input.bands;
     this.regionBands = input.regionBands;
+    this.shapeAt = input.shapeAt;
     this.opened = Math.pow(clamp01(input.config.isletFrequency), ISLET_FREQUENCY_EXPONENT);
     this.shoreDistanceGate = input.shoreWidthMeters * ISLET_MIN_SHORE_DISTANCE_SHARE;
   }
@@ -72,6 +75,7 @@ export class IsletRelief {
     if (!region || !band) {
       return surface;
     }
+    const shape = this.shapeAt(cell.owner, cell.point);
     let result = surface;
     if (this.isOpenWater(cell)) {
       result = this.applyBank(result, cell);
@@ -83,7 +87,7 @@ export class IsletRelief {
       this.isOpenWater(cell) &&
       cell.gate > ISLET_GATE_MIN
     ) {
-      result = this.applyIslet(result, cell, band, REGION_SHAPES[region.type]);
+      result = this.applyIslet(result, cell, band, shape);
     }
     return result;
   }

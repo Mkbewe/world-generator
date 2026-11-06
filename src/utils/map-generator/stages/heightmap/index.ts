@@ -8,6 +8,7 @@ export {
 } from './defaults';
 export type { HeightmapBand, HeightmapBandName } from './defaults';
 export { REGION_SHAPES } from './config/region-shape';
+export { regionShapeFor } from './config/region-shape-variants';
 export type { RegionShape } from './config/region-shape';
 export {
   REGION_TERRAIN_SUPPORT,

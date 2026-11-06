@@ -5,10 +5,17 @@ import type { WorldDimensions } from '../../../world-dimensions';
 import type { WorldShape } from '../../../world-shape';
 import type { RandomFactory } from '../../random';
 import type { WorldSpace } from '../../space';
-import type { GeologyPlan } from '../../types';
+import type { GeologyPlan, HeatZoneClass, WorldPoint } from '../../types';
 
 /** Marker placement share of the stage progress; the partition owns the rest. */
 const PLACEMENT_PROGRESS = 0.25;
+
+export interface GeologyPlanOptions {
+  readonly thermalAt: (point: WorldPoint) => HeatZoneClass;
+  readonly geologyCoupling: number;
+  readonly signal?: AbortSignal;
+  readonly report?: (progress: number) => void;
+}
 
 /** Builds a seed-determined full-world region partition with no heights. */
 export function buildGeologyPlan(
@@ -17,8 +24,7 @@ export function buildGeologyPlan(
   shape: WorldShape,
   dimensions: WorldDimensions,
   space: WorldSpace,
-  signal?: AbortSignal,
-  report?: (progress: number) => void
+  options: GeologyPlanOptions
 ): GeologyPlan {
   validateGeologyConfig(config);
   const markers = placePartitionMarkers({
@@ -28,8 +34,10 @@ export function buildGeologyPlan(
     shape,
     space,
     random,
-    signal,
-    report: progress => report?.(progress * PLACEMENT_PROGRESS),
+    thermalAt: options.thermalAt,
+    geologyCoupling: options.geologyCoupling,
+    signal: options.signal,
+    report: progress => options.report?.(progress * PLACEMENT_PROGRESS),
   });
   const partition = createRegionPartition({
     regions: markers,
@@ -38,8 +46,8 @@ export function buildGeologyPlan(
     shape,
     random,
     space,
-    signal,
-    report: progress => report?.(PLACEMENT_PROGRESS + progress * (1 - PLACEMENT_PROGRESS)),
+    signal: options.signal,
+    report: progress => options.report?.(PLACEMENT_PROGRESS + progress * (1 - PLACEMENT_PROGRESS)),
   });
   const { counts } = partition;
   const cellArea =
@@ -54,6 +62,7 @@ export function buildGeologyPlan(
       id: marker.id,
       type: marker.type,
       centre: marker.centre,
+      thermal: options.thermalAt(marker.centre),
       weight: marker.weight,
       areaSquareMeters: (counts[index] ?? 0) * cellArea,
     })),

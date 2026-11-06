@@ -24,7 +24,7 @@ describe('BaseClimateForm', () => {
       screen.getByText('Presets'),
       screen.getByText('Layout'),
       screen.getByText('Boundaries'),
-      screen.getByText('Heat zones (5)'),
+      screen.getByText('Heat zones (3)'),
       screen.getByText('Moisture'),
     ];
 

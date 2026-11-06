@@ -60,7 +60,7 @@ describe('generation worker', () => {
       stages: [
         { id: 'world-shape', name: 'World shape' },
         { id: 'macro-region', name: 'Macro region' },
-        { id: 'base-climate', name: 'BaseClimate' },
+        { id: 'base-climate', name: 'Base Climate' },
         { id: 'geology', name: 'Geology' },
         { id: 'heightmap', name: 'Heightmap' },
       ],

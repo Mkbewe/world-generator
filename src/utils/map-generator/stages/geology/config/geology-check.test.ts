@@ -46,6 +46,7 @@ describe('isGeologyPlan', () => {
           id: 'region-1',
           type: 'ordinary',
           centre: { x: 0.5, y: 0.5 },
+          thermal: 'temperate',
           weight: 1,
           areaSquareMeters: 100,
         },
@@ -79,5 +80,6 @@ describe('isGeologyPlan', () => {
     const [region] = plan().regions;
     expect(isGeologyPlan(plan({ regions: [{ ...region, id: 'region-2' }] }))).toBe(false);
     expect(isGeologyPlan(plan({ regions: [{ ...region, type: 'lava' }] }))).toBe(false);
+    expect(isGeologyPlan(plan({ regions: [{ ...region, thermal: 'hot' }] }))).toBe(false);
   });
 });

@@ -30,8 +30,8 @@ export type BaseClimateFormPreset = 'horizontal' | 'vertical' | 'ring';
 /** Visible-but-gentle border wobble so the default map is not a perfect target. */
 const DEFAULT_IRREGULARITY = 0.06;
 const DEFAULT_MOISTURE = 0.5;
-const DEFAULT_PRESET: BaseClimateFormPreset = 'horizontal';
-const defaultConfig = baseClimatePresetConfig('earth-like');
+const DEFAULT_PRESET: BaseClimateFormPreset = 'ring';
+const defaultConfig = baseClimatePresetConfig('ring-world');
 
 export const BASE_CLIMATE_FORM_DEFAULTS = {
   zones: defaultConfig.zones,
@@ -40,7 +40,7 @@ export const BASE_CLIMATE_FORM_DEFAULTS = {
   irregularity: DEFAULT_IRREGULARITY,
   moisture: DEFAULT_MOISTURE,
   layout: layoutOfZones(defaultConfig.zones),
-  ringExtent: DEFAULT_RING_EXTENT,
+  ringExtent: ringExtentOf(defaultConfig.zones),
   activePreset: DEFAULT_PRESET,
   currentsEdited: false,
 };

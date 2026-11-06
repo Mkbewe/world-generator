@@ -1,4 +1,4 @@
-import { isGeologyPlan } from '../stages/geology';
+import { isGeologyPlan } from '../stages/geology/config/geology-check';
 import type { MapState, StageData } from '../types';
 
 /** Raster keys the generator owns. The layer catalog may display them, not define them. */

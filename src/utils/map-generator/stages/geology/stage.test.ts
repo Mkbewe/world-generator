@@ -14,7 +14,10 @@ const CONFIG: MapConfig = {
 const GEOLOGY: GeologyConfig = DEFAULT_GEOLOGY_CONFIG;
 
 function context(geology: GeologyConfig = GEOLOGY): MapContext<MapConfig, MapState, string> {
-  return new MapContext<MapConfig, MapState, string>({ ...CONFIG, geology }, {});
+  return new MapContext<MapConfig, MapState, string>(
+    { ...CONFIG, geology },
+    { heatZoneMap: new Int16Array(64 * 64) }
+  );
 }
 
 describe('GeologyStage', () => {
