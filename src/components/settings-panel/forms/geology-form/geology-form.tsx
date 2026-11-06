@@ -2,7 +2,6 @@ import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useGeologySelection } from './hooks/use-geology-selection';
 import { useRegionDistribution } from './hooks/use-region-distribution';
-import { percent } from './lib/percent';
 import { PRESET_OPTIONS } from './lib/preset-options';
 import { RegionDistribution } from './region-distribution';
 import { RegionEditor } from './region-editor';
@@ -16,8 +15,10 @@ import {
 import { defaultRegionTerrain } from '../../../../utils/map-generator/stages/heightmap';
 import type { GeologicalRegionConfig } from '../../../../utils/map-generator/types';
 import { geologyRegionColor } from '../../../../utils/map-layers';
+import { percent } from '../../../lib/percent';
 import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';
+import { regionId } from '../lib/region-id';
 
 /** Starter presets, shared layout and per-region settings of the geology map. */
 export function GeologyForm(): React.JSX.Element {
@@ -34,7 +35,7 @@ export function GeologyForm(): React.JSX.Element {
   const activeSlots = slots.slice(0, regionCount);
   const regionTypes = activeSlots.map(slot => slot.type);
   const tabItems: readonly RegionTabItem[] = regionTypes.map((type, index) => ({
-    id: `region-${index + 1}`,
+    id: regionId(index),
     label: `Region ${index + 1}`,
     color: geologyRegionColor(type, index),
   }));

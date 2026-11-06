@@ -1,7 +1,6 @@
 import { OverlayController } from './overlay/overlay-controller';
 import {
   fitView,
-  isFitted,
   nextZoomScale,
   panBy,
   previousZoomScale,
@@ -11,7 +10,7 @@ import {
 } from './view-transform';
 import type { LayerDataRecord, MapInfo } from '../../map-layers';
 import type { WorldShape } from '../../world-shape';
-import type { MapLayer, MapSize, TileReporter } from '../layer';
+import { type MapLayer, type MapSize, matchesMapSize, type TileReporter } from '../layer';
 import { LayerPresenter } from '../layer-presenter';
 import type { RenderMetrics } from '../metrics';
 import { type MapPointerSample, pointerAnchor, samplePointer } from '../pointer-sampling';
@@ -92,10 +91,6 @@ export class MapView {
     return this.view;
   }
 
-  get zoomed(): boolean {
-    return !isFitted(this.view);
-  }
-
   get overlayDurationMs(): number {
     return this.overlays.renderDurationMs;
   }
@@ -127,7 +122,7 @@ export class MapView {
    * whether the preview should follow the run, so both rules must stay equal.
    */
   start(size: MapSize, shape: WorldShape): void {
-    const continuing = this.matchesSize(size) && this.presented !== undefined;
+    const continuing = matchesMapSize(this.size, size) && this.presented !== undefined;
     if (!continuing) {
       this.view = fitView();
       this.presented = undefined;
@@ -144,10 +139,6 @@ export class MapView {
     this.size = size;
     this.viewport.start();
     this.applyTargetSize();
-  }
-
-  private matchesSize(size: MapSize): boolean {
-    return this.size?.width === size.width && this.size.height === size.height;
   }
 
   restoreSelection(fallback?: MapBaseLayerId): void {

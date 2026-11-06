@@ -3,6 +3,7 @@ import { createOceanCurrentSampler, type OceanCurrentSample } from './currents';
 import { DEFAULT_BASE_CLIMATE_CONFIG } from './defaults';
 import { createBaseMoistureBand, moistureValue } from './moisture';
 import { createHeatZoneSampler } from './sampler';
+import { clamp01 } from '../../../math';
 import { GenerationCancelledError } from '../../errors';
 import {
   createDisplacementField,
@@ -264,8 +265,4 @@ function displacedPoint(
   out.x = point.x + offset.x * amplitude;
   out.y = point.y + offset.y * amplitude;
   return out;
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

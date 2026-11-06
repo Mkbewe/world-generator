@@ -15,8 +15,6 @@ export interface PipelineWorkerGenerateRequest {
   reuse: PipelineWorkerReuse;
 }
 
-export type PipelineWorkerRequest = PipelineWorkerGenerateRequest;
-
 export interface PipelineWorkerStagesResponse {
   type: 'stages';
   stages: readonly StageInfo[];

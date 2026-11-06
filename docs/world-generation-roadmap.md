@@ -93,3 +93,6 @@ przeniesienie ciężkiego rysowania na WebGL/WebGPU.
 - Odświeżenie wyglądu shella i ewentualne dekoracyjne tło.
 - Udostępnianie świata linkiem, samouczek i strona o projekcie.
 - Wsparcie innych języków interfejsu (odległe).
+- `legacy-generator` pozostaje w projekcie do odwołania. To świadoma decyzja
+  produktowa, nie dług do spłaty: nie zgłaszać jego usunięcia ani odłączenia
+  w review, dopóki użytkownik nie zdecyduje inaczej.

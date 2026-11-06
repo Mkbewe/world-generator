@@ -14,43 +14,35 @@ import {
   GeologyForm,
   HeightmapForm,
   MacroRegionForm,
-  type WorldShape,
   WorldShapeForm,
-  type WorldSize,
 } from './forms';
 import { TabLinkToggle } from './tab-link-toggle';
-import { type SettingsTab, useViewSyncStore } from '../../stores';
+import {
+  type SettingsTab,
+  useGeneralFormStore,
+  useViewSyncStore,
+  useWorldShapeFormStore,
+} from '../../stores';
 import { LAYER_CATALOG } from '../../utils/map-layers';
 import { type MapBaseLayerId } from '../../utils/map-renderer';
 import { type VerticalTabItem, VerticalTabs } from '../vertical-tabs';
 
 interface SettingsPanelProps {
-  seed: string;
-  onSeedChange: (seed: string) => void;
   isGenerating: boolean;
   onGenerate: () => void;
-  shape: WorldShape;
-  sizeMeters: WorldSize;
-  metersPerSample: number;
-  onShapeChange: (shape: WorldShape) => void;
-  onSizeChange: (sizeMeters: WorldSize) => void;
-  onDetailChange: (metersPerSample: number) => void;
 }
 
-export function SettingsPanel({
-  seed,
-  onSeedChange,
-  isGenerating,
-  onGenerate,
-  shape,
-  sizeMeters,
-  metersPerSample,
-  onShapeChange,
-  onSizeChange,
-  onDetailChange,
-}: SettingsPanelProps) {
+export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) {
   const activeTab = useViewSyncStore(state => state.settingsTab);
   const setSettingsTab = useViewSyncStore(state => state.setSettingsTab);
+  const seed = useGeneralFormStore(state => state.seed);
+  const setSeed = useGeneralFormStore(state => state.setSeed);
+  const shape = useWorldShapeFormStore(state => state.shape);
+  const sizeMeters = useWorldShapeFormStore(state => state.sizeMeters);
+  const metersPerSample = useWorldShapeFormStore(state => state.metersPerSample);
+  const setShape = useWorldShapeFormStore(state => state.setShape);
+  const setSizeMeters = useWorldShapeFormStore(state => state.setSizeMeters);
+  const setMetersPerSample = useWorldShapeFormStore(state => state.setMetersPerSample);
   const formTabs: Partial<Record<MapBaseLayerId, Omit<VerticalTabItem, 'value'>>> = {
     'world-shape': {
       label: 'World shape',
@@ -60,9 +52,9 @@ export function SettingsPanel({
           shape={shape}
           sizeMeters={sizeMeters}
           metersPerSample={metersPerSample}
-          onShapeChange={onShapeChange}
-          onSizeChange={onSizeChange}
-          onDetailChange={onDetailChange}
+          onShapeChange={setShape}
+          onSizeChange={setSizeMeters}
+          onDetailChange={setMetersPerSample}
         />
       ),
     },
@@ -76,12 +68,12 @@ export function SettingsPanel({
       icon: <SunIcon />,
       content: <BaseClimateForm />,
     },
-    geology: {
+    'geology': {
       label: 'Geology',
       icon: <SewingPinIcon />,
       content: <GeologyForm />,
     },
-    heightmap: {
+    'heightmap': {
       label: 'Heightmap',
       icon: <FrameIcon />,
       content: <HeightmapForm />,
@@ -92,7 +84,7 @@ export function SettingsPanel({
       value: 'general',
       label: 'General',
       icon: <GearIcon />,
-      content: <GeneralForm seed={seed} onSeedChange={onSeedChange} />,
+      content: <GeneralForm seed={seed} onSeedChange={setSeed} />,
     },
     // Form tabs follow the layer catalog order; layers without a form are skipped.
     ...LAYER_CATALOG.flatMap(layer => {

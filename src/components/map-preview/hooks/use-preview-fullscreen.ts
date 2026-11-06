@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 
+import { useEscapeKey } from '../../../hooks/use-escape-key';
 import { useHeaderActions } from '../../header';
 
 const MOBILE_VIEWPORT_QUERY = '(width < 768px)';
@@ -29,24 +30,19 @@ export function usePreviewFullscreen(): boolean {
     return () => query.removeEventListener('change', handleChange);
   }, [setIsFullscreen]);
 
+  useEscapeKey(isFullscreen, () => setIsFullscreen(false));
+
   useEffect(() => {
     if (!isFullscreen) {
       return;
     }
     const root = document.documentElement;
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        setIsFullscreen(false);
-      }
-    };
     const previousOverflow = root.style.overflow;
-    document.addEventListener('keydown', handleKeyDown);
     root.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
       root.style.overflow = previousOverflow;
     };
-  }, [isFullscreen, setIsFullscreen]);
+  }, [isFullscreen]);
 
   return isFullscreen;
 }

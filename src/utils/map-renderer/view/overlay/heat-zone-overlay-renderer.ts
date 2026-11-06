@@ -1,9 +1,7 @@
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
 import { type HeatZoneInfo, isHeatZoneInfoList } from '../../../map-generator/info-definitions';
 import { heatZoneColor } from '../../../map-layers';
-import { presentationPadding } from '../../preview-targets';
-import { effectivePixelRatio } from '../../viewport';
-import { project } from '../view-transform';
+import { projectWithPadding } from '../../preview-targets';
 
 /** Alpha of the zone fill over the base map. */
 const ZONE_ALPHA = 140;
@@ -35,16 +33,11 @@ export class HeatZoneOverlayRenderer implements OverlayRenderer {
     if (!source) {
       return;
     }
-    const ratio = effectivePixelRatio(frame.viewport.devicePixelRatio);
-    const padding = presentationPadding(
-      { width: frame.canvas.width, height: frame.canvas.height },
-      ratio
-    );
-    const projection = project(
+    const projection = projectWithPadding(
       frame.view,
-      { width: frame.canvas.width, height: frame.canvas.height },
       frame.world.size,
-      padding
+      { width: frame.canvas.width, height: frame.canvas.height },
+      frame.viewport.devicePixelRatio
     );
 
     destination.save();

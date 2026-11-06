@@ -1,3 +1,4 @@
+import { clamp01 } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
 import { containsNormalized, type WorldShape } from '../../../../world-shape';
 import { GenerationCancelledError } from '../../../errors';
@@ -89,7 +90,7 @@ export function placePartitionMarkers(input: MarkerPlacementInput): RegionMarker
     }
     const centred = index === 0 && containsNormalized(input.shape, WORLD_CENTRE);
     const preferred = THERMAL_ANCHOR_PREFERENCE[region.type];
-    const coupling = clampUnit(input.geologyCoupling);
+    const coupling = clamp01(input.geologyCoupling);
     const thermalBias =
       preferred && coupling > 0
         ? {
@@ -180,8 +181,4 @@ interface ThermalBias {
   readonly preferred: HeatZoneClass;
   readonly bonus: number;
   readonly maxShift: number;
-}
-
-function clampUnit(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

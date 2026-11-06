@@ -1,4 +1,4 @@
-import { smoothstep } from '../../../../math';
+import { clamp01, smoothstep } from '../../../../math';
 import type { GeologyPlan, HeightmapConfig, WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
 import type { RegionShape } from '../config/region-shape';
@@ -159,8 +159,4 @@ export class IsletRelief {
     const hash = Math.sin(point.x * 12.9898 + point.y * 78.233) * 43758.5453;
     return hash - Math.floor(hash);
   }
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

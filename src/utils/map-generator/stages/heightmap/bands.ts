@@ -25,13 +25,13 @@ export function createHeightmapNoiseBands(
   namespace = 'heightmap'
 ): HeightmapNoiseBands {
   return {
-    large: signedBand(random, `${namespace}.large`, dimensions, HEIGHTMAP_BANDS.large),
-    warpX: signedBand(random, `${namespace}.warpX`, dimensions, HEIGHTMAP_BANDS.warpX),
-    warpY: signedBand(random, `${namespace}.warpY`, dimensions, HEIGHTMAP_BANDS.warpY),
-    coast: signedBand(random, `${namespace}.coast`, dimensions, HEIGHTMAP_BANDS.coast),
-    ridge: signedBand(random, `${namespace}.ridge`, dimensions, HEIGHTMAP_BANDS.ridge),
-    fine: signedBand(random, `${namespace}.fine`, dimensions, HEIGHTMAP_BANDS.fine),
-    bank: signedBand(random, `${namespace}.bank`, dimensions, HEIGHTMAP_BANDS.bank),
+    large: createHeightmapBand(random, dimensions, `${namespace}.large`, HEIGHTMAP_BANDS.large),
+    warpX: createHeightmapBand(random, dimensions, `${namespace}.warpX`, HEIGHTMAP_BANDS.warpX),
+    warpY: createHeightmapBand(random, dimensions, `${namespace}.warpY`, HEIGHTMAP_BANDS.warpY),
+    coast: createHeightmapBand(random, dimensions, `${namespace}.coast`, HEIGHTMAP_BANDS.coast),
+    ridge: createHeightmapBand(random, dimensions, `${namespace}.ridge`, HEIGHTMAP_BANDS.ridge),
+    fine: createHeightmapBand(random, dimensions, `${namespace}.fine`, HEIGHTMAP_BANDS.fine),
+    bank: createHeightmapBand(random, dimensions, `${namespace}.bank`, HEIGHTMAP_BANDS.bank),
   };
 }
 
@@ -43,14 +43,4 @@ export function createHeightmapBand(
   spec: HeightmapBand
 ): WorldNoiseReader {
   return new NoiseSource(random, namespace).band(dimensions, spec);
-}
-
-/** One band straight from the noise port, in its native -1..1 range. */
-function signedBand(
-  random: RandomFactory,
-  namespace: string,
-  dimensions: WorldDimensions,
-  band: HeightmapBand
-): WorldNoiseReader {
-  return createHeightmapBand(random, dimensions, namespace, band);
 }

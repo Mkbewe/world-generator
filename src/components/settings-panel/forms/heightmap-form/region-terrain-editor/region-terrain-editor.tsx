@@ -6,10 +6,9 @@ import type {
   RegionTerrainConfig,
 } from '../../../../../utils/map-generator/types';
 import { regionStyle } from '../../../../../utils/map-layers';
+import { percent } from '../../../../lib/percent';
 import { SliderField } from '../../../../slider-field';
 import { TERRAIN_SLIDER_OPTIONS, terrainParameterPatch } from '../lib/terrain-options';
-
-const percent = (value: number): string => `${Math.round(value * 100)}%`;
 
 export interface RegionTerrainEditorProps {
   index: number;

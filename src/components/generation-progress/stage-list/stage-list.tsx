@@ -1,7 +1,7 @@
 import { Text } from '@radix-ui/themes';
 
 import type { GenerationStageProgress } from '../../../stores';
-import { formatDuration } from '../lib/progress-format';
+import { formatDurationShort } from '../../../utils/format';
 import styles from './stage-list.module.scss';
 
 export function StageList({ stages }: { stages: readonly GenerationStageProgress[] }) {
@@ -31,5 +31,5 @@ function stageTrailing(stage: GenerationStageProgress): string | undefined {
   if (stage.durationMs === undefined) {
     return undefined;
   }
-  return formatDuration(stage.durationMs);
+  return formatDurationShort(stage.durationMs);
 }

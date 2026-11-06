@@ -122,16 +122,16 @@ type RasterReadout = (
 
 /** One provider per vector layer; a new layer adds an entry, not a branch. */
 const VECTOR_READOUTS: Partial<Record<MapBaseLayerId, VectorReadout>> = {
-  geology: geologyReadout,
+  'geology': geologyReadout,
   'ocean-currents': oceanCurrentReadout,
 };
 
 /** One provider per raster layer; a new layer adds an entry, not a branch. */
 const RASTER_READOUTS: Partial<Record<MapBaseLayerId, RasterReadout>> = {
   'macro-region': macroRegionReadout,
-  heightmap: heightmapReadout,
+  'heightmap': heightmapReadout,
   'heat-zones': heatZoneReadout,
-  moisture: moistureReadout,
+  'moisture': moistureReadout,
 };
 
 /** Height under the pointer relative to the sea level; 0 is the waterline. */

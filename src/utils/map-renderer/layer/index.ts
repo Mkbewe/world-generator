@@ -1,7 +1,7 @@
 export { LayerCache, layerCache } from './cache/layer-cache';
 export { CatalogLayer } from './catalog/catalog-layer';
 export { LayerRegistry, layerRegistry } from './layer-registry';
-export { MapLayer, isLayerHit } from './layer';
+export { MapLayer, isLayerHit, matchesMapSize } from './layer';
 export { GeologyPlanVectorLayer } from './geology/geology-plan-vector-layer';
 export { OceanCurrentLayer, oceanCurrentLayerFactory } from './ocean-current/ocean-current-layer';
 export { vectorLayerFactories } from './factories/vector-layer-factories';

@@ -6,6 +6,11 @@ export interface MapSize {
   height: number;
 }
 
+/** Whether the current raster size already equals the requested one. */
+export function matchesMapSize(current: MapSize | undefined, next: MapSize): boolean {
+  return current?.width === next.width && current.height === next.height;
+}
+
 export type TileReporter = (x: number, y: number, width: number, height: number) => void;
 
 /** Raster layers sample numbers; vector layers sample named elements. */

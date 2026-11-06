@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { FrameIcon, GlobeIcon, LayersIcon, SewingPinIcon, SunIcon } from '@radix-ui/react-icons';
 import { Tabs } from '@radix-ui/themes';
 
@@ -9,7 +9,7 @@ const LAYER_ICONS: Readonly<Record<string, ReactNode>> = {
   'world-shape': <GlobeIcon />,
   'macro-region': <LayersIcon />,
   'base-climate': <SunIcon />,
-  geology: <SewingPinIcon />,
+  'geology': <SewingPinIcon />,
 };
 
 interface LayerTabsProps {
@@ -19,7 +19,11 @@ interface LayerTabsProps {
   expanded?: boolean;
 }
 
-export function LayerTabs({ navigation, onLayerChange, expanded = false }: LayerTabsProps) {
+export const LayerTabs = memo(function LayerTabs({
+  navigation,
+  onLayerChange,
+  expanded = false,
+}: LayerTabsProps) {
   const { tabs, activeTab } = navigation;
   const selectTab = (id: string): void => {
     const tab = tabs.find(tab => tab.id === id);
@@ -52,7 +56,7 @@ export function LayerTabs({ navigation, onLayerChange, expanded = false }: Layer
       </Tabs.List>
     </Tabs.Root>
   );
-}
+});
 
 /** Group tabs use their own ids, so unknown ones fall back to the generic icon. */
 function tabIcon(id: string): ReactNode {

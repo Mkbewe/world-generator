@@ -5,7 +5,8 @@
   "rules": {
     "no-eval": ["error"],
     "no-nested-ternary": ["error"],
-    "prettier/prettier": ["error"]
+    "prettier/prettier": ["error"],
+    "quote-props": ["error", "consistent"]
   },
   "overrides": [
     {

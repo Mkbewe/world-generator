@@ -1,9 +1,8 @@
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
 import { sampleOceanCurrentArrows, traceOceanCurrentArrows } from '../../ocean-current';
-import { presentationPadding } from '../../preview-targets';
+import { projectWithPadding } from '../../preview-targets';
 import { effectivePixelRatio } from '../../viewport';
 import { traceWorldBoundary } from '../../world-boundary-renderer';
-import { project } from '../view-transform';
 
 /** Light halo under a dark core keeps arrows readable on every layer. */
 const HALO_COLOR = 'rgba(255, 255, 255, 0.75)';
@@ -38,11 +37,11 @@ export class OceanCurrentOverlayRenderer implements OverlayRenderer {
       throw new Error('Overlay canvas is not available.');
     }
     const ratio = effectivePixelRatio(frame.viewport.devicePixelRatio);
-    const projection = project(
+    const projection = projectWithPadding(
       frame.view,
-      { width: frame.canvas.width, height: frame.canvas.height },
       frame.world.size,
-      presentationPadding({ width: frame.canvas.width, height: frame.canvas.height }, ratio)
+      { width: frame.canvas.width, height: frame.canvas.height },
+      frame.viewport.devicePixelRatio
     );
     const arrows = sampleOceanCurrentArrows(frame.world, map, strength, projection, ratio);
     if (arrows.length === 0) {

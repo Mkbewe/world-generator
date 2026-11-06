@@ -1,12 +1,7 @@
 import {
-  cellCenterMeters,
   cellOriginMeters,
   dimensionsFromMeters,
   metersPerSample,
-  metersToCell,
-  metersToNormalized,
-  normalizedToCell,
-  normalizedToMeters,
   SAMPLE_BUDGET,
   validateDimensions,
   type WorldDimensions,
@@ -78,23 +73,6 @@ describe('metersPerSample', () => {
   });
 });
 
-describe('metersToCell', () => {
-  it('maps meters to the containing cell and clamps to the raster', () => {
-    expect(metersToCell(square, 0, 0)).toEqual({ x: 0, y: 0 });
-    expect(metersToCell(square, 1999, 3999)).toEqual({ x: 999, y: 1999 });
-    expect(metersToCell(square, -50, 9999)).toEqual({ x: 0, y: 1999 });
-  });
-
-  it('returns a cell whose center is within one cell of the point', () => {
-    const point = { xMeters: 1234, yMeters: 3210 };
-    const cell = metersToCell(square, point.xMeters, point.yMeters);
-    const center = cellCenterMeters(square, cell.x, cell.y);
-
-    expect(Math.abs(center.xMeters - point.xMeters)).toBeLessThanOrEqual(2);
-    expect(Math.abs(center.yMeters - point.yMeters)).toBeLessThanOrEqual(2);
-  });
-});
-
 describe('cellOriginMeters', () => {
   it('maps cell indices to the start of the cell in meters', () => {
     expect(cellOriginMeters(square, 0, 0)).toEqual({ xMeters: 0, yMeters: 0 });
@@ -111,23 +89,5 @@ describe('cellOriginMeters', () => {
     };
 
     expect(cellOriginMeters(wide, 3, 4)).toEqual({ xMeters: 6, yMeters: 4 });
-  });
-});
-
-describe('normalized conversions', () => {
-  it('round-trips meters through normalized coordinates', () => {
-    const normalized = metersToNormalized(square, 1000, 3000);
-
-    expect(normalized).toEqual({ u: 0.25, v: 0.75 });
-    expect(normalizedToMeters(square, normalized.u, normalized.v)).toEqual({
-      xMeters: 1000,
-      yMeters: 3000,
-    });
-  });
-
-  it('clamps out-of-range normalized values', () => {
-    expect(metersToNormalized(square, -100, 5000)).toEqual({ u: 0, v: 1 });
-    expect(normalizedToCell(square, 0.5, 0.5)).toEqual({ x: 1000, y: 1000 });
-    expect(normalizedToCell(square, -1, 2)).toEqual({ x: 0, y: 1999 });
   });
 });

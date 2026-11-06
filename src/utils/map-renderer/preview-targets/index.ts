@@ -2,6 +2,7 @@ export {
   PRESENTATION_MARGIN,
   presentationPadding,
   presentationSize,
+  projectWithPadding,
   renderSize,
   renderTarget,
   viewTarget,

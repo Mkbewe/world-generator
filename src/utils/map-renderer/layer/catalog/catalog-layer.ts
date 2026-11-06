@@ -8,27 +8,11 @@ import {
 } from '../../../map-layers';
 import { type RenderTarget, targetKey } from '../../preview-targets';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
+import { yieldToBrowser } from '../geology/geology-yield';
 import { type LayerTile, MapLayer, type MapSize, type TileReporter } from '../layer';
 
 /** Progressive raster drawing splits the frame into this many tiles per axis. */
 const TILES_PER_AXIS = 10;
-
-function createYieldToBrowser(): () => Promise<void> {
-  if (typeof MessageChannel === 'undefined') {
-    return () => new Promise(resolve => setTimeout(resolve, 0));
-  }
-  const channel = new MessageChannel();
-  const resolvers: (() => void)[] = [];
-  channel.port1.onmessage = () => resolvers.shift()?.();
-  channel.port1.start();
-  return () =>
-    new Promise(resolve => {
-      resolvers.push(resolve);
-      channel.port2.postMessage(undefined);
-    });
-}
-
-const yieldToBrowser = createYieldToBrowser();
 
 /** Generic validated raster rendered through a catalog palette. */
 export class CatalogLayer extends MapLayer implements SpatialMask {

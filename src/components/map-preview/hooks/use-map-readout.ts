@@ -4,6 +4,7 @@ import {
   type RefObject,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -93,8 +94,11 @@ export function useMapReadout(
     [rendererRef]
   );
 
-  const sampleAt = (event: { clientX: number; clientY: number }): PointerSample | undefined =>
-    rendererRef.current?.samplePointer(event.clientX, event.clientY);
+  const sampleAt = useCallback(
+    (event: { clientX: number; clientY: number }): PointerSample | undefined =>
+      rendererRef.current?.samplePointer(event.clientX, event.clientY),
+    [rendererRef]
+  );
 
   useEffect(() => {
     if (pinned) {
@@ -128,140 +132,152 @@ export function useMapReadout(
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, [canvasRef, rendererRef, zoomable]);
 
-  const trackReadout = (event: { clientX: number; clientY: number }): void => {
-    if (pinned) {
-      return;
-    }
-    const position = sampleAt(event);
-    if (!position) {
-      positionRef.current = undefined;
-      setReadout(undefined);
-      return;
-    }
-    const last = positionRef.current;
-    if (last && last.x === position.x && last.y === position.y) {
-      return;
-    }
-    positionRef.current = position;
-    refreshReadout(position);
-  };
+  const trackReadout = useCallback(
+    (event: { clientX: number; clientY: number }): void => {
+      if (pinned) {
+        return;
+      }
+      const position = sampleAt(event);
+      if (!position) {
+        positionRef.current = undefined;
+        setReadout(undefined);
+        return;
+      }
+      const last = positionRef.current;
+      if (last && last.x === position.x && last.y === position.y) {
+        return;
+      }
+      positionRef.current = position;
+      refreshReadout(position);
+    },
+    [pinned, refreshReadout, sampleAt]
+  );
 
   /**
    * The measure mode adds a point on every click, the middle mouse button pans
    * and a plain left click or tap pins the readout. Touch pans when not measuring.
    */
-  const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-    if (gestureRef.current) {
-      return;
-    }
-    const touch = isTouchPointer(event);
-    const wantsMeasure = measuring && (event.button === 0 || touch);
-    const wantsPan = zoomable && (event.button === 1 || (touch && !measuring));
-    if (!wantsMeasure && !wantsPan && event.button !== 0) {
-      return;
-    }
-    if (event.button === 1) {
-      event.preventDefault();
-    }
-    // Keep move and up events on the canvas when a drag leaves its bounds.
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    let kind: GestureKind = 'tap';
-    if (wantsMeasure) {
-      kind = 'measure';
-    } else if (wantsPan) {
-      kind = 'pan';
-    }
-    gestureRef.current = {
-      kind,
-      pointerId: event.pointerId,
-      button: event.button,
-      startX: event.clientX,
-      startY: event.clientY,
-      lastX: event.clientX,
-      lastY: event.clientY,
-      moved: false,
-    };
-    if (wantsMeasure) {
-      const position = sampleAt(event);
-      if (!position) {
-        gestureRef.current = undefined;
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+      if (gestureRef.current) {
         return;
       }
-      setMeasurement(current =>
-        current && !current.finished
-          ? { points: [...current.points, position], preview: position }
-          : { points: [position], preview: position }
-      );
-      trackReadout(event);
-      return;
-    }
-    trackReadout(event);
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-    const gesture = gestureRef.current;
-    if (gesture?.pointerId === event.pointerId) {
-      const deltaX = event.clientX - gesture.lastX;
-      const deltaY = event.clientY - gesture.lastY;
-      if (
-        !gesture.moved &&
-        Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >
-          TAP_MOVE_TOLERANCE_PX
-      ) {
-        gesture.moved = true;
-        if (gesture.kind === 'pan') {
-          setPanning(true);
-        }
+      const touch = isTouchPointer(event);
+      const wantsMeasure = measuring && (event.button === 0 || touch);
+      const wantsPan = zoomable && (event.button === 1 || (touch && !measuring));
+      if (!wantsMeasure && !wantsPan && event.button !== 0) {
+        return;
       }
-      if (gesture.moved && gesture.kind === 'pan') {
-        gesture.lastX = event.clientX;
-        gesture.lastY = event.clientY;
-        rendererRef.current?.panByPixels(deltaX, deltaY);
+      if (event.button === 1) {
+        event.preventDefault();
+      }
+      // Keep move and up events on the canvas when a drag leaves its bounds.
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      let kind: GestureKind = 'tap';
+      if (wantsMeasure) {
+        kind = 'measure';
+      } else if (wantsPan) {
+        kind = 'pan';
+      }
+      gestureRef.current = {
+        kind,
+        pointerId: event.pointerId,
+        button: event.button,
+        startX: event.clientX,
+        startY: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        moved: false,
+      };
+      if (wantsMeasure) {
+        const position = sampleAt(event);
+        if (!position) {
+          gestureRef.current = undefined;
+          return;
+        }
+        setMeasurement(current =>
+          current && !current.finished
+            ? { points: [...current.points, position], preview: position }
+            : { points: [position], preview: position }
+        );
         trackReadout(event);
         return;
       }
-    }
-    if (measuring && gesture?.kind !== 'pan') {
-      const position = sampleAt(event);
-      if (position) {
-        setMeasurement(current => {
-          if (!current || current.finished) {
-            return current;
+      trackReadout(event);
+    },
+    [measuring, sampleAt, trackReadout, zoomable]
+  );
+
+  const handlePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+      const gesture = gestureRef.current;
+      if (gesture?.pointerId === event.pointerId) {
+        const deltaX = event.clientX - gesture.lastX;
+        const deltaY = event.clientY - gesture.lastY;
+        if (
+          !gesture.moved &&
+          Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) >
+            TAP_MOVE_TOLERANCE_PX
+        ) {
+          gesture.moved = true;
+          if (gesture.kind === 'pan') {
+            setPanning(true);
           }
-          if (current.preview?.x === position.x && current.preview.y === position.y) {
-            return current;
-          }
-          return { ...current, preview: position };
-        });
+        }
+        if (gesture.moved && gesture.kind === 'pan') {
+          gesture.lastX = event.clientX;
+          gesture.lastY = event.clientY;
+          rendererRef.current?.panByPixels(deltaX, deltaY);
+          trackReadout(event);
+          return;
+        }
       }
-    }
-    trackReadout(event);
-  };
+      if (measuring && gesture?.kind !== 'pan') {
+        const position = sampleAt(event);
+        if (position) {
+          setMeasurement(current => {
+            if (!current || current.finished) {
+              return current;
+            }
+            if (current.preview?.x === position.x && current.preview.y === position.y) {
+              return current;
+            }
+            return { ...current, preview: position };
+          });
+        }
+      }
+      trackReadout(event);
+    },
+    [measuring, rendererRef, sampleAt, trackReadout]
+  );
 
   /** A tap toggles the pin; a drag pans the map. Measure clicks only add points. */
-  const handlePointerUp = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-    const gesture = gestureRef.current;
-    if (gesture?.pointerId !== event.pointerId) {
-      return;
-    }
-    gestureRef.current = undefined;
-    setPanning(false);
-    if (gesture.kind === 'measure') {
-      return;
-    }
-    if (gesture.moved || gesture.button === 1) {
-      return;
-    }
-    const position = sampleAt(event);
-    if (!position) {
-      return;
-    }
-    positionRef.current = position;
-    refreshReadout(position);
-    setPinned(current => !current);
-  };
+  const handlePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+      const gesture = gestureRef.current;
+      if (gesture?.pointerId !== event.pointerId) {
+        return;
+      }
+      gestureRef.current = undefined;
+      setPanning(false);
+      if (gesture.kind === 'measure') {
+        return;
+      }
+      if (gesture.moved || gesture.button === 1) {
+        return;
+      }
+      const position = sampleAt(event);
+      if (!position) {
+        return;
+      }
+      positionRef.current = position;
+      refreshReadout(position);
+      setPinned(current => !current);
+    },
+    [refreshReadout, sampleAt]
+  );
 
-  const handlePointerCancel = (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+  const handlePointerCancel = useCallback((event: ReactPointerEvent<HTMLCanvasElement>): void => {
     if (gestureRef.current?.kind === 'measure') {
       setMeasurement(current => (current ? { ...current, preview: undefined } : current));
     }
@@ -272,37 +288,54 @@ export function useMapReadout(
     }
     positionRef.current = undefined;
     setReadout(undefined);
-  };
+  }, []);
 
   /** Right-click finishes the path; right-clicking a finished path clears it. */
-  const handleContextMenu = (event: ReactMouseEvent<HTMLCanvasElement>): void => {
-    if (!measuring) {
-      return;
-    }
-    event.preventDefault();
-    setMeasurement(current => {
-      if (!current) {
-        return current;
+  const handleContextMenu = useCallback(
+    (event: ReactMouseEvent<HTMLCanvasElement>): void => {
+      if (!measuring) {
+        return;
       }
-      if (current.finished) {
-        return undefined;
-      }
-      const points = current.preview ? [...current.points, current.preview] : current.points;
-      if (points.length < 2) {
-        return undefined;
-      }
-      return { points, finished: true };
-    });
-  };
+      event.preventDefault();
+      setMeasurement(current => {
+        if (!current) {
+          return current;
+        }
+        if (current.finished) {
+          return undefined;
+        }
+        const points = current.preview ? [...current.points, current.preview] : current.points;
+        if (points.length < 2) {
+          return undefined;
+        }
+        return { points, finished: true };
+      });
+    },
+    [measuring]
+  );
 
   /** Keeps the readout while the pointer moves onto the panels; clears it outside. */
-  const handlePointerLeave = (event: ReactPointerEvent<HTMLElement>): void => {
-    if (pinned || isTouchPointer(event)) {
-      return;
-    }
-    positionRef.current = undefined;
-    setReadout(undefined);
-  };
+  const handlePointerLeave = useCallback(
+    (event: ReactPointerEvent<HTMLElement>): void => {
+      if (pinned || isTouchPointer(event)) {
+        return;
+      }
+      positionRef.current = undefined;
+      setReadout(undefined);
+    },
+    [pinned]
+  );
+
+  const handlers = useMemo(
+    () => ({
+      onPointerMove: handlePointerMove,
+      onPointerDown: handlePointerDown,
+      onPointerUp: handlePointerUp,
+      onPointerCancel: handlePointerCancel,
+      onContextMenu: handleContextMenu,
+    }),
+    [handleContextMenu, handlePointerCancel, handlePointerDown, handlePointerMove, handlePointerUp]
+  );
 
   return {
     readout,
@@ -311,12 +344,6 @@ export function useMapReadout(
     measurement,
     clearMeasurement,
     handlePointerLeave,
-    handlers: {
-      onPointerMove: handlePointerMove,
-      onPointerDown: handlePointerDown,
-      onPointerUp: handlePointerUp,
-      onPointerCancel: handlePointerCancel,
-      onContextMenu: handleContextMenu,
-    },
+    handlers,
   };
 }

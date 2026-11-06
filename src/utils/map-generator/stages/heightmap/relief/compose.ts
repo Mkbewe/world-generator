@@ -1,6 +1,6 @@
 import { IsletRelief } from './islet-relief';
 import { gridDistanceTransform } from '../../../../grid-distance';
-import { smoothstep } from '../../../../math';
+import { clamp01, smoothstep } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
 import { GenerationCancelledError } from '../../../errors';
 import type { WorldPoint } from '../../../types';
@@ -187,8 +187,4 @@ function borderGate(distanceMeters: number, warp: number): number {
     return 1;
   }
   return smoothstep((distanceMeters - start) / BORDER_GATE_FADE_METERS);
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

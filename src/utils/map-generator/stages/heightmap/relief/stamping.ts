@@ -7,7 +7,7 @@ import {
   type SampleInput,
 } from './profiles';
 import { gridDistanceTransform } from '../../../../grid-distance';
-import { smoothstep } from '../../../../math';
+import { clamp01, smoothstep } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
 import { GenerationCancelledError } from '../../../errors';
 import type { RandomFactory } from '../../../random';
@@ -427,8 +427,4 @@ function windowSum(
     (integral[(bottom + 1) * stride + left] ?? 0) +
     (integral[top * stride + left] ?? 0)
   );
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

@@ -29,22 +29,6 @@ export type { GeologyPreset } from './stages/geology';
 export { selectDirtyStageIds } from './pipeline/selective-regeneration';
 export { isPipelineStageId, MAP_CONFIG_KEYS, PIPELINE_STAGES } from './pipeline/stage-definitions';
 export type { MapConfigKey, PipelineStageId, StageInfo } from './pipeline/stage-definitions';
-import type { MapContext } from './pipeline/context';
-import type { PipelineStageId as PipelineId } from './pipeline/stage-definitions';
-import type {
-  GenerationEvent as GenericEvent,
-  GenerationResult as GenericResult,
-  MapConfig,
-  MapState,
-  StageStatistics as GenericStatistics,
-} from './types';
-/** Canonical pipeline events, statistics and results narrowed to its stage ids. */
-export type PipelineGenerationEvent = GenericEvent<PipelineId>;
-export type PipelineStageStatistics = GenericStatistics<PipelineId>;
-export type PipelineGenerationResult = GenericResult<
-  MapContext<MapConfig, MapState, PipelineId>,
-  PipelineId
->;
 export { runGeneration } from './worker';
 export type {
   GenerationWorkerOptions,

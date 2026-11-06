@@ -36,7 +36,7 @@ export interface MapSnapshotData extends MapSize, MapMetadata {
 export const OVERLAY_LAYERS = {
   'world-boundary': { label: 'World boundary', source: 'world-shape' },
   'heat-zones': { label: 'Heat zones', source: 'heatZoneMap' },
-  moisture: { label: 'Moisture baseline', source: 'moistureBaseMap' },
+  'moisture': { label: 'Moisture baseline', source: 'moistureBaseMap' },
   'ocean-currents': { label: 'Ocean currents', source: 'oceanCurrentMap' },
 } as const;
 
@@ -45,7 +45,7 @@ export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
 /** Overlays that duplicate their own base layer and should be suppressed there. */
 export const OVERLAY_BASE_LAYERS: Partial<Record<MapOverlayId, MapBaseLayerId>> = {
   'heat-zones': 'heat-zones',
-  moisture: 'moisture',
+  'moisture': 'moisture',
   'ocean-currents': 'ocean-currents',
 };
 
@@ -56,7 +56,7 @@ export const OVERLAY_IDS = Object.keys(OVERLAY_LAYERS) as MapOverlayId[];
 export const DEFAULT_OVERLAY_VISIBILITY: Record<MapOverlayId, boolean> = {
   'world-boundary': true,
   'heat-zones': false,
-  moisture: false,
+  'moisture': false,
   'ocean-currents': false,
 };
 

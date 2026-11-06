@@ -1,7 +1,7 @@
 import { Flex, Text } from '@radix-ui/themes';
 
 import type { GenerationProgressState } from '../../../stores';
-import { formatDuration } from '../lib/progress-format';
+import { formatDurationShort } from '../../../utils/format';
 
 const STATUS_LABEL: Record<GenerationProgressState['status'], string> = {
   running: 'Generating',
@@ -31,7 +31,7 @@ export function ProgressHeader({ status, completed, total, skipped, time }: Prog
           {counter}
         </Text>
         <Text size='2' weight='bold' color={status === 'failed' ? 'red' : 'violet'}>
-          {formatDuration(time)}
+          {formatDurationShort(time)}
         </Text>
       </Flex>
     </Flex>

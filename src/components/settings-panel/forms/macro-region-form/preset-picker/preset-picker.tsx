@@ -1,10 +1,7 @@
 import { Flex, RadioCards, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
-import {
-  MACRO_REGION_PRESETS,
-  type MacroRegionPresetId,
-} from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
+import { MACRO_REGION_PRESETS, type MacroRegionPresetId } from '../lib/presets';
 
 export function PresetPicker() {
   const applyPreset = useMacroRegionFormStore(state => state.applyPreset);

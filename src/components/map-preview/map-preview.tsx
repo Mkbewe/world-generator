@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { useMapReadout } from './hooks/use-map-readout';
 import { useMapRenderer } from './hooks/use-map-renderer';
+import { usePreviewControls } from './hooks/use-preview-controls';
 import { usePreviewFullscreen } from './hooks/use-preview-fullscreen';
 import { useTabSync } from './hooks/use-tab-sync';
 import { LayerNavigation } from './lib/layer-navigation';
@@ -13,18 +14,11 @@ import {
   useViewSyncStore,
 } from '../../stores';
 import { readoutItems, worldDimensions } from '../../utils/map-readout';
-import {
-  layerRegistry,
-  type MapBaseLayerId,
-  type MapOverlayId,
-  type MapRenderer,
-} from '../../utils/map-renderer';
+import { layerRegistry, type MapBaseLayerId, type MapRenderer } from '../../utils/map-renderer';
 import { GenerationProgress } from '../generation-progress';
 import { LayerTabs } from '../layer-tabs';
 import { MapCanvas } from '../map-canvas';
-import { MapMeasure } from '../map-measure';
 import { MapSidebar } from '../map-sidebar';
-import { ScaleBar } from '../scale-bar';
 import styles from './map-preview.module.scss';
 
 interface MapPreviewProps {
@@ -42,7 +36,10 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     navigation,
     onReady,
   });
-  const navigationState = navigation.toViewState(preview.layers, preview.displayedLayer, layerTree);
+  const navigationState = useMemo(
+    () => navigation.toViewState(preview.layers, preview.displayedLayer, layerTree),
+    [navigation, preview.layers, preview.displayedLayer, layerTree]
+  );
   const [measuring, setMeasuring] = useState(true);
   const readout = useMapReadout(rendererRef, canvasRef, preview, {
     zoomable: isFullscreen,
@@ -119,10 +116,17 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
 
   useTabSync({ rendererRef, onLayerChange: selectLayer });
 
-  const handleOverlayChange = (id: MapOverlayId, visible: boolean): void => {
-    usePreviewStore.getState().setOverlay(id, visible);
-    rendererRef.current?.setOverlay(id, visible);
-  };
+  const { handleOverlayChange, view, measure, canvasChildren } = usePreviewControls({
+    rendererRef,
+    wrapperRef,
+    preview,
+    dimensions,
+    measurement: readout.measurement,
+    isFullscreen,
+    measuring,
+    setMeasuring,
+    onClearMeasurement: readout.clearMeasurement,
+  });
 
   return (
     <Card
@@ -153,17 +157,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             panning={readout.panning}
             expanded={isFullscreen}
           >
-            {dimensions && (
-              <>
-                <ScaleBar containerRef={wrapperRef} zoom={preview.zoom} dimensions={dimensions} />
-                <MapMeasure
-                  containerRef={wrapperRef}
-                  viewTransform={preview.viewTransform}
-                  dimensions={dimensions}
-                  measurement={readout.measurement}
-                />
-              </>
-            )}
+            {canvasChildren}
           </MapCanvas>
           <div className={styles.spacer} aria-hidden='true' />
           <MapSidebar
@@ -178,23 +172,8 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
               pinned: readout.pinned,
               onAction: handleReadoutAction,
             }}
-            view={{
-              zoom: preview.zoom,
-              fitted: preview.fitted,
-              zoomable: isFullscreen,
-              onZoomIn: () => rendererRef.current?.zoomIn(),
-              onZoomOut: () => rendererRef.current?.zoomOut(),
-              onReset: () => rendererRef.current?.resetView(),
-            }}
-            measure={{
-              measuring,
-              onToggleMeasuring: () => {
-                if (measuring) {
-                  readout.clearMeasurement();
-                }
-                setMeasuring(!measuring);
-              },
-            }}
+            view={view}
+            measure={measure}
             expanded={isFullscreen}
           />
         </Flex>

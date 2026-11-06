@@ -47,6 +47,18 @@ describe('useBaseClimateFormStore', () => {
     ).toBe(true);
   });
 
+  it('turns vertical currents by mirroring centres without changing their flow', () => {
+    state().applyPreset('vertical');
+
+    const source = baseClimatePresetConfig('earth-like');
+    expect(state().currents.map(current => current.center)).toEqual(
+      source.currents.map(current => ({ x: current.center.y, y: current.center.x }))
+    );
+    expect(state().currents.map(current => current.flow)).toEqual(
+      source.currents.map(current => current.flow)
+    );
+  });
+
   it('converts the layout while preserving labels, classes and shares', () => {
     state().applyPreset('horizontal');
     const zone = state().zones[2];

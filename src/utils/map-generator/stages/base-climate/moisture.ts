@@ -5,6 +5,7 @@ import {
   BASE_MOISTURE_STREAM,
   BASE_MOISTURE_WAVELENGTH_SHARE,
 } from './defaults';
+import { clamp01 } from '../../../math';
 import type { WorldDimensions } from '../../../world-dimensions';
 import { NoiseSource, type RandomFactory, type WorldNoiseReader } from '../../random';
 import type { WorldPoint } from '../../types';
@@ -26,8 +27,4 @@ export function createBaseMoistureBand(
 /** Converts the signed band sample to the required 0..1 moisture range. */
 export function moistureValue(band: WorldNoiseReader, point: WorldPoint): number {
   return clamp01((band(point) + 1) / 2);
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }

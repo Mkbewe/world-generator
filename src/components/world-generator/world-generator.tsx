@@ -1,24 +1,12 @@
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import { useWorldGeneration } from './hooks/use-world-generation';
-import {
-  useGeneralFormStore,
-  useGenerationProgressStore,
-  useWorldShapeFormStore,
-} from '../../stores';
+import { useGenerationProgressStore } from '../../stores';
 import { useHeaderActions } from '../header';
 import { MapPreview } from '../map-preview';
 import { SettingsPanel } from '../settings-panel';
 
 export function WorldGenerator() {
-  const seed = useGeneralFormStore(state => state.seed);
-  const setSeed = useGeneralFormStore(state => state.setSeed);
-  const shape = useWorldShapeFormStore(state => state.shape);
-  const sizeMeters = useWorldShapeFormStore(state => state.sizeMeters);
-  const metersPerSample = useWorldShapeFormStore(state => state.metersPerSample);
-  const setShape = useWorldShapeFormStore(state => state.setShape);
-  const setSizeMeters = useWorldShapeFormStore(state => state.setSizeMeters);
-  const setMetersPerSample = useWorldShapeFormStore(state => state.setMetersPerSample);
   const progress = useGenerationProgressStore(state => state.progress);
   const { isGenerating, generationRun, error, onRendererReady, generate } = useWorldGeneration();
   const { isFullscreen } = useHeaderActions();
@@ -27,18 +15,7 @@ export function WorldGenerator() {
     <>
       <Grid columns={{ initial: '1', md: '4fr 8fr' }} gap='5' align='start'>
         <div inert={isFullscreen || undefined}>
-          <SettingsPanel
-            seed={seed}
-            onSeedChange={setSeed}
-            isGenerating={isGenerating}
-            onGenerate={generate}
-            shape={shape}
-            sizeMeters={sizeMeters}
-            metersPerSample={metersPerSample}
-            onShapeChange={setShape}
-            onSizeChange={setSizeMeters}
-            onDetailChange={setMetersPerSample}
-          />
+          <SettingsPanel isGenerating={isGenerating} onGenerate={generate} />
         </div>
         <MapPreview onReady={onRendererReady} progress={progress} progressKey={generationRun} />
       </Grid>

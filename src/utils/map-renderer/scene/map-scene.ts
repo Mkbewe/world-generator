@@ -15,6 +15,7 @@ import {
   layerRegistry,
   type MapLayer,
   type MapSize,
+  matchesMapSize,
   validateVectorLayerFactories,
   vectorLayerFactories,
   type VectorLayerFactory,
@@ -67,15 +68,11 @@ export class MapScene {
     size: MapSize,
     metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry' | 'dimensionsMeters'>
   ): void {
-    if (!this.matchesSize(size)) {
+    if (!matchesMapSize(this.currentSize, size)) {
       this.reset();
     }
     this.currentSize = size;
     this.setMetadata(metadata);
-  }
-
-  private matchesSize(size: MapSize): boolean {
-    return this.currentSize?.width === size.width && this.currentSize.height === size.height;
   }
 
   /** Updates the shape and region geometry without touching received layers. */

@@ -1,20 +1,22 @@
 import {
-  DEFAULT_MACRO_DEFORMATION,
-  MAX_MACRO_REGIONS,
-} from '../../../utils/map-generator/stages/macro-region/defaults';
-import {
   applyRegionBoundaries,
   baseRegions,
   regionBoundaries,
   regionSegments,
   removeBaseRegion,
   splitLargestRegion,
-} from '../../../utils/map-generator/stages/macro-region/editor/boundary-model';
+} from '../../../components/settings-panel/forms/macro-region-form/lib/boundary-model';
+import {
+  macroRegionPreset,
+  type MacroRegionPresetId,
+} from '../../../components/settings-panel/forms/macro-region-form/lib/presets';
+import {
+  DEFAULT_MACRO_DEFORMATION,
+  MAX_MACRO_REGIONS,
+} from '../../../utils/map-generator/stages/macro-region/defaults';
 import {
   createBandOverlay,
   type MacroRegionLayout,
-  macroRegionPreset,
-  type MacroRegionPresetId,
 } from '../../../utils/map-generator/stages/macro-region/editor/presets';
 import type { MacroRegionConfig, MacroRegionDeformation } from '../../../utils/map-generator/types';
 import { createStore } from '../../create-store';

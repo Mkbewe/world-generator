@@ -1,3 +1,5 @@
+import { MACRO_REGION_PRESETS, macroRegionPreset } from './presets';
+import { DEFAULT_MACRO_DEFORMATION } from '../../../../../utils/map-generator/stages/macro-region/defaults';
 import {
   createBandOverlay,
   createHorizontalLayout,
@@ -5,10 +7,7 @@ import {
   createRadialLayout,
   createRadialPolesLayout,
   createVerticalLayout,
-  MACRO_REGION_PRESETS,
-  macroRegionPreset,
-} from './presets';
-import { DEFAULT_MACRO_DEFORMATION } from '../defaults';
+} from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
 
 describe('macro region presets', () => {
   it('builds adjacent radial regions ordered by danger', () => {
