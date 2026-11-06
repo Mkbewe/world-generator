@@ -8,6 +8,7 @@ const PLAN: GeologyPlan = {
     {
       id: 'region-1',
       centre: { x: 0.25, y: 0.5 },
+      thermal: 'temperate',
       weight: 1,
       type: 'ordinary',
       areaSquareMeters: 100,
@@ -15,6 +16,7 @@ const PLAN: GeologyPlan = {
     {
       id: 'region-2',
       centre: { x: 0.75, y: 0.5 },
+      thermal: 'temperate',
       weight: 1,
       type: 'volcanic',
       areaSquareMeters: 100,

@@ -4,7 +4,12 @@ import { GenerationCancelledError } from '../../../errors';
 import type { RandomFactory } from '../../../random';
 import type { SeededRandom } from '../../../random/seeded-random';
 import type { WorldSpace } from '../../../space';
-import type { GeologicalRegionConfig, GeologicalRegionType, WorldPoint } from '../../../types';
+import type {
+  GeologicalRegionConfig,
+  GeologicalRegionType,
+  HeatZoneClass,
+  WorldPoint,
+} from '../../../types';
 
 /** Seed-resolved marker of one region; the input of the region partition. */
 export interface RegionMarker {
@@ -21,9 +26,23 @@ export interface MarkerPlacementInput {
   readonly shape: WorldShape;
   readonly space: WorldSpace;
   readonly random: RandomFactory;
+  /** Thermal class at a normalized point; enables the light anchor preference. */
+  readonly thermalAt: (point: WorldPoint) => HeatZoneClass;
+  /** How strongly the anchor preference applies, 0..1. */
+  readonly geologyCoupling: number;
   readonly signal?: AbortSignal;
   readonly report?: (progress: number) => void;
 }
+
+/** Soft preference of a region type for a thermal class; never a filter. */
+const THERMAL_ANCHOR_PREFERENCE: Readonly<Partial<Record<GeologicalRegionType, HeatZoneClass>>> = {
+  lagoon: 'warm',
+  fjord: 'cold',
+};
+/** A light bonus, so only close candidates change order. */
+const THERMAL_ANCHOR_BIAS_SHARE = 0.02;
+/** A matching candidate may move the anchor by at most this share of spacing. */
+const THERMAL_ANCHOR_MAX_SHIFT_SHARE = 0.01;
 
 /** Candidate pool at zero evenness; still compares more than one position. */
 const MIN_CANDIDATES = 2;
@@ -69,6 +88,16 @@ export function placePartitionMarkers(input: MarkerPlacementInput): RegionMarker
       throw new Error(`Region configuration has no entry for region-${index + 1}.`);
     }
     const centred = index === 0 && containsNormalized(input.shape, WORLD_CENTRE);
+    const preferred = THERMAL_ANCHOR_PREFERENCE[region.type];
+    const coupling = clampUnit(input.geologyCoupling);
+    const thermalBias =
+      preferred && coupling > 0
+        ? {
+            preferred,
+            bonus: idealSpacing * THERMAL_ANCHOR_BIAS_SHARE * coupling,
+            maxShift: idealSpacing * THERMAL_ANCHOR_MAX_SHIFT_SHARE * coupling,
+          }
+        : undefined;
     const centre = centred
       ? WORLD_CENTRE
       : findMarkerCentre(
@@ -76,6 +105,7 @@ export function placePartitionMarkers(input: MarkerPlacementInput): RegionMarker
           markers,
           minSeparation,
           candidates,
+          thermalBias,
           input
         );
     if (!centre) {
@@ -100,10 +130,13 @@ function findMarkerCentre(
   placed: readonly RegionMarker[],
   minSeparation: number,
   candidates: number,
+  thermalBias: ThermalBias | undefined,
   input: MarkerPlacementInput
 ): WorldPoint | undefined {
   let best: WorldPoint | undefined;
   let bestClearance = -Infinity;
+  let matching: WorldPoint | undefined;
+  let matchingClearance = -Infinity;
   let accepted = 0;
   for (let attempt = 0; attempt < MARKER_ATTEMPTS && accepted < candidates; attempt++) {
     const point = { x: stream.next(), y: stream.next() };
@@ -122,6 +155,33 @@ function findMarkerCentre(
       bestClearance = clearance;
       best = point;
     }
+    if (
+      thermalBias !== undefined &&
+      input.thermalAt(point) === thermalBias.preferred &&
+      clearance > matchingClearance
+    ) {
+      matchingClearance = clearance;
+      matching = point;
+    }
   }
-  return best;
+  if (!thermalBias || !best || !matching) {
+    return best;
+  }
+  if (bestClearance - matchingClearance > thermalBias.bonus) {
+    return best;
+  }
+  if (input.space.distanceMeters(best, matching) > thermalBias.maxShift) {
+    return best;
+  }
+  return matching;
+}
+
+interface ThermalBias {
+  readonly preferred: HeatZoneClass;
+  readonly bonus: number;
+  readonly maxShift: number;
+}
+
+function clampUnit(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }

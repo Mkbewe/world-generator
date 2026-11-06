@@ -1,4 +1,6 @@
 import { isHeightmapConfig } from './config/heightmap-check';
+import { type RegionShape } from './config/region-shape';
+import { regionShapeFor } from './config/region-shape-variants';
 import { createHeightmapNoiseBands } from './bands';
 import { DEFAULT_HEIGHTMAP_CONFIG } from './defaults';
 import { buildHeightField } from './field';
@@ -7,8 +9,16 @@ import type { MapContext } from '../../pipeline/context';
 import { assertStageOutput, type MapStage } from '../../pipeline/stage';
 import { HEIGHTMAP_STAGE, type PipelineStageId } from '../../pipeline/stage-definitions';
 import { spaceOf } from '../../space';
-import type { MapConfig, MapState, StageMetrics, StageProgressReporter } from '../../types';
+import type {
+  MapConfig,
+  MapState,
+  StageMetrics,
+  StageProgressReporter,
+  WorldPoint,
+} from '../../types';
+import { DEFAULT_BASE_CLIMATE_CONFIG } from '../base-climate';
 import { isGeologyPlan } from '../geology';
+import { createThermalAt } from '../geology/thermal';
 
 /**
  * Turns the geology plan into one continuous height field in metres: seeded
@@ -26,7 +36,7 @@ export class HeightmapStage implements MapStage<
   readonly id: PipelineStageId = HEIGHTMAP_STAGE.id;
   readonly name = HEIGHTMAP_STAGE.name;
   readonly configKeys = HEIGHTMAP_STAGE.configKeys;
-  readonly reads: readonly (keyof MapState)[] = ['worldMask', 'geologyPlan'];
+  readonly reads: readonly (keyof MapState)[] = ['worldMask', 'geologyPlan', 'heatZoneMap'];
   readonly writes = ['heightmap', 'provenanceMap'] as const;
   readonly progressStep = 0.1;
 
@@ -59,14 +69,52 @@ export class HeightmapStage implements MapStage<
     const regionBands = plan.regions.map(region =>
       createHeightmapNoiseBands(context.random, dimensions, `heightmap.${region.id}`)
     );
+    const baseClimate = context.config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
+    const heatZoneMap = context.state.heatZoneMap;
+    if (!heatZoneMap || heatZoneMap.length !== sampleWidth * sampleHeight) {
+      throw new Error('A valid heat-zone map must be generated before the heightmap.');
+    }
+    const space = spaceOf(context);
+    const thermalAt = createThermalAt(
+      heatZoneMap,
+      baseClimate.zones.map(zone => zone.thermal),
+      space
+    );
+    const regionShapes = plan.regions.map(region =>
+      regionShapeFor(region.type, region.thermal, baseClimate.geologyCoupling)
+    );
+    const shapeCache = new Map<string, RegionShape>();
+    plan.regions.forEach((region, index) => {
+      const shape = regionShapes[index];
+      if (shape) {
+        shapeCache.set(`${index}:${region.thermal}`, shape);
+      }
+    });
+    const shapeAt = (regionIndex: number, point: WorldPoint) => {
+      const region = plan.regions[regionIndex];
+      if (!region) {
+        throw new Error('A form must reference a planned region.');
+      }
+      const thermal = thermalAt(point);
+      const key = `${regionIndex}:${thermal}`;
+      const cached = shapeCache.get(key);
+      if (cached) {
+        return cached;
+      }
+      const shape = regionShapeFor(region.type, thermal, baseClimate.geologyCoupling);
+      shapeCache.set(key, shape);
+      return shape;
+    };
     const { heightmap, provenanceMap } = buildHeightField({
       plan,
       bands,
       regionBands,
+      regionShapes,
+      shapeAt,
       random: context.random,
       worldMask,
       dimensions,
-      space: spaceOf(context),
+      space,
       config,
       signal,
       report: progress => report(0.02 + progress * 0.97),

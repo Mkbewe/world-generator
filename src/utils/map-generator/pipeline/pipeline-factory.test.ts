@@ -79,15 +79,32 @@ describe('createMapGenerator', () => {
       },
       {
         id: 'geology',
-        reads: [],
+        reads: ['heatZoneMap'],
         writes: ['geologyPlan'],
-        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology'],
+        configKeys: [
+          'world.seed',
+          'world.shape',
+          'world.dimensions',
+          'baseClimate.zones',
+          'baseClimate.zoneIrregularity',
+          'baseClimate.geologyCoupling',
+          'geology',
+        ],
       },
       {
         id: 'heightmap',
-        reads: ['worldMask', 'geologyPlan'],
+        reads: ['worldMask', 'geologyPlan', 'heatZoneMap'],
         writes: ['heightmap', 'provenanceMap'],
-        configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
+        configKeys: [
+          'world.seed',
+          'world.shape',
+          'world.dimensions',
+          'baseClimate.zones',
+          'baseClimate.zoneIrregularity',
+          'baseClimate.geologyCoupling',
+          'geology',
+          'heightmap',
+        ],
       },
     ]);
   });

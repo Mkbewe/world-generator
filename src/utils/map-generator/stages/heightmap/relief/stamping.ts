@@ -14,7 +14,7 @@ import type { RandomFactory } from '../../../random';
 import type { WorldSpace } from '../../../space';
 import type { WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
-import { REGION_SHAPES, type RegionShape } from '../config/region-shape';
+import type { RegionShape } from '../config/region-shape';
 import { defaultRegionTerrain } from '../config/region-terrain';
 import { FIELD_SMOOTH_SHARE, HILL_WARP_SHARE } from '../defaults';
 import type { FieldContext } from '../field';
@@ -124,13 +124,16 @@ export function collectForms(
       throw new GenerationCancelledError();
     }
     const region = context.plan.regions[index];
-    if (!region) {
-      throw new Error('Region plan is missing a region.');
+    const shape = context.regionShapes[index];
+    if (!region || !shape) {
+      throw new Error('Region plan is missing a region or its shape recipe.');
     }
     forms.push(
       ...buildRegionForms({
         regionIndex: index,
         region,
+        shape,
+        shapeAt: point => context.shapeAt(index, point),
         terrain: context.config.regions?.[index] ?? defaultRegionTerrain(region.type),
         cells: interiors[index] ?? [],
         ownerMap: context.ownerMap,
@@ -165,7 +168,7 @@ export function stampForms(context: FieldContext, forms: readonly IslandForm[]):
       throw new Error('A form must reference a planned region.');
     }
     const terrain = context.config.regions?.[form.regionIndex] ?? defaultRegionTerrain(region.type);
-    stampForm(context, form, REGION_SHAPES[region.type], band, terrain.age);
+    stampForm(context, form, form.shape, band, terrain.age);
     context.report?.(0.1 + ((index + 1) / forms.length) * 0.5);
   }
 }
@@ -203,7 +206,7 @@ function stampForm(
   // one transform per form keeps the profile loop free of trigonometry.
   const warpedPeak = applyAspect(form.peak, form, dimensions);
   // Reef rings never read the ridge band; every other profile does.
-  const needsRidge = !(form.hasCavity && shape.cavityFloorShare < 0);
+  const needsRidge = !(form.hasCavity && shape.buildsReef);
   const maxLobeMod = maximumLobeModulation(form, shape);
   const maxShelfSpan = Math.max(shelfFactor - 1, WATER_MIN_SPAN);
   for (let y = minCell.y; y <= maxCell.y; y++) {

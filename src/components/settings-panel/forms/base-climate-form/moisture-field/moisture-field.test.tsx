@@ -31,6 +31,6 @@ describe('MoistureField', () => {
     expect(useBaseClimateFormStore.getState().moisture).toBeGreaterThan(
       BASE_CLIMATE_FORM_DEFAULTS.moisture
     );
-    expect(useBaseClimateFormStore.getState().activePreset).toBe('horizontal');
+    expect(useBaseClimateFormStore.getState().activePreset).toBe('ring');
   });
 });

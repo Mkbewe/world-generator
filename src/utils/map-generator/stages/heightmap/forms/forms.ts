@@ -8,7 +8,7 @@ import type {
   RegionTerrainConfig,
   WorldPoint,
 } from '../../../types';
-import { REGION_SHAPES, type RegionShape } from '../config/region-shape';
+import type { RegionShape } from '../config/region-shape';
 import {
   BORDER_GATE_FADE_METERS,
   BORDER_GATE_METERS,
@@ -52,6 +52,8 @@ export interface IslandForm {
   readonly phase4: number;
   /** Whether this form has an inner cavity: a crater or a lagoon. */
   readonly hasCavity: boolean;
+  /** Resolved recipe sampled at this form's centre. */
+  readonly shape: RegionShape;
   /** Random angular phase of the region's coastal channels (fjords). */
   readonly chutePhase: number;
   /** The island's bays: bearings, bite depths and angular widths. */
@@ -63,6 +65,10 @@ export interface IslandForm {
 export interface RegionFormsInput {
   readonly regionIndex: number;
   readonly region: GeologicalRegionPlan;
+  /** Resolved recipe for the region's form count, radii and placement. */
+  readonly shape: RegionShape;
+  /** Recipe at a form centre; picks the local thermal variant. */
+  readonly shapeAt: (point: WorldPoint) => RegionShape;
   /** Terrain parameters of this region, already resolved from the config. */
   readonly terrain: RegionTerrainConfig;
   /** Interior cell indices: every cell of this region deeper than the gate margin. */
@@ -134,14 +140,15 @@ export function collectRegionInteriors(
  * Builds the island forms of one region: seeded, seed-stable masses whose
  * count, sizes and spacing follow the region's concentration and land share,
  * with lobes merging into larger islands and separate masses keeping open
- * sea between them. Every number a form consumes comes from REGION_SHAPES.
+ * sea between them. Every number a form consumes comes from the form's
+ * resolved shape recipe at its centre.
  */
 export function buildRegionForms(input: RegionFormsInput): IslandForm[] {
   const cells = interiorCells(input.cells, input.borderDistanceMap);
   if (cells.length === 0) {
     return [];
   }
-  const shape = REGION_SHAPES[input.region.type];
+  const shape = input.shape;
   const stream = input.random.create(`heightmap.${input.region.id}.forms`);
   const count = formCount(input.terrain, shape);
   const weights = formWeights(stream, count, input.terrain.concentration);
@@ -151,12 +158,24 @@ export function buildRegionForms(input: RegionFormsInput): IslandForm[] {
   const forms: IslandForm[] = [];
   for (let index = 0; index < count; index++) {
     const radiusMeters = radii[index] ?? MIN_ISLAND_RADIUS_METERS;
-    const hasCavity = drawCavity(stream, shape, input.terrain, radiusMeters, index, cellMeters);
+    const baseCavity = drawCavity(stream, shape, input.terrain, radiusMeters, index, cellMeters);
     const centre =
       index === 0
         ? mainCentre(stream, cells, input, maxRadius)
-        : nextCentre(stream, cells, input, shape, forms, radiusMeters, count, hasCavity);
-    forms.push(createForm(stream, input, shape, centre, radiusMeters, maxRadius, hasCavity));
+        : nextCentre(stream, cells, input, shape, forms, radiusMeters, count, baseCavity);
+    const formShape = input.shapeAt(centre);
+    const hasCavity =
+      formShape === shape
+        ? baseCavity
+        : drawCavity(
+            input.random.create(`heightmap.${input.region.id}.cavity.${index}.local`),
+            formShape,
+            input.terrain,
+            radiusMeters,
+            index,
+            cellMeters
+          );
+    forms.push(createForm(stream, input, formShape, centre, radiusMeters, maxRadius, hasCavity));
   }
   return forms;
 }
@@ -174,7 +193,7 @@ function drawCavity(
   formIndex: number,
   cellMeters: number
 ): boolean {
-  const chance = shape.cavityFloorShare < 0 ? clamp01(terrain.ringShare) : shape.cavityShare;
+  const chance = shape.buildsReef ? clamp01(terrain.ringShare) : shape.cavityShare;
   if (chance <= 0) {
     return false;
   }
@@ -402,6 +421,7 @@ function createForm(
     lobes4: outline.lobes4,
     phase4,
     hasCavity,
+    shape,
     chutePhase,
     bays,
     reefGap,

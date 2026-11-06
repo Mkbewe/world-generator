@@ -59,7 +59,7 @@ const CATALOG_ENTRIES = [
     clipTo: 'world-shape',
     skipValue: -1,
     settingsForm: true,
-    group: { id: 'base-climate', label: 'BaseClimate' },
+    group: { id: 'base-climate', label: 'Base Climate' },
     palette: HEAT_ZONE_FALLBACK_PALETTE,
     paletteFromInfo: info =>
       isHeatZoneInfoList(info.heatZoneInfo)
@@ -74,7 +74,7 @@ const CATALOG_ENTRIES = [
     dataType: 'float32',
     clipTo: 'world-shape',
     settingsForm: false,
-    group: { id: 'base-climate', label: 'BaseClimate' },
+    group: { id: 'base-climate', label: 'Base Climate' },
     palette: { kind: 'ramp', stops: MOISTURE_STOPS },
   },
   {
@@ -84,7 +84,7 @@ const CATALOG_ENTRIES = [
     source: 'oceanCurrentMap',
     clipTo: 'world-shape',
     settingsForm: false,
-    group: { id: 'base-climate', label: 'BaseClimate' },
+    group: { id: 'base-climate', label: 'Base Climate' },
   },
   {
     id: 'geology',

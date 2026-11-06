@@ -94,7 +94,23 @@ describe('selectDirtyStageIds', () => {
       ],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2 } }, ['macro-region']],
-      [{ baseClimate: { ...baseClimate, geologyCoupling: 0.5 } }, ['base-climate']],
+      [
+        { baseClimate: { ...baseClimate, geologyCoupling: 0.5 } },
+        ['base-climate', 'geology', 'heightmap'],
+      ],
+      [
+        {
+          baseClimate: {
+            ...baseClimate,
+            zones: baseClimate.zones.map(zone => ({ ...zone, label: 'Edited' })),
+          },
+        },
+        ['base-climate', 'geology', 'heightmap'],
+      ],
+      [
+        { baseClimate: { ...baseClimate, zoneIrregularity: 0.1 } },
+        ['base-climate', 'geology', 'heightmap'],
+      ],
       [
         {
           baseClimate: {

@@ -3,6 +3,8 @@ import {
   type GeologicalRegionType,
   type GeologyConfig,
   type GeologyPlan,
+  HEAT_ZONE_CLASSES,
+  type HeatZoneClass,
 } from '../../../types';
 import {
   MAX_GEOLOGICAL_REGIONS,
@@ -118,6 +120,9 @@ function validateRegionPlan(value: unknown, index: number): void {
   if (!isRegionType(value.type)) {
     throw new Error(`Region plan "${value.id}" has an unknown type.`);
   }
+  if (!isHeatZoneClass(value.thermal)) {
+    throw new Error(`Region plan "${value.id}" has an unknown thermal class.`);
+  }
   if (!isPoint(value.centre)) {
     throw new Error(`Region plan "${value.id}" has an invalid anchor.`);
   }
@@ -133,6 +138,10 @@ function isRegionType(value: unknown): value is GeologicalRegionType {
   return (
     typeof value === 'string' && (GEOLOGICAL_REGION_TYPES as readonly string[]).includes(value)
   );
+}
+
+function isHeatZoneClass(value: unknown): value is HeatZoneClass {
+  return typeof value === 'string' && (HEAT_ZONE_CLASSES as readonly string[]).includes(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

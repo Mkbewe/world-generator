@@ -29,7 +29,8 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
   są kolejnym krokiem.
 - **Geologia** — świat dzieli się na prowincje o typie i charakterze
   (ordinary, volcanic, lagoon, fjord), z granicami, presetami i udziałami
-  powierzchni; parametry rzeźby regionu wędrują do planu geologii.
+  powierzchni; strefa ciepła w środku każdej formy wyspy wybiera wariant
+  rzeźby, a `geologyCoupling` skaluje to dopasowanie.
 - **Heightmapa** — rzeźba powstaje z form wysp na region: od archipelagu po
   jedną skupioną wyspę, z płaskimi i górzystymi masami, klifami, kraterami
   i lagunami; poziom wody jest stały w rastrze (bez suwaka poziomu morza),

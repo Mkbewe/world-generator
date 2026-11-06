@@ -117,14 +117,15 @@ W zakładce **BaseClimate**:
 - wybór układu stref: pasma albo pierścienie,
 - lista stref ciepła: dodaj, usuń, przesuń, zmień szerokość,
 - dla każdej strefy wybór klasy: zimna, umiarkowana, ciepła,
-- wybór presetu startowego,
-- `geologyCoupling` 0..1 — jak mocno geologia ma podążać za strefami.
+- wybór presetu startowego.
 
-`geologyCoupling` działa tak:
+`geologyCoupling` 0..1 jest częścią konfiguracji (domyślnie 1), bez osobnego
+suwaka w formularzu. Działa tak:
 
 - `0` — geologia ignoruje strefy i używa dzisiejszych przepisów,
 - `1` — wygląd wyspy w pełni podąża za strefą regionu,
-- wartości pośrednie osłabiają przesunięcia pól przepisu.
+- wartości pośrednie osłabiają przesunięcia pól przepisu; interpolowane są
+  pojedyncze pola, nie całe receptury.
 
 Na start nie ma ręcznego edytora żyroskopów ani parametrów FBM. Wilgotność
 i prądy wchodzą przez preset. Osobny edytor można dodać później.
@@ -162,9 +163,12 @@ z kolejności na liście prezentacyjnej.
 
 ## Geologia
 
-Geologia wybiera wygląd regionu na podstawie strefy w **środku regionu**.
-Nie próbkuje osobno każdej wyspy — to ewentualne rozszerzenie, jeśli testy
-wzrokowe pokażą problem na granicy stref wewnątrz jednego regionu.
+Geologia wybiera wygląd **każdej formy wyspy** na podstawie strefy w jej
+środku. Wariant z centrum regionu służy tylko do liczby form, promieni
+i rozmieszczenia, żeby zmiana strefy nie przebudowywała całego podziału.
+Tekstura lądu, głębokość dna i wysepki czytają strefę **per komórka**.
+Granica strefy przecinająca wyspę może zostawić miękki szew; na razie
+akceptujemy to jako świadome ograniczenie pierwszej wersji.
 
 Typ regionu pozostaje procesem geologicznym. Strefa wybiera wariant
 `RegionShape`, bez gałęzi na nazwę typu. Warianty są przesunięciami istniejących
@@ -182,11 +186,12 @@ To są przesunięcia pól takich jak `cavityShare`, `chuteCount`, `amplitudeFact
 najmniej.
 
 Geologia może lekko woleć ciepłe kotwice dla `lagoon` i zimne dla `fjord`.
-To **bias wagi, nie filtr**. Forma, która nie pasuje do strefy, i tak powstaje,
-ale dostaje wariant z tabeli. Przy `geologyCoupling = 0` bias też jest zero.
+To **bias wagi, nie filtr** i tylko lekki tie-breaker: kotwica nie przesuwa się
+dalej niż o 1% typowego odstępu. Forma, która nie pasuje do strefy, i tak
+powstaje, ale dostaje wariant z tabeli. Przy `geologyCoupling = 0` bias jest zero.
 
 Nie ma twardego odrzucania typu regionu. Zimny atol staje się szkierami, ciepły
-fiord dostaje wariant ciepły. Na start wybieramy **jeden wariant na region**
+fiord dostaje wariant ciepły. Wybieramy **jeden wariant na formę wyspy**
 i nie mieszamy całych przepisów liniowo na granicy stref.
 
 ## Późniejszy etap: Climate
@@ -236,7 +241,7 @@ Odrzucamy:
 - pierścienie pozwalają ustawić ciepło na zewnątrz bez osobnego trybu,
 - zmiana stref zmienia mapę i warianty wysp w geologii,
 - `geologyCoupling = 0` przywraca dzisiejsze przepisy,
-- `geologyCoupling = 1` w pełni podąża za strefą środka regionu,
+- `geologyCoupling = 1` w pełni podąża za strefą środka każdej formy wyspy,
 - `moistureBaseMap` jest w zakresie 0..1, bez NaN i bez dziur,
 - `moistureBaseMap` nie ma widocznych granic zgodnych ze strefami ciepła,
 - `oceanCurrentMap` i `oceanCurrentStrength` są w zakresie i deterministyczne,
@@ -251,7 +256,7 @@ Epic: **#220 Implement BaseClimate and Climate**, milestone **v0.13.0**.
 | --- | --- |
 | #490 | kontrakt BaseClimate i mapa stref ciepła |
 | #494 | edytor stref ciepła i presety BaseClimate |
-| #489 | warianty `RegionShape` per strefa, próbkowanie środka regionu, `geologyCoupling` |
+| #489 | warianty `RegionShape` per forma wyspy, `geologyCoupling` |
 | #495 | `moistureBaseMap` — niezależny FBM w BaseClimate |
 | #496 | `oceanCurrentMap` i siła — statyczne żyroskopy w BaseClimate |
 | #488 | overlaye BaseClimate: Heat zones, Moisture baseline, Ocean currents |
@@ -270,6 +275,5 @@ heightmapy, a #493 to jego zmergowany PR.
 - czy edytor stref ma współdzielić kontrolki z makroregionami, czy dostać własny,
 - czy granice stref mają od razu dostać noise, czy zostać czyste w MVP,
 - dokładne wartości przesunięć pól przepisu dla każdego wariantu,
-- czy `geologyCoupling` ma być w zakładce BaseClimate, czy w Geology,
 - czy żyroskopy prądów mają kiedyś dostać edytor, czy zostać przy presetach,
 - jak dokładnie działa edytor stref wilgotności w Climate.

@@ -72,7 +72,7 @@ export function SettingsPanel({
       content: <MacroRegionForm />,
     },
     'heat-zones': {
-      label: 'BaseClimate',
+      label: 'Base Climate',
       icon: <SunIcon />,
       content: <BaseClimateForm />,
     },

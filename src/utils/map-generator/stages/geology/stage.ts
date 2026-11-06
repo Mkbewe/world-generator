@@ -1,6 +1,7 @@
 import { isGeologyPlan, validateGeologyConfig } from './config/geology-check';
 import { DEFAULT_GEOLOGY_CONFIG } from './config/presets';
 import { buildGeologyPlan } from './plan';
+import { createThermalAt } from './thermal';
 import { GenerationCancelledError } from '../../errors';
 import type { MapContext } from '../../pipeline/context';
 import { type MapStage } from '../../pipeline/stage';
@@ -14,6 +15,7 @@ import type {
   StageMetrics,
   StageProgressReporter,
 } from '../../types';
+import { DEFAULT_BASE_CLIMATE_CONFIG } from '../base-climate';
 
 /** Progress reported before the plan itself is built. */
 const PLAN_PROGRESS = 0.1;
@@ -31,7 +33,7 @@ export class GeologyStage implements MapStage<
   readonly id = GEOLOGY_STAGE.id;
   readonly name = GEOLOGY_STAGE.name;
   readonly configKeys = GEOLOGY_STAGE.configKeys;
-  readonly reads: readonly (keyof MapState)[] = [];
+  readonly reads: readonly (keyof MapState)[] = ['heatZoneMap'];
   readonly writes = ['geologyPlan'] as const;
   readonly progressStep = 0.1;
 
@@ -46,15 +48,32 @@ export class GeologyStage implements MapStage<
       throw new GenerationCancelledError();
     }
 
+    const { sampleWidth, sampleHeight } = context.config.world.dimensions;
+    const heatZoneMap = context.state.heatZoneMap;
+    if (!heatZoneMap || heatZoneMap.length !== sampleWidth * sampleHeight) {
+      throw new Error('A valid heat-zone map must be generated before geology.');
+    }
+    const baseClimate = context.config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
+    const space = spaceOf(context);
+    const thermalAt = createThermalAt(
+      heatZoneMap,
+      baseClimate.zones.map(zone => zone.thermal),
+      space
+    );
+
     report(PLAN_PROGRESS);
     const geologyPlan = buildGeologyPlan(
       config,
       context.random,
       context.config.world.shape,
       context.config.world.dimensions,
-      spaceOf(context),
-      signal,
-      progress => report(PLAN_PROGRESS + progress * (1 - PLAN_PROGRESS))
+      space,
+      {
+        thermalAt,
+        geologyCoupling: baseClimate.geologyCoupling,
+        signal,
+        report: progress => report(PLAN_PROGRESS + progress * (1 - PLAN_PROGRESS)),
+      }
     );
     report(1);
     return { geologyPlan };

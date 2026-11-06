@@ -18,26 +18,23 @@ describe('PresetPicker', () => {
     useBaseClimateFormStore.setState({ ...BASE_CLIMATE_FORM_DEFAULTS });
   });
 
-  it('starts on horizontal and applies another preset', async () => {
+  it('starts on ring and applies another preset', async () => {
     const user = userEvent.setup();
     renderPicker();
 
+    expect(screen.getByRole('radio', { name: 'Ring' })).toHaveAttribute('aria-checked', 'true');
+
+    await user.click(screen.getByRole('radio', { name: 'Horizontal' }));
+
+    const state = useBaseClimateFormStore.getState();
+    expect(state.activePreset).toBe('horizontal');
+    expect(state.layout).toBe('horizontal');
+    expect(state.zones).toHaveLength(5);
     expect(screen.getByRole('radio', { name: 'Horizontal' })).toHaveAttribute(
       'aria-checked',
       'true'
     );
-
-    await user.click(screen.getByRole('radio', { name: 'Ring' }));
-
-    const state = useBaseClimateFormStore.getState();
-    expect(state.activePreset).toBe('ring');
-    expect(state.layout).toBe('rings');
-    expect(state.zones).toHaveLength(3);
-    expect(screen.getByRole('radio', { name: 'Ring' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('radio', { name: 'Horizontal' })).toHaveAttribute(
-      'aria-checked',
-      'false'
-    );
+    expect(screen.getByRole('radio', { name: 'Ring' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('clears the active preset after a manual change', async () => {
@@ -53,10 +50,7 @@ describe('PresetPicker', () => {
     });
 
     expect(useBaseClimateFormStore.getState().activePreset).toBeUndefined();
-    expect(screen.getByRole('radio', { name: 'Horizontal' })).toHaveAttribute(
-      'aria-checked',
-      'false'
-    );
+    expect(screen.getByRole('radio', { name: 'Ring' })).toHaveAttribute('aria-checked', 'false');
     expect(screen.getByText(/edited manually/i)).toBeInTheDocument();
     await user.click(screen.getByRole('radio', { name: 'Vertical' }));
     expect(useBaseClimateFormStore.getState().activePreset).toBe('vertical');

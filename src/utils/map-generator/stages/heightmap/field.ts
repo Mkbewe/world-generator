@@ -1,3 +1,4 @@
+import type { RegionShape } from './config/region-shape';
 import {
   composeSurfaces,
   measureShoreDistance,
@@ -16,7 +17,7 @@ import { landAmplitudeMeters } from './fields';
 import type { WorldDimensions } from '../../../world-dimensions';
 import type { RandomFactory } from '../../random';
 import type { WorldSpace } from '../../space';
-import type { GeologyPlan, HeightmapConfig } from '../../types';
+import type { GeologyPlan, HeightmapConfig, WorldPoint } from '../../types';
 import { validateGeologyPlan } from '../geology';
 
 export interface HeightFieldInput {
@@ -25,6 +26,10 @@ export interface HeightFieldInput {
   readonly bands: HeightmapNoiseBands;
   /** One family per planned region, in plan order; shapes differ per region. */
   readonly regionBands: readonly HeightmapNoiseBands[];
+  /** Resolved island recipe per planned region, after thermal coupling. */
+  readonly regionShapes: readonly RegionShape[];
+  /** Resolves the local thermal variant at a form centre. */
+  readonly shapeAt: (regionIndex: number, point: WorldPoint) => RegionShape;
   readonly random: RandomFactory;
   readonly worldMask: Uint8Array;
   readonly dimensions: WorldDimensions;
@@ -46,6 +51,8 @@ export interface FieldContext {
   readonly plan: GeologyPlan;
   readonly bands: HeightmapNoiseBands;
   readonly regionBands: readonly HeightmapNoiseBands[];
+  readonly regionShapes: readonly RegionShape[];
+  readonly shapeAt: (regionIndex: number, point: WorldPoint) => RegionShape;
   readonly ownerMap: Int16Array;
   readonly borderDistanceMap: Float32Array;
   readonly worldMask: Uint8Array;
@@ -76,8 +83,22 @@ export interface FieldContext {
  * template steps, World Machine crater invert, iq domain warp.
  */
 export function buildHeightField(input: HeightFieldInput): HeightField {
-  const { plan, bands, regionBands, random, worldMask, dimensions, space, config } = input;
+  const {
+    plan,
+    bands,
+    regionBands,
+    regionShapes,
+    shapeAt,
+    random,
+    worldMask,
+    dimensions,
+    space,
+    config,
+  } = input;
   validateGeologyPlan(plan);
+  if (regionShapes.length !== plan.regions.length) {
+    throw new Error('Every planned region needs one resolved shape recipe.');
+  }
   if (worldMask.length !== space.sampleWidth * space.sampleHeight) {
     throw new Error('The world mask must match the heightmap raster size.');
   }
@@ -95,6 +116,8 @@ export function buildHeightField(input: HeightFieldInput): HeightField {
     plan,
     bands,
     regionBands,
+    regionShapes,
+    shapeAt,
     ownerMap,
     borderDistanceMap: effectiveBorderDistances(borderDistanceMap, worldMask, space, dimensions),
     worldMask,

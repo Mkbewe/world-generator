@@ -5,7 +5,7 @@ import type { WorldDimensions } from '../../../../world-dimensions';
 import { GenerationCancelledError } from '../../../errors';
 import type { WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
-import { REGION_SHAPES, type RegionShape } from '../config/region-shape';
+import type { RegionShape } from '../config/region-shape';
 import {
   BORDER_GATE_FADE_METERS,
   BORDER_GATE_METERS,
@@ -70,8 +70,9 @@ export function textureLand(context: FieldContext): void {
         continue;
       }
       const point = space.cellToNormalized(x, y);
+      const shape = context.shapeAt(ownerMap[index], point);
       const shoreFade = smoothstep(clamp01(landUplift[index] / SHORE_FADE_METERS));
-      const texture = landTexture(band, point, REGION_SHAPES[region.type]);
+      const texture = landTexture(band, point, shape);
       landUplift[index] *= 1 + (texture - 1) * shoreFade;
     }
     context.report?.(0.6 + ((y + 1) / space.sampleHeight) * 0.08);
@@ -110,14 +111,21 @@ export function composeSurfaces(
     config,
     borderDistanceMap,
   } = context;
-  const isletRelief = new IsletRelief({ plan, bands, regionBands, config, shoreWidthMeters });
+  const isletRelief = new IsletRelief({
+    plan,
+    bands,
+    regionBands,
+    shapeAt: context.shapeAt,
+    config,
+    shoreWidthMeters,
+  });
   for (let y = 0; y < space.sampleHeight; y++) {
     if (context.signal?.aborted) {
       throw new GenerationCancelledError();
     }
     for (let x = 0; x < space.sampleWidth; x++) {
       const index = y * space.sampleWidth + x;
-      if (worldMask[index] === 0) {
+      if (worldMask[index] === 0 || ownerMap[index] < 0) {
         continue;
       }
       const point = space.cellToNormalized(x, y);
@@ -125,8 +133,8 @@ export function composeSurfaces(
       const gate = borderGate(borderDistanceMap[index], large);
       // The region scales its ocean floor depth; the gate fades the scale in
       // so two regions never step against each other at their border.
-      const region = plan.regions[ownerMap[index]];
-      const floorShare = region ? REGION_SHAPES[region.type].oceanFloorShare : 1;
+      const shape = context.shapeAt(ownerMap[index], point);
+      const floorShare = shape.oceanFloorShare;
       const floorScale = 1 - (1 - floorShare) * gate;
       const deepFloor = -OCEAN_FLOOR_METERS * (0.6 + 0.4 * (0.5 - 0.5 * large)) * floorScale;
       // The floor slides linearly from the shore water down to the deep

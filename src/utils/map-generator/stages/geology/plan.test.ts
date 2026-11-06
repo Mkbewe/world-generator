@@ -8,6 +8,7 @@ import { createWorldSpace } from '../../space';
 import type { GeologicalRegionConfig, GeologyConfig } from '../../types';
 
 const DIMENSIONS = { widthMeters: 2000, heightMeters: 2000, sampleWidth: 65, sampleHeight: 65 };
+const OPTIONS = { thermalAt: () => 'temperate' as const, geologyCoupling: 0 };
 
 function config(regionCount = 5): GeologyConfig {
   const preset = geologyPresetConfig('varied');
@@ -32,7 +33,8 @@ function build(seed = 17, regionCount = 5) {
     new RandomFactory(seed),
     'disc',
     DIMENSIONS,
-    createWorldSpace(DIMENSIONS)
+    createWorldSpace(DIMENSIONS),
+    OPTIONS
   );
 }
 
@@ -66,7 +68,8 @@ function expectSharesMatch(
       new RandomFactory(seed),
       shape,
       dimensions,
-      createWorldSpace(dimensions)
+      createWorldSpace(dimensions),
+      OPTIONS
     );
     plan.regions.forEach((region, index) => {
       const target = (regions[index]?.size ?? 0) / totalWeight;
@@ -101,7 +104,8 @@ describe('buildGeologyPlan', () => {
       new RandomFactory(17),
       'disc',
       DIMENSIONS,
-      createWorldSpace(DIMENSIONS)
+      createWorldSpace(DIMENSIONS),
+      OPTIONS
     );
 
     plan.regions.forEach((region, index) => {
@@ -109,6 +113,19 @@ describe('buildGeologyPlan', () => {
       expect(region.type).toBe(expected?.type);
       expect(region.weight).toBe(expected?.size);
     });
+  });
+
+  it('samples the thermal class at every region centre', () => {
+    const plan = buildGeologyPlan(
+      config(3),
+      new RandomFactory(17),
+      'disc',
+      DIMENSIONS,
+      createWorldSpace(DIMENSIONS),
+      { thermalAt: () => 'warm', geologyCoupling: 1 }
+    );
+
+    expect(plan.regions.map(region => region.thermal)).toEqual(['warm', 'warm', 'warm']);
   });
 
   it('generates a partition for every supported region count', () => {
@@ -173,14 +190,16 @@ describe('buildGeologyPlan', () => {
       new RandomFactory(17),
       'disc',
       DIMENSIONS,
-      createWorldSpace(DIMENSIONS)
+      createWorldSpace(DIMENSIONS),
+      OPTIONS
     );
     const second = buildGeologyPlan(
       edited,
       new RandomFactory(17),
       'disc',
       DIMENSIONS,
-      createWorldSpace(DIMENSIONS)
+      createWorldSpace(DIMENSIONS),
+      OPTIONS
     );
 
     const geometry = (region: (typeof first.regions)[number]) => ({
@@ -210,14 +229,16 @@ describe('buildGeologyPlan', () => {
       new RandomFactory(17),
       'disc',
       DIMENSIONS,
-      createWorldSpace(DIMENSIONS)
+      createWorldSpace(DIMENSIONS),
+      OPTIONS
     );
     const ragged = buildGeologyPlan(
       { ...base, layout: { evenness: 0.5, irregularity: 0.9 } },
       new RandomFactory(17),
       'disc',
       DIMENSIONS,
-      createWorldSpace(DIMENSIONS)
+      createWorldSpace(DIMENSIONS),
+      OPTIONS
     );
 
     const geometry = (regions: typeof calm.regions) =>
@@ -348,7 +369,7 @@ describe('buildGeologyPlan', () => {
     const cramped: GeologyConfig = { ...preset, layout: { evenness: 1, irregularity: 0 } };
 
     expect(() =>
-      buildGeologyPlan(cramped, new RandomFactory(5), 'disc', tiny, createWorldSpace(tiny))
+      buildGeologyPlan(cramped, new RandomFactory(5), 'disc', tiny, createWorldSpace(tiny), OPTIONS)
     ).toThrow(/infeasible|no cells/);
   });
 });

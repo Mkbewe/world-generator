@@ -11,6 +11,7 @@ function plan(): GeologyPlan {
         id: 'region-1',
         type: 'ordinary',
         centre: { x: 0.5, y: 0.5 },
+        thermal: 'temperate',
         weight: 1,
         areaSquareMeters: 8,
       },

@@ -29,12 +29,14 @@ export interface RegionShape {
   readonly usesMountainousness: boolean;
   /** Share of forms that carve an inner lagoon/caldera depression, 0..1. */
   readonly cavityShare: number;
+  /** Whether the cavity is a reef ring with a submerged lagoon instead of a crater. */
+  readonly buildsReef: boolean;
   /** Relative radius of the inner cavity (lagoon or crater) as a fraction of the form radius, 0..1. */
   readonly cavityRadiusShare: number;
   /**
-   * Floor height of the cavity: >= 0 carves a crater around `form.peak` at
-   * `peakMeters * cavityFloorShare`; < 0 builds a reef ring around `form.centre`
-   * with a submerged lagoon floor at `SHELF_DEPTH_METERS * cavityFloorShare`.
+   * Floor height of the cavity: for a crater, `peakMeters * cavityFloorShare`;
+   * for a reef ring, the submerged lagoon floor uses
+   * `SHELF_DEPTH_METERS * cavityFloorShare`.
    */
   readonly cavityFloorShare: number;
   /** Angular frequency of radial coastal channels (fjords); 0 disables channels. */
@@ -60,6 +62,7 @@ export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> 
     shelfFactor: 2.8,
     usesMountainousness: true,
     cavityShare: 0,
+    buildsReef: false,
     cavityRadiusShare: 0,
     cavityFloorShare: 0,
     chuteCount: 0,
@@ -79,6 +82,7 @@ export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> 
     shelfFactor: 1.35,
     usesMountainousness: false,
     cavityShare: 0.85,
+    buildsReef: false,
     cavityRadiusShare: 0.32,
     cavityFloorShare: 0.12,
     chuteCount: 0,
@@ -98,6 +102,7 @@ export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> 
     shelfFactor: 2.35,
     usesMountainousness: false,
     cavityShare: 0.8,
+    buildsReef: true,
     cavityRadiusShare: 0.74,
     cavityFloorShare: -0.06,
     chuteCount: 0,
@@ -117,6 +122,7 @@ export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> 
     shelfFactor: 2,
     usesMountainousness: false,
     cavityShare: 0,
+    buildsReef: false,
     cavityRadiusShare: 0,
     cavityFloorShare: 0,
     chuteCount: 4,

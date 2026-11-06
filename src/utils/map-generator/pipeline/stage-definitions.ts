@@ -6,6 +6,9 @@ export const MAP_CONFIG_KEYS = [
   'macroRegions',
   'macroRegionDeformation',
   'baseClimate',
+  'baseClimate.zones',
+  'baseClimate.zoneIrregularity',
+  'baseClimate.geologyCoupling',
   'geology',
   'heightmap',
 ] as const;
@@ -45,7 +48,7 @@ export const MACRO_REGION_STAGE = {
  */
 export const BASE_CLIMATE_STAGE = {
   id: 'base-climate',
-  name: 'BaseClimate',
+  name: 'Base Climate',
   configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'baseClimate'],
 } as const satisfies DeclaredStage;
 
@@ -57,7 +60,15 @@ export const BASE_CLIMATE_STAGE = {
 export const GEOLOGY_STAGE = {
   id: 'geology',
   name: 'Geology',
-  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology'],
+  configKeys: [
+    'world.seed',
+    'world.shape',
+    'world.dimensions',
+    'baseClimate.zones',
+    'baseClimate.zoneIrregularity',
+    'baseClimate.geologyCoupling',
+    'geology',
+  ],
 } as const satisfies DeclaredStage;
 
 /**
@@ -68,7 +79,16 @@ export const GEOLOGY_STAGE = {
 export const HEIGHTMAP_STAGE = {
   id: 'heightmap',
   name: 'Heightmap',
-  configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'geology', 'heightmap'],
+  configKeys: [
+    'world.seed',
+    'world.shape',
+    'world.dimensions',
+    'baseClimate.zones',
+    'baseClimate.zoneIrregularity',
+    'baseClimate.geologyCoupling',
+    'geology',
+    'heightmap',
+  ],
 } as const satisfies DeclaredStage;
 
 /**

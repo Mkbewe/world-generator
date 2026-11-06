@@ -8,7 +8,10 @@ import type {
   GeologicalRegionType,
   GeologyPlan,
   RegionTerrainConfig,
+  WorldPoint,
 } from '../../../types';
+import { REGION_SHAPES, type RegionShape } from '../config/region-shape';
+import { regionShapeFor } from '../config/region-shape-variants';
 
 const DIMENSIONS: WorldDimensions = {
   widthMeters: 4000,
@@ -31,6 +34,7 @@ function region(index: number, type: GeologicalRegionType): GeologicalRegionPlan
     id: `region-${index + 1}`,
     type,
     centre: { x: (index + 0.5) / 2, y: 0.5 },
+    thermal: 'temperate',
     weight: 1,
     areaSquareMeters: DIMENSIONS.widthMeters * DIMENSIONS.heightMeters,
   };
@@ -92,7 +96,9 @@ function plan(
 function regionForms(
   type: GeologicalRegionType,
   dimensions: WorldDimensions = DIMENSIONS,
-  mask?: Uint8Array
+  mask?: Uint8Array,
+  shape?: RegionShape,
+  shapeAt?: (point: WorldPoint) => RegionShape
 ): {
   readonly forms: ReturnType<typeof buildRegionForms>;
   readonly space: ReturnType<typeof createWorldSpace>;
@@ -104,9 +110,12 @@ function regionForms(
   if (!anchor) {
     throw new Error('The plan must carry the region.');
   }
+  const regionShape = shape ?? REGION_SHAPES[anchor.type];
   const forms = buildRegionForms({
     regionIndex: 0,
     region: anchor,
+    shape: regionShape,
+    shapeAt: shapeAt ?? (() => regionShape),
     terrain: terrain(),
     cells:
       collectRegionInteriors(source, source.regionOwnerMap, source.regionBorderDistanceMap)[0] ??
@@ -122,6 +131,49 @@ function regionForms(
 }
 
 describe('buildRegionForms', () => {
+  it.each(['temperate', 'cold'] as const)('builds no atoll cavities for a %s lagoon', thermal => {
+    const { forms } = regionForms(
+      'lagoon',
+      DIMENSIONS,
+      undefined,
+      regionShapeFor('lagoon', thermal, 1)
+    );
+
+    expect(forms.length).toBeGreaterThan(0);
+    expect(forms.every(form => !form.hasCavity)).toBe(true);
+  });
+
+  it('keeps the base atoll recipe when coupling is zero', () => {
+    const shape = regionShapeFor('lagoon', 'cold', 0);
+
+    expect(shape.buildsReef).toBe(REGION_SHAPES.lagoon.buildsReef);
+    expect(shape.cavityShare).toBe(REGION_SHAPES.lagoon.cavityShare);
+  });
+
+  it('resolves the thermal variant at each form centre', () => {
+    const warm = regionShapeFor('lagoon', 'warm', 1);
+    const cold = regionShapeFor('lagoon', 'cold', 1);
+    const { forms } = regionForms('lagoon', DIMENSIONS, undefined, warm, point =>
+      point.x < 0.5 ? cold : warm
+    );
+
+    expect(forms.some(form => form.shape.buildsReef)).toBe(true);
+    expect(forms.some(form => !form.shape.buildsReef)).toBe(true);
+  });
+
+  it('keeps form centres stable when the thermal variant changes', () => {
+    const warm = regionShapeFor('lagoon', 'warm', 1);
+    const cold = regionShapeFor('lagoon', 'cold', 1);
+    const first = regionForms('lagoon', DIMENSIONS, undefined, warm, point =>
+      point.x < 0.5 ? cold : warm
+    );
+    const second = regionForms('lagoon', DIMENSIONS, undefined, warm, point =>
+      point.x < 0.5 ? warm : cold
+    );
+
+    expect(first.forms.map(form => form.centre)).toEqual(second.forms.map(form => form.centre));
+  });
+
   it('anchors the main form of a region near its centre', () => {
     const space = createWorldSpace(DIMENSIONS);
     const mask = new Uint8Array(CELLS);
