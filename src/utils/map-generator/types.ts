@@ -116,6 +116,10 @@ export interface BaseClimateConfig {
   readonly currents: readonly OceanCurrentConfig[];
   /** 0 leaves the current geology recipes, 1 fully follows the zones. */
   readonly geologyCoupling: number;
+  /** Global moisture bias: 0 dry, 0.5 balanced, 1 wet. */
+  readonly moisture?: number;
+  /** How far heat-zone borders may shift in normalized units; 0 keeps them straight. */
+  readonly zoneIrregularity?: number;
 }
 
 /**

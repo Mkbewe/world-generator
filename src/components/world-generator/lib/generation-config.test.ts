@@ -1,5 +1,7 @@
 import { buildGenerationConfig, type GenerationConfigInput } from './generation-config';
 import {
+  BASE_CLIMATE_FORM_DEFAULTS,
+  baseClimateConfigOf,
   GEOLOGY_FORM_DEFAULTS,
   geologyConfigOf,
   HEIGHTMAP_FORM_DEFAULTS,
@@ -14,6 +16,7 @@ function input(overrides: Partial<GenerationConfigInput> = {}): GenerationConfig
     metersPerSample: 1,
     macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
     macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
+    baseClimate: baseClimateConfigOf(BASE_CLIMATE_FORM_DEFAULTS),
     geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
     heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
     ...overrides,
@@ -39,6 +42,7 @@ describe('buildGenerationConfig', () => {
         },
         macroRegions: MACRO_REGION_FORM_DEFAULTS.regions,
         macroRegionDeformation: MACRO_REGION_FORM_DEFAULTS.deformation,
+        baseClimate: baseClimateConfigOf(BASE_CLIMATE_FORM_DEFAULTS),
         geology: geologyConfigOf(GEOLOGY_FORM_DEFAULTS),
         heightmap: HEIGHTMAP_FORM_DEFAULTS.heightmap,
       },

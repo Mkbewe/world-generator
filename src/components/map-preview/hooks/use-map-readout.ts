@@ -87,7 +87,7 @@ export function useMapReadout(
       setReadout({
         position,
         inspection: rendererRef.current?.inspect(position.x, position.y),
-        overlay: rendererRef.current?.inspectOverlay(position.x, position.y),
+        overlays: rendererRef.current?.inspectOverlays(position.x, position.y),
       });
     },
     [rendererRef]

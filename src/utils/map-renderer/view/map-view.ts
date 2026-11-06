@@ -79,6 +79,11 @@ export class MapView {
     return this.overlays.isVisible(id);
   }
 
+  /** Whether an overlay draws and reports values: visible and not suppressed. */
+  isOverlayActive(id: MapOverlayId): boolean {
+    return this.isOverlayVisible(id) && !this.suppressedOverlayIds().has(id);
+  }
+
   get viewportSize(): ViewportSize | undefined {
     return this.overlays.size();
   }

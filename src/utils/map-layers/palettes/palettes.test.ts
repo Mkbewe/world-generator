@@ -1,6 +1,6 @@
 import {
   compilePalette,
-  HEAT_ZONE_COLORS,
+  heatZoneColor,
   heatZonePalette,
   regionColor,
   validatePalette,
@@ -98,8 +98,12 @@ describe('palette compiler', () => {
 
     expect(palette).toMatchObject({
       kind: 'discrete',
-      colors: [HEAT_ZONE_COLORS.cold, HEAT_ZONE_COLORS.warm],
+      colors: [heatZoneColor('cold', 'cold'), heatZoneColor('warm', 'warm')],
     });
+  });
+
+  it('gives same-class heat zones slightly different shades', () => {
+    expect(heatZoneColor('warm', 'warm-a')).not.toEqual(heatZoneColor('warm', 'warm-b'));
   });
 
   it('rejects invalid colors, stops and empty discrete palettes', () => {

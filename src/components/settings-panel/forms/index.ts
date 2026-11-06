@@ -1,3 +1,4 @@
+export { BaseClimateForm } from './base-climate-form';
 export { GeneralForm } from './general-form';
 export { GeologyForm } from './geology-form';
 export { HeightmapForm } from './heightmap-form';

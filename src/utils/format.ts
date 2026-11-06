@@ -34,6 +34,11 @@ export function formatMeters(meters: number): string {
   return `${formatMeasure(meters)} m`;
 }
 
+/** Ratio in 0..1 as a whole percentage, e.g. "42%". */
+export function formatPercent(ratio: number): string {
+  return `${Math.round(ratio * 100)}%`;
+}
+
 /** Distance in the fitting unit: km from a kilometre up, m below. */
 export function formatDistance(meters: number): string {
   return meters >= 1000 ? `${formatMeasure(meters / 1000)} km` : formatMeters(meters);

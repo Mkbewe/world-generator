@@ -5,7 +5,7 @@ import type { MacroRegionConfig } from '../../../../../../utils/map-generator/ty
 import { InfoLabel } from '../../../../../info-label';
 import { SegmentedControlScroll } from '../../../../../segmented-control-scroll';
 import { SliderField } from '../../../../../slider-field';
-import { irregularityLabel, MAX_IRREGULARITY } from '../../lib/irregularity';
+import { irregularityLabel, MAX_IRREGULARITY } from '../../../lib/irregularity';
 import { RegionCardDanger } from '../region-card-danger';
 import { RegionCardHeader } from '../region-card-header';
 

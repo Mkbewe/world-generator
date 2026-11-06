@@ -1,4 +1,4 @@
-import { NoiseSource } from '../../random';
+import { createDisplacementField, type DisplacementOffsets } from '../../irregularity';
 import { RandomFactory } from '../../random/random-factory';
 import { planarDistance } from '../../space';
 import type { MacroRegionPoint } from '../../types';
@@ -23,24 +23,16 @@ export interface CellDeformation {
   bandPosition(axis: 'x' | 'y', amplitude: number): number;
 }
 
-/** Two octaves at three base cycles across the normalized world. */
-const REGION_NOISE_SPEC = {
-  frequency: 3,
-  octaves: 2,
-  persistence: 0.5,
-  lacunarity: 2,
-} as const;
-
 /** One selection point shared by the worker and the preview renderer. */
 export function createRegionDisplacement(seed: number): RegionDisplacement {
-  const noise = new NoiseSource(new RandomFactory(seed), 'macro-region');
-  const shiftX = noise.scalar(REGION_NOISE_SPEC, 'x');
-  const shiftY = noise.scalar(REGION_NOISE_SPEC, 'y');
+  const field = createDisplacementField(new RandomFactory(seed), 'macro-region');
+  const offset: DisplacementOffsets = { x: 0, y: 0 };
 
   return {
     at: (x, y) => {
-      const offsetX = shiftX(x, y);
-      const offsetY = shiftY(x, y);
+      field(x, y, offset);
+      const offsetX = offset.x;
+      const offsetY = offset.y;
       return {
         ringRadius(center, amplitude) {
           return planarDistance({ x: x + offsetX * amplitude, y: y + offsetY * amplitude }, center);

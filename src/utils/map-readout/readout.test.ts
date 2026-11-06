@@ -32,14 +32,44 @@ describe('readoutItems', () => {
   it('shows the heat zone under the pointer when the overlay reports one', () => {
     const items = readoutItems({
       ...readout(),
-      overlay: { overlayId: 'heat-zones', label: 'Heat zone', value: 'Temperate north' },
+      overlays: [{ overlayId: 'heat-zones', label: 'Heat zone', value: 'Temperate north' }],
     });
 
     expect(items).toContainEqual({
-      id: 'overlay',
+      id: 'overlays',
+      label: 'Overlays',
+      value: '',
+      heading: true,
+      detached: true,
+    });
+    expect(items).toContainEqual({
+      id: 'overlay-heat-zones',
       label: 'Heat zone',
       value: 'Temperate north',
     });
+  });
+
+  it('shows every visible overlay value in one detached group', () => {
+    const items = readoutItems({
+      ...readout(),
+      overlays: [
+        { overlayId: 'heat-zones', label: 'Heat zone', value: 'Cold' },
+        { overlayId: 'moisture', label: 'Moisture', value: '42%' },
+      ],
+    });
+    const overlays = items.filter(item => item.id.startsWith('overlay-'));
+
+    expect(items).toContainEqual({
+      id: 'overlays',
+      label: 'Overlays',
+      value: '',
+      heading: true,
+      detached: true,
+    });
+    expect(overlays).toEqual([
+      { id: 'overlay-heat-zones', label: 'Heat zone', value: 'Cold' },
+      { id: 'overlay-moisture', label: 'Moisture', value: '42%' },
+    ]);
   });
 
   it('shows the ocean current under the pointer from the preview layer', () => {
@@ -55,6 +85,43 @@ describe('readoutItems', () => {
       label: 'Ocean current',
       value: 'Southeast · 43%',
     });
+  });
+
+  it('shows the heat zone name and class from the preview layer', () => {
+    const inspection: MapInspection = {
+      kind: 'raster',
+      layerId: 'heat-zones',
+      label: 'Heat zones',
+      value: 1,
+    };
+    const info: MapInfo = {
+      heatZoneInfo: [
+        { id: 'cold', label: 'Cold rim', thermal: 'cold' },
+        { id: 'warm', label: 'Warm core', thermal: 'warm' },
+      ],
+    };
+
+    expect(item(readout(inspection), 'zone', info)).toEqual({
+      id: 'zone',
+      label: 'Heat zone',
+      value: 'Warm core',
+    });
+    expect(item(readout(inspection), 'thermal', info)).toEqual({
+      id: 'thermal',
+      label: 'Class',
+      value: 'Warm',
+    });
+  });
+
+  it('shows the moisture value as a percentage', () => {
+    const inspection: MapInspection = {
+      kind: 'raster',
+      layerId: 'moisture',
+      label: 'Moisture',
+      value: 0.42,
+    };
+
+    expect(itemValue(readout(inspection), 'moisture')).toBe('42%');
   });
 
   it('shows cell coordinates as an X/Y row without a distance', () => {

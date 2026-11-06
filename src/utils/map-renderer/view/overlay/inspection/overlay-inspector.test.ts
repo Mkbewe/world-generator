@@ -1,4 +1,5 @@
 import { HeatZoneOverlayInspector } from './heat-zone-inspector';
+import { MoistureOverlayInspector } from './moisture-inspector';
 import { OceanCurrentOverlayInspector } from './ocean-current-inspector';
 import { OverlayInspectorRegistry } from './overlay-inspector';
 
@@ -85,11 +86,47 @@ describe('OceanCurrentOverlayInspector', () => {
   });
 });
 
+describe('MoistureOverlayInspector', () => {
+  const moistureData = {
+    worldMask: new Uint8Array([1, 1, 0]),
+    moistureBaseMap: new Float32Array([0.42, 0.75, 0.9]),
+  };
+  const moistureInput = {
+    x: 0,
+    y: 0,
+    mapSize: { width: 3, height: 1 },
+    data: moistureData,
+    info: {},
+  };
+
+  it('reads the base moisture as a percentage inside the world', () => {
+    const inspector = new MoistureOverlayInspector();
+
+    expect(inspector.inspect(moistureInput)).toEqual({
+      overlayId: 'moisture',
+      label: 'Moisture',
+      value: '42%',
+    });
+    expect(inspector.inspect({ ...moistureInput, x: 1 })).toMatchObject({ value: '75%' });
+  });
+
+  it('returns undefined outside the world, the map, or without data', () => {
+    const inspector = new MoistureOverlayInspector();
+
+    expect(inspector.inspect({ ...moistureInput, x: 2 })).toBeUndefined();
+    expect(inspector.inspect({ ...moistureInput, x: 3 })).toBeUndefined();
+    expect(inspector.inspect({ ...moistureInput, mapSize: undefined })).toBeUndefined();
+    expect(inspector.inspect({ ...moistureInput, data: {} })).toBeUndefined();
+  });
+});
+
 describe('OverlayInspectorRegistry', () => {
-  it('delegates only to visible inspectors and returns the first value', () => {
+  it('delegates only to visible inspectors and returns every value', () => {
     const registry = new OverlayInspectorRegistry([new HeatZoneOverlayInspector()]);
 
-    expect(registry.inspect(input, () => false)).toBeUndefined();
-    expect(registry.inspect(input, id => id === 'heat-zones')).toMatchObject({ value: 'Cold' });
+    expect(registry.inspectAll(input, () => false)).toEqual([]);
+    expect(registry.inspectAll(input, id => id === 'heat-zones')).toEqual([
+      { overlayId: 'heat-zones', label: 'Heat zone', value: 'Cold' },
+    ]);
   });
 });

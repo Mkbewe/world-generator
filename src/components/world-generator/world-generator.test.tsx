@@ -4,9 +4,12 @@ import userEvent from '@testing-library/user-event';
 
 import { worldGenerationSession } from './lib/world-generation-session';
 import {
+  BASE_CLIMATE_FORM_DEFAULTS,
+  baseClimateConfigOf,
   GENERAL_FORM_DEFAULTS,
   MACRO_REGION_FORM_DEFAULTS,
   PREVIEW_DEFAULTS,
+  useBaseClimateFormStore,
   useGeneralFormStore,
   useGenerationProgressStore,
   useGenerationStatisticsStore,
@@ -81,6 +84,7 @@ describe('WorldGenerator', () => {
     useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
     useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
     useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
+    useBaseClimateFormStore.setState({ ...BASE_CLIMATE_FORM_DEFAULTS });
     useGenerationProgressStore.getState().setProgress(undefined);
     useGenerationStatisticsStore.getState().setResult(undefined);
     usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
@@ -100,6 +104,7 @@ describe('WorldGenerator', () => {
       useGeneralFormStore.setState({ ...GENERAL_FORM_DEFAULTS });
       useWorldShapeFormStore.setState({ ...WORLD_SHAPE_FORM_DEFAULTS });
       useMacroRegionFormStore.setState({ ...MACRO_REGION_FORM_DEFAULTS });
+      useBaseClimateFormStore.setState({ ...BASE_CLIMATE_FORM_DEFAULTS });
       useGenerationProgressStore.getState().setProgress(undefined);
       useGenerationStatisticsStore.getState().setResult(undefined);
       usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
@@ -145,6 +150,7 @@ describe('WorldGenerator', () => {
     if (!config) {
       throw new Error('Expected the run configuration.');
     }
+    expect(config.baseClimate).toEqual(baseClimateConfigOf(useBaseClimateFormStore.getState()));
     const cells = config.world.dimensions.sampleWidth * config.world.dimensions.sampleHeight;
     await act(async () => {
       onStages?.([{ id: 'world-shape', name: 'World shape' }]);

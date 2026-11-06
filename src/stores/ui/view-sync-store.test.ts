@@ -5,6 +5,8 @@ describe('view sync store', () => {
     expect(layerForTab('geology')).toBe('geology');
     expect(layerForTab('general')).toBeUndefined();
     expect(tabForLayer('macro-region')).toBe('macro-region');
+    expect(layerForTab('heat-zones')).toBe('heat-zones');
+    expect(tabForLayer('heat-zones')).toBe('heat-zones');
   });
 
   it('maps the geology tab to its plan layer', () => {

@@ -5,6 +5,7 @@ import {
   OCEAN_CURRENT_FLOWS,
 } from '../../../types';
 import {
+  MAX_HEAT_ZONE_IRREGULARITY,
   MAX_HEAT_ZONES,
   MAX_OCEAN_CURRENT_RADIUS,
   MAX_OCEAN_CURRENT_SOURCES,
@@ -27,6 +28,17 @@ export function validateBaseClimateConfig(config: BaseClimateConfig): void {
   }
   if (!isNormalized(config.geologyCoupling)) {
     throw new RangeError('Geology coupling must be within 0..1.');
+  }
+  if (config.moisture !== undefined && !isNormalized(config.moisture)) {
+    throw new RangeError('Base moisture must be within 0..1.');
+  }
+  if (
+    config.zoneIrregularity !== undefined &&
+    (!Number.isFinite(config.zoneIrregularity) ||
+      config.zoneIrregularity < 0 ||
+      config.zoneIrregularity > MAX_HEAT_ZONE_IRREGULARITY)
+  ) {
+    throw new RangeError(`Heat-zone irregularity must be within 0..${MAX_HEAT_ZONE_IRREGULARITY}.`);
   }
 
   const ids = new Set<string>();

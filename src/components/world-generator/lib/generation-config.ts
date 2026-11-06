@@ -1,4 +1,5 @@
 import type {
+  BaseClimateConfig,
   GeologyConfig,
   HeightmapConfig,
   MacroRegionConfig,
@@ -14,6 +15,7 @@ export interface GenerationConfigInput {
   metersPerSample: number;
   macroRegions: readonly MacroRegionConfig[];
   macroRegionDeformation: MacroRegionDeformation;
+  baseClimate: BaseClimateConfig;
   geology: GeologyConfig;
   heightmap: HeightmapConfig;
 }
@@ -33,6 +35,7 @@ export function buildGenerationConfig(input: GenerationConfigInput): GenerationC
       world: { dimensions: grid.dimensions, seed: parsedSeed, shape: input.shape },
       macroRegions: input.macroRegions,
       macroRegionDeformation: input.macroRegionDeformation,
+      baseClimate: input.baseClimate,
       geology: input.geology,
       heightmap: input.heightmap,
     },

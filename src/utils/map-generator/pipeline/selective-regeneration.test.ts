@@ -88,7 +88,10 @@ describe('selectDirtyStageIds', () => {
         },
         ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
       ],
-      [{ world: { ...config.world, seed: 18 } }, ['macro-region', 'geology', 'heightmap']],
+      [
+        { world: { ...config.world, seed: 18 } },
+        ['macro-region', 'base-climate', 'geology', 'heightmap'],
+      ],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2 } }, ['macro-region']],
       [{ baseClimate: { ...baseClimate, geologyCoupling: 0.5 } }, ['base-climate']],

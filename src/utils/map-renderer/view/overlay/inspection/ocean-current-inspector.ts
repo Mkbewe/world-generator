@@ -1,4 +1,5 @@
 import type { OverlayInspectionInput, OverlayInspector } from './overlay-inspector';
+import { cellIndexAt, isInsideWorld } from './world-cell';
 import { describeOceanCurrent } from '../../../ocean-current';
 import type { MapOverlayInspection } from '../../../types';
 
@@ -7,11 +8,8 @@ export class OceanCurrentOverlayInspector implements OverlayInspector {
   readonly overlayId = 'ocean-currents' as const;
 
   inspect({ x, y, mapSize, data }: OverlayInspectionInput): MapOverlayInspection | undefined {
-    if (!mapSize || x < 0 || y < 0 || x >= mapSize.width || y >= mapSize.height) {
-      return undefined;
-    }
-    const index = y * mapSize.width + x;
-    if (!isInsideWorld(data.worldMask, index)) {
+    const index = cellIndexAt(mapSize, x, y);
+    if (index === undefined || !isInsideWorld(data.worldMask, index)) {
       return undefined;
     }
     const angles = data.oceanCurrentMap;
@@ -30,8 +28,4 @@ export class OceanCurrentOverlayInspector implements OverlayInspector {
       value: describeOceanCurrent(angle, strength),
     };
   }
-}
-
-function isInsideWorld(value: unknown, index: number): boolean {
-  return value instanceof Uint8Array && value[index] === 1;
 }

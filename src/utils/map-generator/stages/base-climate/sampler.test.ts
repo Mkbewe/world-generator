@@ -18,10 +18,12 @@ describe('createHeatZoneSampler', () => {
     expect(zoneAt(config, 0.5, 0.9)).toBe(4);
   });
 
-  it('puts the warm zone in the centre of a ring world', () => {
+  it('puts the temperate core, warm ring and cold rim in a ring world', () => {
     const config = baseClimatePresetConfig('ring-world');
 
+    expect(config.zones.map(zone => zone.thermal)).toEqual(['temperate', 'warm', 'cold']);
     expect(zoneAt(config, 0.5, 0.5)).toBe(0);
+    expect(zoneAt(config, 0.5, 0.25)).toBe(1);
     expect(zoneAt(config, 0, 0)).toBe(2);
   });
 

@@ -17,23 +17,24 @@ export interface OverlayInspector {
   inspect(input: OverlayInspectionInput): MapOverlayInspection | undefined;
 }
 
-/** Resolves the topmost visible overlay that can describe the cell. */
+/** Resolves every visible overlay that can describe the cell. */
 export class OverlayInspectorRegistry {
   constructor(private readonly inspectors: readonly OverlayInspector[]) {}
 
-  inspect(
+  inspectAll(
     input: OverlayInspectionInput,
     isVisible: (id: MapOverlayId) => boolean
-  ): MapOverlayInspection | undefined {
-    for (const inspector of [...this.inspectors].reverse()) {
+  ): readonly MapOverlayInspection[] {
+    const inspections: MapOverlayInspection[] = [];
+    for (const inspector of this.inspectors) {
       if (!isVisible(inspector.overlayId)) {
         continue;
       }
       const inspection = inspector.inspect(input);
       if (inspection) {
-        return inspection;
+        inspections.push(inspection);
       }
     }
-    return undefined;
+    return inspections;
   }
 }

@@ -64,7 +64,7 @@ Przykładowe presety:
 
 - **Earth-like** — zimne pasma przy krawędziach, umiarkowane w środku, ciepłe
   w pasie równikowym,
-- **Ring world** — ciepły środek i zimne zewnętrzne pierścienie,
+- **Ring world** — umiarkowany środek, ciepły pierścień i zimna krawędź,
 - **Cold core** — zimny środek i ciepłe zewnętrzne pierścienie.
 
 ## Wilgotność bazowa

@@ -1,7 +1,15 @@
-import { FrameIcon, GearIcon, GlobeIcon, LayersIcon, SewingPinIcon } from '@radix-ui/react-icons';
+import {
+  FrameIcon,
+  GearIcon,
+  GlobeIcon,
+  LayersIcon,
+  SewingPinIcon,
+  SunIcon,
+} from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Separator } from '@radix-ui/themes';
 
 import {
+  BaseClimateForm,
   GeneralForm,
   GeologyForm,
   HeightmapForm,
@@ -62,6 +70,11 @@ export function SettingsPanel({
       label: 'Macro regions',
       icon: <LayersIcon />,
       content: <MacroRegionForm />,
+    },
+    'heat-zones': {
+      label: 'BaseClimate',
+      icon: <SunIcon />,
+      content: <BaseClimateForm />,
     },
     geology: {
       label: 'Geology',

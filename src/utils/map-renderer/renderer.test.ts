@@ -617,18 +617,20 @@ describe('MapRenderer', () => {
       available: true,
       visible: true,
     });
-    expect(preview.inspectOverlay(0, 0)).toEqual({
-      overlayId: 'heat-zones',
-      label: 'Heat zone',
-      value: 'Cold',
-    });
-    expect(preview.inspectOverlay(0, 1)).toMatchObject({ value: 'Warm' });
-    expect(preview.inspectOverlay(1, 1)).toBeUndefined();
+    expect(preview.inspectOverlays(0, 0)).toEqual([
+      {
+        overlayId: 'heat-zones',
+        label: 'Heat zone',
+        value: 'Cold',
+      },
+    ]);
+    expect(preview.inspectOverlays(0, 1)).toMatchObject([{ value: 'Warm' }]);
+    expect(preview.inspectOverlays(1, 1)).toEqual([]);
 
     preview.setOverlay('heat-zones', false);
-    expect(preview.inspectOverlay(0, 0)).toBeUndefined();
+    expect(preview.inspectOverlays(0, 0)).toEqual([]);
     preview.setOverlay('heat-zones', true);
-    expect(preview.inspectOverlay(0, 0)).toMatchObject({ value: 'Cold' });
+    expect(preview.inspectOverlays(0, 0)).toMatchObject([{ value: 'Cold' }]);
     preview.dispose();
   });
 
@@ -645,17 +647,75 @@ describe('MapRenderer', () => {
       available: true,
       visible: true,
     });
-    expect(preview.inspectOverlay(0, 0)).toEqual({
-      overlayId: 'ocean-currents',
-      label: 'Ocean current',
-      value: 'East · 50%',
-    });
-    expect(preview.inspectOverlay(1, 0)).toMatchObject({ value: 'South · 25%' });
-    expect(preview.inspectOverlay(0, 1)).toMatchObject({ value: 'North · 80%' });
-    expect(preview.inspectOverlay(1, 1)).toBeUndefined();
+    expect(preview.inspectOverlays(0, 0)).toEqual([
+      {
+        overlayId: 'ocean-currents',
+        label: 'Ocean current',
+        value: 'East · 50%',
+      },
+    ]);
+    expect(preview.inspectOverlays(1, 0)).toMatchObject([{ value: 'South · 25%' }]);
+    expect(preview.inspectOverlays(0, 1)).toMatchObject([{ value: 'North · 80%' }]);
+    expect(preview.inspectOverlays(1, 1)).toEqual([]);
 
     preview.setOverlay('ocean-currents', false);
-    expect(preview.inspectOverlay(0, 0)).toBeUndefined();
+    expect(preview.inspectOverlays(0, 0)).toEqual([]);
+    preview.dispose();
+  });
+
+  it('exposes and inspects moisture overlay data', () => {
+    const { preview } = setup();
+    preview.setOverlayData({
+      worldMask: new Uint8Array([1, 1, 1, 0]),
+      moistureBaseMap: new Float32Array([0.42, 0.5, 0.75, 0.9]),
+    });
+    preview.setOverlay('moisture', true);
+
+    expect(preview.state.overlays.find(overlay => overlay.id === 'moisture')).toMatchObject({
+      available: true,
+      visible: true,
+    });
+    expect(preview.inspectOverlays(0, 0)).toEqual([
+      {
+        overlayId: 'moisture',
+        label: 'Moisture',
+        value: '42%',
+      },
+    ]);
+    expect(preview.inspectOverlays(1, 0)).toMatchObject([{ value: '50%' }]);
+    expect(preview.inspectOverlays(0, 1)).toMatchObject([{ value: '75%' }]);
+    expect(preview.inspectOverlays(1, 1)).toEqual([]);
+
+    preview.setOverlay('moisture', false);
+    expect(preview.inspectOverlays(0, 0)).toEqual([]);
+    preview.dispose();
+  });
+
+  it('returns every visible overlay value under the pointer', () => {
+    const { preview } = setup();
+    preview.setInfo({
+      heatZoneInfo: [
+        { id: 'cold', label: 'Cold', thermal: 'cold' },
+        { id: 'temperate', label: 'Temperate', thermal: 'temperate' },
+        { id: 'warm', label: 'Warm', thermal: 'warm' },
+      ],
+    });
+    preview.setOverlayData({
+      worldMask: new Uint8Array([1, 1, 1, 0]),
+      heatZoneMap: new Int16Array([0, 1, 2, -1]),
+      moistureBaseMap: new Float32Array([0.42, 0.5, 0.75, 0.9]),
+      oceanCurrentMap: new Float32Array([0, Math.PI / 2, (3 * Math.PI) / 2, 0]),
+      oceanCurrentStrength: new Float32Array([0.5, 0.25, 0.8, 0.9]),
+    });
+    preview.setOverlay('heat-zones', true);
+    preview.setOverlay('moisture', true);
+    preview.setOverlay('ocean-currents', true);
+
+    expect(preview.inspectOverlays(0, 0)).toEqual([
+      { overlayId: 'heat-zones', label: 'Heat zone', value: 'Cold' },
+      { overlayId: 'moisture', label: 'Moisture', value: '42%' },
+      { overlayId: 'ocean-currents', label: 'Ocean current', value: 'East · 50%' },
+    ]);
     preview.dispose();
   });
 
