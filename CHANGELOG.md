@@ -1,5 +1,102 @@
 # Changelog
 
+## [0.13.0](https://github.com/Mkbewe/world-generator/compare/v0.12.0...v0.13.0) (2026-11-06)
+
+### Features
+
+* **[488](https://github.com/Mkbewe/world-generator/issues/488):** add heat zones overlay and preview layer ([#499](https://github.com/Mkbewe/world-generator/issues/499)) ([004215b](https://github.com/Mkbewe/world-generator/commit/004215b675c75b5b3427b27f903f4d4d0f91793e))
+
+  - add the baseclimate preview tab from heatZoneMap
+  - render heat zones as a thermal-class overlay
+  - show zone readout only while the overlay is visible
+  - move overlay renderers and inspectors under view/overlay
+  - support int16 preview rasters and settings-form opt-out
+  - cover preview, overlay, readout and regression behaviour with tests
+* **[489](https://github.com/Mkbewe/world-generator/issues/489):** per-form heat-zone island variants ([#515](https://github.com/Mkbewe/world-generator/issues/515)) ([662bf57](https://github.com/Mkbewe/world-generator/commit/662bf57186131f0a2fa4367d9eac6aebd0360490))
+
+  - resolve the thermal shape per island form; keep region recipes for
+  counts, radii and anchors
+  - sample land texture, sea floor and islets per cell from the heat-zone
+  map
+  - add cold, temperate and warm variants for ordinary, volcanic, lagoon
+  and fjord
+  - keep anchors stable with a separate cavity stream and a light
+  lagoon/fjord bias
+  - remove the unused plan normalizer and test the discrete coupling
+  threshold
+  - default base climate to ring, list ring first and space the tab label
+* **[490](https://github.com/Mkbewe/world-generator/issues/490):** add the base climate stage and heat-zone map ([#498](https://github.com/Mkbewe/world-generator/issues/498)) ([4775fd5](https://github.com/Mkbewe/world-generator/commit/4775fd54e317dd1fed7df32162657138fb12bc20))
+
+  - add BaseClimate config, presets and band/ring zone sampler
+  - generate and persist heatZoneMap before geology
+  - register the BaseClimate stage in the pipeline
+  - cover zones, presets, masks and determinism with tests
+  - document the BaseClimate/Climate split and hydrology merge
+* **[494](https://github.com/Mkbewe/world-generator/issues/494):** add the base climate editor and revise the ring preset ([#514](https://github.com/Mkbewe/world-generator/issues/514)) ([7fcef63](https://github.com/Mkbewe/world-generator/commit/7fcef630123d46c8b61bb1f3be55b8d44e743ed7))
+
+  - add the BaseClimate form with presets, layout, heat-zone and moisture
+  controls
+  - generate seeded heat-zone borders and apply the moisture bias in the
+  stage
+  - let manual currents survive layout changes and reset them with presets
+  - make the ring preset run a temperate core, warm ring and cold rim
+  - share heat-zone labels, colors, percentage formatting and cell bounds
+  - show all active overlay readouts and keep colors stable per zone id
+  - cover the form, store, stage, overlays and presets with tests
+* **[495](https://github.com/Mkbewe/world-generator/issues/495):** add base moisture field to base climate ([#500](https://github.com/Mkbewe/world-generator/issues/500)) ([379c076](https://github.com/Mkbewe/world-generator/commit/379c0764f3f8fd92f4459b649bfb4fc3b26fcb33))
+
+  - generate moistureBaseMap from an independent fbm stream
+  - clamp and validate values to the 0..1 range
+  - persist the additional float32 raster
+  - cover range, zone independence and determinism with tests
+* **[496](https://github.com/Mkbewe/world-generator/issues/496):** add base ocean currents to base climate ([#505](https://github.com/Mkbewe/world-generator/issues/505)) ([74fe76c](https://github.com/Mkbewe/world-generator/commit/74fe76cbf482bd3ce54f4dfc838a28ce0652c106))
+
+  - add current sources and presets to the base climate config
+  - sum static vortex and radial flows without averaging angles
+  - write ocean current direction and strength rasters
+  - persist and validate the new outputs
+  - cover presets, ranges and determinism with tests
+* **[497](https://github.com/Mkbewe/world-generator/issues/497):** add moisture baseline overlay ([#504](https://github.com/Mkbewe/world-generator/issues/504)) ([ab77c7a](https://github.com/Mkbewe/world-generator/commit/ab77c7a1335ed906f3c3996daadbc52fea67d23a))
+
+  - paint the base moisture field with the shared moisture ramp
+  - suppress matching overlays while their base layer is displayed
+  - preserve overlay switch state and expose the disabled state in the UI
+  - keep heat zones and moisture overlays off by default
+  - cover rendering, suppression and defaults with tests
+* **[501](https://github.com/Mkbewe/world-generator/issues/501):** group base climate preview layers ([#503](https://github.com/Mkbewe/world-generator/issues/503)) ([ea5a479](https://github.com/Mkbewe/world-generator/commit/ea5a4796053a5c0bd31ca1fc4f8fb681cc4e7573))
+
+  - group heat zones and moisture under the base climate tab
+  - switch child layers with the remembered preview selection
+  - color heat zones from the same thermal palette as the overlay
+  - support info-derived palettes for raster layers
+  - cover grouped tabs, colors and persistence with tests
+* **[502](https://github.com/Mkbewe/world-generator/issues/502):** add ocean currents overlay and preview layer ([#507](https://github.com/Mkbewe/world-generator/issues/507)) ([905dcb7](https://github.com/Mkbewe/world-generator/commit/905dcb7a144646bc993783feb8cfbb6986fbcee1))
+
+  - render static BaseClimate currents as arrows over the world
+  - add the Ocean currents preview layer to the BaseClimate group
+  - share arrow geometry and readout text between overlay and preview
+  - add the current readout and suppress the overlay on its base layer
+  - switch BaseClimate view switching to radio cards so labels fit
+  - cover overlay, preview, readout and navigation with tests
+
+### Bug Fixes
+
+* **[220](https://github.com/Mkbewe/world-generator/issues/220):** align base climate defaults and overlay contracts ([#517](https://github.com/Mkbewe/world-generator/issues/517)) ([e5ab99f](https://github.com/Mkbewe/world-generator/commit/e5ab99f3953150dbd102c8f8ffb8781a2dd56fa4))
+
+  - default Base Climate to Ring world and sync the docs
+  - share overlay visibility defaults and log overlay renderer failures
+  - validate heat-zone arrays and reuse HEAT_ZONE_CLASSES
+  - make zone ids deterministic and reject invalid current angles/counts
+  - refresh ocean-current layers when their strength changes
+  - extend tests for the fixed contracts
+
+### Performance Improvements
+
+* **[492](https://github.com/Mkbewe/world-generator/issues/492):** speed up heightmap form stamping ([#493](https://github.com/Mkbewe/world-generator/issues/493)) ([4d227b3](https://github.com/Mkbewe/world-generator/commit/4d227b3f7935597309e877650418579995c3fc20))
+
+  - share band samples and compute both radial distances in one pass
+  - reject out-of-reach cells before the expensive noise pass
+
 ## [0.12.0](https://github.com/Mkbewe/world-generator/compare/v0.11.1...v0.12.0) (2026-11-01)
 
 ### Features
