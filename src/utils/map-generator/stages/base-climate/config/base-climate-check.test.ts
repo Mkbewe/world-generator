@@ -1,12 +1,20 @@
 import { isBaseClimateConfig, validateBaseClimateConfig } from './base-climate-check';
 import type { BaseClimateConfig } from '../../../types';
-import { BASE_CLIMATE_PRESETS, baseClimatePresetConfig } from '../defaults';
+import {
+  BASE_CLIMATE_PRESETS,
+  baseClimatePresetConfig,
+  DEFAULT_BASE_CLIMATE_CONFIG,
+} from '../defaults';
 
 function getBaseClimatePresets(): readonly BaseClimateConfig[] {
   return BASE_CLIMATE_PRESETS.map(preset => baseClimatePresetConfig(preset));
 }
 
 describe('validateBaseClimateConfig', () => {
+  it('uses the ring-world preset as the generator default', () => {
+    expect(DEFAULT_BASE_CLIMATE_CONFIG).toEqual(baseClimatePresetConfig('ring-world'));
+  });
+
   it('accepts every preset layout', () => {
     for (const preset of getBaseClimatePresets()) {
       expect(() => validateBaseClimateConfig(preset)).not.toThrow();

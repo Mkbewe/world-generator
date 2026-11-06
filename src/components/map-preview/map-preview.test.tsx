@@ -78,6 +78,11 @@ describe('MapPreview readout', () => {
       ellipse: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      stroke: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({
       left: 0,
@@ -439,6 +444,11 @@ describe('MapPreview tab sync', () => {
       ellipse: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      stroke: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
     useViewSyncStore.setState({ ...VIEW_SYNC_DEFAULTS });

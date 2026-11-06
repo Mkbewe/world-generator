@@ -52,6 +52,14 @@ export const OVERLAY_BASE_LAYERS: Partial<Record<MapOverlayId, MapBaseLayerId>> 
 /** ID in declaration order, for iteration. */
 export const OVERLAY_IDS = Object.keys(OVERLAY_LAYERS) as MapOverlayId[];
 
+/** Overlays drawn before the user changes anything. */
+export const DEFAULT_OVERLAY_VISIBILITY: Record<MapOverlayId, boolean> = {
+  'world-boundary': true,
+  'heat-zones': false,
+  moisture: false,
+  'ocean-currents': false,
+};
+
 export interface MapLayerOption<TId extends string> {
   id: TId;
   label: string;

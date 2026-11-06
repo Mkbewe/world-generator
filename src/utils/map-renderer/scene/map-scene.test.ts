@@ -268,6 +268,26 @@ describe('MapScene', () => {
     expect(scene.get('ocean-currents')).toBeInstanceOf(OceanCurrentLayer);
   });
 
+  it('rebuilds the ocean-current layer when only its strength changes', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 2, height: 1 }, { shape: 'rectangle' });
+    const map = new Float32Array([0, Math.PI / 2]);
+    scene.load({
+      worldMask: new Uint8Array([1, 1]),
+      oceanCurrentMap: map,
+      oceanCurrentStrength: new Float32Array([0.5, 0.25]),
+    });
+    const first = scene.get('ocean-currents');
+
+    const refreshed = scene.setData({
+      oceanCurrentMap: map,
+      oceanCurrentStrength: new Float32Array([0.6, 0.25]),
+    });
+
+    expect(refreshed).toEqual([expect.any(OceanCurrentLayer)]);
+    expect(scene.get('ocean-currents')).not.toBe(first);
+  });
+
   it('returns the vector layers a new mask unlocks', () => {
     const scene = new MapScene(new LayerCache());
     scene.start({ width: 4, height: 4 }, { shape: 'rectangle' });

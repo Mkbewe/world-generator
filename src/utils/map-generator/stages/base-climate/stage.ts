@@ -193,6 +193,9 @@ export class BaseClimateStage implements MapStage<
       }
       const zone = data.heatZoneMap[index];
       if (zone !== undefined && zone >= 0) {
+        if (zone >= counts.length) {
+          throw new Error('Heat-zone map contains an invalid zone index.');
+        }
         counts[zone] += 1;
       }
       const moisture = data.moistureBaseMap[index];

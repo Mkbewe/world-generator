@@ -104,6 +104,12 @@ describe('useBaseClimateFormStore', () => {
     expect(state().activePreset).toBeUndefined();
   });
 
+  it('derives new zone ids from the current list', () => {
+    state().addZone();
+
+    expect(state().zones.some(zone => zone.id === 'zone-1')).toBe(true);
+  });
+
   it('adds a zone by splitting the widest one and stops at the limit', () => {
     state().applyPreset('horizontal');
     state().addZone();

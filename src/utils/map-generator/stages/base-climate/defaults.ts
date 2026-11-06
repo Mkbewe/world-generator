@@ -124,4 +124,4 @@ export function baseClimatePresetConfig(preset: BaseClimatePreset): BaseClimateC
   };
 }
 
-export const DEFAULT_BASE_CLIMATE_CONFIG: BaseClimateConfig = baseClimatePresetConfig('earth-like');
+export const DEFAULT_BASE_CLIMATE_CONFIG: BaseClimateConfig = baseClimatePresetConfig('ring-world');

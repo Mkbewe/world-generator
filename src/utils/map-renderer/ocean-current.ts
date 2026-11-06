@@ -99,6 +99,9 @@ export function describeOceanCurrent(angle: number, strength: number): string {
     return 'Calm';
   }
   const turn = Math.round(angle / (Math.PI / 4)) % DIRECTIONS.length;
-  const direction = DIRECTIONS[(turn + DIRECTIONS.length) % DIRECTIONS.length] ?? 'East';
+  const direction = DIRECTIONS[(turn + DIRECTIONS.length) % DIRECTIONS.length];
+  if (direction === undefined) {
+    throw new RangeError(`Ocean-current angle is out of range: ${angle}.`);
+  }
   return `${direction} · ${Math.round(strength * 100)}%`;
 }

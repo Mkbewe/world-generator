@@ -23,10 +23,9 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
 - **Pipeline** — etapy World shape, Macro regions, BaseClimate, Geology
   i Heightmap działają w workerze, z postępem, statystykami, selektywnym
   przeliczaniem i pamięcią sesji między widokami.
-- **BaseClimate** — domyślny Earth-like układ pasów przypisuje strefy ciepła
-  regionom geologii; bazowa wilgotność i prądy dochodzą w tym samym etapie
-  (osobne zadania), a overlaye Heat zones, Moisture baseline i Ocean currents
-  są kolejnym krokiem.
+- **BaseClimate** — domyślny Ring world przypisuje strefy ciepła regionom
+  geologii; bazowa wilgotność i prądy dochodzą w tym samym etapie, a overlaye
+  Heat zones, Moisture baseline i Ocean currents są kolejnym krokiem.
 - **Geologia** — świat dzieli się na prowincje o typie i charakterze
   (ordinary, volcanic, lagoon, fjord), z granicami, presetami i udziałami
   powierzchni; strefa ciepła w środku każdej formy wyspy wybiera wariant

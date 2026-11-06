@@ -82,6 +82,7 @@ const CATALOG_ENTRIES = [
     label: 'Ocean currents',
     kind: 'vector',
     source: 'oceanCurrentMap',
+    dataSources: ['oceanCurrentStrength'],
     clipTo: 'world-shape',
     settingsForm: false,
     group: { id: 'base-climate', label: 'Base Climate' },

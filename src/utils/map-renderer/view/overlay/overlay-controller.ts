@@ -5,17 +5,15 @@ import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
 import { WorldBoundaryOverlayRenderer } from './world-boundary-overlay-renderer';
 import type { LayerDataRecord } from '../../../map-layers';
 import type { WorldShape } from '../../../world-shape';
-import type { MapInfo, MapOverlayId, SpatialMask } from '../../types';
+import {
+  DEFAULT_OVERLAY_VISIBILITY,
+  type MapInfo,
+  type MapOverlayId,
+  type SpatialMask,
+} from '../../types';
 import { effectivePixelRatio, type Viewport, type ViewportSize } from '../../viewport';
 import { WorldBoundaryRenderer } from '../../world-boundary-renderer';
 import type { ViewTransform } from '../view-transform';
-
-const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = {
-  'world-boundary': true,
-  'heat-zones': false,
-  moisture: false,
-  'ocean-currents': false,
-};
 
 const EMPTY_INFO: MapInfo = {};
 const EMPTY_SUPPRESSED: ReadonlySet<MapOverlayId> = new Set();
@@ -24,7 +22,7 @@ const EMPTY_SUPPRESSED: ReadonlySet<MapOverlayId> = new Set();
 export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly renderers: readonly OverlayRenderer[];
-  private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_VISIBLE };
+  private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_OVERLAY_VISIBILITY };
   private rendered?: {
     world: SpatialMask;
     viewport: ViewportSize;
@@ -116,8 +114,9 @@ export class OverlayController {
         info,
         activeIds: active.map(renderer => renderer.id),
       };
-    } catch {
+    } catch (error) {
       // Overlays are best-effort; base layer errors are reported elsewhere.
+      console.error('Overlay rendering failed.', error);
       this.boundary.clear();
     } finally {
       this.renderDurationMs += performance.now() - startedAt;
@@ -127,7 +126,7 @@ export class OverlayController {
   reset(): void {
     this.rendered = undefined;
     this.renderDurationMs = 0;
-    this.visible = { ...DEFAULT_VISIBLE };
+    this.visible = { ...DEFAULT_OVERLAY_VISIBILITY };
     this.boundary.clear();
   }
 

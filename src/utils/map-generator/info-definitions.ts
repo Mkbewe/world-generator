@@ -1,6 +1,11 @@
 import { DEFAULT_BASE_CLIMATE_CONFIG } from './stages/base-climate/defaults';
 import { DEFAULT_MACRO_REGIONS } from './stages/macro-region/defaults';
-import type { HeatZoneClass, MacroRegionGeometry, MapConfig } from './types';
+import {
+  HEAT_ZONE_CLASSES,
+  type HeatZoneClass,
+  type MacroRegionGeometry,
+  type MapConfig,
+} from './types';
 
 /** Non-raster facts derived from the generation config, not from a stage raster. */
 export type ConfigMapInfo = Readonly<Record<string, unknown>>;
@@ -71,7 +76,7 @@ export function isHeatZoneInfo(value: unknown): value is HeatZoneInfo {
   return (
     typeof id === 'string' &&
     typeof label === 'string' &&
-    (thermal === 'cold' || thermal === 'temperate' || thermal === 'warm')
+    HEAT_ZONE_CLASSES.some(value => value === thermal)
   );
 }
 
