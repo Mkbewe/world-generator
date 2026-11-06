@@ -1,5 +1,6 @@
 import { HeatZoneOverlayRenderer } from './heat-zone-overlay-renderer';
 import { MoistureOverlayRenderer } from './moisture-overlay-renderer';
+import { OceanCurrentOverlayRenderer } from './ocean-current-overlay-renderer';
 import { OverlayController } from './overlay-controller';
 import type { SpatialMask } from '../../types';
 import { Viewport } from '../../viewport';
@@ -53,12 +54,15 @@ describe('OverlayController', () => {
     expect(controller.isVisible('world-boundary')).toBe(true);
     expect(controller.isVisible('heat-zones')).toBe(false);
     expect(controller.isVisible('moisture')).toBe(false);
+    expect(controller.isVisible('ocean-currents')).toBe(false);
     controller.setVisible('world-boundary', false);
     controller.setVisible('heat-zones', true);
     controller.setVisible('moisture', true);
+    controller.setVisible('ocean-currents', true);
     expect(controller.isVisible('world-boundary')).toBe(false);
     expect(controller.isVisible('heat-zones')).toBe(true);
     expect(controller.isVisible('moisture')).toBe(true);
+    expect(controller.isVisible('ocean-currents')).toBe(true);
   });
 
   it('draws heat zones over the boundary when their data is available', () => {
@@ -156,6 +160,41 @@ describe('OverlayController', () => {
     controller.render(world, 'disc', fitView(), { moistureBaseMap: new Float32Array([0.5]) });
 
     expect(drawMoisture).toHaveBeenCalledOnce();
+  });
+
+  it('draws ocean currents and redraws when their rasters change', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
+    const drawCurrents = vi
+      .spyOn(OceanCurrentOverlayRenderer.prototype, 'render')
+      .mockImplementation(() => {});
+    const controller = setup();
+    const world: SpatialMask = {
+      size: { width: 1, height: 1 },
+      contains: () => true,
+    };
+    const map = new Float32Array([0]);
+    const strength = new Float32Array([0.5]);
+
+    controller.setVisible('ocean-currents', true);
+    controller.render(world, 'disc', fitView(), {
+      oceanCurrentMap: map,
+      oceanCurrentStrength: strength,
+    });
+    controller.render(world, 'disc', fitView(), {
+      oceanCurrentMap: map,
+      oceanCurrentStrength: strength,
+    });
+    controller.render(world, 'disc', fitView(), {
+      oceanCurrentMap: map,
+      oceanCurrentStrength: new Float32Array([0.6]),
+    });
+
+    expect(drawCurrents).toHaveBeenCalledTimes(2);
   });
 
   it('does not draw hidden heat zones', () => {

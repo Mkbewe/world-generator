@@ -7,6 +7,7 @@ import {
   LayerRegistry,
   layerRegistry,
   MapLayer,
+  OceanCurrentLayer,
 } from '../layer';
 
 const BASE_CATALOG = [layerRegistry.get('world-shape'), layerRegistry.get('macro-region')];
@@ -249,8 +250,20 @@ describe('MapScene', () => {
 
   it('refuses a vector catalog without a factory', () => {
     expect(() => new MapScene(new LayerCache(), layerRegistry, new Map())).toThrow(
-      'Missing vector layer factory: geology'
+      'Missing vector layer factory: ocean-currents'
     );
+  });
+
+  it('builds the ocean-current layer from the paired rasters', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 2, height: 1 }, { shape: 'rectangle' });
+    scene.load({
+      worldMask: new Uint8Array([1, 1]),
+      oceanCurrentMap: new Float32Array([0, Math.PI / 2]),
+      oceanCurrentStrength: new Float32Array([0.5, 0.25]),
+    });
+
+    expect(scene.get('ocean-currents')).toBeInstanceOf(OceanCurrentLayer);
   });
 
   it('returns the vector layers a new mask unlocks', () => {

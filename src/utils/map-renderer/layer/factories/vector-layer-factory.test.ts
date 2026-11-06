@@ -13,22 +13,34 @@ const geologyFactory: VectorLayerFactory = {
   },
 };
 
+const oceanCurrentsFactory: VectorLayerFactory = {
+  id: 'ocean-currents',
+  supports: () => true,
+  create: () => {
+    throw new Error('The validator never builds layers.');
+  },
+};
+
 describe('validateVectorLayerFactories', () => {
   it('accepts a catalog whose vector layers all have factories', () => {
-    const factories: VectorLayerFactoryRegistry = new Map([['geology', geologyFactory]]);
+    const factories: VectorLayerFactoryRegistry = new Map([
+      ['geology', geologyFactory],
+      ['ocean-currents', oceanCurrentsFactory],
+    ]);
 
     expect(() => validateVectorLayerFactories(layerRegistry, factories)).not.toThrow();
   });
 
   it('rejects a vector layer without a factory', () => {
     expect(() => validateVectorLayerFactories(layerRegistry, new Map())).toThrow(
-      'Missing vector layer factory: geology'
+      'Missing vector layer factory: ocean-currents'
     );
   });
 
   it('rejects a factory registered under another layer ID', () => {
     const factories: VectorLayerFactoryRegistry = new Map([
       ['geology', { ...geologyFactory, id: 'macro-region' }],
+      ['ocean-currents', oceanCurrentsFactory],
     ]);
 
     expect(() => validateVectorLayerFactories(layerRegistry, factories)).toThrow(

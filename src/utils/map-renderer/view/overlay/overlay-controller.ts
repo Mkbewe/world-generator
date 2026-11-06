@@ -1,5 +1,6 @@
 import { HeatZoneOverlayRenderer } from './heat-zone-overlay-renderer';
 import { MoistureOverlayRenderer } from './moisture-overlay-renderer';
+import { OceanCurrentOverlayRenderer } from './ocean-current-overlay-renderer';
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
 import { WorldBoundaryOverlayRenderer } from './world-boundary-overlay-renderer';
 import type { LayerDataRecord } from '../../../map-layers';
@@ -13,6 +14,7 @@ const DEFAULT_VISIBLE: Record<MapOverlayId, boolean> = {
   'world-boundary': true,
   'heat-zones': false,
   moisture: false,
+  'ocean-currents': false,
 };
 
 const EMPTY_INFO: MapInfo = {};
@@ -30,6 +32,8 @@ export class OverlayController {
     view: ViewTransform;
     heatMap?: Int16Array;
     moistureMap?: Float32Array;
+    currentMap?: Float32Array;
+    currentStrength?: Float32Array;
     info: MapInfo;
     activeIds: readonly MapOverlayId[];
   };
@@ -43,6 +47,7 @@ export class OverlayController {
     this.renderers = [
       new HeatZoneOverlayRenderer(),
       new MoistureOverlayRenderer(),
+      new OceanCurrentOverlayRenderer(),
       new WorldBoundaryOverlayRenderer(this.boundary),
     ];
   }
@@ -86,7 +91,9 @@ export class OverlayController {
     }
     const heatMap = heatZoneMapOf(data);
     const moistureMap = moistureMapOf(data);
-    if (this.isUnchanged(frame, active, heatMap, moistureMap)) {
+    const currentMap = float32MapOf(data, 'oceanCurrentMap');
+    const currentStrength = float32MapOf(data, 'oceanCurrentStrength');
+    if (this.isUnchanged(frame, active, heatMap, moistureMap, currentMap, currentStrength)) {
       return;
     }
 
@@ -104,6 +111,8 @@ export class OverlayController {
         view,
         heatMap,
         moistureMap,
+        currentMap,
+        currentStrength,
         info,
         activeIds: active.map(renderer => renderer.id),
       };
@@ -126,7 +135,9 @@ export class OverlayController {
     frame: OverlayFrame,
     active: readonly OverlayRenderer[],
     heatMap: Int16Array | undefined,
-    moistureMap: Float32Array | undefined
+    moistureMap: Float32Array | undefined,
+    currentMap: Float32Array | undefined,
+    currentStrength: Float32Array | undefined
   ): boolean {
     const rendered = this.rendered;
     return (
@@ -140,6 +151,8 @@ export class OverlayController {
       rendered.viewport.devicePixelRatio === frame.viewport.devicePixelRatio &&
       rendered.heatMap === heatMap &&
       rendered.moistureMap === moistureMap &&
+      rendered.currentMap === currentMap &&
+      rendered.currentStrength === currentStrength &&
       rendered.info === frame.info &&
       rendered.activeIds.length === active.length &&
       active.every((renderer, index) => rendered.activeIds[index] === renderer.id)
@@ -170,6 +183,10 @@ function heatZoneMapOf(data: LayerDataRecord): Int16Array | undefined {
 }
 
 function moistureMapOf(data: LayerDataRecord): Float32Array | undefined {
-  const value = data.moistureBaseMap;
+  return float32MapOf(data, 'moistureBaseMap');
+}
+
+function float32MapOf(data: LayerDataRecord, key: string): Float32Array | undefined {
+  const value = data[key];
   return value instanceof Float32Array ? value : undefined;
 }

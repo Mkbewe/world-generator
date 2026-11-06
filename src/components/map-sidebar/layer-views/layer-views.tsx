@@ -1,4 +1,4 @@
-import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
+import { Flex, RadioCards, Text } from '@radix-ui/themes';
 
 import type { MapBaseLayerId, MapLayerNavigation, MapLayerNode } from '../../../utils/map-renderer';
 import styles from './layer-views.module.scss';
@@ -30,7 +30,9 @@ export function LayerViews({ tabs, activeTab, onViewChange }: LayerViewsProps) {
           <Text size='2' weight='bold' color='gray'>
             {group.label}
           </Text>
-          <SegmentedControl.Root
+          <RadioCards.Root
+            columns='1'
+            gap='2'
             size='1'
             className={styles.options}
             aria-label={group.label + ' view'}
@@ -43,16 +45,16 @@ export function LayerViews({ tabs, activeTab, onViewChange }: LayerViewsProps) {
             }}
           >
             {group.children.map(child => (
-              <SegmentedControl.Item
+              <RadioCards.Item
                 key={child.id}
                 value={child.id}
-                aria-disabled={!child.available}
+                disabled={!child.available}
                 className={styles.option}
               >
                 {child.label}
-              </SegmentedControl.Item>
+              </RadioCards.Item>
             ))}
-          </SegmentedControl.Root>
+          </RadioCards.Root>
         </Flex>
       ))}
     </div>

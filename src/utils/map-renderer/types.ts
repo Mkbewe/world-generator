@@ -37,6 +37,7 @@ export const OVERLAY_LAYERS = {
   'world-boundary': { label: 'World boundary', source: 'world-shape' },
   'heat-zones': { label: 'Heat zones', source: 'heatZoneMap' },
   moisture: { label: 'Moisture baseline', source: 'moistureBaseMap' },
+  'ocean-currents': { label: 'Ocean currents', source: 'oceanCurrentMap' },
 } as const;
 
 export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
@@ -45,6 +46,7 @@ export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
 export const OVERLAY_BASE_LAYERS: Partial<Record<MapOverlayId, MapBaseLayerId>> = {
   'heat-zones': 'heat-zones',
   moisture: 'moisture',
+  'ocean-currents': 'ocean-currents',
 };
 
 /** ID in declaration order, for iteration. */

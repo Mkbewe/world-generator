@@ -1,4 +1,8 @@
-import { HeatZoneOverlayInspector, OverlayInspectorRegistry } from './view/overlay/inspection';
+import {
+  HeatZoneOverlayInspector,
+  OceanCurrentOverlayInspector,
+  OverlayInspectorRegistry,
+} from './view/overlay/inspection';
 import { fitView, isFitted, type ViewTransform } from './view/view-transform';
 import {
   isLayerHit,
@@ -83,6 +87,7 @@ export class MapRenderer {
   private overlayData: LayerDataRecord = {};
   private readonly overlayInspectors = new OverlayInspectorRegistry([
     new HeatZoneOverlayInspector(),
+    new OceanCurrentOverlayInspector(),
   ]);
 
   constructor(
@@ -339,6 +344,7 @@ export class MapRenderer {
   /** Updates the rasters painted by the overlay canvas; independent of base layers. */
   setOverlayData(data: LayerDataRecord): void {
     this.overlayData = data;
+    this.scene.setData(data);
     this.view.setOverlayData(data);
     this.emitState();
   }

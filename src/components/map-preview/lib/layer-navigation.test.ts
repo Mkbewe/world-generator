@@ -111,7 +111,7 @@ describe('LayerNavigation', () => {
     const available = layerRegistry.order.map(id => ({
       id,
       label: id,
-      available: id === 'heat-zones' || id === 'moisture',
+      available: id === 'heat-zones' || id === 'moisture' || id === 'ocean-currents',
     }));
 
     const state = navigation.toViewState(available, 'moisture');
@@ -123,6 +123,7 @@ describe('LayerNavigation', () => {
       children: [
         { id: 'heat-zones', available: true },
         { id: 'moisture', available: true },
+        { id: 'ocean-currents', available: true },
       ],
     });
   });

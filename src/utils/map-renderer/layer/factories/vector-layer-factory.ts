@@ -1,3 +1,4 @@
+import type { LayerDataRecord } from '../../../map-layers';
 import type { WorldShape } from '../../../world-shape';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
 import type { MapLayer, MapSize } from '../layer';
@@ -10,6 +11,8 @@ export interface VectorLayerInput {
   readonly value: unknown;
   /** Map info, so a layer may read the extra sources its spec declares. */
   readonly info: MapInfo;
+  /** All persistent rasters received with the map, e.g. a paired strength field. */
+  readonly data: LayerDataRecord;
   /** Spatial mask of the layer's clip source, e.g. the world shape. */
   readonly mask?: SpatialMask;
   /** World outline the layer may paint, e.g. an ocean background. */
