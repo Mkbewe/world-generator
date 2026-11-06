@@ -3,6 +3,7 @@ export { CatalogLayer } from './catalog/catalog-layer';
 export { LayerRegistry, layerRegistry } from './layer-registry';
 export { MapLayer, isLayerHit } from './layer';
 export { GeologyPlanVectorLayer } from './geology/geology-plan-vector-layer';
+export { OceanCurrentLayer, oceanCurrentLayerFactory } from './ocean-current/ocean-current-layer';
 export { vectorLayerFactories } from './factories/vector-layer-factories';
 export { validateVectorLayerFactories } from './factories/vector-layer-factory';
 export { LayerQueue } from './cache/layer-queue';

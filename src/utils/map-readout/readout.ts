@@ -111,6 +111,7 @@ type RasterReadout = (
 /** One provider per vector layer; a new layer adds an entry, not a branch. */
 const VECTOR_READOUTS: Partial<Record<MapBaseLayerId, VectorReadout>> = {
   geology: geologyReadout,
+  'ocean-currents': oceanCurrentReadout,
 };
 
 /** One provider per raster layer; a new layer adds an entry, not a branch. */
@@ -336,6 +337,12 @@ function isMacroRegionInfo(value: unknown): value is MacroRegionInfo {
     range.length === 2 &&
     range.every(entry => typeof entry === 'number' && Number.isFinite(entry))
   );
+}
+
+/** Readout of the BaseClimate current under the pointer. */
+function oceanCurrentReadout(inspection: VectorMapInspection): readonly ReadoutItem[] | undefined {
+  const value = inspection.hit?.label;
+  return value ? [{ id: 'current', label: 'Ocean current', value }] : undefined;
 }
 
 /** Readout of the geological region under the pointer. */

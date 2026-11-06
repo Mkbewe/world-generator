@@ -145,6 +145,7 @@ describe('MapRenderer', () => {
       'macro-region',
       'heat-zones',
       'moisture',
+      'ocean-currents',
       'geology',
       'heightmap',
     ]);
@@ -303,6 +304,7 @@ describe('MapRenderer', () => {
       false,
       false,
       false,
+      false,
     ]);
     expect(() => preview.add('macro-region', new Uint8Array(4))).toThrow();
     preview.dispose();
@@ -351,10 +353,12 @@ describe('MapRenderer', () => {
       'world-boundary',
       'heat-zones',
       'moisture',
+      'ocean-currents',
     ]);
     expect(preview.state.overlays[0]).toMatchObject({ available: true, visible: true });
     expect(preview.state.overlays[1]).toMatchObject({ available: false, visible: false });
     expect(preview.state.overlays[2]).toMatchObject({ available: false, visible: false });
+    expect(preview.state.overlays[3]).toMatchObject({ available: false, visible: false });
   });
 
   it('honours the preferred layer option on restore', async () => {
@@ -625,6 +629,33 @@ describe('MapRenderer', () => {
     expect(preview.inspectOverlay(0, 0)).toBeUndefined();
     preview.setOverlay('heat-zones', true);
     expect(preview.inspectOverlay(0, 0)).toMatchObject({ value: 'Cold' });
+    preview.dispose();
+  });
+
+  it('exposes and inspects ocean-current overlay data', () => {
+    const { preview } = setup();
+    preview.setOverlayData({
+      worldMask: new Uint8Array([1, 1, 1, 0]),
+      oceanCurrentMap: new Float32Array([0, Math.PI / 2, (3 * Math.PI) / 2, 0]),
+      oceanCurrentStrength: new Float32Array([0.5, 0.25, 0.8, 0.9]),
+    });
+    preview.setOverlay('ocean-currents', true);
+
+    expect(preview.state.overlays.find(overlay => overlay.id === 'ocean-currents')).toMatchObject({
+      available: true,
+      visible: true,
+    });
+    expect(preview.inspectOverlay(0, 0)).toEqual({
+      overlayId: 'ocean-currents',
+      label: 'Ocean current',
+      value: 'East · 50%',
+    });
+    expect(preview.inspectOverlay(1, 0)).toMatchObject({ value: 'South · 25%' });
+    expect(preview.inspectOverlay(0, 1)).toMatchObject({ value: 'North · 80%' });
+    expect(preview.inspectOverlay(1, 1)).toBeUndefined();
+
+    preview.setOverlay('ocean-currents', false);
+    expect(preview.inspectOverlay(0, 0)).toBeUndefined();
     preview.dispose();
   });
 

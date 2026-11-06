@@ -42,6 +42,21 @@ describe('readoutItems', () => {
     });
   });
 
+  it('shows the ocean current under the pointer from the preview layer', () => {
+    const inspection: MapInspection = {
+      kind: 'vector',
+      layerId: 'ocean-currents',
+      label: 'Ocean currents',
+      hit: { id: 'ocean-current', label: 'Southeast · 43%' },
+    };
+
+    expect(item(readout(inspection), 'current')).toEqual({
+      id: 'current',
+      label: 'Ocean current',
+      value: 'Southeast · 43%',
+    });
+  });
+
   it('shows cell coordinates as an X/Y row without a distance', () => {
     const items = readoutItems(readout());
 

@@ -14,10 +14,9 @@
 
 .options {
   max-width: 100%;
-  overflow-x: auto;
 }
 
-.option[aria-disabled='true'] {
+.option:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

@@ -1,4 +1,6 @@
 export { HeatZoneOverlayRenderer, paintHeatZonePixels } from './overlay/heat-zone-overlay-renderer';
+export { OceanCurrentOverlayRenderer } from './overlay/ocean-current-overlay-renderer';
+export { sampleOceanCurrentArrows } from '../ocean-current';
 export { MapView } from './map-view';
 export type { MapViewElements } from './map-view';
 export { pointerAnchor, samplePointer } from '../pointer-sampling';

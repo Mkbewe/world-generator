@@ -78,6 +78,15 @@ const CATALOG_ENTRIES = [
     palette: { kind: 'ramp', stops: MOISTURE_STOPS },
   },
   {
+    id: 'ocean-currents',
+    label: 'Ocean currents',
+    kind: 'vector',
+    source: 'oceanCurrentMap',
+    clipTo: 'world-shape',
+    settingsForm: false,
+    group: { id: 'base-climate', label: 'BaseClimate' },
+  },
+  {
     id: 'geology',
     label: 'Geology',
     kind: 'vector',

@@ -60,6 +60,7 @@ describe('GeologyPlanVectorLayer', () => {
       size: { width: 2, height: 1 },
       value: PLAN,
       info: {},
+      data: {},
     });
     try {
       expect(layer).toBeInstanceOf(GeologyPlanVectorLayer);

@@ -31,6 +31,7 @@ export class MapScene {
   private regionConfig?: MapMetadata['regionGeometry'];
   private dimensionsMeters?: MapMetadata['dimensionsMeters'];
   private info: MapInfo = {};
+  private data: LayerDataRecord = {};
   private selection?: string;
   private readonly layers = new Map<MapBaseLayerId, MapLayer>();
   private readonly available = new Set<MapBaseLayerId>();
@@ -120,6 +121,11 @@ export class MapScene {
   setInfo(info: MapInfo): readonly MapLayer[] {
     this.info = info;
     return this.applyVectorLayers();
+  }
+
+  /** Keeps the persistent rasters a vector layer may pair with its own source. */
+  setData(data: LayerDataRecord): void {
+    this.data = data;
   }
 
   /**
@@ -238,6 +244,7 @@ export class MapScene {
           size,
           value,
           info: this.info,
+          data: this.data,
           mask: clipMask,
           shape: this.geometry?.shape,
           dimensionsMeters: this.dimensionsMeters,
@@ -269,6 +276,7 @@ export class MapScene {
 
   load(data: MapRasters): readonly MapLayer[] {
     const values: LayerDataRecord = data;
+    this.data = values;
     // Rasters may complete the mask a vector layer waits for, so each add
     // reports the vector layers it unlocked together with the raster itself.
     return this.registry
@@ -335,6 +343,7 @@ export class MapScene {
     this.regionConfig = undefined;
     this.dimensionsMeters = undefined;
     this.info = {};
+    this.data = {};
     this.selection = undefined;
     this.layers.clear();
     this.available.clear();
