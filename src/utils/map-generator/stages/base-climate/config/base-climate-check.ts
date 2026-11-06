@@ -14,7 +14,7 @@ import {
 
 /** Throws when the layout cannot produce valid heat-zone and current maps. */
 export function validateBaseClimateConfig(config: BaseClimateConfig): void {
-  if (config.zones.length < MIN_HEAT_ZONES) {
+  if (!Array.isArray(config.zones) || config.zones.length < MIN_HEAT_ZONES) {
     throw new RangeError('At least one heat zone is required.');
   }
   if (config.zones.length > MAX_HEAT_ZONES) {

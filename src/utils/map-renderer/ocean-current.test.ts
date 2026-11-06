@@ -67,4 +67,10 @@ describe('describeOceanCurrent', () => {
     expect(describeOceanCurrent((7 * Math.PI) / 4, 0.4)).toBe('Northeast · 40%');
     expect(describeOceanCurrent(0, 0)).toBe('Calm');
   });
+
+  it('rejects a non-finite angle instead of guessing a direction', () => {
+    expect(() => describeOceanCurrent(Number.NaN, 0.4)).toThrow(
+      'Ocean-current angle is out of range: NaN.'
+    );
+  });
 });

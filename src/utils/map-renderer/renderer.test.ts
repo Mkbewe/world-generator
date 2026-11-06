@@ -1,6 +1,6 @@
 import { MapLayer } from './layer';
 import { MapPersistence } from './persistence';
-import { MapRenderer, type MapRendererOptions } from './renderer';
+import { emptyRenderState, MapRenderer, type MapRendererOptions } from './renderer';
 import { type GeneratedMapSnapshot, MapRepository } from './repository';
 import { Viewport } from './viewport';
 import { WorldBoundaryRenderer } from './world-boundary-renderer';
@@ -82,6 +82,15 @@ function setupWithSnapshot(
 }
 
 describe('MapRenderer', () => {
+  it('starts with only the boundary overlay visible', () => {
+    expect(emptyRenderState().overlays.map(overlay => [overlay.id, overlay.visible])).toEqual([
+      ['world-boundary', true],
+      ['heat-zones', false],
+      ['moisture', false],
+      ['ocean-currents', false],
+    ]);
+  });
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.spyOn(Viewport.prototype, 'start').mockImplementation(() => {});

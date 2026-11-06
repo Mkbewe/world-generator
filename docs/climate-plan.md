@@ -67,6 +67,8 @@ Przykładowe presety:
 - **Ring world** — umiarkowany środek, ciepły pierścień i zimna krawędź,
 - **Cold core** — zimny środek i ciepłe zewnętrzne pierścienie.
 
+Domyślnym presetem formularza i fallbackiem generatora jest **Ring world**.
+
 ## Wilgotność bazowa
 
 `moistureBaseMap: Float32Array` jest niezależnym polem noise — **nie jest
@@ -79,8 +81,9 @@ szerokości świata), wartości 0..1.
 To nie jest symulacja cyrkulacji. To tylko podstawa, żeby świat nie był wszędzie
 tak samo wilgotny. Ręczne strefy wilgotności dochodzą dopiero w Climate.
 
-Na start brak suwaków wilgotności; seed wystarcza. Parametry noise'u dodajemy
-tylko wtedy, gdy testy wzrokowe pokażą problem.
+Suwak **World moisture** przesuwa całe pole w stronę suchą albo wilgotną;
+seed nadal kształtuje lokalną zmienność. Parametry noise'u dodajemy tylko
+wtedy, gdy testy wzrokowe pokażą problem.
 
 ## Prądy morskie
 
@@ -112,12 +115,14 @@ dodatku do wilgotności; bez lokalnej symulacji blokowania przez wyspy.
 
 ## Kontrolki
 
-W zakładce **BaseClimate**:
+W zakładce **Base Climate**:
 
 - wybór układu stref: pasma albo pierścienie,
 - lista stref ciepła: dodaj, usuń, przesuń, zmień szerokość,
 - dla każdej strefy wybór klasy: zimna, umiarkowana, ciepła,
-- wybór presetu startowego.
+- wybór presetu startowego,
+- suwak wilgotności świata,
+- suwak nieregularności granic stref.
 
 `geologyCoupling` 0..1 jest częścią konfiguracji (domyślnie 1), bez osobnego
 suwaka w formularzu. Działa tak:
@@ -127,8 +132,9 @@ suwaka w formularzu. Działa tak:
 - wartości pośrednie osłabiają przesunięcia pól przepisu; interpolowane są
   pojedyncze pola, nie całe receptury.
 
-Na start nie ma ręcznego edytora żyroskopów ani parametrów FBM. Wilgotność
-i prądy wchodzą przez preset. Osobny edytor można dodać później.
+Nie ma ręcznego edytora żyroskopów ani parametrów FBM. Prądy wchodzą przez
+preset, a wilgotność ma osobny suwak świata. Osobny edytor prądów można dodać
+później.
 
 ## Overlays
 

@@ -70,16 +70,12 @@ interface BaseClimateFormState {
   moveZone: (id: string, direction: -1 | 1) => void;
 }
 
-let nextZoneNumber = 1;
-
 function createZoneId(existing: readonly HeatZoneConfig[]): string {
-  let id = `zone-${nextZoneNumber}`;
-  while (existing.some(zone => zone.id === id)) {
-    nextZoneNumber += 1;
-    id = `zone-${nextZoneNumber}`;
-  }
-  nextZoneNumber += 1;
-  return id;
+  const highest = existing.reduce((max, zone) => {
+    const match = /^zone-(\d+)$/.exec(zone.id);
+    return Math.max(max, match ? Number(match[1]) : 0);
+  }, 0);
+  return `zone-${highest + 1}`;
 }
 
 function nextZoneLabel(zones: readonly HeatZoneConfig[]): string {

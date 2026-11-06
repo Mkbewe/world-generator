@@ -16,6 +16,7 @@ import {
 import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
 import {
+  DEFAULT_OVERLAY_VISIBILITY,
   type MapBaseLayerId,
   type MapInfo,
   type MapInspection,
@@ -66,7 +67,7 @@ export function emptyRenderState(): MapRendererState {
       id,
       label: OVERLAY_LAYERS[id].label,
       available: false,
-      visible: true,
+      visible: DEFAULT_OVERLAY_VISIBILITY[id],
     })),
     info: {},
     zoom: 1,
@@ -346,7 +347,9 @@ export class MapRenderer {
   /** Updates the rasters painted by the overlay canvas; independent of base layers. */
   setOverlayData(data: LayerDataRecord): void {
     this.overlayData = data;
-    this.scene.setData(data);
+    for (const layer of this.scene.setData(data)) {
+      this.queue.enqueue(layer);
+    }
     this.view.setOverlayData(data);
     this.emitState();
   }

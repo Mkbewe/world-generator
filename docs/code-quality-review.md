@@ -1,9 +1,8 @@
 # Review jakości kodu — stan na 06.11.2026
 
-> Stan: HEAD `74fe76c`. Niecommitowane zmiany ocean-current (overlay, renderer,
-> inspector) nie są objęte tym przeglądem; w working tree dochodzi m.in. piąty
-> duplikat projection boilerplate i produkcyjne użycie `cellToCanvas`, a liczba
-> plików testowych rośnie do 168.
+> Snapshot historyczny: HEAD `74fe76c`, 167 plików testowych. Dokument nie
+> opisuje aktualnego stanu `master`; służy jako lista długu i punkt odniesienia
+> dla późniejszych przeglądów.
 
 Przegląd całości `src` (34,8 tys. linii TS, 167 plików testowych na HEAD) pod
 kątem jakości kodu i poprawek o niskim koszcie. Zakres: `utils/map-generator`,
@@ -62,11 +61,10 @@ nie architektura, tylko:
 - `MapRenderer.size` (`renderer.ts:188-190`) — rzuca przed `start()`;
   konsumenci używają `currentSize`.
 - `MapScene.isComplete/getLayers` (`map-scene.ts:315-329`) — tylko testy.
-- `BaseClimateConfig.geologyCoupling` (`types.ts:118`) — walidowany i
-  defaultowany slider; żaden etap go nie odczytuje (heightmap nie ma go w
-  `configKeys`). Podłączyć albo wyłączyć do czasu etapu Climate.
+- `BaseClimateConfig.geologyCoupling` (`types.ts:118`) — odczytują go
+  BaseClimate, Geology i Heightmap; pozostaje bez osobnego suwaka w formularzu.
 - `BASE_CLIMATE_PRESETS`/`baseClimatePresetConfig` (`map-generator/index.ts:15-20`)
-  — eksportowane bez formularza-odbiorcy.
+  — używane przez formularz Base Climate i generator.
 - `AREA_COMPENSATION = 1` (`heightmap/forms/forms.ts:81`) — stała bez efektu;
   `signedBand` (`bands.ts:49-56`) — no-op wrapper.
 
@@ -134,7 +132,7 @@ komentarzy); wcześniejsza wersja tabeli mieszała obie metody liczenia.
 | `heightmap/forms/forms.ts` | 436 | suwaki formularza i rasteryzacja w jednym pliku |
 | `heightmap/relief/stamping.ts` | 431 | `stampForm` ~104 linie; brak unitów |
 | `heightmap/relief/profiles.ts` | 315 | czyste funkcje, zero unitów |
-| `map-renderer/renderer.ts` | 393 | composition root; `emptyRenderState()` (`:53-70`) buduje overlay options równolegle do `MapView.overlayOptions` (`map-view.ts:103-115`); to już nie tylko ryzyko — `:64` ustawia `visible: true` dla wszystkich, a `OverlayController` domyślnie wyłącza heat-zones i moisture (w working tree także ocean-currents) |
+| `map-renderer/renderer.ts` | 393 | composition root; `emptyRenderState()` (`:53-70`) buduje overlay options równolegle do `MapView.overlayOptions` (`map-view.ts:103-115`). Wspólne defaulty overlayów naprawiono w #220. |
 | `layer/catalog/catalog-layer.ts` | 371 | painting + polityka minifikacji + BFS edge-fill + walidacja rastra + prywatny duplikat yieldu |
 | `utils/map-generator/types.ts` | 364 | 4 obowiązki: konfiguracja, stan, eventy, opcje; najczęściej importowany plik |
 

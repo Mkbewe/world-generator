@@ -62,6 +62,8 @@ export interface RasterLayerSpec<TId extends string = string> extends LayerSpecB
  */
 export interface VectorLayerSpec<TId extends string = string> extends LayerSpecBase<TId> {
   readonly kind: 'vector';
+  /** Additional persistent rasters the layer reads, e.g. a paired strength field. */
+  readonly dataSources?: readonly string[];
 }
 
 export type LayerSpec<TId extends string = string> = RasterLayerSpec<TId> | VectorLayerSpec<TId>;

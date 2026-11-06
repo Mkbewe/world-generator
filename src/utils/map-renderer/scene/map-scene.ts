@@ -123,9 +123,29 @@ export class MapScene {
     return this.applyVectorLayers();
   }
 
-  /** Keeps the persistent rasters a vector layer may pair with its own source. */
-  setData(data: LayerDataRecord): void {
+  /** Keeps persistent rasters and refreshes vector layers that read them. */
+  setData(data: LayerDataRecord): readonly MapLayer[] {
     this.data = data;
+    const refreshed: MapLayer[] = [];
+    for (const [id, previous] of this.layers) {
+      const spec = this.registry.get(id);
+      if (spec.kind !== 'vector' || !spec.dataSources) {
+        continue;
+      }
+      const factory = this.vectorLayers.get(id);
+      if (!factory) {
+        continue;
+      }
+      const value = this.info[spec.source] ?? this.data[spec.source];
+      if (value === undefined || !factory.supports(value)) {
+        continue;
+      }
+      const layer = this.addVector(spec, factory, value);
+      if (layer !== previous) {
+        refreshed.push(layer);
+      }
+    }
+    return refreshed;
   }
 
   /**
@@ -226,11 +246,13 @@ export class MapScene {
     const size = this.size;
     const clipMask = spec.clipTo ? this.rasterLayer(spec.clipTo) : undefined;
     const previous = this.layers.get(spec.id);
+    const dataSources = spec.dataSources?.map(source => this.data[source]) ?? [];
     const layer = this.cache.getOrCreate(
       spec.id,
       [
         spec,
         value,
+        ...dataSources,
         size.width,
         size.height,
         clipMask,

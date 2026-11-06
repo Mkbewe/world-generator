@@ -65,6 +65,38 @@ describe('OverlayController', () => {
     expect(controller.isVisible('ocean-currents')).toBe(true);
   });
 
+  it('reports an overlay renderer failure instead of swallowing it', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 10,
+      height: 10,
+      devicePixelRatio: 1,
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      clearRect: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const error = new Error('Canvas lost');
+    vi.spyOn(HeatZoneOverlayRenderer.prototype, 'render').mockImplementation(() => {
+      throw error;
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const controller = setup();
+    const world: SpatialMask = {
+      size: { width: 1, height: 1 },
+      contains: () => true,
+    };
+
+    controller.setVisible('heat-zones', true);
+    controller.render(
+      world,
+      'disc',
+      fitView(),
+      { heatZoneMap: new Int16Array([0]) },
+      { heatZoneInfo: [{ id: 'cold', label: 'Cold', thermal: 'cold' as const }] }
+    );
+
+    expect(log).toHaveBeenCalledWith('Overlay rendering failed.', error);
+  });
+
   it('draws heat zones over the boundary when their data is available', () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 10,
@@ -301,6 +333,7 @@ describe('OverlayController', () => {
   });
 
   it('retries failed drawing instead of caching it', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 10,
       height: 10,
