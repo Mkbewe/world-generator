@@ -19,7 +19,7 @@ describe('locale storage', () => {
   });
 
   it('ignores a locale without a catalogue', () => {
-    window.localStorage.setItem(STORAGE_KEY, 'pl');
+    window.localStorage.setItem(STORAGE_KEY, 'de');
 
     expect(readStoredLocale()).toBe(DEFAULT_LOCALE);
   });
