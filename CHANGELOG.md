@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.14.0](https://github.com/Mkbewe/world-generator/compare/v0.13.0...v0.14.0) (2026-11-07)
+
+### Features
+
+* **[510](https://github.com/Mkbewe/world-generator/issues/510):** add i18n infrastructure with i18next ([#526](https://github.com/Mkbewe/world-generator/issues/526)) ([2436ae3](https://github.com/Mkbewe/world-generator/commit/2436ae3235a6178fe315a8aa2045557cd8dd0d7e))
+
+  - add i18next and react-i18next with typed message keys
+  - add the English catalogue, locale resolution and default-locale
+  fallback
+  - wrap the app in I18nextProvider and translate the header title
+  - initialise i18n in the Vitest setup so component tests need no
+  provider
+  - cover lookup, interpolation, unknown keys and locale fallback
+  - enforce the i18n boundary in the ESLint element rules
+* **[511](https://github.com/Mkbewe/world-generator/issues/511):** move user-facing copy into the english catalogue ([#527](https://github.com/Mkbewe/world-generator/issues/527)) ([94f3f64](https://github.com/Mkbewe/world-generator/commit/94f3f6418c61088fef55b2fd37da066963208681))
+
+  - add typed English catalogue with no key separator and no locale
+  fallback
+  - derive locales and resources from a single CATALOGUES registry
+  - migrate components, forms, statistics, breadcrumbs and readouts to
+  keys
+  - move layer, overlay, stage and readout labels to typed message keys
+  - keep map-renderer data-only and translate readout values in the UI
+  - enforce catalogue parity with satisfies Record<MessageKey, string>
+  - remove dead copy, exports and duplicate label/labelKey fields
+* **[512](https://github.com/Mkbewe/world-generator/issues/512):** add the polish catalogue ([#529](https://github.com/Mkbewe/world-generator/issues/529)) ([4a1203b](https://github.com/Mkbewe/world-generator/commit/4a1203b49bc1995aaaf78be86508d35ca6f7e4f6))
+
+  - translate every English message key into Polish
+  - register Polish as a second locale with its flag
+  - keep language names as endonyms instead of translated labels
+  - enforce catalogue key parity and cover locale resolution with
+  data-driven tests
+* **[513](https://github.com/Mkbewe/world-generator/issues/513):** add a language switcher to the header ([#528](https://github.com/Mkbewe/world-generator/issues/528)) ([1fc87e8](https://github.com/Mkbewe/world-generator/commit/1fc87e89718a8b6a232435013f7b1aa6e552e5e9))
+
+  - persist the chosen locale and restore it on reload
+  - add flag assets and locale presentation options
+  - add the header switcher with a flag, name and a framed locale menu
+  - add language and theme rows to the mobile drawer with an inline locale
+  list
+  - keep the menus non-modal so the scrollbar no longer shifts the page
+  - restore jsdom localStorage in tests on newer Node
+
+### Code Refactoring
+
+* **[506](https://github.com/Mkbewe/world-generator/issues/506):** address code-quality review findings ([#525](https://github.com/Mkbewe/world-generator/issues/525)) ([52cfc54](https://github.com/Mkbewe/world-generator/commit/52cfc5401dea6ba1d79846210400eb980ef1750c))
+
+  - add space and relief unit tests for profiles, compose and stamping
+  - remove dead API and unused world-dimension helpers
+  - move the macro-region editor model and presets out of the generator
+  - deduplicate clamp01, percent, duration, size, escape, projection and
+  region-id helpers
+  - stabilise preview handlers, memoise MapCanvas/LayerTabs, read stores
+  in SettingsPanel
+  - enforce generator <- renderer <- UI import boundaries with
+  eslint-plugin-boundaries
+  - enforce consistent object key quoting via ESLint and Prettier
+  - document deferred review items and the legacy-generator decision
+
 ## [0.13.0](https://github.com/Mkbewe/world-generator/compare/v0.12.0...v0.13.0) (2026-11-06)
 
 ### Features
