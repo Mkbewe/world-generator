@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router';
 import { Cross1Icon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
-import { Button, Flex, IconButton, VisuallyHidden } from '@radix-ui/themes';
+import { Button, Flex, IconButton, Text, VisuallyHidden } from '@radix-ui/themes';
 
+import { LanguageSwitcher } from '../../header';
 import { isActivePath, NAVIGATION_ITEMS } from '../../navigation';
 import styles from './menu-drawer.module.scss';
 
@@ -15,8 +16,8 @@ interface MenuDrawerProps {
 export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerProps) {
   const { pathname } = useLocation();
   const { t } = useTranslation();
-  const themeLabel = t(currentTheme === 'light' ? 'theme.switchToDark' : 'theme.switchToLight');
-  const themeIcon = currentTheme === 'light' ? <MoonIcon /> : <SunIcon />;
+  const themeLabel = currentTheme === 'light' ? t('theme.light') : t('theme.dark');
+  const themeIcon = currentTheme === 'light' ? <SunIcon /> : <MoonIcon />;
 
   return (
     <div className={styles.overlay}>
@@ -63,12 +64,25 @@ export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerP
               {t(item.labelKey)}
             </NavLink>
           ))}
-          {onToggleTheme && (
-            <Button onClick={onToggleTheme} size='3' variant='soft' className={styles.themeButton}>
-              {themeIcon}
-              {themeLabel}
-            </Button>
-          )}
+          <Flex direction='column' className={styles.footer}>
+            <LanguageSwitcher variant='row' />
+            {onToggleTheme && (
+              <Button
+                variant='ghost'
+                color='gray'
+                className={styles.setting}
+                onClick={onToggleTheme}
+                title={t(currentTheme === 'light' ? 'theme.switchToDark' : 'theme.switchToLight')}
+                aria-label={`${t('theme.title')}: ${themeLabel}`}
+              >
+                <Text as='span'>{t('theme.title')}</Text>
+                <Flex align='center' gap='2' className={styles.settingValue}>
+                  {themeIcon}
+                  <Text as='span'>{themeLabel}</Text>
+                </Flex>
+              </Button>
+            )}
+          </Flex>
         </Flex>
       </section>
     </div>

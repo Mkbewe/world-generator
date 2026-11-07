@@ -1,0 +1,108 @@
+.flag {
+  display: block;
+  border-radius: 50%;
+}
+
+.setting.setting {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  justify-content: space-between;
+  padding: 0.875rem 0;
+  border-radius: 0;
+  border-top: 1px solid var(--gray-6);
+  text-align: left;
+
+  &:hover,
+  &:active {
+    background: transparent;
+  }
+
+  &:focus-visible {
+    outline-offset: -2px;
+  }
+}
+
+.value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray-12);
+  font-weight: var(--font-weight-medium);
+}
+
+.chevron {
+  flex: none;
+  color: var(--gray-9);
+  transition: transform 120ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.inlineOptions {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.25rem;
+  border: 1px solid var(--gray-6);
+  border-radius: 8px;
+  background: var(--gray-2);
+}
+
+.inlineOption.inlineOption {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--gray-3);
+  }
+
+  &:focus-within {
+    outline: 2px solid var(--violet-8);
+    outline-offset: -2px;
+  }
+
+  > [role='radio'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  > span {
+    flex: 1;
+  }
+}
+
+.inlineOptionActive {
+  background: var(--gray-4);
+}
+
+.inlineCheck {
+  margin-left: auto;
+  color: var(--violet-11);
+}
+
+.menu.menu {
+  --base-menu-content-padding: 0.25rem;
+
+  min-width: 10rem;
+  border: 1px solid var(--gray-6);
+  border-radius: 8px;
+  background: var(--gray-2);
+}
+
+.menuItem.menuItem {
+  border-radius: 6px;
+}
+
+.menuItemActive {
+  background: var(--gray-4);
+}
+
+.menuItemContent {
+  width: 100%;
+}

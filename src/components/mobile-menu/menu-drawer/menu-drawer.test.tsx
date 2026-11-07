@@ -48,8 +48,14 @@ describe('MenuDrawer', () => {
     const onToggleTheme = vi.fn();
     renderDrawer({ onToggleTheme, currentTheme: 'light' });
 
-    await user.click(screen.getByRole('button', { name: 'Switch to dark mode' }));
+    await user.click(screen.getByRole('button', { name: 'Theme: Light' }));
 
     expect(onToggleTheme).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers the language switcher', () => {
+    renderDrawer();
+
+    expect(screen.getByRole('button', { name: 'Language: English' })).toBeInTheDocument();
   });
 });

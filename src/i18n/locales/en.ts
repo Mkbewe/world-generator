@@ -9,6 +9,8 @@ const en = {
   'header.esc': 'Esc',
   'header.enterFullscreen': 'Enter fullscreen',
   'header.exitFullscreen': 'Exit fullscreen',
+  'header.language': 'Language',
+  'locales.en': 'English',
   'mobileMenu.title': 'Menu',
   'mobileMenu.open': 'Open menu',
   'mobileMenu.close': 'Close menu',
@@ -18,6 +20,9 @@ const en = {
   'navigation.legacy': 'Legacy Generator',
   'theme.switchToDark': 'Switch to dark mode',
   'theme.switchToLight': 'Switch to light mode',
+  'theme.title': 'Theme',
+  'theme.dark': 'Dark',
+  'theme.light': 'Light',
   'errorPage.code': 'Error 500',
   'errorPage.title': 'The world generator ran aground',
   'errorPage.description':
