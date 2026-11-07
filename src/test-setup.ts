@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import './i18n';
 
 // jsdom lacks ResizeObserver, which Radix Themes components (e.g. Slider) rely on.
 class ResizeObserverStub {
