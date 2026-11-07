@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { MemoryRouter } from 'react-router';
+import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 
@@ -26,10 +27,12 @@ function FullscreenBridge() {
 function renderHeader({ onToggleTheme, currentTheme }: RenderOptions = {}) {
   return render(
     <MemoryRouter>
-      <HeaderActionsProvider>
-        <FullscreenBridge />
-        <Header onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
-      </HeaderActionsProvider>
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <Header onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
+        </HeaderActionsProvider>
+      </Theme>
     </MemoryRouter>
   );
 }

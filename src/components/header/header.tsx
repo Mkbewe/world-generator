@@ -5,6 +5,7 @@ import { EnterFullScreenIcon, ExitFullScreenIcon, MoonIcon, SunIcon } from '@rad
 import { Avatar, Badge, Flex, Heading, IconButton } from '@radix-ui/themes';
 
 import { useHeaderActions } from './header-actions-context';
+import { LanguageSwitcher } from './language-switcher';
 import { MobileMenu } from '../mobile-menu';
 import { PageSection } from '../page-section';
 import styles from './header.module.scss';
@@ -62,6 +63,7 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
             )}
           </Flex>
           <Flex gap='4' align='center' display={{ initial: 'none', sm: 'flex' }}>
+            <LanguageSwitcher />
             {canFullscreen && (
               <Flex align='center' gap='2'>
                 <IconButton

@@ -61,7 +61,7 @@ describe('MobileMenu', () => {
     renderMenu({ onToggleTheme: mockToggle, currentTheme: 'light' });
 
     await user.click(screen.getByRole('button', { name: /open menu/i }));
-    await user.click(await screen.findByRole('button', { name: /switch to dark mode/i }));
+    await user.click(await screen.findByRole('button', { name: 'Theme: Light' }));
 
     expect(mockToggle).toHaveBeenCalledTimes(1);
   });
@@ -73,7 +73,7 @@ describe('MobileMenu', () => {
     await user.click(screen.getByRole('button', { name: /open menu/i }));
     await screen.findByRole('heading', { name: 'Menu' });
 
-    expect(screen.queryByRole('button', { name: /switch to/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Theme:/ })).not.toBeInTheDocument();
   });
 
   it('should close when the close button is clicked', async () => {
@@ -83,7 +83,7 @@ describe('MobileMenu', () => {
     await user.click(screen.getByRole('button', { name: /open menu/i }));
     await user.click(await screen.findByRole('button', { name: /close menu/i }));
 
-    expect(screen.queryByRole('button', { name: /switch to dark mode/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Theme:/ })).not.toBeInTheDocument();
   });
 
   it('should close after navigating through a menu link', async () => {

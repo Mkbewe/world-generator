@@ -1,6 +1,9 @@
 export { CATALOGUES } from './catalogues';
 export type { Catalogue } from './catalogues';
 export { default as i18n, i18nReady } from './i18n';
+export { LOCALE_OPTIONS } from './locale-options';
+export type { LocalePresentation } from './locale-options';
+export { readStoredLocale, storeLocale } from './locale-storage';
 export { DEFAULT_LOCALE, isLocale, resolveLocale, SUPPORTED_LOCALES } from './locale';
 export type { Locale } from './locale';
 export { isMessageKey } from './locales/en';
