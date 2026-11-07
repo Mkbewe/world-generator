@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, i18n, i18nReady } from './index';
+import { CATALOGUES, DEFAULT_LOCALE, i18n, i18nReady, SUPPORTED_LOCALES } from './index';
 
 describe('i18n', () => {
   beforeAll(async () => {
@@ -10,7 +10,13 @@ describe('i18n', () => {
   });
 
   it('translates a known key', () => {
-    expect(i18n.t('app.name')).toBe('World Generator');
+    expect(i18n.t('app.name')).toBe(CATALOGUES[DEFAULT_LOCALE]['app.name']);
+  });
+
+  it.each(SUPPORTED_LOCALES)('translates keys in the %s catalogue', async locale => {
+    await i18n.changeLanguage(locale);
+
+    expect(i18n.t('navigation.statistics')).toBe(CATALOGUES[locale]['navigation.statistics']);
   });
 
   it('interpolates named values', () => {

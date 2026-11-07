@@ -1,8 +1,8 @@
-import { DEFAULT_LOCALE, isLocale, resolveLocale } from './locale';
+import { DEFAULT_LOCALE, isLocale, resolveLocale, SUPPORTED_LOCALES } from './locale';
 
 describe('resolveLocale', () => {
-  it('keeps a shipped locale', () => {
-    expect(resolveLocale('en')).toBe('en');
+  it.each(SUPPORTED_LOCALES)('keeps the shipped locale %s', locale => {
+    expect(resolveLocale(locale)).toBe(locale);
   });
 
   it('falls back to the default locale for an unknown value', () => {
@@ -13,8 +13,11 @@ describe('resolveLocale', () => {
 });
 
 describe('isLocale', () => {
-  it('recognises only shipped locales', () => {
-    expect(isLocale('en')).toBe(true);
+  it.each(SUPPORTED_LOCALES)('recognises the shipped locale %s', locale => {
+    expect(isLocale(locale)).toBe(true);
+  });
+
+  it('rejects a locale without a catalogue', () => {
     expect(isLocale('de')).toBe(false);
   });
 });

@@ -16,7 +16,7 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
   const { locale, setLocale } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const optionsId = useId();
-  const currentLabel = t(LOCALE_OPTIONS[locale].labelKey);
+  const currentLabel = LOCALE_OPTIONS[locale].label;
   const accessibleName = `${t('header.language')}: ${currentLabel}`;
   const currentFlag = (
     <img
@@ -81,7 +81,7 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
                     height={20}
                     className={styles.flag}
                   />
-                  <Text as='span'>{t(LOCALE_OPTIONS[option].labelKey)}</Text>
+                  <Text as='span'>{LOCALE_OPTIONS[option].label}</Text>
                   {option === locale && (
                     <Text as='span' className={styles.inlineCheck} aria-hidden='true'>
                       ✓
@@ -129,7 +129,7 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
                   height={20}
                   className={styles.flag}
                 />
-                <Text as='span'>{t(LOCALE_OPTIONS[option].labelKey)}</Text>
+                <Text as='span'>{LOCALE_OPTIONS[option].label}</Text>
               </Flex>
               {option === locale && (
                 <Text as='span' className={styles.inlineCheck} aria-hidden='true'>

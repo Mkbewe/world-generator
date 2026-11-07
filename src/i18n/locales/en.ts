@@ -10,7 +10,6 @@ const en = {
   'header.enterFullscreen': 'Enter fullscreen',
   'header.exitFullscreen': 'Exit fullscreen',
   'header.language': 'Language',
-  'locales.en': 'English',
   'mobileMenu.title': 'Menu',
   'mobileMenu.open': 'Open menu',
   'mobileMenu.close': 'Close menu',
