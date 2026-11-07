@@ -20,14 +20,14 @@ describe('GenerationProgress', () => {
       stages: [
         {
           id: 'world-shape',
-          name: 'World shape',
+          nameKey: 'stages.worldShape',
           status: 'completed',
           percentage: 100,
           durationMs: 120,
         },
         {
-          id: 'noise',
-          name: 'Noise',
+          id: 'base-climate',
+          nameKey: 'stages.baseClimate',
           status: 'completed',
           percentage: 100,
           durationMs: 340,
@@ -36,7 +36,7 @@ describe('GenerationProgress', () => {
     });
 
     expect(screen.getByText('World shape')).toBeInTheDocument();
-    expect(screen.getByText('Noise')).toBeInTheDocument();
+    expect(screen.getByText('Base Climate')).toBeInTheDocument();
     expect(screen.getByText('120 ms')).toBeInTheDocument();
     expect(screen.getByText('340 ms')).toBeInTheDocument();
   });
@@ -46,8 +46,8 @@ describe('GenerationProgress', () => {
       status: 'completed',
       totalDurationMs: 1500,
       stages: [
-        { id: 'world-shape', name: 'World shape', status: 'completed', percentage: 100 },
-        { id: 'noise', name: 'Noise', status: 'completed', percentage: 100 },
+        { id: 'world-shape', nameKey: 'stages.worldShape', status: 'completed', percentage: 100 },
+        { id: 'base-climate', nameKey: 'stages.baseClimate', status: 'completed', percentage: 100 },
       ],
     });
 
@@ -61,11 +61,23 @@ describe('GenerationProgress', () => {
       status: 'completed',
       totalDurationMs: 460,
       stages: [
-        { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0, durationMs: 0 },
-        { id: 'noise', name: 'Noise', status: 'skipped', percentage: 0, durationMs: 0 },
+        {
+          id: 'world-shape',
+          nameKey: 'stages.worldShape',
+          status: 'skipped',
+          percentage: 0,
+          durationMs: 0,
+        },
+        {
+          id: 'base-climate',
+          nameKey: 'stages.baseClimate',
+          status: 'skipped',
+          percentage: 0,
+          durationMs: 0,
+        },
         {
           id: 'macro-region',
-          name: 'Macro regions',
+          nameKey: 'stages.macroRegion',
           status: 'completed',
           percentage: 100,
           durationMs: 300,
@@ -82,8 +94,8 @@ describe('GenerationProgress', () => {
     renderProgress({
       status: 'failed',
       stages: [
-        { id: 'world-shape', name: 'World shape', status: 'completed', percentage: 100 },
-        { id: 'noise', name: 'Noise', status: 'failed', percentage: 0 },
+        { id: 'world-shape', nameKey: 'stages.worldShape', status: 'completed', percentage: 100 },
+        { id: 'base-climate', nameKey: 'stages.baseClimate', status: 'failed', percentage: 0 },
       ],
     });
 

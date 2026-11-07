@@ -105,17 +105,6 @@ export const HEAT_ZONE_COLORS: Readonly<Record<HeatZoneClass, Color>> = {
   warm: [224, 116, 64],
 };
 
-/** Display names of the BaseClimate thermal classes. */
-export const HEAT_ZONE_CLASS_LABELS: Readonly<Record<HeatZoneClass, string>> = {
-  cold: 'Cold',
-  temperate: 'Temperate',
-  warm: 'Warm',
-};
-
-export function heatZoneClassLabel(thermal: HeatZoneClass): string {
-  return HEAT_ZONE_CLASS_LABELS[thermal];
-}
-
 /** Small per-zone channel offsets so same-class zones stay distinguishable. */
 const HEAT_ZONE_SHADE_RANGE = 10;
 

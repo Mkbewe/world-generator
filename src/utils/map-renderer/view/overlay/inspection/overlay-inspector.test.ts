@@ -19,7 +19,6 @@ describe('HeatZoneOverlayInspector', () => {
 
     expect(inspector.inspect(input)).toEqual({
       overlayId: 'heat-zones',
-      label: 'Heat zone',
       value: 'Cold',
     });
     expect(inspector.inspect({ ...input, x: 1 })).toMatchObject({ value: 'Warm' });
@@ -57,11 +56,14 @@ describe('OceanCurrentOverlayInspector', () => {
 
     expect(inspector.inspect(currentInput)).toEqual({
       overlayId: 'ocean-currents',
-      label: 'Ocean current',
-      value: 'East · 50%',
+      oceanCurrent: { angle: 0, strength: 0.5 },
     });
-    expect(inspector.inspect({ ...currentInput, x: 1 })).toMatchObject({ value: 'South · 25%' });
-    expect(inspector.inspect({ ...currentInput, y: 1 })).toMatchObject({ value: 'North · 80%' });
+    expect(inspector.inspect({ ...currentInput, x: 1 })).toMatchObject({
+      oceanCurrent: { angle: Math.fround(Math.PI / 2), strength: 0.25 },
+    });
+    expect(inspector.inspect({ ...currentInput, y: 1 })).toMatchObject({
+      oceanCurrent: { angle: Math.fround((3 * Math.PI) / 2), strength: Math.fround(0.8) },
+    });
   });
 
   it('returns undefined outside the world, the map, or without data', () => {
@@ -104,7 +106,6 @@ describe('MoistureOverlayInspector', () => {
 
     expect(inspector.inspect(moistureInput)).toEqual({
       overlayId: 'moisture',
-      label: 'Moisture',
       value: '42%',
     });
     expect(inspector.inspect({ ...moistureInput, x: 1 })).toMatchObject({ value: '75%' });
@@ -126,7 +127,7 @@ describe('OverlayInspectorRegistry', () => {
 
     expect(registry.inspectAll(input, () => false)).toEqual([]);
     expect(registry.inspectAll(input, id => id === 'heat-zones')).toEqual([
-      { overlayId: 'heat-zones', label: 'Heat zone', value: 'Cold' },
+      { overlayId: 'heat-zones', value: 'Cold' },
     ]);
   });
 });

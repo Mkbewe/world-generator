@@ -1,4 +1,5 @@
-﻿import { LayersIcon } from '@radix-ui/react-icons';
+﻿import { useTranslation } from 'react-i18next';
+import { LayersIcon } from '@radix-ui/react-icons';
 import { Card, Flex, Switch, Text } from '@radix-ui/themes';
 
 import type { MapOverlayId, MapRendererState } from '../../../utils/map-renderer';
@@ -12,12 +13,13 @@ interface OverlayControlsProps {
 }
 
 export function OverlayControls({ preview, onOverlayChange, bare = false }: OverlayControlsProps) {
+  const { t } = useTranslation();
   const content = (
     <Flex direction='column' gap='3'>
       <Flex align='center' gap='2' className={styles.title}>
         <LayersIcon width={20} height={20} />
         <Text size='3' weight='bold'>
-          Overlays
+          {t('overlays.title')}
         </Text>
       </Flex>
       {preview.overlays.map(overlay => {
@@ -25,14 +27,14 @@ export function OverlayControls({ preview, onOverlayChange, bare = false }: Over
         return (
           <Flex key={overlay.id} justify='between' align='center' gap='3'>
             <Text size='2' color={inactive ? 'gray' : undefined}>
-              {overlay.label}
+              {t(overlay.labelKey)}
             </Text>
             <Switch
               checked={overlay.visible}
               disabled={inactive}
-              title={overlay.disabled ? 'Visible on other layers' : undefined}
+              title={overlay.disabled ? t('overlays.visibleOnOtherLayers') : undefined}
               onCheckedChange={visible => onOverlayChange(overlay.id, visible)}
-              aria-label={overlay.label}
+              aria-label={t(overlay.labelKey)}
             />
           </Flex>
         );

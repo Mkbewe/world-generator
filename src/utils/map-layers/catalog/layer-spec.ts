@@ -1,3 +1,5 @@
+import type { MessageKey } from '../../../i18n';
+
 export type Color = readonly [red: number, green: number, blue: number];
 
 export interface RampStop {
@@ -22,13 +24,13 @@ export type RasterDataType = 'uint8' | 'int16' | 'float32';
 
 export interface LayerGroupSpec {
   readonly id: string;
-  readonly label: string;
+  readonly labelKey: MessageKey;
 }
 
 /** Fields every catalog entry shares. */
 interface LayerSpecBase<TId extends string = string> {
   readonly id: TId;
-  readonly label: string;
+  readonly labelKey: MessageKey;
   /** Generator output this layer paints. */
   readonly source: string;
   readonly clipTo?: TId;

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { MagnifyingGlassIcon, MinusIcon, PlusIcon, ResetIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, IconButton, Text } from '@radix-ui/themes';
 
@@ -27,13 +28,14 @@ export function ViewControls({
   onReset,
   bare = false,
 }: ViewControlsProps) {
+  const { t } = useTranslation();
   const content = (
     <Flex direction='column' gap='3'>
       <Flex align='center' justify='between' gap='3'>
         <Flex align='center' gap='2' className={styles.title}>
           <MagnifyingGlassIcon width={20} height={20} />
           <Text size='3' weight='bold'>
-            View
+            {t('viewControls.title')}
           </Text>
         </Flex>
         {zoomable && (
@@ -43,10 +45,10 @@ export function ViewControls({
             color='gray'
             disabled={fitted}
             onClick={onReset}
-            title='Show the whole map'
+            title={t('viewControls.showWholeMap')}
           >
             <ResetIcon />
-            Reset
+            {t('viewControls.reset')}
           </Button>
         )}
       </Flex>
@@ -57,7 +59,7 @@ export function ViewControls({
               size='2'
               variant='soft'
               color='gray'
-              aria-label='Zoom out'
+              aria-label={t('viewControls.zoomOut')}
               disabled={zoom <= MIN_VIEW_SCALE}
               onClick={onZoomOut}
             >
@@ -70,7 +72,7 @@ export function ViewControls({
               size='2'
               variant='soft'
               color='gray'
-              aria-label='Zoom in'
+              aria-label={t('viewControls.zoomIn')}
               disabled={zoom >= MAX_VIEW_SCALE}
               onClick={onZoomIn}
             >
@@ -78,7 +80,7 @@ export function ViewControls({
             </IconButton>
           </Flex>
           <Text size='1' color='gray'>
-            Scroll to zoom
+            {t('viewControls.scrollToZoom')}
           </Text>
         </Flex>
       )}

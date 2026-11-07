@@ -1,10 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, Text } from '@radix-ui/themes';
 
 import type { GeologicalRegionType } from '../../../../../utils/map-generator/types';
-import { geologyRegionColor, regionStyle } from '../../../../../utils/map-layers';
+import { geologyRegionColor } from '../../../../../utils/map-layers';
 import { type BoundaryDraft, DistributionBar } from '../../../../distribution-bar';
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
 import { GEOLOGY_SHARE_COPY } from '../../lib/share-copy';
+import { regionTypeOption } from '../lib/region-options';
 
 interface RegionDistributionProps {
   segments: readonly DistributionSegment[];
@@ -20,23 +22,32 @@ export function RegionDistribution({
   minShare,
   types,
 }: RegionDistributionProps): React.JSX.Element {
+  const { t } = useTranslation();
+
   return (
     <Flex direction='column' gap='2'>
-      <div role='group' aria-label='Geology region areas'>
+      <div role='group' aria-label={t('forms.geology.areaAria')}>
         <DistributionBar
           segments={segments}
           draft={draft}
           minShare={minShare}
-          ariaLabel='Geology region area distribution'
-          header={GEOLOGY_SHARE_COPY}
+          ariaLabel={t('forms.geology.areaDistributionAria')}
+          header={{
+            label: t(GEOLOGY_SHARE_COPY.labelKey),
+            description: t(GEOLOGY_SHARE_COPY.descriptionKey),
+          }}
           colorForIndex={index => geologyRegionColor(types[index], index)}
           labelForIndex={index =>
-            `Region ${index + 1}: ${regionStyle(types[index]).label} (${Math.round(draft.shares[index] ?? 0)}%)`
+            t('forms.geology.regionShareLabel', {
+              index: index + 1,
+              type: t(regionTypeOption(types[index]).labelKey),
+              percent: Math.round(draft.shares[index] ?? 0),
+            })
           }
         />
       </div>
       <Text size='1' color='gray'>
-        Drag a boundary to change the area of the two neighbouring regions.
+        {t('forms.geology.areaHint')}
       </Text>
     </Flex>
   );

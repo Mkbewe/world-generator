@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, Text } from '@radix-ui/themes';
 
 import { appConfig } from '../../config';
@@ -11,19 +12,21 @@ export interface FooterProps {
 
 export function Footer({ inert = false }: FooterProps) {
   const currentYear = new Date().getFullYear();
+  const { t } = useTranslation();
+  const name = t('app.name');
 
   return (
     <footer className={styles.footer} inert={inert || undefined}>
       <PageSection as='div' background='subtle' border='top' p='medium'>
         <Flex direction='column' align='center' gap='2'>
           <Text size='2' weight='medium'>
-            {appConfig.name} v{appConfig.version}
+            {t('footer.version', { name, version: appConfig.version })}
           </Text>
           <Text size='1' color='gray'>
-            {appConfig.description}
+            {t('app.description')}
           </Text>
           <Text size='1' color='gray'>
-            © {currentYear} {appConfig.name}
+            {t('footer.copyright', { year: currentYear, name })}
           </Text>
         </Flex>
       </PageSection>

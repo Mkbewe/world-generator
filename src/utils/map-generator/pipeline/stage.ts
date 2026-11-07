@@ -1,4 +1,5 @@
 import type { MapContext } from './context';
+import type { MessageKey } from '../../../i18n';
 import type { SeededWorldConfig, StageData, StageMetrics, StageProgressReporter } from '../types';
 
 export interface MapStage<
@@ -8,7 +9,7 @@ export interface MapStage<
   TOutput extends StageData = StageData,
 > {
   readonly id: TId;
-  readonly name: string;
+  readonly nameKey: MessageKey;
   /** State keys this stage reads. Absent on generic test stages. */
   readonly reads?: readonly (keyof TState)[];
   /**

@@ -1,14 +1,14 @@
+import { CATALOGUES, type Locale, SUPPORTED_LOCALES } from './catalogues';
+
+export { SUPPORTED_LOCALES };
+export type { Locale };
+
 /** Locale used when none is resolved or a requested locale is unknown. */
-export const DEFAULT_LOCALE = 'en';
-
-/** Locales shipped with the app; add a catalogue before adding a locale here. */
-export const SUPPORTED_LOCALES = ['en'] as const;
-
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = 'en';
 
 /** Whether a runtime value is one of the shipped locales. */
 export function isLocale(value: string): value is Locale {
-  return SUPPORTED_LOCALES.some(locale => locale === value);
+  return Object.hasOwn(CATALOGUES, value);
 }
 
 /** Resolves a requested locale, falling back to the default one. */

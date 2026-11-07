@@ -19,8 +19,6 @@ export class HeatZoneOverlayInspector implements OverlayInspector {
       return undefined;
     }
     const zoneInfo = zones[zone];
-    return zoneInfo
-      ? { overlayId: 'heat-zones', label: 'Heat zone', value: zoneInfo.label }
-      : undefined;
+    return zoneInfo ? { overlayId: 'heat-zones', value: zoneInfo.label } : undefined;
   }
 }

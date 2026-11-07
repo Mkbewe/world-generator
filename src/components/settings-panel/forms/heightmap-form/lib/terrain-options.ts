@@ -1,52 +1,51 @@
+import type { MessageKey } from '../../../../../i18n';
 import type { RegionTerrainParameter } from '../../../../../utils/map-generator';
 import type { RegionTerrainConfig } from '../../../../../utils/map-generator/types';
 
 export interface TerrainSliderOption {
   readonly id: RegionTerrainParameter;
-  readonly label: string;
-  readonly description: string;
-  readonly rangeLabels: readonly [minimum: string, maximum: string];
+  readonly labelKey: MessageKey;
+  readonly descriptionKey: MessageKey;
+  readonly rangeLabelKeys: readonly [minimum: MessageKey, maximum: MessageKey];
 }
 
 /** Region terrain sliders in display order. */
 export const TERRAIN_SLIDER_OPTIONS: readonly TerrainSliderOption[] = [
   {
     id: 'landShare',
-    label: 'Land share',
-    description: 'How much of the region rises above the water.',
-    rangeLabels: ['Open sea', 'Mostly land'],
+    labelKey: 'forms.heightmap.landShare',
+    descriptionKey: 'forms.heightmap.landShareDescription',
+    rangeLabelKeys: ['forms.heightmap.landShareMin', 'forms.heightmap.landShareMax'],
   },
   {
     id: 'concentration',
-    label: 'Island division',
-    description:
-      'Whether the land breaks into many smaller islands or gathers into one main island.',
-    rangeLabels: ['Many islands', 'One island'],
+    labelKey: 'forms.heightmap.concentration',
+    descriptionKey: 'forms.heightmap.concentrationDescription',
+    rangeLabelKeys: ['forms.heightmap.concentrationMin', 'forms.heightmap.concentrationMax'],
   },
   {
     id: 'clustering',
-    label: 'Island clustering',
-    description: 'Whether separate islands spread across the whole region or group close together.',
-    rangeLabels: ['Scattered', 'Clustered'],
+    labelKey: 'forms.heightmap.clustering',
+    descriptionKey: 'forms.heightmap.clusteringDescription',
+    rangeLabelKeys: ['forms.heightmap.clusteringMin', 'forms.heightmap.clusteringMax'],
   },
   {
     id: 'age',
-    label: 'Geological age',
-    description:
-      'How eroded the islands are: young reliefs stay steep and cliffed, ancient ones soften.',
-    rangeLabels: ['Young', 'Ancient'],
+    labelKey: 'forms.heightmap.age',
+    descriptionKey: 'forms.heightmap.ageDescription',
+    rangeLabelKeys: ['forms.heightmap.ageMin', 'forms.heightmap.ageMax'],
   },
   {
     id: 'mountainousness',
-    label: 'Mountainousness',
-    description: 'How strongly the islands tend to build mountain ridges.',
-    rangeLabels: ['Gentle hills', 'Steep mountains'],
+    labelKey: 'forms.heightmap.mountainousness',
+    descriptionKey: 'forms.heightmap.mountainousnessDescription',
+    rangeLabelKeys: ['forms.heightmap.mountainousnessMin', 'forms.heightmap.mountainousnessMax'],
   },
   {
     id: 'ringShare',
-    label: 'Lagoon rings',
-    description: 'Share of islands shaped as atoll rings with a lagoon instead of solid islets.',
-    rangeLabels: ['Solid islets', 'Atoll rings'],
+    labelKey: 'forms.heightmap.ringShare',
+    descriptionKey: 'forms.heightmap.ringShareDescription',
+    rangeLabelKeys: ['forms.heightmap.ringShareMin', 'forms.heightmap.ringShareMax'],
   },
 ];
 

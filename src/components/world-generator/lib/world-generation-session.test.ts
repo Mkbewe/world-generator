@@ -24,20 +24,20 @@ const config: MapConfig = {
 };
 
 const stages: readonly StageInfo[] = [
-  { id: 'world-shape', name: 'World shape' },
-  { id: 'macro-region', name: 'Macro region' },
+  { id: 'world-shape', nameKey: 'stages.worldShape' },
+  { id: 'macro-region', nameKey: 'stages.macroRegion' },
 ];
 
 function completed(stageId: string, data: Record<string, unknown>): GenerationEvent {
   return {
     type: 'stage-completed',
     stageId,
-    stageName: stageId,
+    stageNameKey: 'stages.worldShape',
     stageIndex: stageId === 'world-shape' ? 0 : 1,
     stageCount: 2,
     statistics: {
       stageId,
-      stageName: stageId,
+      stageNameKey: 'stages.worldShape',
       status: 'completed',
       startedAt: 0,
       finishedAt: 1,
@@ -54,7 +54,7 @@ function stageStatistics(
 ): StageStatistics {
   return {
     stageId,
-    stageName: stageId,
+    stageNameKey: 'stages.worldShape',
     status,
     startedAt: 0,
     finishedAt: durationMs,
@@ -66,12 +66,12 @@ function skipped(stageId: string): GenerationEvent {
   return {
     type: 'stage-skipped',
     stageId,
-    stageName: stageId,
+    stageNameKey: 'stages.worldShape',
     stageIndex: stageId === 'world-shape' ? 0 : 1,
     stageCount: 2,
     statistics: {
       stageId,
-      stageName: stageId,
+      stageNameKey: 'stages.worldShape',
       status: 'skipped',
       startedAt: 0,
       finishedAt: 0,
@@ -138,7 +138,7 @@ describe('WorldGenerationSession', () => {
       options?.onEvent?.({
         type: 'stage-started',
         stageId: 'world-shape',
-        stageName: 'World shape',
+        stageNameKey: 'stages.worldShape',
         stageIndex: 0,
         stageCount: 2,
       });
@@ -298,8 +298,8 @@ describe('WorldGenerationSession', () => {
     const run = session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, onProgress);
 
     expect(onProgress.mock.calls[0][0].stages).toEqual([
-      { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0 },
-      { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
+      { id: 'world-shape', nameKey: 'stages.worldShape', status: 'skipped', percentage: 0 },
+      { id: 'macro-region', nameKey: 'stages.macroRegion', status: 'pending', percentage: 0 },
     ]);
 
     finish({ statistics: [], totalDurationMs: 1 });

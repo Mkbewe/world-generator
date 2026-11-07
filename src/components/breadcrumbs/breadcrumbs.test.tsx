@@ -1,9 +1,9 @@
 import { MemoryRouter } from 'react-router';
 import { render, screen } from '@testing-library/react';
 
-import { Breadcrumbs } from './breadcrumbs';
+import { Breadcrumbs, type BreadcrumbsItem } from './breadcrumbs';
 
-function renderBreadcrumbs(items?: { label: string; to?: string }[]) {
+function renderBreadcrumbs(items?: BreadcrumbsItem[]) {
   return render(
     <MemoryRouter>
       <Breadcrumbs items={items} />
@@ -13,7 +13,10 @@ function renderBreadcrumbs(items?: { label: string; to?: string }[]) {
 
 describe('Breadcrumbs', () => {
   it('should render breadcrumbs from provided items', () => {
-    renderBreadcrumbs([{ label: 'Home', to: '/' }, { label: 'Legacy Generator' }]);
+    renderBreadcrumbs([
+      { labelKey: 'navigation.home', to: '/' },
+      { labelKey: 'navigation.legacy' },
+    ]);
 
     expect(screen.getByLabelText('Breadcrumb')).toBeInTheDocument();
     expect(screen.getByText('Home')).toBeInTheDocument();
@@ -21,14 +24,20 @@ describe('Breadcrumbs', () => {
   });
 
   it('should render links for items with to property', () => {
-    renderBreadcrumbs([{ label: 'Home', to: '/' }, { label: 'Legacy Generator' }]);
+    renderBreadcrumbs([
+      { labelKey: 'navigation.home', to: '/' },
+      { labelKey: 'navigation.legacy' },
+    ]);
 
     const homeLink = screen.getByText('Home');
     expect(homeLink).toHaveAttribute('href', '/');
   });
 
   it('should render last item as active span without link', () => {
-    renderBreadcrumbs([{ label: 'Home', to: '/' }, { label: 'Legacy Generator' }]);
+    renderBreadcrumbs([
+      { labelKey: 'navigation.home', to: '/' },
+      { labelKey: 'navigation.legacy' },
+    ]);
 
     const activeItem = screen.getByText('Legacy Generator');
     expect(activeItem.tagName).toBe('SPAN');
@@ -36,7 +45,10 @@ describe('Breadcrumbs', () => {
   });
 
   it('should render separators between items', () => {
-    renderBreadcrumbs([{ label: 'Home', to: '/' }, { label: 'Legacy Generator' }]);
+    renderBreadcrumbs([
+      { labelKey: 'navigation.home', to: '/' },
+      { labelKey: 'navigation.legacy' },
+    ]);
 
     const nav = screen.getByLabelText('Breadcrumb');
     const separators = nav.querySelectorAll('svg');
@@ -45,7 +57,7 @@ describe('Breadcrumbs', () => {
   });
 
   it('should render a single item without separator', () => {
-    renderBreadcrumbs([{ label: 'Home' }]);
+    renderBreadcrumbs([{ labelKey: 'navigation.home' }]);
 
     const nav = screen.getByLabelText('Breadcrumb');
     expect(nav.querySelectorAll('svg')).toHaveLength(0);

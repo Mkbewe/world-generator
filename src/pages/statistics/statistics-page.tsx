@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Button, Card, Flex, Heading, Text } from '@radix-ui/themes';
 
@@ -12,19 +13,20 @@ import { RenderStatisticsPanel } from '../../components/render-statistics';
 export function StatisticsPage() {
   const snapshot = useStatisticsSnapshot();
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const { t } = useTranslation();
 
   if (!snapshot || snapshot.generation.statistics.length === 0) {
     return (
       <Card size={{ initial: '2', sm: '3' }}>
         <Flex direction='column' align='center' gap='4'>
           <Heading size='5' color='violet'>
-            No statistics yet
+            {t('statisticsPage.emptyTitle')}
           </Heading>
           <Text size='3' color='gray' align='center'>
-            Generate a world to see pipeline statistics.
+            {t('statisticsPage.emptyDescription')}
           </Text>
           <Button asChild>
-            <Link to='/'>Back to generator</Link>
+            <Link to='/'>{t('statisticsPage.back')}</Link>
           </Button>
         </Flex>
       </Card>
@@ -41,7 +43,7 @@ export function StatisticsPage() {
   return (
     <Flex direction='column' gap='5'>
       <Flex justify='end'>
-        <Button onClick={() => setIsExportOpen(true)}>Export</Button>
+        <Button onClick={() => setIsExportOpen(true)}>{t('statisticsPage.export')}</Button>
       </Flex>
       <MapStatisticsPanel
         world={snapshot.world}
@@ -54,9 +56,9 @@ export function StatisticsPage() {
       <ExportDialog
         isOpen={isExportOpen}
         onOpenChange={setIsExportOpen}
-        title='Export Statistics'
-        description='Download the map configuration, generation statistics and render statistics as JSON?'
-        formats={[{ id: 'json', label: 'JSON file' }]}
+        title={t('statisticsPage.exportTitle')}
+        description={t('statisticsPage.exportDescription')}
+        formats={[{ id: 'json', label: t('statisticsPage.exportJson') }]}
         onExport={handleExport}
       />
     </Flex>

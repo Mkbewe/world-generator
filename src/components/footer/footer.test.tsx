@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 
 import { Footer } from './footer';
 import { appConfig } from '../../config';
+import { i18n } from '../../i18n';
 
 describe('Footer', () => {
   it('should render successfully', () => {
@@ -17,7 +18,7 @@ describe('Footer', () => {
     render(<Footer />);
 
     const titleElement = screen.getByText(
-      new RegExp(`${appConfig.name} v${appConfig.version}`, 'i')
+      new RegExp(`${i18n.t('app.name')} v${appConfig.version}`, 'i')
     );
     expect(titleElement).toBeInTheDocument();
   });
@@ -25,7 +26,7 @@ describe('Footer', () => {
   it('should display description', () => {
     render(<Footer />);
 
-    const description = screen.getByText(new RegExp(appConfig.description, 'i'));
+    const description = screen.getByText(new RegExp(i18n.t('app.description'), 'i'));
     expect(description).toBeInTheDocument();
   });
 
@@ -33,7 +34,7 @@ describe('Footer', () => {
     render(<Footer />);
 
     const currentYear = new Date().getFullYear();
-    const copyright = screen.getByText(new RegExp(`© ${currentYear} ${appConfig.name}`, 'i'));
+    const copyright = screen.getByText(new RegExp(`© ${currentYear} ${i18n.t('app.name')}`, 'i'));
     expect(copyright).toBeInTheDocument();
   });
 

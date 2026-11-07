@@ -1,5 +1,5 @@
 import { LayerRegistry, layerRegistry } from './layer-registry';
-import type { RasterLayerSpec } from '../../map-layers';
+import type { LayerGroupSpec, RasterLayerSpec } from '../../map-layers';
 
 const world = layerRegistry.raster('world-shape');
 const regions = layerRegistry.raster('macro-region');
@@ -7,7 +7,7 @@ const regions = layerRegistry.raster('macro-region');
 function solid(id: string, overrides: Partial<RasterLayerSpec> = {}): RasterLayerSpec {
   return {
     id,
-    label: id,
+    labelKey: 'layers.geology',
     kind: 'raster',
     source: id + 'Map',
     dataType: 'uint8',
@@ -55,7 +55,7 @@ describe('LayerRegistry', () => {
   });
 
   it('builds single-level groups in first-child catalog order', () => {
-    const group = { id: 'climate', label: 'Climate' };
+    const group = { id: 'climate', labelKey: 'layers.baseClimate' } satisfies LayerGroupSpec;
     const registry = new LayerRegistry([
       world,
       solid('winds', { group }),
@@ -77,14 +77,14 @@ describe('LayerRegistry', () => {
       () =>
         new LayerRegistry([
           solid('climate'),
-          solid('winds', { group: { id: 'climate', label: 'Climate' } }),
+          solid('winds', { group: { id: 'climate', labelKey: 'layers.baseClimate' } }),
         ])
     ).toThrow('collides with a layer ID');
     expect(
       () =>
         new LayerRegistry([
-          solid('winds', { group: { id: 'climate', label: 'Climate' } }),
-          solid('rainfall', { group: { id: 'climate', label: 'Weather' } }),
+          solid('winds', { group: { id: 'climate', labelKey: 'layers.baseClimate' } }),
+          solid('rainfall', { group: { id: 'climate', labelKey: 'layers.moisture' } }),
         ])
     ).toThrow('Inconsistent layer group label');
   });
@@ -110,7 +110,7 @@ describe('LayerRegistry', () => {
       world,
       {
         id: 'geology',
-        label: 'Geology',
+        labelKey: 'layers.geology',
         kind: 'vector',
         source: 'geologyPlan',
         clipTo: 'world-shape',

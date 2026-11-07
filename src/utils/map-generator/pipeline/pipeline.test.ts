@@ -18,7 +18,7 @@ interface TestState {
 type TestStage = MapStage<TestConfig, TestState>;
 
 function createStage(id: string, execute: TestStage['execute']): TestStage {
-  return { id, name: `${id} stage`, configKeys: [], execute };
+  return { id, nameKey: 'stages.worldShape', configKeys: [], execute };
 }
 
 describe('MapGenerator', () => {

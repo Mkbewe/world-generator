@@ -1,4 +1,5 @@
-﻿import { type RenderTarget, targetKey } from '../preview-targets';
+import type { MessageKey } from '../../../i18n';
+import { type RenderTarget, targetKey } from '../preview-targets';
 import type { LayerHit, MapBaseLayerId } from '../types';
 
 export interface MapSize {
@@ -26,7 +27,7 @@ export interface LayerRenderStatistics {
   pixels: number;
   /** Domain elements a vector layer reports instead of a raster resolution. */
   elements?: {
-    readonly label: string;
+    readonly labelKey: MessageKey;
     readonly count: number;
   };
 }

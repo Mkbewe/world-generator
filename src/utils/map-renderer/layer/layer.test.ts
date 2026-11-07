@@ -7,7 +7,7 @@ import type { RenderTarget } from '../preview-targets';
 /** Float ramp layer used by the tests; the catalog ships only integer rasters. */
 const FLOAT_SPEC = {
   id: 'macro-region',
-  label: 'Float map',
+  labelKey: 'layers.geology',
   kind: 'raster',
   source: 'floatMap',
   dataType: 'float32',
@@ -105,7 +105,7 @@ describe('MapLayer rendering lifecycle', () => {
     const skipLayer = new CatalogLayer(
       {
         id: 'macro-region',
-        label: 'Skip',
+        labelKey: 'layers.geology',
         kind: 'raster',
         source: 'skipMap',
         dataType: 'uint8',

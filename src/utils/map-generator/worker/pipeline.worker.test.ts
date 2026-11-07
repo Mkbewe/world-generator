@@ -58,11 +58,11 @@ describe('generation worker', () => {
     expect(messages[0]).toEqual({
       type: 'stages',
       stages: [
-        { id: 'world-shape', name: 'World shape' },
-        { id: 'macro-region', name: 'Macro region' },
-        { id: 'base-climate', name: 'Base Climate' },
-        { id: 'geology', name: 'Geology' },
-        { id: 'heightmap', name: 'Heightmap' },
+        { id: 'world-shape', nameKey: 'stages.worldShape' },
+        { id: 'macro-region', nameKey: 'stages.macroRegion' },
+        { id: 'base-climate', nameKey: 'stages.baseClimate' },
+        { id: 'geology', nameKey: 'stages.geology' },
+        { id: 'heightmap', nameKey: 'stages.heightmap' },
       ],
       skippedStageIds: [],
     });

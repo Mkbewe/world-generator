@@ -88,7 +88,7 @@ export class RenderMetrics {
     const spec = this.registry.get(layer.id);
     const shared = {
       id: layer.id,
-      name: spec.label,
+      nameKey: spec.labelKey,
       durationMs: statistics?.durationMs ?? 0,
       reused: measured === undefined && statistics !== undefined,
       outputWidth: layer.canvas.width,

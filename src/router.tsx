@@ -16,18 +16,18 @@ export const routes: RouteObject[] = [
   {
     element: <MainLayout />,
     errorElement: <ErrorPage />,
-    handle: { breadcrumb: 'Home' } satisfies RouteHandle,
+    handle: { breadcrumbKey: 'navigation.home' } satisfies RouteHandle,
     children: [
       { index: true, element: <HomePage /> },
       {
         path: 'legacy-generator',
         element: <LegacyGeneratorPage />,
-        handle: { breadcrumb: 'Legacy Generator' } satisfies RouteHandle,
+        handle: { breadcrumbKey: 'navigation.legacy' } satisfies RouteHandle,
       },
       {
         path: 'statistics',
         element: <StatisticsPage />,
-        handle: { breadcrumb: 'Statistics' } satisfies RouteHandle,
+        handle: { breadcrumbKey: 'navigation.statistics' } satisfies RouteHandle,
       },
       // Dev-only: visit /__crash to preview the 500 error page.
       ...(import.meta.env.DEV

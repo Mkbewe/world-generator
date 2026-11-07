@@ -6,7 +6,7 @@ import { OverlayControls } from './overlay-controls';
 import { emptyRenderState, type MapOverlayOption } from '../../../utils/map-renderer';
 
 function overlay(available: boolean): MapOverlayOption {
-  return { id: 'world-boundary', label: 'World boundary', visible: false, available };
+  return { id: 'world-boundary', labelKey: 'overlays.world-boundary', visible: false, available };
 }
 
 function renderControls(
@@ -43,7 +43,7 @@ describe('OverlayControls', () => {
   it('disables overlays suppressed by their own base layer', () => {
     const moisture: MapOverlayOption = {
       id: 'moisture',
-      label: 'Moisture baseline',
+      labelKey: 'overlays.moisture',
       visible: true,
       available: true,
       disabled: true,

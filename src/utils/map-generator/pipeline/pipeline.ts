@@ -1,6 +1,7 @@
 import { MapContext } from './context';
 import { type MapStage } from './stage';
 import { commitStageWrites } from './stage-outputs';
+import type { MessageKey } from '../../../i18n';
 import { GenerationCancelledError, GenerationStageError } from '../errors';
 import type { WorldSpace } from '../space';
 import type {
@@ -75,7 +76,7 @@ export class MapGenerator<
         options.onEvent?.({
           type: 'stage-skipped',
           stageId: stage.id,
-          stageName: stage.name,
+          stageNameKey: stage.nameKey,
           stageIndex,
           stageCount: this.stages.length,
           statistics,
@@ -86,7 +87,7 @@ export class MapGenerator<
       options.onEvent?.({
         type: 'stage-started',
         stageId: stage.id,
-        stageName: stage.name,
+        stageNameKey: stage.nameKey,
         stageIndex,
         stageCount: this.stages.length,
       });
@@ -97,7 +98,7 @@ export class MapGenerator<
       const report = createProgressReporter(
         {
           stageId: stage.id,
-          stageName: stage.name,
+          stageNameKey: stage.nameKey,
           stageIndex,
           stageCount: this.stages.length,
         },
@@ -122,13 +123,13 @@ export class MapGenerator<
         options.onEvent?.({
           type: 'stage-failed',
           stageId: stage.id,
-          stageName: stage.name,
+          stageNameKey: stage.nameKey,
           stageIndex,
           stageCount: this.stages.length,
           statistics,
         });
 
-        throw new GenerationStageError(stage.id, stage.name, statistics, [...context.statistics], {
+        throw new GenerationStageError(stage.id, statistics, [...context.statistics], {
           cause: error,
         });
       }
@@ -144,7 +145,7 @@ export class MapGenerator<
       options.onEvent?.({
         type: 'stage-completed',
         stageId: stage.id,
-        stageName: stage.name,
+        stageNameKey: stage.nameKey,
         stageIndex,
         stageCount: this.stages.length,
         statistics,
@@ -193,7 +194,7 @@ export class MapGenerator<
 
     return {
       stageId: stage.id,
-      stageName: stage.name,
+      stageNameKey: stage.nameKey,
       status,
       startedAt,
       finishedAt,
@@ -210,7 +211,7 @@ function createSkippedStatistics<
 >(stage: MapStage<TConfig, TState, TId, StageData>): StageStatistics<TId> {
   return {
     stageId: stage.id,
-    stageName: stage.name,
+    stageNameKey: stage.nameKey,
     status: 'skipped',
     startedAt: 0,
     finishedAt: 0,
@@ -219,7 +220,7 @@ function createSkippedStatistics<
 }
 
 function createProgressReporter<TId extends string>(
-  base: { stageId: TId; stageName: string; stageIndex: number; stageCount: number },
+  base: { stageId: TId; stageNameKey: MessageKey; stageIndex: number; stageCount: number },
   step: number,
   onEvent?: (event: GenerationEvent<TId>) => void
 ): StageProgressReporter {

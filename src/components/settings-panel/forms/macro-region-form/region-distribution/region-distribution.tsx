@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, Text } from '@radix-ui/themes';
 
 import { type BoundaryDraft, DistributionBar } from '../../../../distribution-bar';
@@ -13,18 +14,23 @@ interface RegionDistributionProps {
 }
 
 export function RegionDistribution({ segments, draft, header }: RegionDistributionProps) {
+  const { t } = useTranslation();
+
   return (
     <Flex direction='column' gap='2'>
-      <div role='group' aria-label='Region boundaries'>
+      <div role='group' aria-label={t('forms.macroRegion.regionBoundariesAria')}>
         <DistributionBar
           segments={segments}
           draft={draft}
           minShare={MIN_MACRO_REGION_SHARE}
-          header={header}
+          header={{
+            label: t(header.labelKey),
+            description: t(header.descriptionKey),
+          }}
         />
       </div>
       <Text size='1' color='gray'>
-        Drag a boundary on the bar to resize the two neighbouring regions.
+        {t('forms.macroRegion.distributionHint')}
       </Text>
     </Flex>
   );

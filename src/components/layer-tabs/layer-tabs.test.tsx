@@ -6,9 +6,19 @@ import { LayerTabs } from './layer-tabs';
 import type { MapLayerNode } from '../../utils/map-renderer';
 
 const TABS: readonly MapLayerNode[] = [
-  { id: 'world-shape', label: 'World shape', available: true, selectedLayer: 'world-shape' },
-  { id: 'macro-region', label: 'Macro regions', available: false, selectedLayer: 'macro-region' },
-  { id: 'geology', label: 'Geology', available: true, selectedLayer: 'geology' },
+  {
+    id: 'world-shape',
+    labelKey: 'layers.worldShape',
+    available: true,
+    selectedLayer: 'world-shape',
+  },
+  {
+    id: 'macro-region',
+    labelKey: 'layers.macroRegions',
+    available: false,
+    selectedLayer: 'macro-region',
+  },
+  { id: 'geology', labelKey: 'layers.geology', available: true, selectedLayer: 'geology' },
 ];
 
 function renderTabs(activeTab = 'world-shape'): ReturnType<typeof vi.fn> {

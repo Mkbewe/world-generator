@@ -5,9 +5,9 @@ import { StageList } from './stage-list';
 import type { GenerationStageProgress } from '../../../stores';
 
 const stages: readonly GenerationStageProgress[] = [
-  { id: 'a', name: 'World shape', status: 'completed', percentage: 100, durationMs: 120 },
-  { id: 'b', name: 'Noise', status: 'running', percentage: 40 },
-  { id: 'c', name: 'Macro regions', status: 'skipped', percentage: 0, durationMs: 0 },
+  { id: 'a', nameKey: 'stages.worldShape', status: 'completed', percentage: 100, durationMs: 120 },
+  { id: 'b', nameKey: 'stages.baseClimate', status: 'running', percentage: 40 },
+  { id: 'c', nameKey: 'stages.macroRegion', status: 'skipped', percentage: 0, durationMs: 0 },
 ];
 
 describe('StageList', () => {
@@ -20,7 +20,7 @@ describe('StageList', () => {
 
     expect(screen.getByText('World shape')).toBeInTheDocument();
     expect(screen.getByText('120 ms')).toBeInTheDocument();
-    expect(screen.getByTitle('Noise')).toBeInTheDocument();
+    expect(screen.getByTitle('Base Climate')).toBeInTheDocument();
     expect(screen.queryByText('40 ms')).toBeNull();
   });
 

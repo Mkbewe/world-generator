@@ -1,6 +1,5 @@
 import type { OverlayInspectionInput, OverlayInspector } from './overlay-inspector';
 import { cellIndexAt, isInsideWorld } from './world-cell';
-import { describeOceanCurrent } from '../../../ocean-current';
 import type { MapOverlayInspection } from '../../../types';
 
 /** Reads the BaseClimate current under one world cell. */
@@ -22,10 +21,6 @@ export class OceanCurrentOverlayInspector implements OverlayInspector {
     if (!Number.isFinite(angle) || !Number.isFinite(strength)) {
       return undefined;
     }
-    return {
-      overlayId: 'ocean-currents',
-      label: 'Ocean current',
-      value: describeOceanCurrent(angle, strength),
-    };
+    return { overlayId: 'ocean-currents', oceanCurrent: { angle, strength } };
   }
 }

@@ -1,31 +1,33 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type UIMatch, useMatches } from 'react-router';
 
 import { BreadcrumbItem } from './breadcrumb-item';
+import { isMessageKey, type MessageKey } from '../../i18n';
 import styles from './breadcrumbs.module.scss';
 
 export interface BreadcrumbsItem {
-  label: string;
+  labelKey: MessageKey;
   to?: string;
 }
 
 export interface RouteHandle {
-  breadcrumb?: string;
+  breadcrumbKey?: MessageKey;
 }
 
 interface BreadcrumbsProps {
   items?: BreadcrumbsItem[];
 }
 
-function getBreadcrumb(handle: unknown): string | undefined {
+function getBreadcrumbKey(handle: unknown): MessageKey | undefined {
   if (
     typeof handle === 'object' &&
     handle !== null &&
-    'breadcrumb' in handle &&
-    typeof handle.breadcrumb === 'string' &&
-    handle.breadcrumb.length > 0
+    'breadcrumbKey' in handle &&
+    typeof handle.breadcrumbKey === 'string' &&
+    isMessageKey(handle.breadcrumbKey)
   ) {
-    return handle.breadcrumb;
+    return handle.breadcrumbKey;
   }
 }
 
@@ -33,11 +35,11 @@ function getBreadcrumbsFromMatches(matches: UIMatch[]): BreadcrumbsItem[] {
   const crumbs: BreadcrumbsItem[] = [];
 
   for (const match of matches) {
-    const breadcrumb = getBreadcrumb(match.handle);
+    const breadcrumbKey = getBreadcrumbKey(match.handle);
 
-    if (breadcrumb) {
+    if (breadcrumbKey) {
       crumbs.push({
-        label: breadcrumb,
+        labelKey: breadcrumbKey,
         to: match.pathname,
       });
     }
@@ -51,17 +53,22 @@ function renderBreadcrumbs(breadcrumbs: BreadcrumbsItem[]) {
     return null;
   }
 
+  return <BreadcrumbNav breadcrumbs={breadcrumbs} />;
+}
+
+function BreadcrumbNav({ breadcrumbs }: { breadcrumbs: BreadcrumbsItem[] }) {
+  const { t } = useTranslation();
   const itemsList: ReactNode[] = breadcrumbs.map((crumb, index) => (
     <BreadcrumbItem
-      key={crumb.to ?? crumb.label}
-      label={crumb.label}
+      key={crumb.to ?? crumb.labelKey}
+      label={t(crumb.labelKey)}
       to={crumb.to}
       isLast={index === breadcrumbs.length - 1}
     />
   ));
 
   return (
-    <nav aria-label='Breadcrumb' className={styles.nav}>
+    <nav aria-label={t('breadcrumbs.label')} className={styles.nav}>
       <ol className={styles.list}>{itemsList}</ol>
     </nav>
   );

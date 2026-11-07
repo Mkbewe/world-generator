@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@radix-ui/themes';
 
 import styles from './map-canvas.module.scss';
@@ -46,6 +47,7 @@ export const MapCanvas = memo(function MapCanvas({
   expanded = false,
   children,
 }: MapCanvasProps) {
+  const { t } = useTranslation();
   const [graceElapsed, setGraceElapsed] = useState(false);
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export const MapCanvas = memo(function MapCanvas({
               className={styles.placeholderIcon}
             />
             <Text size='2' color='gray'>
-              Generate a map to see the preview.
+              {t('mapCanvas.placeholder')}
             </Text>
           </div>
         )}
@@ -81,7 +83,7 @@ export const MapCanvas = memo(function MapCanvas({
           className={styles.canvas}
           data-ready={ready || undefined}
           data-panning={panning || undefined}
-          aria-label='Generated map preview'
+          aria-label={t('mapCanvas.label')}
           {...handlers}
         />
         <canvas

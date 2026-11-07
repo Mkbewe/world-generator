@@ -1,3 +1,4 @@
+import type { MessageKey } from '../../../i18n';
 import type {
   LayerGroupNode,
   LayerTreeNode,
@@ -9,12 +10,12 @@ import type {
 
 interface NavigationLeaf {
   readonly id: MapBaseLayerId;
-  readonly label: string;
+  readonly labelKey: MessageKey;
 }
 
 interface NavigationGroup {
   readonly id: string;
-  readonly label: string;
+  readonly labelKey: MessageKey;
   readonly children: readonly NavigationLeaf[];
 }
 
@@ -86,7 +87,7 @@ function selectedChild(group: NavigationGroup, saved: readonly MapLayerNode[]): 
 
 function createNode(node: LayerTreeNode): NavigationNode {
   if (!isTreeGroup(node)) {
-    return { id: node.id, label: node.label };
+    return { id: node.id, labelKey: node.labelKey };
   }
   if (node.children.length === 0) {
     throw new Error(`Layer group "${node.id}" must contain at least one layer.`);
@@ -94,8 +95,8 @@ function createNode(node: LayerTreeNode): NavigationNode {
 
   return {
     id: node.id,
-    label: node.label,
-    children: node.children.map(child => ({ id: child.id, label: child.label })),
+    labelKey: node.labelKey,
+    children: node.children.map(child => ({ id: child.id, labelKey: child.labelKey })),
   };
 }
 
@@ -112,7 +113,7 @@ function projectNode(
   if (!isGroup(node)) {
     return {
       id: node.id,
-      label: node.label,
+      labelKey: node.labelKey,
       available: available.has(node.id),
       selectedLayer: node.id,
     };
@@ -120,7 +121,7 @@ function projectNode(
 
   const children = node.children.map(child => ({
     id: child.id,
-    label: child.label,
+    labelKey: child.labelKey,
     available: available.has(child.id),
     selectedLayer: child.id,
   }));
@@ -138,7 +139,7 @@ function projectNode(
 
   return {
     id: node.id,
-    label: node.label,
+    labelKey: node.labelKey,
     available: children.some(child => child.available),
     children,
     selectedChild,

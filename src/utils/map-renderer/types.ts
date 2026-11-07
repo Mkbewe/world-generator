@@ -1,5 +1,6 @@
 import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
+import type { MessageKey } from '../../i18n';
 import type { MacroRegionConfig, MacroRegionDeformation } from '../map-generator/types';
 import type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
 import type { WorldShape } from '../world-shape';
@@ -34,10 +35,10 @@ export interface MapSnapshotData extends MapSize, MapMetadata {
 }
 
 export const OVERLAY_LAYERS = {
-  'world-boundary': { label: 'World boundary', source: 'world-shape' },
-  'heat-zones': { label: 'Heat zones', source: 'heatZoneMap' },
-  'moisture': { label: 'Moisture baseline', source: 'moistureBaseMap' },
-  'ocean-currents': { label: 'Ocean currents', source: 'oceanCurrentMap' },
+  'world-boundary': { labelKey: 'overlays.world-boundary', source: 'world-shape' },
+  'heat-zones': { labelKey: 'overlays.heat-zones', source: 'heatZoneMap' },
+  'moisture': { labelKey: 'overlays.moisture', source: 'moistureBaseMap' },
+  'ocean-currents': { labelKey: 'overlays.ocean-currents', source: 'oceanCurrentMap' },
 } as const;
 
 export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
@@ -62,7 +63,7 @@ export const DEFAULT_OVERLAY_VISIBILITY: Record<MapOverlayId, boolean> = {
 
 export interface MapLayerOption<TId extends string> {
   id: TId;
-  label: string;
+  labelKey: MessageKey;
   available: boolean;
 }
 
@@ -70,13 +71,14 @@ export interface MapLayerOption<TId extends string> {
 export interface LayerHit {
   readonly id: string;
   readonly label?: string;
+  readonly oceanCurrent?: { readonly angle: number; readonly strength: number };
 }
 
 /** Raster value of the displayed layer at a source cell. */
 export interface RasterMapInspection {
   readonly kind: 'raster';
   readonly layerId: MapBaseLayerId;
-  readonly label: string;
+  readonly labelKey: MessageKey;
   /** Undefined when the cell lies outside the layer's valid area. */
   readonly value?: number;
 }
@@ -85,7 +87,7 @@ export interface RasterMapInspection {
 export interface VectorMapInspection {
   readonly kind: 'vector';
   readonly layerId: MapBaseLayerId;
-  readonly label: string;
+  readonly labelKey: MessageKey;
   /** Undefined when the pointer misses every element of the layer. */
   readonly hit?: LayerHit;
 }
@@ -102,18 +104,18 @@ export interface MapOverlayOption extends MapLayerOption<MapOverlayId> {
 /** Named overlay value under the pointer, e.g. the BaseClimate heat zone. */
 export interface MapOverlayInspection {
   readonly overlayId: MapOverlayId;
-  readonly label: string;
-  readonly value: string;
+  readonly value?: string;
+  readonly oceanCurrent?: { readonly angle: number; readonly strength: number };
 }
 
 export interface LayerLeafNode<TId extends string = MapBaseLayerId> {
   readonly id: TId;
-  readonly label: string;
+  readonly labelKey: MessageKey;
 }
 
 export interface LayerGroupNode<TId extends string = MapBaseLayerId> {
   readonly id: string;
-  readonly label: string;
+  readonly labelKey: MessageKey;
   readonly children: readonly LayerLeafNode<TId>[];
 }
 
@@ -137,7 +139,7 @@ export interface MapLayerNavigation {
 /** Measurements every rendered layer reports, whatever its data. */
 interface RenderLayerStatisticsBase {
   id: MapBaseLayerId;
-  name: string;
+  nameKey: MessageKey;
   /** Synchronous preparation and drawing time, excluding browser yields. */
   durationMs: number;
   /** True when this run replayed the layer and the cost comes from an earlier one. */
@@ -163,7 +165,7 @@ export interface VectorRenderLayerStatistics extends RenderLayerStatisticsBase {
   kind: 'vector';
   /** Domain elements the layer reports, e.g. geological regions. */
   elements?: {
-    readonly label: string;
+    readonly labelKey: MessageKey;
     readonly count: number;
   };
 }

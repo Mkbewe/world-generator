@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -22,6 +23,8 @@ export function PanelHeader({
   onPositionChange,
   onCollapsedChange,
 }: PanelHeaderProps) {
+  const { t } = useTranslation();
+
   if (collapsed) {
     return <CollapseButton collapsed onToggle={() => onCollapsedChange(false)} />;
   }
@@ -29,22 +32,22 @@ export function PanelHeader({
   return (
     <Flex justify='between' align='center' gap='2'>
       <Text size='2' weight='bold' color='gray'>
-        Panels
+        {t('panelHeader.title')}
       </Text>
       <Flex align='center' gap='2'>
         <SegmentedControl.Root
           size='1'
-          aria-label='Panel position'
+          aria-label={t('panelHeader.position')}
           value={position}
           onValueChange={value => onPositionChange(value as PanelPosition)}
         >
-          <SegmentedControl.Item value='top' aria-label='Move panels to top'>
+          <SegmentedControl.Item value='top' aria-label={t('panelHeader.moveTop')}>
             <ArrowUpIcon />
           </SegmentedControl.Item>
-          <SegmentedControl.Item value='middle' aria-label='Center panels'>
+          <SegmentedControl.Item value='middle' aria-label={t('panelHeader.center')}>
             <HeightIcon />
           </SegmentedControl.Item>
-          <SegmentedControl.Item value='bottom' aria-label='Move panels to bottom'>
+          <SegmentedControl.Item value='bottom' aria-label={t('panelHeader.moveBottom')}>
             <ArrowDownIcon />
           </SegmentedControl.Item>
         </SegmentedControl.Root>
@@ -60,13 +63,16 @@ interface CollapseButtonProps {
 }
 
 function CollapseButton({ collapsed = false, onToggle }: CollapseButtonProps) {
+  const { t } = useTranslation();
+  const label = t(collapsed ? 'panelHeader.show' : 'panelHeader.hide');
+
   return (
     <IconButton
       size='1'
       variant='surface'
       color='gray'
-      title={collapsed ? 'Show panels' : 'Hide panels'}
-      aria-label={collapsed ? 'Show panels' : 'Hide panels'}
+      title={label}
+      aria-label={label}
       onClick={onToggle}
     >
       {collapsed ? <DoubleArrowLeftIcon /> : <DoubleArrowRightIcon />}

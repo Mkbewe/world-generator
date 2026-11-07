@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { AlertDialog, Button, Flex, RadioCards, Text } from '@radix-ui/themes';
 
 /** One format the dialog can export; the caller turns the chosen id into a file. */
@@ -26,6 +27,7 @@ export function ExportDialog({
   formats,
   onExport,
 }: ExportDialogProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState(formats[0]?.id ?? '');
 
   return createPortal(
@@ -61,12 +63,12 @@ export function ExportDialog({
         <Flex gap='3' mt='4' justify='end'>
           <AlertDialog.Cancel>
             <Button variant='soft' color='gray'>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </AlertDialog.Cancel>
           <AlertDialog.Action>
             <Button variant='solid' onClick={() => onExport(selected)}>
-              Export
+              {t('common.export')}
             </Button>
           </AlertDialog.Action>
         </Flex>

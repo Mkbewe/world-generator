@@ -1,3 +1,4 @@
+import type { MessageKey } from '../../../../../i18n';
 import {
   createHorizontalLayout,
   createRadialLayout,
@@ -11,8 +12,8 @@ export type MacroRegionPresetId = 'rings' | 'horizontal' | 'vertical' | 'rings-w
 
 export interface MacroRegionPresetDefinition {
   readonly id: MacroRegionPresetId;
-  readonly label: string;
-  readonly description: string;
+  readonly labelKey: MessageKey;
+  readonly descriptionKey: MessageKey;
   readonly layout: MacroRegionLayout;
   readonly createRegions: () => readonly MacroRegionConfig[];
 }
@@ -20,29 +21,29 @@ export interface MacroRegionPresetDefinition {
 export const MACRO_REGION_PRESETS: readonly MacroRegionPresetDefinition[] = [
   {
     id: 'rings-with-poles',
-    label: 'Rings + poles',
-    description: 'Four concentric regions crossed by dangerous bands at both poles.',
+    labelKey: 'forms.macroRegion.presetRingsPoles',
+    descriptionKey: 'forms.macroRegion.presetRingsPolesDescription',
     layout: 'radial',
     createRegions: () => createRadialPolesLayout(6),
   },
   {
     id: 'rings',
-    label: 'Rings',
-    description: 'Four concentric regions with danger increasing towards the rim.',
+    labelKey: 'forms.macroRegion.presetRings',
+    descriptionKey: 'forms.macroRegion.presetRingsDescription',
     layout: 'radial',
     createRegions: () => createRadialLayout(4),
   },
   {
     id: 'horizontal',
-    label: 'Horizontal',
-    description: 'Five horizontal regions with a safer middle and dangerous edges.',
+    labelKey: 'forms.macroRegion.presetHorizontal',
+    descriptionKey: 'forms.macroRegion.presetHorizontalDescription',
     layout: 'horizontal',
     createRegions: () => createHorizontalLayout(5),
   },
   {
     id: 'vertical',
-    label: 'Vertical',
-    description: 'Five vertical regions with a safer middle and dangerous edges.',
+    labelKey: 'forms.macroRegion.presetVertical',
+    descriptionKey: 'forms.macroRegion.presetVerticalDescription',
     layout: 'vertical',
     createRegions: () => createVerticalLayout(5),
   },

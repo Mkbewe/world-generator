@@ -22,7 +22,6 @@ export class MoistureOverlayInspector implements OverlayInspector {
     }
     return {
       overlayId: 'moisture',
-      label: 'Moisture',
       value: formatPercent(value),
     };
   }

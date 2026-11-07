@@ -19,8 +19,14 @@ describe('OceanCurrentLayer', () => {
     const mask: SpatialMask = { size, contains: () => true };
     const layer = new OceanCurrentLayer('ocean-currents', size, map, strength, mask);
     try {
-      expect(layer.sample(0, 0)).toEqual({ id: 'ocean-current', label: 'East · 50%' });
-      expect(layer.sample(1, 0)).toEqual({ id: 'ocean-current', label: 'South · 25%' });
+      expect(layer.sample(0, 0)).toEqual({
+        id: 'ocean-current',
+        oceanCurrent: { angle: 0, strength: 0.5 },
+      });
+      expect(layer.sample(1, 0)).toEqual({
+        id: 'ocean-current',
+        oceanCurrent: { angle: Math.fround(Math.PI / 2), strength: 0.25 },
+      });
       expect(layer.sample(2, 0)).toBeUndefined();
     } finally {
       layer.dispose();
@@ -32,7 +38,10 @@ describe('OceanCurrentLayer', () => {
     const layer = new OceanCurrentLayer('ocean-currents', size, map, strength, mask);
     try {
       expect(layer.sample(0, 0)).toBeUndefined();
-      expect(layer.sample(1, 0)).toEqual({ id: 'ocean-current', label: 'South · 25%' });
+      expect(layer.sample(1, 0)).toEqual({
+        id: 'ocean-current',
+        oceanCurrent: { angle: Math.fround(Math.PI / 2), strength: 0.25 },
+      });
     } finally {
       layer.dispose();
     }

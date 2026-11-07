@@ -30,7 +30,10 @@ describe('RegionDistribution', () => {
         <RegionDistribution
           segments={segments}
           draft={createDraft()}
-          header={{ label: 'Ring thickness', description: 'Not an area share.' }}
+          header={{
+            labelKey: 'forms.share.ringThickness',
+            descriptionKey: 'forms.share.ringDescription',
+          }}
         />
       </Theme>
     );

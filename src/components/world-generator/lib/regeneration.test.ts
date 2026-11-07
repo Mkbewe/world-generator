@@ -16,9 +16,9 @@ const config: MapConfig = {
 };
 
 const stages: readonly StageInfo[] = [
-  { id: 'world-shape', name: 'World shape' },
-  { id: 'macro-region', name: 'Macro region' },
-  { id: 'geology', name: 'Geology' },
+  { id: 'world-shape', nameKey: 'stages.worldShape' },
+  { id: 'macro-region', nameKey: 'stages.macroRegion' },
+  { id: 'geology', nameKey: 'stages.geology' },
 ];
 
 function stageStatistics(
@@ -28,7 +28,7 @@ function stageStatistics(
 ): StageStatistics {
   return {
     stageId,
-    stageName: stageId,
+    stageNameKey: 'stages.worldShape',
     status,
     startedAt: 0,
     finishedAt: durationMs,

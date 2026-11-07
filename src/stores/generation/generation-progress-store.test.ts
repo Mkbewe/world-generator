@@ -4,7 +4,7 @@ import type { GenerationProgressState } from './progress-types';
 const progress: GenerationProgressState = {
   status: 'completed',
   totalDurationMs: 10,
-  stages: [{ id: 'noise', name: 'Noise', status: 'completed', percentage: 100 }],
+  stages: [{ id: 'noise', nameKey: 'stages.baseClimate', status: 'completed', percentage: 100 }],
 };
 
 describe('useGenerationProgressStore', () => {

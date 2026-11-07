@@ -1,3 +1,5 @@
+import type { MessageKey } from '../../../i18n';
+
 /** Dotted `MapConfig` paths a stage may declare as its inputs. */
 export const MAP_CONFIG_KEYS = [
   'world.seed',
@@ -18,20 +20,20 @@ export type MapConfigKey = (typeof MAP_CONFIG_KEYS)[number];
 /** Shape checked on each stage constant before the id union is derived from the list. */
 interface DeclaredStage {
   readonly id: string;
-  readonly name: string;
+  readonly nameKey: MessageKey;
   readonly configKeys: readonly MapConfigKey[];
 }
 
 export const WORLD_SHAPE_STAGE = {
   id: 'world-shape',
-  name: 'World shape',
+  nameKey: 'stages.worldShape',
   configKeys: ['world.dimensions', 'world.shape'],
 } as const satisfies DeclaredStage;
 
 /** Regions read the mask and carry their own deterministic border noise. */
 export const MACRO_REGION_STAGE = {
   id: 'macro-region',
-  name: 'Macro region',
+  nameKey: 'stages.macroRegion',
   configKeys: [
     'world.seed',
     'world.shape',
@@ -48,7 +50,7 @@ export const MACRO_REGION_STAGE = {
  */
 export const BASE_CLIMATE_STAGE = {
   id: 'base-climate',
-  name: 'Base Climate',
+  nameKey: 'stages.baseClimate',
   configKeys: ['world.seed', 'world.shape', 'world.dimensions', 'baseClimate'],
 } as const satisfies DeclaredStage;
 
@@ -59,7 +61,7 @@ export const BASE_CLIMATE_STAGE = {
  */
 export const GEOLOGY_STAGE = {
   id: 'geology',
-  name: 'Geology',
+  nameKey: 'stages.geology',
   configKeys: [
     'world.seed',
     'world.shape',
@@ -78,7 +80,7 @@ export const GEOLOGY_STAGE = {
  */
 export const HEIGHTMAP_STAGE = {
   id: 'heightmap',
-  name: 'Heightmap',
+  nameKey: 'stages.heightmap',
   configKeys: [
     'world.seed',
     'world.shape',
@@ -109,7 +111,7 @@ export type PipelineStageId = (typeof PIPELINE_STAGES)[number]['id'];
 
 export interface StageInfo {
   readonly id: PipelineStageId;
-  readonly name: string;
+  readonly nameKey: MessageKey;
 }
 
 /**

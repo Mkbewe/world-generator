@@ -6,7 +6,7 @@ import { layerRegistry } from '../layer-registry';
 /** Float ramp layer used by the tests; the catalog ships only integer rasters. */
 const FLOAT_SPEC = {
   id: 'macro-region',
-  label: 'Float map',
+  labelKey: 'layers.geology',
   kind: 'raster',
   source: 'floatMap',
   dataType: 'float32',
@@ -274,7 +274,7 @@ describe('CatalogLayer', () => {
   it('requires a matching mask for clipped layers', () => {
     const clipped = {
       id: 'macro-region',
-      label: 'Clipped',
+      labelKey: 'layers.geology',
       kind: 'raster',
       source: 'clippedMap',
       dataType: 'uint8',

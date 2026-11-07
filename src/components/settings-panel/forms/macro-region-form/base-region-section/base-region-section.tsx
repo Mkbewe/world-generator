@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
@@ -19,6 +20,7 @@ import { RegionDistribution } from '../region-distribution';
 
 /** Base regions: the share bar, their tabs and the selected region fields. */
 export function BaseRegionSection() {
+  const { t } = useTranslation();
   const regions = useMacroRegionFormStore(state => state.regions);
   const layout = useMacroRegionFormStore(state => state.layout);
   const setRegionBoundaries = useMacroRegionFormStore(state => state.setRegionBoundaries);
@@ -48,10 +50,10 @@ export function BaseRegionSection() {
     <Flex direction='column' gap='2'>
       <Flex justify='between' align='center'>
         <Text size='2' weight='bold' color='gray'>
-          Base regions ({base.length})
+          {t('forms.macroRegion.baseRegions', { count: base.length })}
         </Text>
         <Button size='1' variant='soft' onClick={addBaseRegion} disabled={atLimit}>
-          <PlusIcon /> Add region
+          <PlusIcon /> {t('forms.macroRegion.addRegion')}
         </Button>
       </Flex>
       <RegionDistribution segments={segments} draft={draft} header={shareCopy} />
@@ -59,7 +61,7 @@ export function BaseRegionSection() {
         items={tabItems}
         selectedIndex={selectedIndex}
         onSelect={selectRegion}
-        ariaLabel='Base regions'
+        ariaLabel={t('forms.macroRegion.baseRegionsAria')}
       />
       {region && (
         <BaseRegionCard region={region} index={selectedIndex} canRemove={base.length > 1} />

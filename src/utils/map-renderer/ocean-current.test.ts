@@ -1,5 +1,5 @@
 import type { MapProjection } from './view/view-transform';
-import { describeOceanCurrent, sampleOceanCurrentArrows } from './ocean-current';
+import { sampleOceanCurrentArrows } from './ocean-current';
 
 const projection: MapProjection = {
   cellSize: 10,
@@ -52,25 +52,5 @@ describe('sampleOceanCurrentArrows', () => {
     expect(sampleOceanCurrentArrows(world(), map, strength, projection, 2)).toEqual([
       { x: 45, y: 45, angle: 0, strength: 0.5 },
     ]);
-  });
-});
-
-describe('describeOceanCurrent', () => {
-  it('names every direction and reports calm water', () => {
-    expect(describeOceanCurrent(0, 0.4)).toBe('East · 40%');
-    expect(describeOceanCurrent(Math.PI / 4, 0.4)).toBe('Southeast · 40%');
-    expect(describeOceanCurrent(Math.PI / 2, 0.4)).toBe('South · 40%');
-    expect(describeOceanCurrent((3 * Math.PI) / 4, 0.4)).toBe('Southwest · 40%');
-    expect(describeOceanCurrent(Math.PI, 0.4)).toBe('West · 40%');
-    expect(describeOceanCurrent((5 * Math.PI) / 4, 0.4)).toBe('Northwest · 40%');
-    expect(describeOceanCurrent((3 * Math.PI) / 2, 0.4)).toBe('North · 40%');
-    expect(describeOceanCurrent((7 * Math.PI) / 4, 0.4)).toBe('Northeast · 40%');
-    expect(describeOceanCurrent(0, 0)).toBe('Calm');
-  });
-
-  it('rejects a non-finite angle instead of guessing a direction', () => {
-    expect(() => describeOceanCurrent(Number.NaN, 0.4)).toThrow(
-      'Ocean-current angle is out of range: NaN.'
-    );
   });
 });

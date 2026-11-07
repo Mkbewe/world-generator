@@ -60,12 +60,12 @@ export function emptyRenderState(): MapRendererState {
   return {
     layers: layerRegistry.order.map(id => ({
       id,
-      label: layerRegistry.get(id).label,
+      labelKey: layerRegistry.get(id).labelKey,
       available: false,
     })),
     overlays: OVERLAY_IDS.map(id => ({
       id,
-      label: OVERLAY_LAYERS[id].label,
+      labelKey: OVERLAY_LAYERS[id].labelKey,
       available: false,
       visible: DEFAULT_OVERLAY_VISIBILITY[id],
     })),
@@ -223,14 +223,14 @@ export class MapRenderer {
       return {
         kind: 'vector',
         layerId: id,
-        label: spec.label,
+        labelKey: spec.labelKey,
         hit: isLayerHit(sample) ? sample : undefined,
       };
     }
     return {
       kind: 'raster',
       layerId: id,
-      label: spec.label,
+      labelKey: spec.labelKey,
       value: typeof sample === 'number' ? sample : undefined,
     };
   }

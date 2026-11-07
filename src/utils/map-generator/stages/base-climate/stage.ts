@@ -42,7 +42,7 @@ export class BaseClimateStage implements MapStage<
   BaseClimateOutput
 > {
   readonly id: PipelineStageId = BASE_CLIMATE_STAGE.id;
-  readonly name = BASE_CLIMATE_STAGE.name;
+  readonly nameKey = BASE_CLIMATE_STAGE.nameKey;
   readonly configKeys = BASE_CLIMATE_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask'];
   readonly writes = [

@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { SIZE_PRESETS } from './lib/size-presets';
 import { TERRAIN_DETAIL_OPTIONS } from './lib/terrain-detail';
 import { WorldShapeForm } from './world-shape-form';
+import { i18n } from '../../../../i18n';
 
 interface RenderOptions {
   shape?: 'disc' | 'rectangle';
@@ -51,7 +52,7 @@ describe('WorldShapeForm', () => {
     const { onSizeChange } = renderForm({ sizeMeters: 4500 });
 
     for (const preset of SIZE_PRESETS) {
-      await user.click(screen.getByRole('radio', { name: preset.label }));
+      await user.click(screen.getByRole('radio', { name: i18n.t(preset.labelKey) }));
       expect(onSizeChange).toHaveBeenLastCalledWith(preset.sizeMeters);
     }
   });
@@ -85,7 +86,7 @@ describe('WorldShapeForm', () => {
     const { onDetailChange } = renderForm({ metersPerSample: 3 });
 
     for (const option of TERRAIN_DETAIL_OPTIONS) {
-      await user.click(screen.getByRole('radio', { name: option.label }));
+      await user.click(screen.getByRole('radio', { name: i18n.t(option.labelKey) }));
       expect(onDetailChange).toHaveBeenLastCalledWith(option.metersPerSample);
     }
   });

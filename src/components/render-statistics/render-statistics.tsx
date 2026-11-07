@@ -1,3 +1,6 @@
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+
 import { formatBytes, formatDuration, formatNumber } from '../../utils/format';
 import type { RenderLayerStatistics, RenderStatistics } from '../../utils/map-renderer';
 import {
@@ -8,18 +11,17 @@ import {
 import type { TimingSegment } from '../timing-bar';
 
 /** A vector layer reports elements; a raster layer reports its pixels and raster. */
-function layerMetrics(layer: RenderLayerStatistics): StatisticsMetric[] {
+function layerMetrics(layer: RenderLayerStatistics, t: TFunction): StatisticsMetric[] {
   const shared: StatisticsMetric[] = [
     {
-      label: 'Buffer',
+      label: t('statistics.render.buffer'),
       value: `${layer.outputWidth} × ${layer.outputHeight}`,
-      description:
-        'Resolution of the buffer drawn for this layer: viewport scale when minifying, one pixel per cell when magnified.',
+      description: t('statistics.render.bufferDescription'),
     },
     {
-      label: 'Data',
+      label: t('statistics.render.data'),
       value: formatBytes(layer.bytes),
-      description: 'Estimated size of the surfaces held for this layer at rest.',
+      description: t('statistics.render.dataDescription'),
     },
   ];
 
@@ -27,9 +29,9 @@ function layerMetrics(layer: RenderLayerStatistics): StatisticsMetric[] {
     const elements: StatisticsMetric[] = layer.elements
       ? [
           {
-            label: layer.elements.label,
+            label: t(layer.elements.labelKey),
             value: formatNumber(layer.elements.count),
-            description: 'Elements carried by this vector layer.',
+            description: t('statistics.render.elementsDescription'),
           },
         ]
       : [];
@@ -38,23 +40,22 @@ function layerMetrics(layer: RenderLayerStatistics): StatisticsMetric[] {
 
   return [
     {
-      label: 'Drawing performance',
+      label: t('statistics.render.drawingPerformance'),
       value:
         layer.pixels > 0 && layer.durationMs > 0
           ? `${formatNumber((layer.durationMs * 1_000_000) / layer.pixels, 2)} ms/MPix`
           : '—',
-      description:
-        'Preparation and drawing time per million pixels, excluding waiting. Lower is faster.',
+      description: t('statistics.render.drawingPerformanceDescription'),
     },
     {
-      label: 'Tiles',
+      label: t('statistics.render.tiles'),
       value: formatNumber(layer.tiles),
-      description: 'Number of tiles drawn while rendering this layer.',
+      description: t('statistics.render.tilesDescription'),
     },
     {
-      label: 'Source',
+      label: t('statistics.render.source'),
       value: `${layer.sourceWidth} × ${layer.sourceHeight}`,
-      description: 'Resolution of the generator raster this layer samples.',
+      description: t('statistics.render.sourceDescription'),
     },
     ...shared,
   ];
@@ -65,66 +66,74 @@ interface RenderStatisticsPanelProps {
 }
 
 export function RenderStatisticsPanel({ statistics }: RenderStatisticsPanelProps) {
+  const { t } = useTranslation();
   const { viewport } = statistics;
 
   const summary: StatisticsMetric[] = [
     {
-      label: 'Viewport',
+      label: t('statistics.render.viewport'),
       value: viewport ? `${Math.round(viewport.width)} × ${Math.round(viewport.height)}` : '—',
-      description: 'Display size of the preview area in CSS pixels.',
+      description: t('statistics.render.viewportDescription'),
     },
     {
-      label: 'Pixel ratio',
+      label: t('statistics.render.pixelRatio'),
       value: viewport ? String(viewport.devicePixelRatio) : '—',
-      description: 'Device pixel ratio used for the preview buffers, capped at 2.',
+      description: t('statistics.render.pixelRatioDescription'),
     },
     {
-      label: 'Overlay',
+      label: t('statistics.render.overlay'),
       value: formatDuration(statistics.overlayDurationMs),
-      description: 'Total time spent updating the world boundary overlay during this run.',
+      description: t('statistics.render.overlayDescription'),
     },
     {
-      label: 'First tile',
+      label: t('statistics.render.firstTile'),
       value: formatDuration(statistics.firstTileDurationMs),
-      description: 'Time from starting generation to drawing the first buffer tile on the preview.',
+      description: t('statistics.render.firstTileDescription'),
     },
     {
-      label: 'Buffers',
+      label: t('statistics.render.buffers'),
       value: formatBytes(statistics.bufferBytes),
-      description:
-        'Estimated RGBA buffers held at report time: layer frames and their whole-map overviews. Render stages are temporary and released after each frame.',
+      description: t('statistics.render.buffersDescription'),
     },
   ];
 
   const timing: TimingSegment[] = [
     ...statistics.layers.map(layer => ({
       key: layer.id,
-      label: layer.name,
+      label: t(layer.nameKey),
       durationMs: layer.durationMs,
     })),
-    { key: 'overlay', label: 'Overlay', durationMs: statistics.overlayDurationMs },
-    { key: 'presentation', label: 'Presentation', durationMs: statistics.presentationDurationMs },
+    {
+      key: 'overlay',
+      label: t('statistics.render.overlay'),
+      durationMs: statistics.overlayDurationMs,
+    },
+    {
+      key: 'presentation',
+      label: t('statistics.render.presentation'),
+      durationMs: statistics.presentationDurationMs,
+    },
   ];
   const measuredTime = timing.reduce((total, segment) => total + segment.durationMs, 0);
   const unmeasuredTime = Math.max(0, statistics.elapsedDurationMs - measuredTime);
 
   const sections: StatisticsSection[] = statistics.layers.map(layer => ({
     key: layer.id,
-    title: layer.name,
+    title: t(layer.nameKey),
     trailing: layer.reused
       ? `${formatDuration(layer.durationMs)} · reused`
       : formatDuration(layer.durationMs),
-    metrics: layerMetrics(layer),
+    metrics: layerMetrics(layer, t),
   }));
 
   return (
     <StatisticsPanel
-      title='Rendering'
+      title={t('statistics.render.title')}
       summary={summary}
       timing={timing}
       timingNote={
         unmeasuredTime > 0
-          ? `Additional time outside measured rendering: ${formatDuration(unmeasuredTime)}.`
+          ? t('statistics.additionalTime', { duration: formatDuration(unmeasuredTime) })
           : undefined
       }
       sections={sections}

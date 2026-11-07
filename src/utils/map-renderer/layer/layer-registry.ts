@@ -1,3 +1,4 @@
+import type { MessageKey } from '../../../i18n';
 import {
   LAYER_CATALOG,
   type LayerDataRecord,
@@ -35,10 +36,10 @@ export class LayerRegistry<TId extends string = MapBaseLayerId> {
     }
 
     const layerIds = new Set(this.specs.keys());
-    const groups = new Map<string, { label: string; children: LayerLeafNode<TId>[] }>();
+    const groups = new Map<string, { labelKey: MessageKey; children: LayerLeafNode<TId>[] }>();
     const tree: LayerTreeNode<TId>[] = [];
     for (const spec of catalog) {
-      const leaf = { id: spec.id, label: spec.label };
+      const leaf = { id: spec.id, labelKey: spec.labelKey };
       if (!spec.group) {
         tree.push(leaf);
         continue;
@@ -48,15 +49,15 @@ export class LayerRegistry<TId extends string = MapBaseLayerId> {
       }
       const existing = groups.get(spec.group.id);
       if (existing) {
-        if (existing.label !== spec.group.label) {
+        if (existing.labelKey !== spec.group.labelKey) {
           throw new Error('Inconsistent layer group label: ' + spec.group.id);
         }
         existing.children.push(leaf);
         continue;
       }
-      const group = { label: spec.group.label, children: [leaf] };
+      const group = { labelKey: spec.group.labelKey, children: [leaf] };
       groups.set(spec.group.id, group);
-      tree.push({ id: spec.group.id, label: group.label, children: group.children });
+      tree.push({ id: spec.group.id, labelKey: group.labelKey, children: group.children });
     }
     this.tree = tree;
     this.order = catalog.map(spec => spec.id);

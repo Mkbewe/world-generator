@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import {
   formatAreaKm2,
   formatDuration,
@@ -14,40 +16,45 @@ interface MapStatisticsPanelProps {
 }
 
 export function MapStatisticsPanel({ world, totalDurationMs }: MapStatisticsPanelProps) {
+  const { t } = useTranslation();
   const { widthMeters, heightMeters, sampleWidth, sampleHeight } = world.dimensions;
   const items: StatisticsMetric[] = [
     {
-      label: 'Seed',
+      label: t('statistics.map.seed'),
       value: String(world.seed),
-      description: 'Seed used for deterministic generation.',
+      description: t('statistics.map.seedDescription'),
     },
     {
-      label: 'Size',
+      label: t('statistics.map.size'),
       value: `${formatMeasure(widthMeters)} × ${formatMeasure(heightMeters)} m`,
-      description: 'Physical world size.',
+      description: t('statistics.map.sizeDescription'),
     },
     {
-      label: 'Terrain detail',
+      label: t('statistics.map.terrainDetail'),
       value: formatMeters(widthMeters / sampleWidth),
-      description: 'Metres covered by one sample cell.',
+      description: t('statistics.map.terrainDetailDescription'),
     },
     {
-      label: 'Area',
+      label: t('statistics.map.area'),
       value: formatAreaKm2(widthMeters * heightMeters),
-      description: 'World surface area.',
+      description: t('statistics.map.areaDescription'),
     },
-    { label: 'Shape', value: world.shape, description: 'World shape preset.' },
     {
-      label: 'Cells',
+      label: t('statistics.map.shape'),
+      value: world.shape,
+      description: t('statistics.map.shapeDescription'),
+    },
+    {
+      label: t('statistics.map.cells'),
       value: formatNumber(sampleWidth * sampleHeight),
-      description: 'Total number of cells (width × height).',
+      description: t('statistics.map.cellsDescription'),
     },
     {
-      label: 'Total time',
+      label: t('statistics.map.totalTime'),
       value: formatDuration(totalDurationMs),
-      description: 'Elapsed time from starting generation to the latest rendered result.',
+      description: t('statistics.map.totalTimeDescription'),
     },
   ];
 
-  return <StatisticsPanel title='Map' summary={items} />;
+  return <StatisticsPanel title={t('statistics.map.title')} summary={items} />;
 }

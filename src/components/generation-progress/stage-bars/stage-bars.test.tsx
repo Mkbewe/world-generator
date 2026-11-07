@@ -4,11 +4,11 @@ import { StageBars } from './stage-bars';
 import type { GenerationStageProgress } from '../../../stores';
 
 const stages: readonly GenerationStageProgress[] = [
-  { id: 'a', name: 'Pending', status: 'pending', percentage: 0 },
-  { id: 'b', name: 'Running', status: 'running', percentage: 40 },
-  { id: 'c', name: 'Completed', status: 'completed', percentage: 100 },
-  { id: 'd', name: 'Failed', status: 'failed', percentage: 0 },
-  { id: 'e', name: 'Skipped', status: 'skipped', percentage: 0 },
+  { id: 'a', nameKey: 'stages.worldShape', status: 'pending', percentage: 0 },
+  { id: 'b', nameKey: 'stages.worldShape', status: 'running', percentage: 40 },
+  { id: 'c', nameKey: 'stages.worldShape', status: 'completed', percentage: 100 },
+  { id: 'd', nameKey: 'stages.worldShape', status: 'failed', percentage: 0 },
+  { id: 'e', nameKey: 'stages.worldShape', status: 'skipped', percentage: 0 },
 ];
 
 describe('StageBars', () => {

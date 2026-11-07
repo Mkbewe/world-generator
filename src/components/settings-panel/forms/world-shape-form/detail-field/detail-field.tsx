@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
 import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
@@ -9,6 +10,7 @@ interface DetailFieldProps {
 }
 
 export function DetailField({ metersPerSample, onChange }: DetailFieldProps) {
+  const { t } = useTranslation();
   const active = TERRAIN_DETAIL_OPTIONS.find(
     option => option.metersPerSample === metersPerSample
   )?.value;
@@ -16,13 +18,13 @@ export function DetailField({ metersPerSample, onChange }: DetailFieldProps) {
   return (
     <Flex direction='column' gap='2'>
       <Text size='2' color='gray'>
-        Terrain detail:
+        {t('forms.worldShape.terrainDetail')}
       </Text>
       <SegmentedControlScroll>
         <SegmentedControl.Root
           value={active}
           size='1'
-          aria-label='Terrain detail'
+          aria-label={t('forms.worldShape.terrainDetailAria')}
           onValueChange={value => {
             const option = TERRAIN_DETAIL_OPTIONS.find(item => item.value === value);
             if (option) {
@@ -32,13 +34,13 @@ export function DetailField({ metersPerSample, onChange }: DetailFieldProps) {
         >
           {TERRAIN_DETAIL_OPTIONS.map(option => (
             <SegmentedControl.Item key={option.value} value={option.value}>
-              {option.label}
+              {t(option.labelKey)}
             </SegmentedControl.Item>
           ))}
         </SegmentedControl.Root>
       </SegmentedControlScroll>
       <Text size='1' color='gray'>
-        Smaller values keep more terrain detail in every sample.
+        {t('forms.worldShape.terrainDetailHint')}
       </Text>
     </Flex>
   );

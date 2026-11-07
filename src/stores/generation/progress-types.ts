@@ -1,8 +1,10 @@
+import type { MessageKey } from '../../i18n';
+
 export type GenerationStageStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export interface GenerationStageProgress {
   id: string;
-  name: string;
+  nameKey: MessageKey;
   status: GenerationStageStatus;
   /** 0..100. Reserved for real per-stage progress. */
   percentage: number;

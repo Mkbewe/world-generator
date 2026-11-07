@@ -9,18 +9,18 @@ function climateTabs(macroRegionAvailable = true): readonly MapLayerNode[] {
   return [
     {
       id: 'climate',
-      label: 'Climate',
+      labelKey: 'layers.baseClimate',
       available: true,
       selectedChild: 'geology',
       selectedLayer: 'geology',
       children: [
         {
           id: 'macro-region',
-          label: 'Macro regions',
+          labelKey: 'layers.macroRegions',
           available: macroRegionAvailable,
           selectedLayer: 'macro-region',
         },
-        { id: 'geology', label: 'Geology', available: true, selectedLayer: 'geology' },
+        { id: 'geology', labelKey: 'layers.geology', available: true, selectedLayer: 'geology' },
       ],
     },
   ];

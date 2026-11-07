@@ -3,8 +3,8 @@ import type { GenerationProgressState } from '../../../stores';
 import type { StageInfo, StageStatistics } from '../../../utils/map-generator';
 
 const stageInfos = [
-  { id: 'world-shape', name: 'World shape' },
-  { id: 'macro-region', name: 'Macro region' },
+  { id: 'world-shape', nameKey: 'stages.worldShape' },
+  { id: 'macro-region', nameKey: 'stages.macroRegion' },
 ] as const satisfies readonly StageInfo[];
 
 function statistics(
@@ -14,7 +14,7 @@ function statistics(
 ): StageStatistics {
   return {
     stageId,
-    stageName: stageId,
+    stageNameKey: 'stages.worldShape',
     status,
     startedAt: 0,
     finishedAt: durationMs,
@@ -47,8 +47,8 @@ describe('ProgressTracker', () => {
       status: 'running',
       startedAt: expect.any(Number),
       stages: [
-        { id: 'world-shape', name: 'World shape', status: 'pending', percentage: 0 },
-        { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
+        { id: 'world-shape', nameKey: 'stages.worldShape', status: 'pending', percentage: 0 },
+        { id: 'macro-region', nameKey: 'stages.macroRegion', status: 'pending', percentage: 0 },
       ],
     });
   });
@@ -59,8 +59,8 @@ describe('ProgressTracker', () => {
     tracker.start();
 
     expect(latest().stages).toEqual([
-      { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0 },
-      { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
+      { id: 'world-shape', nameKey: 'stages.worldShape', status: 'skipped', percentage: 0 },
+      { id: 'macro-region', nameKey: 'stages.macroRegion', status: 'pending', percentage: 0 },
     ]);
   });
 
@@ -71,7 +71,7 @@ describe('ProgressTracker', () => {
     tracker.handle({
       type: 'stage-started',
       stageId: 'world-shape',
-      stageName: 'World shape',
+      stageNameKey: 'stages.worldShape',
       stageIndex: 0,
       stageCount: 2,
     });
@@ -80,7 +80,7 @@ describe('ProgressTracker', () => {
     tracker.handle({
       type: 'stage-completed',
       stageId: 'world-shape',
-      stageName: 'World shape',
+      stageNameKey: 'stages.worldShape',
       stageIndex: 0,
       stageCount: 2,
       statistics: statistics('world-shape', 'completed', 120),
@@ -100,7 +100,7 @@ describe('ProgressTracker', () => {
     tracker.handle({
       type: 'stage-progress',
       stageId: 'macro-region',
-      stageName: 'Macro region',
+      stageNameKey: 'stages.macroRegion',
       stageIndex: 1,
       stageCount: 2,
       progress: 0.42,
@@ -117,7 +117,7 @@ describe('ProgressTracker', () => {
     tracker.handle({
       type: 'stage-progress',
       stageId: 'macro-region',
-      stageName: 'Macro region',
+      stageNameKey: 'stages.macroRegion',
       stageIndex: 0,
       stageCount: 2,
       progress: 0.42,
@@ -138,7 +138,7 @@ describe('ProgressTracker', () => {
     tracker.handle({
       type: 'stage-failed',
       stageId: 'macro-region',
-      stageName: 'Macro region',
+      stageNameKey: 'stages.macroRegion',
       stageIndex: 1,
       stageCount: 2,
       statistics: statistics('macro-region', 'failed', 30),
@@ -155,7 +155,7 @@ describe('ProgressTracker', () => {
     tracker.handle({
       type: 'stage-skipped',
       stageId: 'world-shape',
-      stageName: 'World shape',
+      stageNameKey: 'stages.worldShape',
       stageIndex: 0,
       stageCount: 2,
       statistics: statistics('world-shape', 'skipped', 0),
@@ -180,9 +180,9 @@ describe('planProgress', () => {
   it('plans the known stages before a run with reused ones already skipped', () => {
     const planned = planProgress(
       [
-        { id: 'world-shape', name: 'World shape' },
-        { id: 'macro-region', name: 'Macro region' },
-        { id: 'geology', name: 'Geology' },
+        { id: 'world-shape', nameKey: 'stages.worldShape' },
+        { id: 'macro-region', nameKey: 'stages.macroRegion' },
+        { id: 'geology', nameKey: 'stages.geology' },
       ],
       ['world-shape', 'macro-region']
     );
@@ -191,9 +191,9 @@ describe('planProgress', () => {
       status: 'running',
       startedAt: expect.any(Number),
       stages: [
-        { id: 'world-shape', name: 'World shape', status: 'skipped', percentage: 0 },
-        { id: 'macro-region', name: 'Macro region', status: 'skipped', percentage: 0 },
-        { id: 'geology', name: 'Geology', status: 'pending', percentage: 0 },
+        { id: 'world-shape', nameKey: 'stages.worldShape', status: 'skipped', percentage: 0 },
+        { id: 'macro-region', nameKey: 'stages.macroRegion', status: 'skipped', percentage: 0 },
+        { id: 'geology', nameKey: 'stages.geology', status: 'pending', percentage: 0 },
       ],
     });
   });

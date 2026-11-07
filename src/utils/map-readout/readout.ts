@@ -1,16 +1,22 @@
+import type { MessageKey } from '../../i18n';
 import { formatArea, formatDistance, formatMeasure, formatPercent } from '../format';
 import { isHeatZoneInfoList, type MacroRegionInfo } from '../map-generator/info-definitions';
 import type { GeologicalRegionPlan } from '../map-generator/types';
-import { heatZoneClassLabel, regionStyle } from '../map-layers';
-import type {
-  MapBaseLayerId,
-  MapInfo,
-  MapInspection,
-  MapOverlayInspection,
-  RasterMapInspection,
-  VectorMapInspection,
+import {
+  type MapBaseLayerId,
+  type MapInfo,
+  type MapInspection,
+  type MapOverlayInspection,
+  OVERLAY_LAYERS,
+  type RasterMapInspection,
+  type VectorMapInspection,
 } from '../map-renderer';
 import { cellOriginMeters, type WorldDimensions } from '../world-dimensions';
+
+export interface TranslatedText {
+  readonly key: MessageKey;
+  readonly params?: Readonly<Record<string, string | number | { readonly key: MessageKey }>>;
+}
 
 export interface PointerSample {
   /** Source raster cell under the pointer. */
@@ -38,7 +44,7 @@ export interface Measurement {
 /** Labelled pair of X/Y values rendered as aligned columns. */
 export interface ReadoutLine {
   /** Column caption; omitted for a continuation of the line above. */
-  readonly label?: string;
+  readonly labelKey?: MessageKey;
   readonly x: string;
   readonly y: string;
 }
@@ -46,13 +52,13 @@ export interface ReadoutLine {
 /** Interactive entry rendered as a button instead of a label/value pair. */
 export interface ReadoutAction {
   readonly id: string;
-  readonly label: string;
+  readonly labelKey: MessageKey;
 }
 
 export interface ReadoutItem {
   readonly id: string;
-  readonly label: string;
-  readonly value: string;
+  readonly labelKey: MessageKey;
+  readonly value?: string | TranslatedText;
   /** When present, rendered as aligned X/Y columns instead of a single value. */
   readonly lines?: readonly ReadoutLine[];
   /** When present, rendered as a button. */
@@ -65,10 +71,33 @@ export interface ReadoutItem {
   readonly heading?: boolean;
 }
 
-const EMPTY = '—';
+const DIRECTION_KEYS: readonly MessageKey[] = [
+  'directions.east',
+  'directions.southeast',
+  'directions.south',
+  'directions.southwest',
+  'directions.west',
+  'directions.northwest',
+  'directions.north',
+  'directions.northeast',
+];
 
-/** Share names of the macro region form; the readout keeps its own short pair. */
-const WIDTH_LABELS = { ring: 'Ring thickness', band: 'Band width' } as const;
+function oceanCurrentText(angle: number, strength: number): TranslatedText {
+  if (strength < 0.01) {
+    return { key: 'readout.calm' };
+  }
+  const turn = Math.round(angle / (Math.PI / 4)) % DIRECTION_KEYS.length;
+  const directionKey = DIRECTION_KEYS[(turn + DIRECTION_KEYS.length) % DIRECTION_KEYS.length];
+  if (directionKey === undefined) {
+    throw new RangeError(`Ocean-current angle is out of range: ${angle}.`);
+  }
+  return {
+    key: 'readout.oceanCurrentValue',
+    params: { strength: Math.round(strength * 100), direction: { key: directionKey } },
+  };
+}
+
+const EMPTY = '—';
 
 export interface ReadoutOptions {
   /** When false, action buttons are dropped, e.g. in the fullscreen preview. */
@@ -87,7 +116,7 @@ export function readoutItems(
   const items: ReadoutItem[] = [
     {
       id: 'position',
-      label: 'Position',
+      labelKey: 'readout.position',
       value: EMPTY,
       lines: readout ? describePositionLines(readout.position, info) : undefined,
       separated: measured === undefined,
@@ -95,14 +124,25 @@ export function readoutItems(
     ...(measured ? [measured] : []),
     ...inspectionItems(inspection, info),
     ...(overlays.length > 0
-      ? [
-          { id: 'overlays', label: 'Overlays', value: '', heading: true, detached: true },
-          ...overlays.map(overlay => ({
-            id: `overlay-${overlay.overlayId}`,
-            label: overlay.label,
-            value: overlay.value,
-          })),
-        ]
+      ? ([
+          {
+            id: 'overlays',
+            labelKey: 'readout.overlays',
+            value: '',
+            heading: true,
+            detached: true,
+          },
+          ...overlays.map(overlay => {
+            const labelKey = OVERLAY_LAYERS[overlay.overlayId].labelKey;
+            return {
+              id: `overlay-${overlay.overlayId}`,
+              labelKey,
+              value: overlay.oceanCurrent
+                ? oceanCurrentText(overlay.oceanCurrent.angle, overlay.oceanCurrent.strength)
+                : overlay.value,
+            };
+          }),
+        ] satisfies readonly ReadoutItem[])
       : []),
   ];
   return options.actions === false ? items.filter(item => item.action === undefined) : items;
@@ -141,8 +181,12 @@ function heightmapReadout(inspection: RasterMapInspection): readonly ReadoutItem
     return undefined;
   }
   return [
-    { id: 'surface', label: 'Surface', value: height > 0 ? 'Land' : 'Water' },
-    { id: 'height', label: 'Height', value: `${formatMeters(height)} m` },
+    {
+      id: 'surface',
+      labelKey: 'readout.surface',
+      value: { key: height > 0 ? 'readout.land' : 'readout.water' },
+    },
+    { id: 'height', labelKey: 'readout.height', value: `${formatMeters(height)} m` },
   ];
 }
 
@@ -164,8 +208,8 @@ function heatZoneReadout(
     return undefined;
   }
   return [
-    { id: 'zone', label: 'Heat zone', value: zone.label },
-    { id: 'thermal', label: 'Class', value: heatZoneClassLabel(zone.thermal) },
+    { id: 'zone', labelKey: 'readout.heatZone', value: zone.label },
+    { id: 'thermal', labelKey: 'readout.class', value: { key: `readout.${zone.thermal}` } },
   ];
 }
 
@@ -175,7 +219,7 @@ function moistureReadout(inspection: RasterMapInspection): readonly ReadoutItem[
   if (value === undefined) {
     return undefined;
   }
-  return [{ id: 'moisture', label: 'Moisture', value: formatPercent(value) }];
+  return [{ id: 'moisture', labelKey: 'readout.moisture', value: formatPercent(value) }];
 }
 
 /** Raster layers report their value; vector layers name the hovered element. */
@@ -188,7 +232,7 @@ function inspectionItems(
     if (provider) {
       return provider(inspection, info) ?? [];
     }
-    return [{ id: 'name', label: 'Name', value: inspection.hit?.id ?? EMPTY }];
+    return [{ id: 'name', labelKey: 'readout.name', value: inspection.hit?.id ?? EMPTY }];
   }
   if (inspection?.kind === 'raster') {
     const items = RASTER_READOUTS[inspection.layerId]?.(inspection, info);
@@ -196,19 +240,13 @@ function inspectionItems(
       return items;
     }
   }
-  return [
-    {
-      id: 'value',
-      label: inspection?.label ?? 'Value',
-      value: describeValue(inspection),
-    },
-  ];
+  return [{ id: 'value', labelKey: 'readout.value', ...describeValue(inspection) }];
 }
 
 /** Pixel coordinates with the cell origin in meters when dimensions are known. */
 function describePositionLines(position: PointerSample, info: MapInfo): readonly ReadoutLine[] {
   const lines: ReadoutLine[] = [
-    { label: 'Position', x: `X ${position.x} cell`, y: `Y ${position.y} cell` },
+    { labelKey: 'readout.position', x: `X ${position.x} cell`, y: `Y ${position.y} cell` },
   ];
   const dimensions = worldDimensions(info);
   if (dimensions) {
@@ -259,28 +297,25 @@ function measuredItem(measurement: Measurement, info: MapInfo): ReadoutItem | un
   }
   return {
     id: 'distance',
-    label: 'Distance',
+    labelKey: 'readout.distance',
     value: formatDistance(total),
     separated: true,
   };
 }
 
-function describeValue(inspection: MapInspection | undefined): string {
-  if (!inspection || inspection.kind === 'vector') {
-    return EMPTY;
-  }
-  if (inspection.value === undefined) {
-    return EMPTY;
+function describeValue(inspection: MapInspection | undefined): Pick<ReadoutItem, 'value'> {
+  if (!inspection || inspection.kind === 'vector' || inspection.value === undefined) {
+    return { value: EMPTY };
   }
   switch (inspection.layerId) {
     case 'world-shape':
-      return inspection.value === 1 ? 'Inside' : 'Outside';
+      return { value: { key: inspection.value === 1 ? 'readout.inside' : 'readout.outside' } };
     case 'macro-region':
-      return `Region ${inspection.value}`;
+      return { value: { key: 'readout.regionIndex', params: { index: inspection.value } } };
     case 'heat-zones':
-      return String(inspection.value);
+      return { value: String(inspection.value) };
     default:
-      return inspection.value.toFixed(3);
+      return { value: inspection.value.toFixed(3) };
   }
 }
 
@@ -298,23 +333,36 @@ function macroRegionReadout(
     return undefined;
   }
   const items: ReadoutItem[] = [
-    { id: 'region', label: 'Region', value: region.label.trim() || `Region ${index}` },
-    { id: 'range', label: 'Range', value: rangeText(region) },
-    { id: 'width', label: WIDTH_LABELS[region.kind], value: widthText(region, info) },
-    { id: 'danger', label: 'Danger', value: region.danger.toFixed(2) },
+    {
+      id: 'region',
+      labelKey: 'readout.region',
+      ...(region.label.trim()
+        ? { value: region.label }
+        : { value: { key: 'readout.regionIndex', params: { index } } }),
+    },
+    {
+      id: 'range',
+      labelKey: 'readout.range',
+      value: {
+        key: region.kind === 'ring' ? 'readout.rangeRing' : 'readout.rangeBand',
+        params: {
+          from: percent(region.range[0] * (region.kind === 'ring' ? 200 : 100)),
+          to: percent(region.range[1] * (region.kind === 'ring' ? 200 : 100)),
+        },
+      },
+    },
+    {
+      id: 'width',
+      labelKey: region.kind === 'ring' ? 'readout.ringThickness' : 'readout.bandWidth',
+      value: widthText(region, info),
+    },
+    { id: 'danger', labelKey: 'readout.danger', value: region.danger.toFixed(2) },
   ];
   const area = areaItem(info, index);
   if (area) {
     items.push(area);
   }
   return items;
-}
-
-/** Normalized range as percentages: of the radius for rings, of the axis for bands. */
-function rangeText(region: MacroRegionInfo): string {
-  const scale = region.kind === 'ring' ? 200 : 100;
-  const unit = region.kind === 'ring' ? 'radius' : 'axis';
-  return `${percent(region.range[0] * scale)}–${percent(region.range[1] * scale)}% of the ${unit}`;
 }
 
 /** Base regions share the layout; an overlay band reports its coverage of the axis. */
@@ -341,8 +389,14 @@ function areaItem(info: MapInfo, index: number): ReadoutItem | undefined {
     (sum, entry) => sum + (typeof entry === 'number' && Number.isFinite(entry) ? entry : 0),
     0
   );
-  const share = total > 0 ? ` · ${((area / total) * 100).toFixed(1)}%` : '';
-  return { id: 'area', label: 'Area', value: `${formatArea(area)}${share}` };
+  const share = total > 0 ? ((area / total) * 100).toFixed(1) : '';
+  return {
+    id: 'area',
+    labelKey: 'readout.area',
+    ...(share
+      ? { value: { key: 'readout.areaShare', params: { area: formatArea(area), share } } }
+      : { value: formatArea(area) }),
+  };
 }
 
 /** Sum of the base region extents, used as the denominator of their width share. */
@@ -389,8 +443,19 @@ function isMacroRegionInfo(value: unknown): value is MacroRegionInfo {
 
 /** Readout of the BaseClimate current under the pointer. */
 function oceanCurrentReadout(inspection: VectorMapInspection): readonly ReadoutItem[] | undefined {
-  const value = inspection.hit?.label;
-  return value ? [{ id: 'current', label: 'Ocean current', value }] : undefined;
+  const hit = inspection.hit;
+  if (!hit) {
+    return undefined;
+  }
+  return [
+    {
+      id: 'current',
+      labelKey: 'readout.oceanCurrent',
+      value: hit.oceanCurrent
+        ? oceanCurrentText(hit.oceanCurrent.angle, hit.oceanCurrent.strength)
+        : (hit.label ?? EMPTY),
+    },
+  ];
 }
 
 /** Readout of the geological region under the pointer. */
@@ -409,17 +474,20 @@ function geologyReadout(
   if (!region) {
     return undefined;
   }
-  const style = regionStyle(region.type);
   return [
-    { id: 'region', label: 'Region', value: region.id },
-    { id: 'type', label: 'Type', value: style.label },
-    { id: 'character', label: 'Character', value: style.description },
+    { id: 'region', labelKey: 'readout.region', value: region.id },
+    { id: 'type', labelKey: 'readout.type', value: { key: `readout.${region.type}` } },
+    {
+      id: 'character',
+      labelKey: 'readout.character',
+      value: { key: `readout.${region.type}Description` },
+    },
     ...areaItems(region, plan.worldAreaSquareMeters),
     {
       id: 'edit-region',
-      label: 'Edit region',
+      labelKey: 'readout.editRegion',
       value: '',
-      action: { id: 'edit-region', label: 'Edit region' },
+      action: { id: 'edit-region', labelKey: 'readout.editRegion' },
     },
   ];
 }
@@ -431,13 +499,20 @@ function areaItems(region: GeologicalRegionPlan, worldArea: unknown): readonly R
   }
   const share =
     typeof worldArea === 'number' && Number.isFinite(worldArea) && worldArea > 0
-      ? ` · ${((region.areaSquareMeters / worldArea) * 100).toFixed(1)}%`
+      ? ((region.areaSquareMeters / worldArea) * 100).toFixed(1)
       : '';
   return [
     {
       id: 'area',
-      label: 'Area',
-      value: `${formatArea(region.areaSquareMeters)}${share}`,
+      labelKey: 'readout.area',
+      ...(share
+        ? {
+            value: {
+              key: 'readout.areaShare',
+              params: { area: formatArea(region.areaSquareMeters), share },
+            },
+          }
+        : { value: formatArea(region.areaSquareMeters) }),
     },
   ];
 }

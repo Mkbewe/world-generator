@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, Text } from '@radix-ui/themes';
 
 import { formatBytes } from '../../../../../utils/format';
@@ -10,6 +11,7 @@ interface GridSummaryFieldProps {
 
 /** Shows the derived sample grid and the estimated memory before generating. */
 export function GridSummaryField({ sizeMeters, metersPerSample }: GridSummaryFieldProps) {
+  const { t } = useTranslation();
   const grid = summarizeWorldGrid(sizeMeters, metersPerSample);
   const effective = grid.metersPerSample;
   const effectiveLabel = effective >= 1 ? effective.toFixed(0) : effective.toFixed(1);
@@ -17,13 +19,19 @@ export function GridSummaryField({ sizeMeters, metersPerSample }: GridSummaryFie
   return (
     <Flex direction='column' gap='1'>
       <Text size='1' color='gray'>
-        {grid.dimensions.sampleWidth} × {grid.dimensions.sampleHeight} samples ·{' '}
-        {formatBytes(grid.memoryBytes)} data · {effectiveLabel} m per sample
+        {t('forms.worldShape.gridSummary', {
+          width: grid.dimensions.sampleWidth,
+          height: grid.dimensions.sampleHeight,
+          memory: formatBytes(grid.memoryBytes),
+          detail: effectiveLabel,
+        })}
       </Text>
       {grid.clamped && (
         <Text size='1' color='orange'>
-          {metersPerSample} m per sample does not fit the sample budget; generation uses{' '}
-          {effectiveLabel} m per sample. Pick a bigger detail step to match it.
+          {t('forms.worldShape.gridClamped', {
+            requested: metersPerSample,
+            effective: effectiveLabel,
+          })}
         </Text>
       )}
     </Flex>
