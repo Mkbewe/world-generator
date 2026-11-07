@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { EnterFullScreenIcon, ExitFullScreenIcon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Avatar, Badge, Flex, Heading, IconButton } from '@radix-ui/themes';
@@ -15,6 +16,7 @@ interface HeaderProps {
 
 export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
   const { canFullscreen, isFullscreen, setIsFullscreen } = useHeaderActions();
+  const { t } = useTranslation();
   const fullscreenTriggerRef = useRef<HTMLButtonElement>(null);
   const wasFullscreenRef = useRef(false);
 
@@ -46,7 +48,7 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
                 fallback='WG'
               />
               <Heading size='6' weight='bold' truncate className={styles.title}>
-                World Generator
+                {t('app.name')}
               </Heading>
             </Link>
             {isFullscreen && (

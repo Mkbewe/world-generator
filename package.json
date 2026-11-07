@@ -31,8 +31,10 @@
     "@radix-ui/react-navigation-menu": "^1.2.22",
     "@radix-ui/themes": "^3.3.0",
     "@vercel/global-config": "1.5.1",
+    "i18next": "^26.7.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-i18next": "^17.1.13",
     "react-router": "^8.3.0",
     "simplex-noise": "^4.0.3",
     "zustand": "^5.0.15"
