@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   FrameIcon,
   GearIcon,
@@ -33,6 +34,7 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) {
+  const { t } = useTranslation();
   const activeTab = useViewSyncStore(state => state.settingsTab);
   const setSettingsTab = useViewSyncStore(state => state.setSettingsTab);
   const seed = useGeneralFormStore(state => state.seed);
@@ -45,7 +47,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
   const setMetersPerSample = useWorldShapeFormStore(state => state.setMetersPerSample);
   const formTabs: Partial<Record<MapBaseLayerId, Omit<VerticalTabItem, 'value'>>> = {
     'world-shape': {
-      label: 'World shape',
+      label: t('settings.worldShape'),
       icon: <GlobeIcon />,
       content: (
         <WorldShapeForm
@@ -59,22 +61,22 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
       ),
     },
     'macro-region': {
-      label: 'Macro regions',
+      label: t('settings.macroRegions'),
       icon: <LayersIcon />,
       content: <MacroRegionForm />,
     },
     'heat-zones': {
-      label: 'Base Climate',
+      label: t('settings.baseClimate'),
       icon: <SunIcon />,
       content: <BaseClimateForm />,
     },
     'geology': {
-      label: 'Geology',
+      label: t('settings.geology'),
       icon: <SewingPinIcon />,
       content: <GeologyForm />,
     },
     'heightmap': {
-      label: 'Heightmap',
+      label: t('settings.heightmap'),
       icon: <FrameIcon />,
       content: <HeightmapForm />,
     },
@@ -82,7 +84,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
   const tabs: readonly VerticalTabItem[] = [
     {
       value: 'general',
-      label: 'General',
+      label: t('settings.general'),
       icon: <GearIcon />,
       content: <GeneralForm seed={seed} onSeedChange={setSeed} />,
     },
@@ -102,7 +104,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
       <Flex direction='column' gap='4' height='100%'>
         <Flex justify='between' align='center'>
           <Heading size='5' color='violet'>
-            Map Settings
+            {t('settings.title')}
           </Heading>
           <TabLinkToggle />
         </Flex>
@@ -110,7 +112,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
         <Flex direction='column' flexGrow='1'>
           <VerticalTabs
             items={tabs}
-            ariaLabel='Generation settings'
+            ariaLabel={t('settings.ariaLabel')}
             value={activeTab}
             onValueChange={handleTabChange}
           />
@@ -118,7 +120,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
         <Flex direction='column' gap='4'>
           <Separator size='4' />
           <Button onClick={onGenerate} loading={isGenerating} data-testid='generate-map-button'>
-            Generate Map
+            {t('settings.generate')}
           </Button>
         </Flex>
       </Flex>

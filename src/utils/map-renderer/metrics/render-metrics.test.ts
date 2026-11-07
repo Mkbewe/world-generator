@@ -112,7 +112,7 @@ describe('RenderMetrics', () => {
 
       expect(reports[0].layers[0]).toMatchObject({
         kind: 'vector',
-        elements: { label: 'Regions', count: 2 },
+        elements: { labelKey: 'statistics.render.elements', count: 2 },
       });
       expect(reports[0].layers[0]).not.toHaveProperty('pixels');
       expect(reports[0].layers[0]).not.toHaveProperty('sourceWidth');

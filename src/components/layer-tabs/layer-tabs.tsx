@@ -1,4 +1,5 @@
 import { memo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FrameIcon, GlobeIcon, LayersIcon, SewingPinIcon, SunIcon } from '@radix-ui/react-icons';
 import { Tabs } from '@radix-ui/themes';
 
@@ -24,6 +25,7 @@ export const LayerTabs = memo(function LayerTabs({
   onLayerChange,
   expanded = false,
 }: LayerTabsProps) {
+  const { t } = useTranslation();
   const { tabs, activeTab } = navigation;
   const selectTab = (id: string): void => {
     const tab = tabs.find(tab => tab.id === id);
@@ -40,13 +42,13 @@ export const LayerTabs = memo(function LayerTabs({
       className={styles.root}
       data-expanded={expanded || undefined}
     >
-      <Tabs.List aria-label='Map layers' className={styles.strip}>
+      <Tabs.List aria-label={t('layers.aria')} className={styles.strip}>
         {tabs.map(tab => (
           <Tabs.Trigger
             key={tab.id}
             value={tab.id}
-            aria-label={tab.label}
-            title={tab.label}
+            aria-label={t(tab.labelKey)}
+            title={t(tab.labelKey)}
             disabled={!tab.available}
             className={styles.trigger}
           >

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, RadioCards, Text } from '@radix-ui/themes';
 
 import type { MapBaseLayerId, MapLayerNavigation, MapLayerNode } from '../../../utils/map-renderer';
@@ -15,6 +16,8 @@ function rendersViews(
 }
 
 export function LayerViews({ tabs, activeTab, onViewChange }: LayerViewsProps) {
+  const { t } = useTranslation();
+
   return (
     <div className={styles.sections}>
       {tabs.filter(rendersViews).map(group => (
@@ -28,14 +31,14 @@ export function LayerViews({ tabs, activeTab, onViewChange }: LayerViewsProps) {
           inert={group.id !== activeTab}
         >
           <Text size='2' weight='bold' color='gray'>
-            {group.label}
+            {t(group.labelKey)}
           </Text>
           <RadioCards.Root
             columns='1'
             gap='2'
             size='1'
             className={styles.options}
-            aria-label={group.label + ' view'}
+            aria-label={t('layers.view', { name: t(group.labelKey) })}
             value={group.selectedChild}
             onValueChange={value => {
               const child = group.children.find(child => child.id === value);
@@ -51,7 +54,7 @@ export function LayerViews({ tabs, activeTab, onViewChange }: LayerViewsProps) {
                 disabled={!child.available}
                 className={styles.option}
               >
-                {child.label}
+                {t(child.labelKey)}
               </RadioCards.Item>
             ))}
           </RadioCards.Root>

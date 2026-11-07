@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { metersPerCssPixel, scaleBarSegment } from './lib/scale-bar';
 import { useElementSize } from '../../hooks/use-element-size';
@@ -15,6 +16,7 @@ export interface ScaleBarProps {
 
 /** Round-distance scale bar drawn over the preview corner. */
 export function ScaleBar({ containerRef, zoom, dimensions }: ScaleBarProps) {
+  const { t } = useTranslation();
   const { width, height } = useElementSize(containerRef);
   const metersPerPixel = metersPerCssPixel(zoom, dimensions, width, height);
   const segment = metersPerPixel === undefined ? undefined : scaleBarSegment(metersPerPixel);
@@ -22,7 +24,11 @@ export function ScaleBar({ containerRef, zoom, dimensions }: ScaleBarProps) {
     return null;
   }
   return (
-    <div className={styles.bar} role='img' aria-label={`Scale: ${segment.label}`}>
+    <div
+      className={styles.bar}
+      role='img'
+      aria-label={t('scaleBar.label', { label: segment.label })}
+    >
       <span className={styles.label}>{segment.label}</span>
       <span className={styles.line} style={{ width: `${segment.pixels}px` }} />
     </div>

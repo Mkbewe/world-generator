@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
 import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
@@ -10,12 +11,13 @@ interface SizePresetFieldProps {
 }
 
 export function SizePresetField({ sizeMeters, onSelect }: SizePresetFieldProps) {
+  const { t } = useTranslation();
   const activePreset = SIZE_PRESETS.find(preset => preset.sizeMeters === sizeMeters)?.value;
 
   return (
     <Flex direction='column' gap='2'>
       <Text size='2' color='gray'>
-        Size preset:
+        {t('forms.worldShape.sizePreset')}
       </Text>
       <SegmentedControlScroll>
         <SegmentedControl.Root
@@ -30,7 +32,7 @@ export function SizePresetField({ sizeMeters, onSelect }: SizePresetFieldProps) 
         >
           {SIZE_PRESETS.map(preset => (
             <SegmentedControl.Item key={preset.value} value={preset.value}>
-              {preset.label}
+              {t(preset.labelKey)}
             </SegmentedControl.Item>
           ))}
         </SegmentedControl.Root>

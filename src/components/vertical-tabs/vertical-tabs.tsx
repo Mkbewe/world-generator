@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Flex, Heading, Separator, Tabs, Tooltip } from '@radix-ui/themes';
 
 import styles from './vertical-tabs.module.scss';
@@ -25,12 +26,15 @@ export interface VerticalTabsProps {
 
 export function VerticalTabs({
   items,
-  ariaLabel = 'Sections',
+  ariaLabel,
   defaultValue,
   value,
   onValueChange,
   side = 'left',
 }: VerticalTabsProps) {
+  const { t } = useTranslation();
+  const label = ariaLabel ?? t('common.sections');
+
   return (
     <Tabs.Root
       className={styles.root}
@@ -40,7 +44,7 @@ export function VerticalTabs({
       defaultValue={defaultValue ?? items[0]?.value}
       onValueChange={onValueChange}
     >
-      <Tabs.List className={styles.list} aria-label={ariaLabel}>
+      <Tabs.List className={styles.list} aria-label={label}>
         {items.map(item => (
           <Tabs.Trigger
             key={item.value}

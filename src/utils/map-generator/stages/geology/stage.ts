@@ -31,7 +31,7 @@ export class GeologyStage implements MapStage<
   { geologyPlan: GeologyPlan }
 > {
   readonly id = GEOLOGY_STAGE.id;
-  readonly name = GEOLOGY_STAGE.name;
+  readonly nameKey = GEOLOGY_STAGE.nameKey;
   readonly configKeys = GEOLOGY_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['heatZoneMap'];
   readonly writes = ['geologyPlan'] as const;

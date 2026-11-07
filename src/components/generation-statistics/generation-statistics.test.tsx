@@ -8,7 +8,7 @@ import type { StageStatistics } from '../../utils/map-generator';
 function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'world-shape',
-    stageName: 'World shape',
+    stageNameKey: 'stages.worldShape',
     status: 'completed',
     startedAt: 0,
     finishedAt: 12.5,
@@ -52,12 +52,12 @@ describe('GenerationStatisticsPanel', () => {
       statistics: [
         createStage({
           stageId: 'world-shape',
-          stageName: 'World shape',
+          stageNameKey: 'stages.worldShape',
           status: 'skipped',
           durationMs: 1200,
           details: { bytes: 1024 },
         }),
-        createStage({ stageId: 'macro-region', stageName: 'Macro region' }),
+        createStage({ stageId: 'macro-region', stageNameKey: 'stages.macroRegion' }),
       ],
       totalDurationMs: 12.5,
     });
@@ -81,8 +81,12 @@ describe('GenerationStatisticsPanel', () => {
   it('renders stage names and durations', () => {
     renderPanel({
       statistics: [
-        createStage({ stageId: 'world-shape', stageName: 'World shape' }),
-        createStage({ stageId: 'macro-region', stageName: 'Macro region', durationMs: 20.4 }),
+        createStage({ stageId: 'world-shape', stageNameKey: 'stages.worldShape' }),
+        createStage({
+          stageId: 'macro-region',
+          stageNameKey: 'stages.macroRegion',
+          durationMs: 20.4,
+        }),
       ],
       totalDurationMs: 40,
     });
@@ -110,7 +114,7 @@ describe('GenerationStatisticsPanel', () => {
       statistics: [
         createStage({
           stageId: 'macro-region',
-          stageName: 'Macro region',
+          stageNameKey: 'stages.macroRegion',
           details: {
             regions: 4,
             overlays: 0,
@@ -136,7 +140,7 @@ describe('GenerationStatisticsPanel', () => {
       statistics: [
         createStage({
           stageId: 'geology',
-          stageName: 'Geology',
+          stageNameKey: 'stages.geology',
           details: {
             regions: 5,
             ordinary: 3,

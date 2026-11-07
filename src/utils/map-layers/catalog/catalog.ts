@@ -31,7 +31,7 @@ const HEAT_ZONE_FALLBACK_PALETTE = {
 const CATALOG_ENTRIES = [
   {
     id: 'world-shape',
-    label: 'World shape',
+    labelKey: 'layers.worldShape',
     kind: 'raster',
     source: 'worldMask',
     dataType: 'uint8',
@@ -41,7 +41,7 @@ const CATALOG_ENTRIES = [
   },
   {
     id: 'macro-region',
-    label: 'Macro regions',
+    labelKey: 'layers.macroRegions',
     kind: 'raster',
     source: 'macroRegionIdMap',
     dataType: 'uint8',
@@ -52,14 +52,14 @@ const CATALOG_ENTRIES = [
   },
   {
     id: 'heat-zones',
-    label: 'Heat zones',
+    labelKey: 'layers.heatZones',
     kind: 'raster',
     source: 'heatZoneMap',
     dataType: 'int16',
     clipTo: 'world-shape',
     skipValue: -1,
     settingsForm: true,
-    group: { id: 'base-climate', label: 'Base Climate' },
+    group: { id: 'base-climate', labelKey: 'layers.baseClimate' },
     palette: HEAT_ZONE_FALLBACK_PALETTE,
     paletteFromInfo: info =>
       isHeatZoneInfoList(info.heatZoneInfo)
@@ -68,28 +68,28 @@ const CATALOG_ENTRIES = [
   },
   {
     id: 'moisture',
-    label: 'Moisture',
+    labelKey: 'layers.moisture',
     kind: 'raster',
     source: 'moistureBaseMap',
     dataType: 'float32',
     clipTo: 'world-shape',
     settingsForm: false,
-    group: { id: 'base-climate', label: 'Base Climate' },
+    group: { id: 'base-climate', labelKey: 'layers.baseClimate' },
     palette: { kind: 'ramp', stops: MOISTURE_STOPS },
   },
   {
     id: 'ocean-currents',
-    label: 'Ocean currents',
+    labelKey: 'layers.oceanCurrents',
     kind: 'vector',
     source: 'oceanCurrentMap',
     dataSources: ['oceanCurrentStrength'],
     clipTo: 'world-shape',
     settingsForm: false,
-    group: { id: 'base-climate', label: 'Base Climate' },
+    group: { id: 'base-climate', labelKey: 'layers.baseClimate' },
   },
   {
     id: 'geology',
-    label: 'Geology',
+    labelKey: 'layers.geology',
     kind: 'vector',
     source: 'geologyPlan',
     clipTo: 'world-shape',
@@ -97,7 +97,7 @@ const CATALOG_ENTRIES = [
   },
   {
     id: 'heightmap',
-    label: 'Heightmap',
+    labelKey: 'layers.heightmap',
     kind: 'raster',
     source: 'heightmap',
     dataType: 'float32',

@@ -1,25 +1,26 @@
+import type { MessageKey } from '../../../../../i18n';
 import type { BaseClimateFormPreset } from '../../../../../stores/form/base-climate-form';
 
 export interface BaseClimatePresetOption {
   readonly id: BaseClimateFormPreset;
-  readonly label: string;
-  readonly description: string;
+  readonly labelKey: MessageKey;
+  readonly descriptionKey: MessageKey;
 }
 
 export const BASE_CLIMATE_PRESET_OPTIONS: readonly BaseClimatePresetOption[] = [
   {
     id: 'ring',
-    label: 'Ring',
-    description: 'Temperate core, warm ring and a cold rim.',
+    labelKey: 'forms.baseClimate.presetRing',
+    descriptionKey: 'forms.baseClimate.presetRingDescription',
   },
   {
     id: 'horizontal',
-    label: 'Horizontal',
-    description: 'Cold poles, temperate belts and a warm equator.',
+    labelKey: 'forms.baseClimate.presetHorizontal',
+    descriptionKey: 'forms.baseClimate.presetHorizontalDescription',
   },
   {
     id: 'vertical',
-    label: 'Vertical',
-    description: 'Cold edges, temperate belts and a warm centre.',
+    labelKey: 'forms.baseClimate.presetVertical',
+    descriptionKey: 'forms.baseClimate.presetVerticalDescription',
   },
 ];

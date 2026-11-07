@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, Flex, Text, TextField } from '@radix-ui/themes';
 
 interface GeneralFormProps {
@@ -6,6 +7,7 @@ interface GeneralFormProps {
 }
 
 export function GeneralForm({ seed, onSeedChange }: GeneralFormProps) {
+  const { t } = useTranslation();
   const randomizeSeed = (): void => {
     onSeedChange(
       Math.floor(Math.random() * 1_000_000)
@@ -17,7 +19,7 @@ export function GeneralForm({ seed, onSeedChange }: GeneralFormProps) {
   return (
     <Flex direction='column' gap='2'>
       <Text as='label' htmlFor='general-form-seed-input' size='3' color='gray'>
-        Seed:
+        {t('forms.general.seed')}
       </Text>
       <Flex gap='2'>
         <TextField.Root
@@ -28,7 +30,7 @@ export function GeneralForm({ seed, onSeedChange }: GeneralFormProps) {
           style={{ flexGrow: 1 }}
         />
         <Button variant='soft' size='3' onClick={randomizeSeed}>
-          Randomize
+          {t('forms.general.randomize')}
         </Button>
       </Flex>
     </Flex>

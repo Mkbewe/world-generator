@@ -11,19 +11,6 @@ const MAX_ARROW_LENGTH = 24;
 /** Arrowhead length as a share of the whole arrow and its half-spread. */
 const HEAD_LENGTH_RATIO = 0.45;
 const HEAD_SPREAD_RATIO = 0.55;
-/** 8-point names in map-frame clockwise order, starting at +x (east). */
-const DIRECTIONS = [
-  'East',
-  'Southeast',
-  'South',
-  'Southwest',
-  'West',
-  'Northwest',
-  'North',
-  'Northeast',
-] as const;
-/** Strength below which the readout reports calm instead of a direction. */
-const CALM_STRENGTH = 0.01;
 
 /** One arrow sampled from the BaseClimate current rasters. */
 export interface OceanCurrentArrow {
@@ -91,17 +78,4 @@ export function traceOceanCurrentArrows(
     context.moveTo(tipX, tipY);
     context.lineTo(backX + directionY * spread, backY - directionX * spread);
   }
-}
-
-/** Direction and strength as a short readout value, e.g. "Southeast · 43%". */
-export function describeOceanCurrent(angle: number, strength: number): string {
-  if (strength < CALM_STRENGTH) {
-    return 'Calm';
-  }
-  const turn = Math.round(angle / (Math.PI / 4)) % DIRECTIONS.length;
-  const direction = DIRECTIONS[(turn + DIRECTIONS.length) % DIRECTIONS.length];
-  if (direction === undefined) {
-    throw new RangeError(`Ocean-current angle is out of range: ${angle}.`);
-  }
-  return `${direction} · ${Math.round(strength * 100)}%`;
 }

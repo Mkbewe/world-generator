@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Link, useRouteError } from 'react-router';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Heading, Text } from '@radix-ui/themes';
@@ -6,6 +7,7 @@ import styles from '../not-found/not-found-page.module.scss';
 
 export function ErrorPage() {
   const error = useRouteError();
+  const { t } = useTranslation();
   const message = error instanceof Error ? error.message : undefined;
 
   return (
@@ -14,14 +16,13 @@ export function ErrorPage() {
         <Flex direction='column' align='center' gap='5' py='5'>
           <ExclamationTriangleIcon className={styles.icon} aria-hidden />
           <Text size='8' color='violet' weight='bold'>
-            Error 500
+            {t('errorPage.code')}
           </Text>
           <Heading size='6' align='center'>
-            The world generator ran aground
+            {t('errorPage.title')}
           </Heading>
           <Text size='3' color='gray' align='center'>
-            An unexpected current wrecked this page. You can try sailing again or head back to
-            charted waters.
+            {t('errorPage.description')}
           </Text>
           {message && (
             <Text size='2' color='gray' align='center'>
@@ -29,7 +30,7 @@ export function ErrorPage() {
             </Text>
           )}
           <Button asChild>
-            <Link to='/'>Back to home</Link>
+            <Link to='/'>{t('errorPage.back')}</Link>
           </Button>
         </Flex>
       </Card>

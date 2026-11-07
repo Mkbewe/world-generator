@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, Text, TextField } from '@radix-ui/themes';
 
 import { MAX_WORLD_SIZE, MIN_WORLD_SIZE } from '../lib/world-shape';
@@ -9,10 +10,12 @@ interface SizeInputFieldProps {
 }
 
 export function SizeInputField({ value, onChange, onCommit }: SizeInputFieldProps) {
+  const { t } = useTranslation();
+
   return (
     <Flex direction='column' gap='2'>
       <Text as='label' htmlFor='world-shape-form-size' size='2' color='gray'>
-        Custom size:
+        {t('forms.worldShape.customSize')}
       </Text>
       <TextField.Root
         id='world-shape-form-size'
@@ -29,7 +32,7 @@ export function SizeInputField({ value, onChange, onCommit }: SizeInputFieldProp
           }
         }}
       >
-        <TextField.Slot side='right'>m</TextField.Slot>
+        <TextField.Slot side='right'>{t('forms.worldShape.metersUnit')}</TextField.Slot>
       </TextField.Root>
     </Flex>
   );

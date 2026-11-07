@@ -14,7 +14,7 @@ import type { StageStatistics } from '../../utils/map-generator';
 function createStage(overrides: Partial<StageStatistics> = {}): StageStatistics {
   return {
     stageId: 'macro-region',
-    stageName: 'Macro region',
+    stageNameKey: 'stages.macroRegion',
     status: 'completed',
     startedAt: 0,
     finishedAt: 20.4,
@@ -59,7 +59,7 @@ describe('StatisticsPage', () => {
         statistics: [
           createStage({
             stageId: 'world-shape',
-            stageName: 'World shape',
+            stageNameKey: 'stages.worldShape',
             durationMs: 12.5,
           }),
           createStage(),

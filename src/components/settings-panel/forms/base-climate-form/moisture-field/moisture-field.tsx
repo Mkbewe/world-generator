@@ -1,45 +1,46 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, Text } from '@radix-ui/themes';
 
 import { useBaseClimateFormStore } from '../../../../../stores';
 import { SliderField } from '../../../../slider-field';
 
 export function MoistureField() {
+  const { t } = useTranslation();
   const moisture = useBaseClimateFormStore(state => state.moisture);
   const setMoisture = useBaseClimateFormStore(state => state.setMoisture);
 
   return (
     <Flex direction='column' gap='2'>
       <Text size='2' weight='bold' color='gray'>
-        Moisture
+        {t('forms.baseClimate.moisture')}
       </Text>
       <SliderField
-        label='World moisture'
-        description='Shifts the base moisture field towards dry or wet. The seed still shapes the local variation.'
+        label={t('forms.baseClimate.moistureLabel')}
+        description={t('forms.baseClimate.moistureDescription')}
         value={moisture}
         min={0}
         max={1}
         step={0.05}
-        format={moistureLabel}
-        rangeLabels={['Dry', 'Wet']}
+        format={value => t(moistureKey(value), { percent: Math.round(value * 100) })}
+        rangeLabels={[t('forms.baseClimate.dry'), t('forms.baseClimate.wet')]}
         onChange={setMoisture}
       />
     </Flex>
   );
 }
 
-function moistureLabel(value: number): string {
-  const percent = Math.round(value * 100);
+function moistureKey(value: number) {
   if (value <= 0.2) {
-    return `Dry · ${percent}%`;
+    return 'forms.baseClimate.moistureDry' as const;
   }
   if (value < 0.45) {
-    return `Slightly dry · ${percent}%`;
+    return 'forms.baseClimate.moistureSlightlyDry' as const;
   }
   if (value <= 0.55) {
-    return `Balanced · ${percent}%`;
+    return 'forms.baseClimate.moistureBalanced' as const;
   }
   if (value < 0.8) {
-    return `Slightly wet · ${percent}%`;
+    return 'forms.baseClimate.moistureSlightlyWet' as const;
   }
-  return `Wet · ${percent}%`;
+  return 'forms.baseClimate.moistureWet' as const;
 }

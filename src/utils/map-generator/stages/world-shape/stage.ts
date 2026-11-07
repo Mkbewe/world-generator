@@ -13,7 +13,7 @@ export class WorldShapeStage implements MapStage<
   { worldMask: Uint8Array }
 > {
   readonly id: PipelineStageId = WORLD_SHAPE_STAGE.id;
-  readonly name = WORLD_SHAPE_STAGE.name;
+  readonly nameKey = WORLD_SHAPE_STAGE.nameKey;
   readonly configKeys = WORLD_SHAPE_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = [];
   readonly writes = ['worldMask'] as const;

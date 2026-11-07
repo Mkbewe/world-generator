@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex } from '@radix-ui/themes';
 
 import { RegionTerrainEditor } from './region-terrain-editor';
@@ -18,6 +19,7 @@ import { regionId } from '../lib/region-id';
 
 /** Global heightmap settings and the terrain sliders of every region. */
 export function HeightmapForm(): React.JSX.Element {
+  const { t } = useTranslation();
   const heightmap = useHeightmapFormStore(state => state.heightmap);
   const terrainSlots = useHeightmapFormStore(state => state.slots);
   const setRelief = useHeightmapFormStore(state => state.setRelief);
@@ -27,7 +29,7 @@ export function HeightmapForm(): React.JSX.Element {
   const slots = useGeologyFormStore(state => state.slots);
   const tabItems: readonly RegionTabItem[] = slots.slice(0, regionCount).map((slot, index) => ({
     id: regionId(index),
-    label: `Region ${index + 1}`,
+    label: t('common.regionName', { index: index + 1 }),
     color: geologyRegionColor(slot.type, index),
   }));
   const { selectedIndex, region, selectRegion } = useGeologySelection(regionCount, slots);
@@ -36,32 +38,32 @@ export function HeightmapForm(): React.JSX.Element {
   return (
     <Flex direction='column' gap='4'>
       <SliderField
-        label='Relief'
-        description='How high the land rises: 0 keeps islands flat, 1 builds steep mountains.'
+        label={t('forms.heightmap.relief')}
+        description={t('forms.heightmap.reliefDescription')}
         value={heightmap.relief}
         min={MIN_RELIEF}
         max={MAX_RELIEF}
         step={0.05}
         format={percent}
-        rangeLabels={['Flat', 'Mountainous']}
+        rangeLabels={[t('forms.heightmap.rangeFlat'), t('forms.heightmap.rangeMountainous')]}
         onChange={setRelief}
       />
       <SliderField
-        label='Islets and rocks'
-        description='How often small emergences rise out of the water near the shores.'
+        label={t('forms.heightmap.islets')}
+        description={t('forms.heightmap.isletsDescription')}
         value={heightmap.isletFrequency}
         min={MIN_ISLET_FREQUENCY}
         max={MAX_ISLET_FREQUENCY}
         step={0.05}
         format={percent}
-        rangeLabels={['None', 'Many']}
+        rangeLabels={[t('forms.heightmap.rangeNone'), t('forms.heightmap.rangeMany')]}
         onChange={setIsletFrequency}
       />
       <RegionTabs
         items={tabItems}
         selectedIndex={selectedIndex}
         onSelect={selectRegion}
-        ariaLabel='Heightmap regions'
+        ariaLabel={t('forms.heightmap.regionsAria')}
       />
       <RegionTerrainEditor
         index={selectedIndex}

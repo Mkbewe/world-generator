@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { TrashIcon } from '@radix-ui/react-icons';
 import { Box, Button, Card, Flex, RadioCards, Text, TextField } from '@radix-ui/themes';
 
@@ -17,6 +18,7 @@ interface HeatZoneCardProps {
 }
 
 export function HeatZoneCard({ zone, canRemove, canMoveEarlier, canMoveLater }: HeatZoneCardProps) {
+  const { t } = useTranslation();
   const updateZone = useBaseClimateFormStore(state => state.updateZone);
   const removeZone = useBaseClimateFormStore(state => state.removeZone);
   const moveZone = useBaseClimateFormStore(state => state.moveZone);
@@ -33,7 +35,7 @@ export function HeatZoneCard({ zone, canRemove, canMoveEarlier, canMoveLater }: 
           />
           <TextField.Root
             value={zone.label}
-            aria-label='Zone label'
+            aria-label={t('forms.baseClimate.zoneLabelAria')}
             className={styles.name}
             onChange={event => updateZone(zone.id, { label: event.target.value })}
           />
@@ -41,7 +43,7 @@ export function HeatZoneCard({ zone, canRemove, canMoveEarlier, canMoveLater }: 
             size='1'
             variant='soft'
             color='red'
-            aria-label={`Remove ${zone.label}`}
+            aria-label={t('forms.baseClimate.removeZone', { label: zone.label })}
             disabled={!canRemove}
             onClick={() => removeZone(zone.id)}
           >
@@ -52,7 +54,7 @@ export function HeatZoneCard({ zone, canRemove, canMoveEarlier, canMoveLater }: 
           columns='3'
           gap='2'
           size='1'
-          aria-label='Thermal class'
+          aria-label={t('forms.baseClimate.thermalClassAria')}
           value={zone.thermal}
           onValueChange={value => {
             const option = HEAT_ZONE_CLASS_OPTIONS.find(item => item.id === value);
@@ -63,13 +65,21 @@ export function HeatZoneCard({ zone, canRemove, canMoveEarlier, canMoveLater }: 
         >
           {HEAT_ZONE_CLASS_OPTIONS.map(option => (
             <RadioCards.Item key={option.id} value={option.id}>
-              {option.label}
+              {t(option.labelKey)}
             </RadioCards.Item>
           ))}
         </RadioCards.Root>
         <Flex justify='between' align='center'>
           <Text size='1' color='gray'>
-            {geometrySummary(zone)}
+            {zone.geometry.kind === 'ring'
+              ? t('forms.baseClimate.ringSummary', {
+                  inner: zone.geometry.innerRadius.toFixed(2),
+                  outer: zone.geometry.outerRadius.toFixed(2),
+                })
+              : t('forms.baseClimate.bandSummary', {
+                  width: Math.round(zone.geometry.width * 100),
+                  centre: Math.round(zone.geometry.center * 100),
+                })}
           </Text>
           <MoveControls
             canMoveEarlier={canMoveEarlier}
@@ -81,11 +91,4 @@ export function HeatZoneCard({ zone, canRemove, canMoveEarlier, canMoveLater }: 
       </Flex>
     </Card>
   );
-}
-
-function geometrySummary(zone: HeatZoneConfig): string {
-  if (zone.geometry.kind === 'ring') {
-    return `Radius ${zone.geometry.innerRadius.toFixed(2)}–${zone.geometry.outerRadius.toFixed(2)}`;
-  }
-  return `Width ${Math.round(zone.geometry.width * 100)}% · centre ${Math.round(zone.geometry.center * 100)}%`;
 }

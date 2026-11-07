@@ -21,7 +21,18 @@ function itemValue(
   id: string,
   info?: Parameters<typeof readoutItems>[1]
 ): string | undefined {
-  return item(readoutValue, id, info)?.value;
+  const entry = item(readoutValue, id, info);
+  const value = entry?.value;
+  return typeof value === 'string' ? value : value?.key;
+}
+
+function itemLabel(
+  readoutValue: InspectorReadout | undefined,
+  id: string,
+  info?: Parameters<typeof readoutItems>[1]
+): string | undefined {
+  const entry = item(readoutValue, id, info);
+  return entry?.labelKey;
 }
 
 describe('readoutItems', () => {
@@ -32,19 +43,19 @@ describe('readoutItems', () => {
   it('shows the heat zone under the pointer when the overlay reports one', () => {
     const items = readoutItems({
       ...readout(),
-      overlays: [{ overlayId: 'heat-zones', label: 'Heat zone', value: 'Temperate north' }],
+      overlays: [{ overlayId: 'heat-zones', value: 'Temperate north' }],
     });
 
     expect(items).toContainEqual({
       id: 'overlays',
-      label: 'Overlays',
+      labelKey: 'readout.overlays',
       value: '',
       heading: true,
       detached: true,
     });
     expect(items).toContainEqual({
       id: 'overlay-heat-zones',
-      label: 'Heat zone',
+      labelKey: 'overlays.heat-zones',
       value: 'Temperate north',
     });
   });
@@ -53,22 +64,22 @@ describe('readoutItems', () => {
     const items = readoutItems({
       ...readout(),
       overlays: [
-        { overlayId: 'heat-zones', label: 'Heat zone', value: 'Cold' },
-        { overlayId: 'moisture', label: 'Moisture', value: '42%' },
+        { overlayId: 'heat-zones', value: 'Cold' },
+        { overlayId: 'moisture', value: '42%' },
       ],
     });
     const overlays = items.filter(item => item.id.startsWith('overlay-'));
 
     expect(items).toContainEqual({
       id: 'overlays',
-      label: 'Overlays',
+      labelKey: 'readout.overlays',
       value: '',
       heading: true,
       detached: true,
     });
     expect(overlays).toEqual([
-      { id: 'overlay-heat-zones', label: 'Heat zone', value: 'Cold' },
-      { id: 'overlay-moisture', label: 'Moisture', value: '42%' },
+      { id: 'overlay-heat-zones', labelKey: 'overlays.heat-zones', value: 'Cold' },
+      { id: 'overlay-moisture', labelKey: 'overlays.moisture', value: '42%' },
     ]);
   });
 
@@ -76,14 +87,17 @@ describe('readoutItems', () => {
     const inspection: MapInspection = {
       kind: 'vector',
       layerId: 'ocean-currents',
-      label: 'Ocean currents',
-      hit: { id: 'ocean-current', label: 'Southeast · 43%' },
+      labelKey: 'layers.oceanCurrents',
+      hit: { id: 'ocean-current', oceanCurrent: { angle: Math.PI / 4, strength: 0.43 } },
     };
 
     expect(item(readout(inspection), 'current')).toEqual({
       id: 'current',
-      label: 'Ocean current',
-      value: 'Southeast · 43%',
+      labelKey: 'readout.oceanCurrent',
+      value: {
+        key: 'readout.oceanCurrentValue',
+        params: { strength: 43, direction: { key: 'directions.southeast' } },
+      },
     });
   });
 
@@ -91,7 +105,7 @@ describe('readoutItems', () => {
     const inspection: MapInspection = {
       kind: 'raster',
       layerId: 'heat-zones',
-      label: 'Heat zones',
+      labelKey: 'layers.heatZones',
       value: 1,
     };
     const info: MapInfo = {
@@ -103,21 +117,22 @@ describe('readoutItems', () => {
 
     expect(item(readout(inspection), 'zone', info)).toEqual({
       id: 'zone',
-      label: 'Heat zone',
+      labelKey: 'readout.heatZone',
       value: 'Warm core',
     });
     expect(item(readout(inspection), 'thermal', info)).toEqual({
       id: 'thermal',
-      label: 'Class',
-      value: 'Warm',
+      labelKey: 'readout.class',
+      value: { key: 'readout.warm' },
     });
+    expect(itemValue(readout(inspection), 'thermal', info)).toBe('readout.warm');
   });
 
   it('shows the moisture value as a percentage', () => {
     const inspection: MapInspection = {
       kind: 'raster',
       layerId: 'moisture',
-      label: 'Moisture',
+      labelKey: 'layers.moisture',
       value: 0.42,
     };
 
@@ -129,10 +144,10 @@ describe('readoutItems', () => {
 
     expect(items[0]).toMatchObject({
       id: 'position',
-      label: 'Position',
-      lines: [{ label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' }],
+      labelKey: 'readout.position',
+      lines: [{ labelKey: 'readout.position', x: 'X 50 cell', y: 'Y 25 cell' }],
     });
-    expect(items[1]).toMatchObject({ id: 'value', label: 'Value', value: '—' });
+    expect(items[1]).toMatchObject({ id: 'value', labelKey: 'readout.value', value: '—' });
     expect(items.map(value => value.value).join(' ')).not.toContain('%');
   });
 
@@ -147,7 +162,7 @@ describe('readoutItems', () => {
     };
 
     expect(item(readout(), 'position', info)?.lines).toEqual([
-      { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
+      { labelKey: 'readout.position', x: 'X 50 cell', y: 'Y 25 cell' },
       { x: 'X 100 m', y: 'Y 50 m' },
     ]);
   });
@@ -174,10 +189,10 @@ describe('readoutItems', () => {
     };
 
     expect(item(readout(), 'position', { worldDimensions: 'nope' })?.lines).toEqual([
-      { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
+      { labelKey: 'readout.position', x: 'X 50 cell', y: 'Y 25 cell' },
     ]);
     expect(item(readout(), 'position', malformed)?.lines).toEqual([
-      { label: 'Position', x: 'X 50 cell', y: 'Y 25 cell' },
+      { labelKey: 'readout.position', x: 'X 50 cell', y: 'Y 25 cell' },
     ]);
   });
 
@@ -200,7 +215,7 @@ describe('readoutItems', () => {
       readoutItems(readout(), mapInfo, value).find(entry => entry.id === 'distance');
 
     expect(measured(measurement)).toMatchObject({
-      label: 'Distance',
+      labelKey: 'readout.distance',
       value: '2.24 km',
       separated: true,
     });
@@ -232,26 +247,35 @@ describe('readoutItems', () => {
   });
 
   it('describes world shape values', () => {
-    const inspection = { kind: 'raster', layerId: 'world-shape', label: 'World shape' } as const;
+    const inspection = {
+      kind: 'raster',
+      layerId: 'world-shape',
+      labelKey: 'layers.worldShape',
+    } as const;
 
-    expect(itemValue(readout({ ...inspection, value: 1 }), 'value')).toBe('Inside');
-    expect(itemValue(readout({ ...inspection, value: 0 }), 'value')).toBe('Outside');
+    expect(itemValue(readout({ ...inspection, value: 1 }), 'value')).toBe('readout.inside');
+    expect(itemValue(readout({ ...inspection, value: 0 }), 'value')).toBe('readout.outside');
   });
 
   it('describes macro region ids with their labels', () => {
     expect(
       itemValue(
-        readout({ kind: 'raster', layerId: 'macro-region', label: 'Macro regions', value: 3 }),
+        readout({
+          kind: 'raster',
+          layerId: 'macro-region',
+          labelKey: 'layers.macroRegions',
+          value: 3,
+        }),
         'value'
       )
-    ).toBe('Region 3');
+    ).toBe('readout.regionIndex');
   });
 
   it('shows the macro region range, width, danger and area captured with the map', () => {
     const inspection = {
       kind: 'raster',
       layerId: 'macro-region',
-      label: 'Macro regions',
+      labelKey: 'layers.macroRegions',
       value: 1,
     } as const;
     const info = {
@@ -263,18 +287,18 @@ describe('readoutItems', () => {
     };
 
     expect(itemValue(readout(inspection), 'region', info)).toBe('Wasteland');
-    expect(item(readout(inspection), 'width', info)?.label).toBe('Ring thickness');
-    expect(itemValue(readout(inspection), 'range', info)).toBe('50–100% of the radius');
+    expect(itemLabel(readout(inspection), 'width', info)).toBe('readout.ringThickness');
+    expect(itemValue(readout(inspection), 'range', info)).toBe('readout.rangeRing');
     expect(itemValue(readout(inspection), 'width', info)).toBe('50%');
     expect(itemValue(readout(inspection), 'danger', info)).toBe('0.90');
-    expect(itemValue(readout(inspection), 'area', info)).toBe('6 km² · 75.0%');
+    expect(itemValue(readout(inspection), 'area', info)).toBe('readout.areaShare');
   });
 
   it('shows an overlay band coverage and its axis range', () => {
     const inspection = {
       kind: 'raster',
       layerId: 'macro-region',
-      label: 'Macro regions',
+      labelKey: 'layers.macroRegions',
       value: 0,
     } as const;
     const info = {
@@ -283,8 +307,8 @@ describe('readoutItems', () => {
       ],
     };
 
-    expect(item(readout(inspection), 'width', info)?.label).toBe('Band width');
-    expect(itemValue(readout(inspection), 'range', info)).toBe('42–58% of the axis');
+    expect(itemLabel(readout(inspection), 'width', info)).toBe('readout.bandWidth');
+    expect(itemValue(readout(inspection), 'range', info)).toBe('readout.rangeBand');
     expect(itemValue(readout(inspection), 'width', info)).toBe('16%');
     expect(item(readout(inspection), 'area', info)).toBeUndefined();
   });
@@ -293,29 +317,31 @@ describe('readoutItems', () => {
     const inspection = {
       kind: 'raster',
       layerId: 'macro-region',
-      label: 'Macro regions',
+      labelKey: 'layers.macroRegions',
       value: 1,
     } as const;
 
-    expect(itemValue(readout(inspection), 'value', { macroRegionInfo: 'nope' })).toBe('Region 1');
+    expect(itemValue(readout(inspection), 'value', { macroRegionInfo: 'nope' })).toBe(
+      'readout.regionIndex'
+    );
     expect(itemValue(readout(inspection), 'value', { macroRegionInfo: [{ label: 1 }] })).toBe(
-      'Region 1'
+      'readout.regionIndex'
     );
   });
 
   it('keeps the layer label while the raster sample is unavailable', () => {
     const raster = readoutItems(
-      readout({ kind: 'raster', layerId: 'world-shape', label: 'World shape' })
+      readout({ kind: 'raster', layerId: 'world-shape', labelKey: 'layers.worldShape' })
     );
 
-    expect(raster[1]).toMatchObject({ label: 'World shape', value: '—' });
+    expect(raster[1]).toMatchObject({ labelKey: 'readout.value', value: '—' });
   });
 
   it('shows the generated region and its type under the pointer', () => {
     const inspection = {
       kind: 'vector',
       layerId: 'geology',
-      label: 'Geology',
+      labelKey: 'layers.geology',
       hit: { id: 'region-2' },
     } as const;
     const info = {
@@ -337,14 +363,12 @@ describe('readoutItems', () => {
     };
 
     expect(itemValue(readout(inspection), 'region', info)).toBe('region-2');
-    expect(itemValue(readout(inspection), 'type', info)).toBe('Lagoon');
-    expect(itemValue(readout(inspection), 'character', info)).toBe(
-      'Low reef rings, lagoons and sandy islets'
-    );
-    expect(itemValue(readout(inspection), 'area', info)).toBe('2 km² · 20.0%');
+    expect(itemValue(readout(inspection), 'type', info)).toBe('readout.lagoon');
+    expect(itemValue(readout(inspection), 'character', info)).toBe('readout.lagoonDescription');
+    expect(itemValue(readout(inspection), 'area', info)).toBe('readout.areaShare');
     expect(item(readout(inspection), 'edit-region', info)?.action).toEqual({
       id: 'edit-region',
-      label: 'Edit region',
+      labelKey: 'readout.editRegion',
     });
   });
 
@@ -352,7 +376,7 @@ describe('readoutItems', () => {
     const inspection = {
       kind: 'vector',
       layerId: 'geology',
-      label: 'Geology',
+      labelKey: 'layers.geology',
       hit: { id: 'region-2' },
     } as const;
     const info = {
@@ -382,7 +406,7 @@ describe('readoutItems', () => {
     const inspection = {
       kind: 'vector',
       layerId: 'geology',
-      label: 'Geology',
+      labelKey: 'layers.geology',
       hit: { id: 'region-7' },
     } as const;
     const info = {

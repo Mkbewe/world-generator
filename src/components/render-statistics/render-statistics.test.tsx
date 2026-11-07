@@ -15,7 +15,7 @@ const statistics = {
     {
       kind: 'raster',
       id: 'world-shape',
-      name: 'World shape',
+      nameKey: 'layers.worldShape',
       durationMs: 30,
       tiles: 16,
       pixels: 1_000_000,
@@ -28,7 +28,7 @@ const statistics = {
     {
       kind: 'raster',
       id: 'macro-region',
-      name: 'Macro regions',
+      nameKey: 'layers.macroRegions',
       durationMs: 20,
       tiles: 16,
       pixels: 2_000_000,
@@ -96,9 +96,9 @@ describe('RenderStatisticsPanel', () => {
               {
                 kind: 'vector',
                 id: 'geology',
-                name: 'Geology',
+                nameKey: 'layers.geology',
                 durationMs: 5,
-                elements: { label: 'Regions', count: 120 },
+                elements: { labelKey: 'statistics.render.elements', count: 120 },
                 outputWidth: 320,
                 outputHeight: 240,
                 bytes: 1_000_000,

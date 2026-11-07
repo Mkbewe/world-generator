@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ArrowLeftIcon, ArrowRightIcon } from '@radix-ui/react-icons';
 import { Button, Flex } from '@radix-ui/themes';
 
@@ -15,12 +16,14 @@ export function MoveControls({
   onMoveEarlier,
   onMoveLater,
 }: MoveControlsProps) {
+  const { t } = useTranslation();
+
   return (
     <Flex gap='1'>
       <Button
         size='1'
         variant='soft'
-        aria-label='Move earlier'
+        aria-label={t('moveControls.earlier')}
         disabled={!canMoveEarlier}
         onClick={onMoveEarlier}
       >
@@ -29,7 +32,7 @@ export function MoveControls({
       <Button
         size='1'
         variant='soft'
-        aria-label='Move later'
+        aria-label={t('moveControls.later')}
         disabled={!canMoveLater}
         onClick={onMoveLater}
       >

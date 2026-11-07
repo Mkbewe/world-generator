@@ -2,6 +2,7 @@ import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerResponse,
 } from './pipeline-worker.types';
+import type { MessageKey } from '../../../i18n';
 import { GenerationStageError } from '../errors';
 import { createMapGenerator } from '../pipeline/pipeline-factory';
 import { isPipelineStageId, type StageInfo } from '../pipeline/stage-definitions';
@@ -102,12 +103,12 @@ function hasCachedWrites(
   });
 }
 
-function announceStages(stages: readonly { id: string; name: string }[]): StageInfo[] {
+function announceStages(stages: readonly { id: string; nameKey: MessageKey }[]): StageInfo[] {
   return stages.map(stage => {
     if (!isPipelineStageId(stage.id)) {
       throw new Error(`Unknown stage id: "${stage.id}".`);
     }
-    return { id: stage.id, name: stage.name };
+    return { id: stage.id, nameKey: stage.nameKey };
   });
 }
 

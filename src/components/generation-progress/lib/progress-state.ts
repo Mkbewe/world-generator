@@ -1,3 +1,4 @@
+import type { MessageKey } from '../../../i18n';
 import type { GenerationProgressState, GenerationStageProgress } from '../../../stores';
 import type { GenerationEvent, StageInfo } from '../../../utils/map-generator';
 
@@ -50,7 +51,7 @@ function applyEvent(
  * as skipped right away, before the worker reports anything.
  */
 export function planProgress(
-  stages: readonly { id: string; name: string }[],
+  stages: readonly { id: string; nameKey: MessageKey }[],
   skippedStageIds: readonly string[]
 ): GenerationProgressState {
   const skipped = new Set(skippedStageIds);
@@ -62,12 +63,12 @@ export function planProgress(
 }
 
 function initialStage(
-  stage: { id: string; name: string },
+  stage: { id: string; nameKey: MessageKey },
   skipped: ReadonlySet<string>
 ): GenerationStageProgress {
   return {
     id: stage.id,
-    name: stage.name,
+    nameKey: stage.nameKey,
     status: skipped.has(stage.id) ? 'skipped' : 'pending',
     percentage: 0,
   };
@@ -77,7 +78,7 @@ function applyStageEvent(
   stage: GenerationStageProgress,
   event: GenerationEvent
 ): GenerationStageProgress {
-  const current = { ...stage, name: event.stageName };
+  const current = { ...stage, nameKey: event.stageNameKey };
 
   switch (event.type) {
     case 'stage-started':

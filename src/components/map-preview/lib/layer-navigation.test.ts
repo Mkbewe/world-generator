@@ -7,13 +7,13 @@ import {
 } from '../../../utils/map-renderer';
 
 const tree: readonly LayerTreeNode[] = [
-  { id: 'world-shape', label: 'World shape' },
+  { id: 'world-shape', labelKey: 'layers.worldShape' },
   {
     id: 'climate',
-    label: 'Climate',
+    labelKey: 'layers.baseClimate',
     children: [
-      { id: 'macro-region', label: 'Macro regions' },
-      { id: 'geology', label: 'Geology' },
+      { id: 'macro-region', labelKey: 'layers.macroRegions' },
+      { id: 'geology', labelKey: 'layers.geology' },
     ],
   },
 ];
@@ -21,15 +21,15 @@ const tree: readonly LayerTreeNode[] = [
 const layerIds = ['world-shape', 'macro-region', 'geology'] as const;
 const layers: readonly MapLayerOption<MapBaseLayerId>[] = layerIds.map(id => ({
   id,
-  label: id,
+  labelKey: 'layers.geology',
   available: true,
 }));
 
 describe('LayerNavigation', () => {
   it('rejects an empty group instead of creating an invalid fallback', () => {
-    expect(() => new LayerNavigation([{ id: 'empty', label: 'Empty', children: [] }])).toThrow(
-      'must contain at least one layer'
-    );
+    expect(
+      () => new LayerNavigation([{ id: 'empty', labelKey: 'layers.geology', children: [] }])
+    ).toThrow('must contain at least one layer');
   });
 
   it('selects the first child of a group by default', () => {
@@ -108,9 +108,9 @@ describe('LayerNavigation', () => {
 
   it('keeps the real BaseClimate layers in one switchable group', () => {
     const navigation = new LayerNavigation(layerRegistry.tree);
-    const available = layerRegistry.order.map(id => ({
+    const available = layerRegistry.order.map((id): MapLayerOption<MapBaseLayerId> => ({
       id,
-      label: id,
+      labelKey: 'layers.geology',
       available: id === 'heat-zones' || id === 'moisture' || id === 'ocean-currents',
     }));
 

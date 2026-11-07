@@ -1,96 +1,116 @@
-import type { MetricDescriptor } from '../../utils/format';
+import type { MessageKey } from '../../i18n';
+import type { MetricKind } from '../../utils/format';
 
-export const METRIC_DESCRIPTORS: Record<string, MetricDescriptor> = {
+export interface MetricDescriptorKeys {
+  readonly labelKey: MessageKey;
+  readonly descriptionKey: MessageKey;
+  readonly kind: MetricKind;
+  readonly precision?: number;
+}
+
+export const METRIC_DESCRIPTORS: Record<string, MetricDescriptorKeys> = {
   shape: {
-    label: 'Shape',
+    labelKey: 'statistics.metrics.shape',
     kind: 'text',
-    description: 'World shape preset used to build the mask (disc or rectangle).',
+    descriptionKey: 'statistics.metrics.shapeDescription',
   },
-  width: { label: 'Width', kind: 'number', description: 'Grid width in cells.' },
-  height: { label: 'Height', kind: 'number', description: 'Grid height in cells.' },
-  cells: { label: 'Cells', kind: 'number', description: 'Total number of cells (width × height).' },
-  filledCells: {
-    label: 'Filled cells',
+  width: {
+    labelKey: 'statistics.metrics.width',
     kind: 'number',
-    description: 'Cells that lie inside the world shape.',
+    descriptionKey: 'statistics.metrics.widthDescription',
+  },
+  height: {
+    labelKey: 'statistics.metrics.height',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.heightDescription',
+  },
+  cells: {
+    labelKey: 'statistics.metrics.cells',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.cellsDescription',
+  },
+  filledCells: {
+    labelKey: 'statistics.metrics.filledCells',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.filledCellsDescription',
   },
   coverage: {
-    label: 'Coverage',
+    labelKey: 'statistics.metrics.coverage',
     kind: 'ratio',
-    description: 'Share of the grid that lies inside the world shape.',
+    descriptionKey: 'statistics.metrics.coverageDescription',
   },
   regions: {
-    label: 'Regions',
+    labelKey: 'statistics.metrics.regions',
     kind: 'number',
-    description: 'Number of regions the stage produced or configured.',
+    descriptionKey: 'statistics.metrics.regionsDescription',
   },
   overlays: {
-    label: 'Overlays',
+    labelKey: 'statistics.metrics.overlays',
     kind: 'number',
-    description: 'Number of macro regions configured as overlays.',
+    descriptionKey: 'statistics.metrics.overlaysDescription',
   },
   deformationAmplitude: {
-    label: 'Deformation amplitude',
+    labelKey: 'statistics.metrics.deformationAmplitude',
     kind: 'number',
     precision: 2,
-    description: 'Strength of the macro-region border displacement.',
+    descriptionKey: 'statistics.metrics.deformationAmplitudeDescription',
   },
   ordinary: {
-    label: 'Ordinary',
+    labelKey: 'statistics.metrics.ordinary',
     kind: 'number',
-    description: 'Regions seeded as ordinary ground.',
+    descriptionKey: 'statistics.metrics.ordinaryDescription',
   },
   volcanic: {
-    label: 'Volcanic',
+    labelKey: 'statistics.metrics.volcanic',
     kind: 'number',
-    description: 'Regions seeded as volcanic ground.',
+    descriptionKey: 'statistics.metrics.volcanicDescription',
   },
   lagoon: {
-    label: 'Lagoon',
+    labelKey: 'statistics.metrics.lagoon',
     kind: 'number',
-    description: 'Regions seeded as lagoon ground.',
+    descriptionKey: 'statistics.metrics.lagoonDescription',
   },
   fjord: {
-    label: 'Fjord',
+    labelKey: 'statistics.metrics.fjord',
     kind: 'number',
-    description: 'Regions seeded as fjord ground.',
+    descriptionKey: 'statistics.metrics.fjordDescription',
   },
   min: {
-    label: 'Lowest height',
+    labelKey: 'statistics.metrics.min',
     kind: 'number',
     precision: 1,
-    description: 'Lowest cell height in metres.',
+    descriptionKey: 'statistics.metrics.minDescription',
   },
   max: {
-    label: 'Highest height',
+    labelKey: 'statistics.metrics.max',
     kind: 'number',
     precision: 1,
-    description: 'Highest cell height in metres.',
+    descriptionKey: 'statistics.metrics.maxDescription',
   },
   mean: {
-    label: 'Mean height',
+    labelKey: 'statistics.metrics.mean',
     kind: 'number',
     precision: 1,
-    description: 'Average cell height in metres.',
+    descriptionKey: 'statistics.metrics.meanDescription',
   },
   stdDev: {
-    label: 'Height spread',
+    labelKey: 'statistics.metrics.stdDev',
     kind: 'number',
     precision: 1,
-    description: 'Standard deviation of the cell heights, in metres.',
+    descriptionKey: 'statistics.metrics.stdDevDescription',
   },
   landShare: {
-    label: 'Land share',
+    labelKey: 'statistics.metrics.landShare',
     kind: 'ratio',
-    description: 'Share of the world above the sea level.',
+    descriptionKey: 'statistics.metrics.landShareDescription',
   },
   bytes: {
-    label: 'Data',
+    labelKey: 'statistics.metrics.bytes',
     kind: 'bytes',
-    description: 'Size of the layer data produced by this stage.',
+    descriptionKey: 'statistics.metrics.bytesDescription',
   },
 };
 
-export function describeMetric(key: string): MetricDescriptor {
-  return METRIC_DESCRIPTORS[key] ?? { label: key, kind: 'number', description: '', precision: 3 };
+export function describeMetric(key: string): MetricDescriptorKeys | undefined {
+  return METRIC_DESCRIPTORS[key];
 }

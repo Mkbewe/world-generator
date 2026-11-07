@@ -66,13 +66,13 @@ describe('runGeneration', () => {
     });
     FakeWorker.latest.emitMessage({
       type: 'stages',
-      stages: [{ id: 'geology', name: 'Geology' }],
+      stages: [{ id: 'geology', nameKey: 'stages.geology' }],
       skippedStageIds: [],
     });
     FakeWorker.latest.emitMessage({
       type: 'stage-started',
       stageId: 'geology',
-      stageName: 'Geology',
+      stageNameKey: 'stages.geology',
       stageIndex: 0,
       stageCount: 1,
     });
@@ -82,7 +82,7 @@ describe('runGeneration', () => {
     });
 
     await expect(promise).resolves.toEqual({ statistics: [], totalDurationMs: 5 });
-    expect(onStages).toHaveBeenCalledWith([{ id: 'geology', name: 'Geology' }], []);
+    expect(onStages).toHaveBeenCalledWith([{ id: 'geology', nameKey: 'stages.geology' }], []);
     expect(onEvent).toHaveBeenCalledOnce();
     expect(FakeWorker.latest.terminate).toHaveBeenCalledOnce();
   });
@@ -99,7 +99,7 @@ describe('runGeneration', () => {
     FakeWorker.latest.emitMessage({
       type: 'stage-started',
       stageId: 'geology',
-      stageName: 'Geology',
+      stageNameKey: 'stages.geology',
       stageIndex: 0,
       stageCount: 1,
     });

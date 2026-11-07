@@ -14,17 +14,16 @@ describe('i18n', () => {
   });
 
   it('interpolates named values', () => {
-    expect(i18n.t('common.count', { count: 3 })).toBe('3 items');
+    expect(i18n.t('footer.version', { name: 'World Generator', version: '1.2.3' })).toBe(
+      'World Generator v1.2.3'
+    );
   });
 
   it('reports an unknown key as missing', () => {
     expect(i18n.exists('missing.key')).toBe(false);
   });
 
-  it('falls back to the default locale for an unknown language', async () => {
-    await i18n.changeLanguage('de');
-
-    expect(i18n.resolvedLanguage).toBe(DEFAULT_LOCALE);
-    expect(i18n.t('app.name')).toBe('World Generator');
+  it('does not fall back to another locale for missing translations', () => {
+    expect(i18n.options.fallbackLng).toBe(false);
   });
 });

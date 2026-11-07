@@ -1,18 +1,20 @@
+import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router';
 import * as NavigationMenu from '@radix-ui/react-navigation-menu';
 
+import type { MessageKey } from '../../i18n';
 import { PageSection } from '../page-section';
 import styles from './navigation.module.scss';
 
 export interface NavigationItem {
-  label: string;
+  labelKey: MessageKey;
   to: string;
 }
 
 export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
-  { label: 'Home', to: '/' },
-  { label: 'Statistics', to: '/statistics' },
-  { label: 'Legacy Generator', to: '/legacy-generator' },
+  { labelKey: 'navigation.home', to: '/' },
+  { labelKey: 'navigation.statistics', to: '/statistics' },
+  { labelKey: 'navigation.legacy', to: '/legacy-generator' },
 ];
 
 export function isActivePath(pathname: string, to: string): boolean {
@@ -30,6 +32,7 @@ export interface NavigationProps {
 
 export function Navigation({ inert = false }: NavigationProps) {
   const { pathname } = useLocation();
+  const { t } = useTranslation();
 
   return (
     <div className={styles.navBar} inert={inert || undefined}>
@@ -47,7 +50,7 @@ export function Navigation({ inert = false }: NavigationProps) {
                         : styles.link
                     }
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </NavLink>
                 </NavigationMenu.Link>
               </NavigationMenu.Item>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex, Text } from '@radix-ui/themes';
 
 import { formatDuration } from '../../utils/format';
@@ -17,6 +18,7 @@ interface TimingBarProps {
 }
 
 export function TimingBar({ segments }: TimingBarProps) {
+  const { t } = useTranslation();
   const visible = segments.filter(segment => segment.durationMs > 0);
   const total = visible.reduce((sum, segment) => sum + segment.durationMs, 0);
   if (visible.length === 0 || total <= 0) {
@@ -26,7 +28,7 @@ export function TimingBar({ segments }: TimingBarProps) {
   return (
     <Flex direction='column' gap='2'>
       <Text size='2' weight='bold' color='gray'>
-        Timing
+        {t('statistics.timing')}
       </Text>
       <div className={styles.timeline}>
         {visible.map((segment, index) => {
@@ -38,7 +40,10 @@ export function TimingBar({ segments }: TimingBarProps) {
               data-index={index % 4}
               data-muted={segment.muted}
               style={{ width: `${percent}%` }}
-              title={`${segment.label}: ${formatDuration(segment.durationMs)}`}
+              title={t('statistics.timingTooltip', {
+                label: segment.label,
+                duration: formatDuration(segment.durationMs),
+              })}
             >
               {percent >= MIN_LABEL_PERCENT && (
                 <span className={styles.timelineLabel}>{Math.round(percent)}%</span>

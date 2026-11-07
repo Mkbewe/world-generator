@@ -9,9 +9,7 @@ export {
   BASE_CLIMATE_ZONE_COLORS,
   GEOLOGY_REGION_PALETTES,
   geologyRegionColor,
-  HEAT_ZONE_CLASS_LABELS,
   HEAT_ZONE_COLORS,
-  heatZoneClassLabel,
   heatZoneColor,
   HEIGHTMAP_STOPS,
   MOISTURE_STOPS,
@@ -19,8 +17,6 @@ export {
   validatePalette,
 } from './palettes/palettes';
 export type { PixelWriter } from './palettes/palettes';
-export { REGION_STYLES, regionStyle } from './palettes/regions';
-export type { RegionStyle } from './palettes/regions';
 export type {
   Color,
   DiscreteOverflow,

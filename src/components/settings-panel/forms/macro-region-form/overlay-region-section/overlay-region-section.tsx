@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
@@ -11,6 +12,7 @@ import { OverlayRegionCard } from '../region-card';
 
 /** Overlay bands: their tabs and the selected band fields. */
 export function OverlayRegionSection() {
+  const { t } = useTranslation();
   const regions = useMacroRegionFormStore(state => state.regions);
   const addOverlay = useMacroRegionFormStore(state => state.addOverlay);
   const baseCount = baseRegions(regions).length;
@@ -28,30 +30,30 @@ export function OverlayRegionSection() {
       <Flex justify='between' align='center'>
         <Flex direction='column'>
           <Text size='2' weight='bold' color='gray'>
-            Overlay regions ({overlays.length})
+            {t('forms.macroRegion.overlayRegions', { count: overlays.length })}
           </Text>
           <Text size='1' color='gray'>
-            Bands cut through the base layout. Later overlays appear on top.
+            {t('forms.macroRegion.overlayHint')}
           </Text>
         </Flex>
         <Flex gap='2' wrap='wrap'>
           <Button
             size='1'
             variant='soft'
-            aria-label='Add horizontal overlay'
+            aria-label={t('forms.macroRegion.addHorizontal')}
             onClick={() => addOverlay('y')}
             disabled={atLimit}
           >
-            <PlusIcon /> Horizontal
+            <PlusIcon /> {t('forms.macroRegion.horizontal')}
           </Button>
           <Button
             size='1'
             variant='soft'
-            aria-label='Add vertical overlay'
+            aria-label={t('forms.macroRegion.addVertical')}
             onClick={() => addOverlay('x')}
             disabled={atLimit}
           >
-            <PlusIcon /> Vertical
+            <PlusIcon /> {t('forms.macroRegion.vertical')}
           </Button>
         </Flex>
       </Flex>
@@ -60,7 +62,7 @@ export function OverlayRegionSection() {
           items={tabItems}
           selectedIndex={selectedIndex}
           onSelect={selectRegion}
-          ariaLabel='Overlay regions'
+          ariaLabel={t('forms.macroRegion.overlayRegionsAria')}
         />
       )}
       {region && <OverlayRegionCard region={region} index={baseCount + selectedIndex} />}

@@ -17,7 +17,7 @@ const WORLD = {
 
 const STAGE: StageStatistics = {
   stageId: 'world-shape',
-  stageName: 'World shape',
+  stageNameKey: 'stages.worldShape',
   status: 'completed',
   startedAt: 0,
   finishedAt: 10,

@@ -26,7 +26,7 @@ export class MacroRegionStage implements MapStage<
   { macroRegionIdMap: Uint8Array; macroRegionAreas: readonly number[] }
 > {
   readonly id: PipelineStageId = MACRO_REGION_STAGE.id;
-  readonly name = MACRO_REGION_STAGE.name;
+  readonly nameKey = MACRO_REGION_STAGE.nameKey;
   readonly configKeys = MACRO_REGION_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask'];
   readonly writes = ['macroRegionIdMap', 'macroRegionAreas'] as const;

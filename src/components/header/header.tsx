@@ -39,10 +39,14 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
       >
         <Flex justify='between' align='center' className={styles.headerContent}>
           <Flex align='center' gap='4' minWidth='0'>
-            <Link to='/' className={styles.logoLink} aria-label='World Generator home'>
+            <Link
+              to='/'
+              className={styles.logoLink}
+              aria-label={t('header.home', { name: t('app.name') })}
+            >
               <Avatar
                 src='/favicon.svg'
-                alt='World Generator Logo'
+                alt={t('header.logoAlt', { name: t('app.name') })}
                 size='3'
                 radius='full'
                 fallback='WG'
@@ -53,7 +57,7 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
             </Link>
             {isFullscreen && (
               <Badge variant='soft' color='gray' size='2'>
-                Fullscreen
+                {t('header.fullscreen')}
               </Badge>
             )}
           </Flex>
@@ -66,14 +70,14 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
                   size='3'
                   color='gray'
                   variant='surface'
-                  title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-                  aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  title={t(isFullscreen ? 'header.exitFullscreen' : 'header.enterFullscreen')}
+                  aria-label={t(isFullscreen ? 'header.exitFullscreen' : 'header.enterFullscreen')}
                 >
                   {isFullscreen ? <ExitFullScreenIcon /> : <EnterFullScreenIcon />}
                 </IconButton>
                 {isFullscreen && (
                   <Badge variant='outline' color='gray' size='3'>
-                    Esc
+                    {t('header.esc')}
                   </Badge>
                 )}
               </Flex>
@@ -84,7 +88,10 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
                 size='3'
                 variant='surface'
                 color='gray'
-                title={`Switch to ${currentTheme === 'light' ? 'dark' : 'light'} mode`}
+                title={t(currentTheme === 'light' ? 'theme.switchToDark' : 'theme.switchToLight')}
+                aria-label={t(
+                  currentTheme === 'light' ? 'theme.switchToDark' : 'theme.switchToLight'
+                )}
               >
                 {currentTheme === 'light' ? <MoonIcon /> : <SunIcon />}
               </IconButton>

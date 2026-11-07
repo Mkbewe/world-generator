@@ -5,7 +5,9 @@ import userEvent from '@testing-library/user-event';
 import { CursorReadout } from './cursor-readout';
 import type { ReadoutItem } from '../../../utils/map-readout';
 
-const ITEMS: readonly ReadoutItem[] = [{ id: 'position', label: 'Position', value: 'X 1' }];
+const ITEMS: readonly ReadoutItem[] = [
+  { id: 'position', labelKey: 'readout.position', value: 'X 1' },
+];
 
 describe('CursorReadout', () => {
   it('renders the readout items', () => {
@@ -24,7 +26,15 @@ describe('CursorReadout', () => {
     render(
       <Theme>
         <CursorReadout
-          items={[{ id: 'overlays', label: 'Overlays', value: '', heading: true, detached: true }]}
+          items={[
+            {
+              id: 'overlays',
+              labelKey: 'readout.overlays',
+              value: '',
+              heading: true,
+              detached: true,
+            },
+          ]}
         />
       </Theme>
     );
@@ -37,14 +47,14 @@ describe('CursorReadout', () => {
       <Theme>
         <CursorReadout
           items={[
-            { id: 'stage', label: 'Stage', value: 'A' },
-            { id: 'overlay', label: 'Overlay', value: 'B', detached: true },
+            { id: 'stage', labelKey: 'readout.name', value: 'A' },
+            { id: 'overlay', labelKey: 'readout.oceanCurrent', value: 'B', detached: true },
           ]}
         />
       </Theme>
     );
 
-    expect(screen.getByText('Overlay:').parentElement).toHaveClass(/detached/);
+    expect(screen.getByText('Ocean current:').parentElement).toHaveClass(/detached/);
   });
 
   it('marks the pinned readout', () => {
@@ -64,9 +74,9 @@ describe('CursorReadout', () => {
       ...ITEMS,
       {
         id: 'edit-region',
-        label: 'Edit region',
+        labelKey: 'readout.editRegion',
         value: '',
-        action: { id: 'edit-region', label: 'Edit region' },
+        action: { id: 'edit-region', labelKey: 'readout.editRegion' },
       },
     ];
 
@@ -86,11 +96,11 @@ describe('CursorReadout', () => {
     const items: readonly ReadoutItem[] = [
       {
         id: 'position',
-        label: 'Position',
+        labelKey: 'readout.position',
         value: 'X 1',
         lines: [
-          { label: 'Position', x: 'X 1 cell', y: 'Y 2 cell' },
-          { label: 'Position', x: 'X 3 m', y: 'Y 4 m' },
+          { labelKey: 'readout.position', x: 'X 1 cell', y: 'Y 2 cell' },
+          { labelKey: 'readout.position', x: 'X 3 m', y: 'Y 4 m' },
         ],
       },
     ];

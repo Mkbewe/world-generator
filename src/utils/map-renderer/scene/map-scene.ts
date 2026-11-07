@@ -55,7 +55,7 @@ export class MapScene {
   get options(): readonly MapLayerOption<MapBaseLayerId>[] {
     return this.registry.order.map(id => ({
       id,
-      label: this.registry.get(id).label,
+      labelKey: this.registry.get(id).labelKey,
       available: this.available.has(id),
     }));
   }

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { SizePresetField } from './size-preset-field';
+import { i18n } from '../../../../../i18n';
 import { SIZE_PRESETS } from '../lib/size-presets';
 
 function renderField(sizeMeters: number, onSelect: (sizeMeters: number) => void = () => {}) {
@@ -18,7 +19,7 @@ describe('SizePresetField', () => {
     renderField(SIZE_PRESETS[0].sizeMeters);
 
     for (const preset of SIZE_PRESETS) {
-      expect(screen.getByRole('radio', { name: preset.label })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: i18n.t(preset.labelKey) })).toBeInTheDocument();
     }
   });
 
@@ -27,7 +28,7 @@ describe('SizePresetField', () => {
     renderField(active.sizeMeters);
 
     for (const preset of SIZE_PRESETS) {
-      expect(screen.getByRole('radio', { name: preset.label })).toHaveAttribute(
+      expect(screen.getByRole('radio', { name: i18n.t(preset.labelKey) })).toHaveAttribute(
         'aria-checked',
         String(preset === active)
       );
@@ -40,7 +41,7 @@ describe('SizePresetField', () => {
     renderField(SIZE_PRESETS[0].sizeMeters, onSelect);
 
     const target = SIZE_PRESETS[SIZE_PRESETS.length - 1];
-    await user.click(screen.getByRole('radio', { name: target.label }));
+    await user.click(screen.getByRole('radio', { name: i18n.t(target.labelKey) }));
 
     expect(onSelect).toHaveBeenCalledWith(target.sizeMeters);
   });

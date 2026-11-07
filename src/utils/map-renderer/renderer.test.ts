@@ -444,7 +444,7 @@ describe('MapRenderer', () => {
     const latest = onRenderStatistics.mock.calls.at(-1)?.[0];
     expect(latest).toMatchObject({ elapsedDurationMs: expect.any(Number) });
     expect(latest.layers).toEqual([
-      expect.objectContaining({ id: 'world-shape', name: 'World shape' }),
+      expect.objectContaining({ id: 'world-shape', nameKey: 'layers.worldShape' }),
     ]);
   });
 
@@ -601,13 +601,13 @@ describe('MapRenderer', () => {
     expect(preview.inspect(1, 1)).toEqual({
       kind: 'raster',
       layerId: 'macro-region',
-      label: 'Macro regions',
+      labelKey: 'layers.macroRegions',
       value: 3,
     });
     expect(preview.inspect(0, 0)).toEqual({
       kind: 'raster',
       layerId: 'macro-region',
-      label: 'Macro regions',
+      labelKey: 'layers.macroRegions',
       value: undefined,
     });
   });
@@ -631,7 +631,6 @@ describe('MapRenderer', () => {
     expect(preview.inspectOverlays(0, 0)).toEqual([
       {
         overlayId: 'heat-zones',
-        label: 'Heat zone',
         value: 'Cold',
       },
     ]);
@@ -659,14 +658,14 @@ describe('MapRenderer', () => {
       visible: true,
     });
     expect(preview.inspectOverlays(0, 0)).toEqual([
-      {
-        overlayId: 'ocean-currents',
-        label: 'Ocean current',
-        value: 'East · 50%',
-      },
+      { overlayId: 'ocean-currents', oceanCurrent: { angle: 0, strength: 0.5 } },
     ]);
-    expect(preview.inspectOverlays(1, 0)).toMatchObject([{ value: 'South · 25%' }]);
-    expect(preview.inspectOverlays(0, 1)).toMatchObject([{ value: 'North · 80%' }]);
+    expect(preview.inspectOverlays(1, 0)).toMatchObject([
+      { oceanCurrent: { angle: Math.fround(Math.PI / 2), strength: 0.25 } },
+    ]);
+    expect(preview.inspectOverlays(0, 1)).toMatchObject([
+      { oceanCurrent: { angle: Math.fround((3 * Math.PI) / 2), strength: Math.fround(0.8) } },
+    ]);
     expect(preview.inspectOverlays(1, 1)).toEqual([]);
 
     preview.setOverlay('ocean-currents', false);
@@ -689,7 +688,6 @@ describe('MapRenderer', () => {
     expect(preview.inspectOverlays(0, 0)).toEqual([
       {
         overlayId: 'moisture',
-        label: 'Moisture',
         value: '42%',
       },
     ]);
@@ -723,9 +721,9 @@ describe('MapRenderer', () => {
     preview.setOverlay('ocean-currents', true);
 
     expect(preview.inspectOverlays(0, 0)).toEqual([
-      { overlayId: 'heat-zones', label: 'Heat zone', value: 'Cold' },
-      { overlayId: 'moisture', label: 'Moisture', value: '42%' },
-      { overlayId: 'ocean-currents', label: 'Ocean current', value: 'East · 50%' },
+      { overlayId: 'heat-zones', value: 'Cold' },
+      { overlayId: 'moisture', value: '42%' },
+      { overlayId: 'ocean-currents', oceanCurrent: { angle: 0, strength: 0.5 } },
     ]);
     preview.dispose();
   });
@@ -744,13 +742,13 @@ describe('MapRenderer', () => {
     expect(preview.inspect(5, 5)).toEqual({
       kind: 'vector',
       layerId: 'geology',
-      label: 'Geology',
+      labelKey: 'layers.geology',
       hit: { id: 'region-1' },
     });
     expect(preview.inspect(0, 0)).toEqual({
       kind: 'vector',
       layerId: 'geology',
-      label: 'Geology',
+      labelKey: 'layers.geology',
       hit: undefined,
     });
     preview.dispose();

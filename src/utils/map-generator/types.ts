@@ -1,3 +1,4 @@
+import type { MessageKey } from '../../i18n';
 import type { WorldDimensions } from '../world-dimensions';
 import type { WorldShape } from '../world-shape';
 
@@ -295,7 +296,7 @@ export type StageMetrics = Record<string, StageMetric> & {
 
 export interface StageStatistics<TId extends string = string> {
   stageId: TId;
-  stageName: string;
+  stageNameKey: MessageKey;
   status: 'completed' | 'failed' | 'skipped';
   startedAt: number;
   finishedAt: number;
@@ -307,7 +308,7 @@ export type StageData = Record<string, unknown>;
 
 interface StageEventBase<TId extends string = string> {
   stageId: TId;
-  stageName: string;
+  stageNameKey: MessageKey;
   stageIndex: number;
   stageCount: number;
 }

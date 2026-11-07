@@ -24,7 +24,7 @@ describe('usePreviewStore', () => {
     const tree: readonly MapLayerNode[] = [
       {
         id: 'climate',
-        label: 'Climate',
+        labelKey: 'layers.baseClimate',
         available: true,
         selectedChild: 'macro-region',
         selectedLayer: 'macro-region',

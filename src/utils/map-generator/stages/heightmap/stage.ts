@@ -34,7 +34,7 @@ export class HeightmapStage implements MapStage<
   { heightmap: Float32Array; provenanceMap: Int16Array }
 > {
   readonly id: PipelineStageId = HEIGHTMAP_STAGE.id;
-  readonly name = HEIGHTMAP_STAGE.name;
+  readonly nameKey = HEIGHTMAP_STAGE.nameKey;
   readonly configKeys = HEIGHTMAP_STAGE.configKeys;
   readonly reads: readonly (keyof MapState)[] = ['worldMask', 'geologyPlan', 'heatZoneMap'];
   readonly writes = ['heightmap', 'provenanceMap'] as const;

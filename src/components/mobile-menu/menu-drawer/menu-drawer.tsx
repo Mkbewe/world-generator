@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router';
 import { Cross1Icon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Button, Flex, IconButton, VisuallyHidden } from '@radix-ui/themes';
@@ -13,7 +14,8 @@ interface MenuDrawerProps {
 
 export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerProps) {
   const { pathname } = useLocation();
-  const themeLabel = `Switch to ${currentTheme === 'light' ? 'dark' : 'light'} mode`;
+  const { t } = useTranslation();
+  const themeLabel = t(currentTheme === 'light' ? 'theme.switchToDark' : 'theme.switchToLight');
   const themeIcon = currentTheme === 'light' ? <MoonIcon /> : <SunIcon />;
 
   return (
@@ -33,19 +35,19 @@ export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerP
       >
         <Flex justify='between' align='center' mb='6'>
           <h2 id='mobile-menu-title' className={styles.title}>
-            Menu
+            {t('mobileMenu.title')}
           </h2>
           <IconButton
             size='3'
             variant='ghost'
             color='gray'
-            aria-label='Close menu'
+            aria-label={t('mobileMenu.close')}
             onClick={onClose}
           >
             <Cross1Icon />
           </IconButton>
         </Flex>
-        <VisuallyHidden>World Generator actions</VisuallyHidden>
+        <VisuallyHidden>{t('mobileMenu.actions', { name: t('app.name') })}</VisuallyHidden>
         <Flex direction='column' className={styles.actions}>
           {NAVIGATION_ITEMS.map(item => (
             <NavLink
@@ -58,7 +60,7 @@ export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerP
                   : styles.navLink
               }
             >
-              {item.label}
+              {t(item.labelKey)}
             </NavLink>
           ))}
           {onToggleTheme && (

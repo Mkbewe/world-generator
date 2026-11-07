@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { TrashIcon } from '@radix-ui/react-icons';
 import { Box, Button, Flex, TextField } from '@radix-ui/themes';
 
@@ -16,6 +17,7 @@ export function RegionCardHeader({
   index: number;
   canRemove?: boolean;
 }) {
+  const { t } = useTranslation();
   const updateRegion = useMacroRegionFormStore(state => state.updateRegion);
   const removeRegion = useMacroRegionFormStore(state => state.removeRegion);
 
@@ -28,7 +30,7 @@ export function RegionCardHeader({
       />
       <TextField.Root
         value={region.label}
-        aria-label='Region label'
+        aria-label={t('forms.macroRegion.regionLabelAria')}
         className={styles.regionName}
         onChange={event => updateRegion(region.id, { label: event.target.value })}
       />
@@ -36,7 +38,7 @@ export function RegionCardHeader({
         size='1'
         variant='soft'
         color='red'
-        aria-label={`Remove ${region.label}`}
+        aria-label={t('forms.macroRegion.removeRegion', { label: region.label })}
         disabled={!canRemove}
         onClick={() => removeRegion(region.id)}
       >

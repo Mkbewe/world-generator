@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, Flex, SegmentedControl } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../../stores';
@@ -5,11 +6,12 @@ import type { MacroRegionConfig } from '../../../../../../utils/map-generator/ty
 import { InfoLabel } from '../../../../../info-label';
 import { SegmentedControlScroll } from '../../../../../segmented-control-scroll';
 import { SliderField } from '../../../../../slider-field';
-import { irregularityLabel, MAX_IRREGULARITY } from '../../../lib/irregularity';
+import { irregularityKey, MAX_IRREGULARITY } from '../../../lib/irregularity';
 import { RegionCardDanger } from '../region-card-danger';
 import { RegionCardHeader } from '../region-card-header';
 
 export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig; index: number }) {
+  const { t } = useTranslation();
   const updateOverlay = useMacroRegionFormStore(state => state.updateOverlay);
   const deformation = useMacroRegionFormStore(state => state.deformation);
   if (region.geometry.kind !== 'band') {
@@ -18,8 +20,8 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
   const geometry = region.geometry;
   const horizontal = geometry.axis === 'y';
   const positionLabels: readonly [string, string] = horizontal
-    ? ['North', 'South']
-    : ['West', 'East'];
+    ? [t('forms.macroRegion.north'), t('forms.macroRegion.south')]
+    : [t('forms.macroRegion.west'), t('forms.macroRegion.east')];
 
   return (
     <Card size='1' variant='surface'>
@@ -27,8 +29,8 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
         <RegionCardHeader region={region} index={index} />
         <Flex direction='column' gap='1'>
           <InfoLabel
-            label='Direction'
-            description='A horizontal band crosses west to east; a vertical band crosses north to south.'
+            label={t('forms.macroRegion.direction')}
+            description={t('forms.macroRegion.directionDescription')}
           />
           <SegmentedControlScroll>
             <SegmentedControl.Root
@@ -36,18 +38,22 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
               value={geometry.axis}
               onValueChange={axis => updateOverlay(region.id, { axis: axis as 'x' | 'y' })}
             >
-              <SegmentedControl.Item value='y'>Horizontal</SegmentedControl.Item>
-              <SegmentedControl.Item value='x'>Vertical</SegmentedControl.Item>
+              <SegmentedControl.Item value='y'>
+                {t('forms.macroRegion.horizontal')}
+              </SegmentedControl.Item>
+              <SegmentedControl.Item value='x'>
+                {t('forms.macroRegion.vertical')}
+              </SegmentedControl.Item>
             </SegmentedControl.Root>
           </SegmentedControlScroll>
         </Flex>
         <SliderField
-          label='Position'
-          description={
+          label={t('forms.macroRegion.position')}
+          description={t(
             horizontal
-              ? 'Places the band between the northern and southern edges.'
-              : 'Places the band between the western and eastern edges.'
-          }
+              ? 'forms.macroRegion.positionHorizontalDescription'
+              : 'forms.macroRegion.positionVerticalDescription'
+          )}
           value={geometry.center * 100}
           min={0}
           max={100}
@@ -57,8 +63,8 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
           onChange={center => updateOverlay(region.id, { center: center / 100 })}
         />
         <SliderField
-          label='Width'
-          description='How much of the world the band covers.'
+          label={t('forms.macroRegion.width')}
+          description={t('forms.macroRegion.widthDescription')}
           value={geometry.width * 100}
           min={5}
           max={100}
@@ -67,14 +73,14 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
           onChange={width => updateOverlay(region.id, { width: width / 100 })}
         />
         <SliderField
-          label='Overlay irregularity'
-          description='Border deformation for this band; overrides the shared border irregularity.'
+          label={t('forms.macroRegion.overlayIrregularity')}
+          description={t('forms.macroRegion.overlayIrregularityDescription')}
           value={region.irregularity ?? deformation.amplitude}
           min={0}
           max={MAX_IRREGULARITY}
           step={0.01}
-          format={irregularityLabel}
-          rangeLabels={['None', 'Large']}
+          format={value => t(irregularityKey(value))}
+          rangeLabels={[t('forms.irregularity.none'), t('forms.irregularity.large')]}
           onChange={value => updateOverlay(region.id, { irregularity: value })}
         />
         <RegionCardDanger region={region} />

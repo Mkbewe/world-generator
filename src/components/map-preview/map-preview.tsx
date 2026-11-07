@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { useMapReadout } from './hooks/use-map-readout';
@@ -28,6 +29,7 @@ interface MapPreviewProps {
 }
 
 export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) {
+  const { t } = useTranslation();
   const isFullscreen = usePreviewFullscreen();
   const cardRef = useRef<HTMLDivElement>(null);
   const layerTree = usePreviewStore(state => state.layerTree);
@@ -139,7 +141,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     >
       <Flex direction='column' gap='4' className={styles.body}>
         <Heading size='5' color='violet' className={styles.heading}>
-          Preview
+          {t('preview.title')}
         </Heading>
         <Separator size='4' className={styles.separator} />
         <Flex align='stretch' gap='3' className={styles.workspace}>

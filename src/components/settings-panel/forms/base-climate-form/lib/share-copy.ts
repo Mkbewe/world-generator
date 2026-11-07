@@ -1,19 +1,19 @@
+import type { MessageKey } from '../../../../../i18n';
 import type { HeatZoneLayout } from '../../../../../stores/form/base-climate-form';
 
 export interface HeatZoneShareCopy {
-  readonly label: string;
-  readonly description: string;
+  readonly labelKey: MessageKey;
+  readonly descriptionKey: MessageKey;
 }
 
 export function heatZoneShareCopy(layout: HeatZoneLayout): HeatZoneShareCopy {
   return layout === 'rings'
     ? {
-        label: 'Ring thickness',
-        description:
-          'How thick each zone is along the radius. Area grows with the square of the radius.',
+        labelKey: 'forms.baseClimate.ringThickness',
+        descriptionKey: 'forms.baseClimate.ringDescription',
       }
     : {
-        label: 'Band width',
-        description: 'How wide each zone is along the axis. Equal widths cover equal areas.',
+        labelKey: 'forms.baseClimate.bandWidth',
+        descriptionKey: 'forms.baseClimate.bandDescription',
       };
 }

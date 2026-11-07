@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useGeologySelection } from './hooks/use-geology-selection';
@@ -22,6 +23,7 @@ import { regionId } from '../lib/region-id';
 
 /** Starter presets, shared layout and per-region settings of the geology map. */
 export function GeologyForm(): React.JSX.Element {
+  const { t } = useTranslation();
   const regionCount = useGeologyFormStore(state => state.regionCount);
   const layout = useGeologyFormStore(state => state.layout);
   const slots = useGeologyFormStore(state => state.slots);
@@ -36,7 +38,7 @@ export function GeologyForm(): React.JSX.Element {
   const regionTypes = activeSlots.map(slot => slot.type);
   const tabItems: readonly RegionTabItem[] = regionTypes.map((type, index) => ({
     id: regionId(index),
-    label: `Region ${index + 1}`,
+    label: t('common.regionName', { index: index + 1 }),
     color: geologyRegionColor(type, index),
   }));
   const { selectedIndex, region, selectRegion } = useGeologySelection(regionCount, slots);
@@ -59,8 +61,7 @@ export function GeologyForm(): React.JSX.Element {
   return (
     <Flex direction='column' gap='4'>
       <Text size='1' color='gray'>
-        Regions cover the whole world with irregular borders. A preset fills the settings once;
-        every later change stays yours.
+        {t('forms.geology.intro')}
       </Text>
       <Flex gap='2' wrap='wrap'>
         {PRESET_OPTIONS.map(option => (
@@ -71,19 +72,19 @@ export function GeologyForm(): React.JSX.Element {
             variant='surface'
             onClick={() => applyPresetWithTerrain(option.id)}
           >
-            {option.label}
+            {t(option.labelKey)}
           </Button>
         ))}
       </Flex>
       <SliderField
-        label='Regions'
-        description='How many regions share the world.'
+        label={t('forms.geology.regions')}
+        description={t('forms.geology.regionsDescription')}
         value={regionCount}
         min={MIN_GEOLOGICAL_REGIONS}
         max={MAX_GEOLOGICAL_REGIONS}
         step={1}
         format={value => value.toFixed(0)}
-        rangeLabels={['One', `${MAX_GEOLOGICAL_REGIONS}`]}
+        rangeLabels={[t('forms.geology.rangeOne'), `${MAX_GEOLOGICAL_REGIONS}`]}
         onChange={setRegionCount}
       />
       {regionCount > 1 && (
@@ -95,32 +96,32 @@ export function GeologyForm(): React.JSX.Element {
         />
       )}
       <SliderField
-        label='Evenness'
-        description='How evenly the region anchors spread over the world.'
+        label={t('forms.geology.evenness')}
+        description={t('forms.geology.evennessDescription')}
         value={layout.evenness}
         min={0}
         max={1}
         step={0.05}
         format={percent}
-        rangeLabels={['Clustered', 'Even']}
+        rangeLabels={[t('forms.geology.rangeClustered'), t('forms.geology.rangeEven')]}
         onChange={evenness => setLayout({ evenness })}
       />
       <SliderField
-        label='Border irregularity'
-        description='How much noise displaces the region borders.'
+        label={t('forms.geology.borderIrregularity')}
+        description={t('forms.geology.borderIrregularityDescription')}
         value={layout.irregularity}
         min={0}
         max={1}
         step={0.05}
         format={percent}
-        rangeLabels={['Clean', 'Ragged']}
+        rangeLabels={[t('forms.geology.rangeClean'), t('forms.geology.rangeRagged')]}
         onChange={irregularity => setLayout({ irregularity })}
       />
       <RegionTabs
         items={tabItems}
         selectedIndex={selectedIndex}
         onSelect={selectRegion}
-        ariaLabel='Geology regions'
+        ariaLabel={t('forms.geology.regionsAria')}
       />
       <RegionEditor index={selectedIndex} region={region} onChange={changeRegion} />
     </Flex>

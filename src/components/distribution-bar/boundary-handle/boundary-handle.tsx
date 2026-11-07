@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import styles from './boundary-handle.module.scss';
 
@@ -22,6 +23,7 @@ export function BoundaryHandle({
   onCommit,
   onCancel,
 }: BoundaryHandleProps) {
+  const { t } = useTranslation();
   const handleRef = useRef<HTMLButtonElement>(null);
   const trackRect = useRef<DOMRect | undefined>(undefined);
   const activePointer = useRef<number | undefined>(undefined);
@@ -45,7 +47,7 @@ export function BoundaryHandle({
       ref={handleRef}
       type='button'
       role='slider'
-      aria-label={`Boundary ${index + 1}`}
+      aria-label={t('distribution.boundary', { index: index + 1 })}
       aria-valuemin={minShare}
       aria-valuemax={100 - minShare}
       aria-valuenow={Math.round(boundary)}

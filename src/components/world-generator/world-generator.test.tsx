@@ -44,12 +44,12 @@ function completed(stageId: string, data: Record<string, unknown>): GenerationEv
   return {
     type: 'stage-completed',
     stageId,
-    stageName: stageId,
+    stageNameKey: 'stages.worldShape',
     stageIndex: 0,
     stageCount: 1,
     statistics: {
       stageId,
-      stageName: stageId,
+      stageNameKey: 'stages.worldShape',
       status: 'completed',
       startedAt: 0,
       finishedAt: 1,
@@ -153,7 +153,7 @@ describe('WorldGenerator', () => {
     expect(config.baseClimate).toEqual(baseClimateConfigOf(useBaseClimateFormStore.getState()));
     const cells = config.world.dimensions.sampleWidth * config.world.dimensions.sampleHeight;
     await act(async () => {
-      onStages?.([{ id: 'world-shape', name: 'World shape' }]);
+      onStages?.([{ id: 'world-shape', nameKey: 'stages.worldShape' }]);
       onEvent?.(completed('world-shape', { worldMask: new Uint8Array(cells).fill(1) }));
     });
 
@@ -188,13 +188,13 @@ describe('WorldGenerator', () => {
     runGenerationMock.mockImplementation((config, options) => {
       const count = config.world.dimensions.sampleWidth * config.world.dimensions.sampleHeight;
       options.onStages([
-        { id: 'world-shape', name: 'World shape' },
-        { id: 'macro-region', name: 'Macro region' },
+        { id: 'world-shape', nameKey: 'stages.worldShape' },
+        { id: 'macro-region', nameKey: 'stages.macroRegion' },
       ]);
       options.onEvent({
         type: 'stage-completed',
         stageId: 'world-shape',
-        stageName: 'World shape',
+        stagenameKey: 'stages.worldShape',
         stageIndex: 0,
         stageCount: 2,
         statistics: {},
@@ -203,7 +203,7 @@ describe('WorldGenerator', () => {
       options.onEvent({
         type: 'stage-completed',
         stageId: 'macro-region',
-        stageName: 'Macro region',
+        stagenameKey: 'stages.macroRegion',
         stageIndex: 1,
         stageCount: 2,
         statistics: {},
@@ -235,17 +235,17 @@ describe('WorldGenerator', () => {
       stages: [
         {
           id: 'world-shape',
-          name: 'World shape',
+          nameKey: 'stages.worldShape',
           status: 'completed',
           percentage: 100,
         },
-        { id: 'macro-region', name: 'Macro region', status: 'completed', percentage: 100 },
+        { id: 'macro-region', nameKey: 'stages.macroRegion', status: 'completed', percentage: 100 },
       ],
     });
     runGenerationMock.mockImplementation((_config, options) => {
       options?.onStages?.([
-        { id: 'world-shape', name: 'World shape' },
-        { id: 'macro-region', name: 'Macro region' },
+        { id: 'world-shape', nameKey: 'stages.worldShape' },
+        { id: 'macro-region', nameKey: 'stages.macroRegion' },
       ]);
       return pendingRun(options);
     });
@@ -262,8 +262,8 @@ describe('WorldGenerator', () => {
       status: 'running',
       startedAt: expect.any(Number),
       stages: [
-        { id: 'world-shape', name: 'World shape', status: 'pending', percentage: 0 },
-        { id: 'macro-region', name: 'Macro region', status: 'pending', percentage: 0 },
+        { id: 'world-shape', nameKey: 'stages.worldShape', status: 'pending', percentage: 0 },
+        { id: 'macro-region', nameKey: 'stages.macroRegion', status: 'pending', percentage: 0 },
       ],
     });
     expect(screen.getByText('Generating')).toBeInTheDocument();
@@ -276,14 +276,14 @@ describe('WorldGenerator', () => {
       stages: [
         {
           id: 'world-shape',
-          name: 'World shape',
+          nameKey: 'stages.worldShape',
           status: 'completed',
           percentage: 100,
           durationMs: 1,
         },
         {
           id: 'macro-region',
-          name: 'Macro region',
+          nameKey: 'stages.macroRegion',
           status: 'completed',
           percentage: 100,
           durationMs: 2,

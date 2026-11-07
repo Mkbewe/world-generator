@@ -1,8 +1,4 @@
-import {
-  describeOceanCurrent,
-  sampleOceanCurrentArrows,
-  traceOceanCurrentArrows,
-} from '../../ocean-current';
+import { sampleOceanCurrentArrows, traceOceanCurrentArrows } from '../../ocean-current';
 import { type RenderTarget, targetKey } from '../../preview-targets';
 import type { LayerHit, MapBaseLayerId, SpatialMask } from '../../types';
 import { effectivePixelRatio } from '../../viewport';
@@ -52,7 +48,7 @@ export class OceanCurrentLayer extends MapLayer {
     if (!Number.isFinite(angle) || !Number.isFinite(strength)) {
       return undefined;
     }
-    return { id: 'ocean-current', label: describeOceanCurrent(angle, strength) };
+    return { id: 'ocean-current', oceanCurrent: { angle, strength } };
   }
 
   protected renderFrame(

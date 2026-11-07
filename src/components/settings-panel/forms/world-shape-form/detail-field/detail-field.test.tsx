@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { DetailField } from './detail-field';
+import { i18n } from '../../../../../i18n';
 import { TERRAIN_DETAIL_OPTIONS } from '../lib/terrain-detail';
 
 function renderField(metersPerSample: number, onChange: (value: number) => void = () => {}) {
@@ -18,7 +19,7 @@ describe('DetailField', () => {
     renderField(TERRAIN_DETAIL_OPTIONS[0].metersPerSample);
 
     for (const option of TERRAIN_DETAIL_OPTIONS) {
-      expect(screen.getByRole('radio', { name: option.label })).toBeInTheDocument();
+      expect(screen.getByRole('radio', { name: i18n.t(option.labelKey) })).toBeInTheDocument();
     }
   });
 
@@ -27,7 +28,7 @@ describe('DetailField', () => {
     renderField(active.metersPerSample);
 
     for (const option of TERRAIN_DETAIL_OPTIONS) {
-      expect(screen.getByRole('radio', { name: option.label })).toHaveAttribute(
+      expect(screen.getByRole('radio', { name: i18n.t(option.labelKey) })).toHaveAttribute(
         'aria-checked',
         String(option === active)
       );
@@ -41,7 +42,7 @@ describe('DetailField', () => {
     renderField(-1, onChange);
 
     for (const option of TERRAIN_DETAIL_OPTIONS) {
-      await user.click(screen.getByRole('radio', { name: option.label }));
+      await user.click(screen.getByRole('radio', { name: i18n.t(option.labelKey) }));
       expect(onChange).toHaveBeenLastCalledWith(option.metersPerSample);
     }
   });

@@ -150,7 +150,9 @@ export class GeologyPlanVectorLayer extends MapLayer {
   }
 
   protected statisticsDetails(): Partial<LayerRenderStatistics> {
-    return { elements: { label: 'Regions', count: this.plan.regions.length } };
+    return {
+      elements: { labelKey: 'statistics.render.elements', count: this.plan.regions.length },
+    };
   }
 
   /** Anchors and type glyphs of the plan, drawn over the finished frame. */

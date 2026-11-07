@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Flex } from '@radix-ui/themes';
 
 import { type BoundaryDraft } from './hooks/use-boundary-draft';
@@ -26,13 +27,16 @@ export function DistributionBar({
   minShare,
   colorForIndex,
   labelForIndex,
-  ariaLabel = 'Region width distribution',
+  ariaLabel,
   header,
 }: DistributionBarProps) {
+  const { t } = useTranslation();
+  const label = ariaLabel ?? t('forms.distribution.aria');
+
   return (
     <Flex direction='column' gap='2'>
       {header && <InfoLabel label={header.label} description={header.description} />}
-      <div className={styles.distribution} aria-label={ariaLabel}>
+      <div className={styles.distribution} aria-label={label}>
         {segments.map((segment, index) => (
           <div
             key={segment.id}

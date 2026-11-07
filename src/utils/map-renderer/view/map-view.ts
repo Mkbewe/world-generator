@@ -106,7 +106,7 @@ export class MapView {
       const source = OVERLAY_LAYERS[id].source;
       return {
         id,
-        label: OVERLAY_LAYERS[id].label,
+        labelKey: OVERLAY_LAYERS[id].labelKey,
         available: id === 'world-boundary' ? this.mask !== undefined : this.hasOverlayData(source),
         visible: this.overlays.isVisible(id),
         disabled: suppressed.has(id),
