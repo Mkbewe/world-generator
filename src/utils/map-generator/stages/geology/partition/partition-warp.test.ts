@@ -17,6 +17,7 @@ function input(irregularity: number, seed = 7): RegionPartitionInput {
     layout: { evenness: 0.5, irregularity },
     dimensions: DIMENSIONS,
     shape: 'disc',
+    worldMask: new Uint8Array(16),
     random: new RandomFactory(seed),
     space: createWorldSpace(DIMENSIONS),
   };

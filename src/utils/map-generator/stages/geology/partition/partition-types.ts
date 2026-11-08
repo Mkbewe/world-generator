@@ -10,6 +10,7 @@ export interface RegionPartitionInput {
   readonly layout: GeologyLayoutConfig;
   readonly dimensions: WorldDimensions;
   readonly shape: WorldShape;
+  readonly worldMask: Uint8Array;
   readonly random: RandomFactory;
   readonly space: WorldSpace;
   readonly signal?: AbortSignal;

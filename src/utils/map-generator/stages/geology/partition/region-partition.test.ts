@@ -46,11 +46,25 @@ function placedMarkers(
   });
 }
 
+function maskOf(dimensions: WorldDimensions, shape: WorldShape): Uint8Array {
+  const space = createWorldSpace(dimensions);
+  const mask = new Uint8Array(dimensions.sampleWidth * dimensions.sampleHeight);
+  for (let y = 0; y < dimensions.sampleHeight; y++) {
+    for (let x = 0; x < dimensions.sampleWidth; x++) {
+      if (containsNormalized(shape, space.cellToNormalized(x, y))) {
+        mask[y * dimensions.sampleWidth + x] = 1;
+      }
+    }
+  }
+  return mask;
+}
+
 function partition(
   markers: readonly RegionMarker[],
   options: {
     dimensions?: WorldDimensions;
     shape?: WorldShape;
+    worldMask?: Uint8Array;
     irregularity?: number;
     seed?: number;
     signal?: AbortSignal;
@@ -58,6 +72,8 @@ function partition(
   } = {}
 ): ReturnType<typeof createRegionPartition> {
   const dimensions = options.dimensions ?? WORLD;
+  const shape = options.shape ?? 'disc';
+  const worldMask = options.worldMask ?? maskOf(dimensions, shape);
   return createRegionPartition({
     regions: markers,
     layout: {
@@ -65,7 +81,8 @@ function partition(
       irregularity: options.irregularity ?? LAYOUT.irregularity,
     },
     dimensions,
-    shape: options.shape ?? 'disc',
+    shape,
+    worldMask,
     random: new RandomFactory(options.seed ?? 17),
     space: createWorldSpace(dimensions),
     signal: options.signal,
@@ -113,19 +130,6 @@ function borderLength(owner: Int16Array, width: number, height: number): number 
   return length;
 }
 
-function maskOf(dimensions: WorldDimensions, shape: WorldShape): Uint8Array {
-  const space = createWorldSpace(dimensions);
-  const mask = new Uint8Array(dimensions.sampleWidth * dimensions.sampleHeight);
-  for (let y = 0; y < dimensions.sampleHeight; y++) {
-    for (let x = 0; x < dimensions.sampleWidth; x++) {
-      if (containsNormalized(shape, space.cellToNormalized(x, y))) {
-        mask[y * dimensions.sampleWidth + x] = 1;
-      }
-    }
-  }
-  return mask;
-}
-
 describe('regionBorderDistances', () => {
   const grid: WorldDimensions = {
     widthMeters: 50,
@@ -164,6 +168,14 @@ describe('regionBorderDistances', () => {
 });
 
 describe('createRegionPartition', () => {
+  it('fails loudly when the world mask does not match the raster size', () => {
+    const dimensions = world(41);
+    const markers = placedMarkers(2, 17, dimensions);
+    expect(() => partition(markers, { dimensions, worldMask: new Uint8Array(10) })).toThrow(
+      'The world mask must match the partition raster size.'
+    );
+  });
+
   it('covers every inside-world cell with exactly one region', () => {
     for (const count of [1, 3, 5, 10]) {
       const dimensions = world(41);

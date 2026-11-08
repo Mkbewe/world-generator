@@ -11,6 +11,7 @@ import type { GeologyPlan, HeatZoneClass, WorldPoint } from '../../types';
 const PLACEMENT_PROGRESS = 0.25;
 
 export interface GeologyPlanOptions {
+  readonly worldMask: Uint8Array;
   readonly thermalAt: (point: WorldPoint) => HeatZoneClass;
   readonly geologyCoupling: number;
   readonly signal?: AbortSignal;
@@ -44,6 +45,7 @@ export function buildGeologyPlan(
     layout: config.layout,
     dimensions,
     shape,
+    worldMask: options.worldMask,
     random,
     space,
     signal: options.signal,

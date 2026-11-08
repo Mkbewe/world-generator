@@ -33,7 +33,7 @@ export class GeologyStage implements MapStage<
   readonly id = GEOLOGY_STAGE.id;
   readonly nameKey = GEOLOGY_STAGE.nameKey;
   readonly configKeys = GEOLOGY_STAGE.configKeys;
-  readonly reads: readonly (keyof MapState)[] = ['heatZoneMap'];
+  readonly reads: readonly (keyof MapState)[] = ['heatZoneMap', 'worldMask'];
   readonly writes = ['geologyPlan'] as const;
   readonly progressStep = 0.1;
 
@@ -49,9 +49,14 @@ export class GeologyStage implements MapStage<
     }
 
     const { sampleWidth, sampleHeight } = context.config.world.dimensions;
+    const cells = sampleWidth * sampleHeight;
     const heatZoneMap = context.state.heatZoneMap;
-    if (!heatZoneMap || heatZoneMap.length !== sampleWidth * sampleHeight) {
+    if (!heatZoneMap || heatZoneMap.length !== cells) {
       throw new Error('A valid heat-zone map must be generated before geology.');
+    }
+    const worldMask = context.state.worldMask;
+    if (!worldMask || worldMask.length !== cells) {
+      throw new Error('A valid world mask must be generated before geology.');
     }
     const baseClimate = context.config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
     const space = spaceOf(context);
@@ -69,6 +74,7 @@ export class GeologyStage implements MapStage<
       context.config.world.dimensions,
       space,
       {
+        worldMask,
         thermalAt,
         geologyCoupling: baseClimate.geologyCoupling,
         signal,
@@ -79,7 +85,12 @@ export class GeologyStage implements MapStage<
     return { geologyPlan };
   }
 
-  validate(state: Readonly<MapState>, _config: Readonly<MapConfig>): void {
+  validate(state: Readonly<MapState>, config: Readonly<MapConfig>): void {
+    const { sampleWidth, sampleHeight } = config.world.dimensions;
+    const cells = sampleWidth * sampleHeight;
+    if (!state.worldMask || state.worldMask.length !== cells) {
+      throw new Error('Pipeline completed without a valid world mask.');
+    }
     if (!state.geologyPlan || !isGeologyPlan(state.geologyPlan)) {
       throw new Error('Pipeline completed without all required map data.');
     }

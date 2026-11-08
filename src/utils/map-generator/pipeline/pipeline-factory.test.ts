@@ -79,7 +79,7 @@ describe('createMapGenerator', () => {
       },
       {
         id: 'geology',
-        reads: ['heatZoneMap'],
+        reads: ['heatZoneMap', 'worldMask'],
         writes: ['geologyPlan'],
         configKeys: [
           'world.seed',
