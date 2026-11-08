@@ -13,10 +13,17 @@ const CONFIG: MapConfig = {
 
 const GEOLOGY: GeologyConfig = DEFAULT_GEOLOGY_CONFIG;
 
-function context(geology: GeologyConfig = GEOLOGY): MapContext<MapConfig, MapState, string> {
+function context(
+  geology: GeologyConfig = GEOLOGY,
+  stateOverrides: Partial<MapState> = {}
+): MapContext<MapConfig, MapState, string> {
   return new MapContext<MapConfig, MapState, string>(
     { ...CONFIG, geology },
-    { heatZoneMap: new Int16Array(64 * 64) }
+    {
+      worldMask: new Uint8Array(64 * 64).fill(1),
+      heatZoneMap: new Int16Array(64 * 64),
+      ...stateOverrides,
+    }
   );
 }
 
@@ -27,7 +34,27 @@ describe('GeologyStage', () => {
 
     expect(data.geologyPlan.regions).toHaveLength(4);
     expect(data.geologyPlan.regionOwnerMap).toHaveLength(64 * 64);
-    expect(() => stage.validate({ geologyPlan: data.geologyPlan }, CONFIG)).not.toThrow();
+    expect(() =>
+      stage.validate({ worldMask: new Uint8Array(64 * 64), geologyPlan: data.geologyPlan }, CONFIG)
+    ).not.toThrow();
+  });
+
+  it('rejects a missing or mismatched world mask on execute', async () => {
+    await expect(
+      new GeologyStage().execute(
+        context(GEOLOGY, { worldMask: undefined }),
+        new AbortController().signal,
+        () => {}
+      )
+    ).rejects.toThrow('world mask must be generated');
+
+    await expect(
+      new GeologyStage().execute(
+        context(GEOLOGY, { worldMask: new Uint8Array(10) }),
+        new AbortController().signal,
+        () => {}
+      )
+    ).rejects.toThrow('world mask must be generated');
   });
 
   it('rejects an invalid configuration before planning', async () => {
@@ -47,8 +74,17 @@ describe('GeologyStage', () => {
     ).rejects.toThrow('Region count must be an integer');
   });
 
+  it('rejects a missing or mismatched world mask on validate', () => {
+    expect(() => new GeologyStage().validate({}, CONFIG)).toThrow('valid world mask');
+    expect(() => new GeologyStage().validate({ worldMask: new Uint8Array(10) }, CONFIG)).toThrow(
+      'valid world mask'
+    );
+  });
+
   it('rejects a missing plan on validate', () => {
-    expect(() => new GeologyStage().validate({}, CONFIG)).toThrow('required map data');
+    expect(() =>
+      new GeologyStage().validate({ worldMask: new Uint8Array(64 * 64) }, CONFIG)
+    ).toThrow('required map data');
   });
 
   it('summarizes the plan by region type', async () => {

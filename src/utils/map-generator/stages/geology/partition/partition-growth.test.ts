@@ -30,6 +30,7 @@ function input(regions: readonly RegionMarker[], seed = 3): RegionPartitionInput
     layout: { evenness: 0.5, irregularity: 0 },
     dimensions: DIMENSIONS,
     shape: 'disc',
+    worldMask: new Uint8Array(81),
     random: new RandomFactory(seed),
     space: createWorldSpace(DIMENSIONS),
   };

@@ -2,13 +2,32 @@ import { geologyPresetConfig } from './config/presets';
 import { MAX_REGION_SIZE, MIN_REGION_SIZE } from './defaults';
 import { buildGeologyPlan } from './plan';
 import type { WorldDimensions } from '../../../world-dimensions';
-import { type WorldShape } from '../../../world-shape';
+import { containsNormalized, type WorldShape } from '../../../world-shape';
 import { RandomFactory } from '../../random';
 import { createWorldSpace } from '../../space';
 import type { GeologicalRegionConfig, GeologyConfig } from '../../types';
 
 const DIMENSIONS = { widthMeters: 2000, heightMeters: 2000, sampleWidth: 65, sampleHeight: 65 };
-const OPTIONS = { thermalAt: () => 'temperate' as const, geologyCoupling: 0 };
+
+function maskOf(dimensions: WorldDimensions, shape: WorldShape): Uint8Array {
+  const space = createWorldSpace(dimensions);
+  const mask = new Uint8Array(dimensions.sampleWidth * dimensions.sampleHeight);
+  for (let y = 0; y < dimensions.sampleHeight; y++) {
+    for (let x = 0; x < dimensions.sampleWidth; x++) {
+      if (containsNormalized(shape, space.cellToNormalized(x, y))) {
+        mask[y * dimensions.sampleWidth + x] = 1;
+      }
+    }
+  }
+  return mask;
+}
+
+const DEFAULT_MASK = maskOf(DIMENSIONS, 'disc');
+const OPTIONS = {
+  worldMask: DEFAULT_MASK,
+  thermalAt: () => 'temperate' as const,
+  geologyCoupling: 0,
+};
 
 function config(regionCount = 5): GeologyConfig {
   const preset = geologyPresetConfig('varied');
@@ -69,7 +88,7 @@ function expectSharesMatch(
       shape,
       dimensions,
       createWorldSpace(dimensions),
-      OPTIONS
+      { ...OPTIONS, worldMask: maskOf(dimensions, shape) }
     );
     plan.regions.forEach((region, index) => {
       const target = (regions[index]?.size ?? 0) / totalWeight;
@@ -122,7 +141,7 @@ describe('buildGeologyPlan', () => {
       'disc',
       DIMENSIONS,
       createWorldSpace(DIMENSIONS),
-      { thermalAt: () => 'warm', geologyCoupling: 1 }
+      { ...OPTIONS, thermalAt: () => 'warm', geologyCoupling: 1 }
     );
 
     expect(plan.regions.map(region => region.thermal)).toEqual(['warm', 'warm', 'warm']);
@@ -369,7 +388,10 @@ describe('buildGeologyPlan', () => {
     const cramped: GeologyConfig = { ...preset, layout: { evenness: 1, irregularity: 0 } };
 
     expect(() =>
-      buildGeologyPlan(cramped, new RandomFactory(5), 'disc', tiny, createWorldSpace(tiny), OPTIONS)
+      buildGeologyPlan(cramped, new RandomFactory(5), 'disc', tiny, createWorldSpace(tiny), {
+        ...OPTIONS,
+        worldMask: maskOf(tiny, 'disc'),
+      })
     ).toThrow(/infeasible|no cells/);
   });
 });

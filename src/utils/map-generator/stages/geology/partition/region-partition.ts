@@ -4,7 +4,6 @@ import type { RegionPartition, RegionPartitionInput } from './partition-types';
 import { createBorderWarp, sampleWarp } from './partition-warp';
 import { gridDistanceTransform } from '../../../../grid-distance';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import { containsNormalized } from '../../../../world-shape';
 import { GenerationCancelledError } from '../../../errors';
 import { checkPartition } from '../validation/partition-check';
 
@@ -26,38 +25,37 @@ const CHECK_PROGRESS = 0.95;
  * configuration.
  */
 export function createRegionPartition(input: RegionPartitionInput): RegionPartition {
-  const { dimensions, shape, space, regions } = input;
+  const { dimensions, worldMask, regions } = input;
   const width = dimensions.sampleWidth;
   const height = dimensions.sampleHeight;
-  const mask = new Uint8Array(width * height);
-  let worldCells = 0;
+  const cells = width * height;
+  if (worldMask.length !== cells) {
+    throw new Error('The world mask must match the partition raster size.');
+  }
 
-  for (let y = 0; y < height; y++) {
+  let worldCells = 0;
+  for (let index = 0; index < cells; index++) {
     if (input.signal?.aborted) {
       throw new GenerationCancelledError();
     }
-    for (let x = 0; x < width; x++) {
-      const index = y * width + x;
-      if (containsNormalized(shape, space.cellToNormalized(x, y))) {
-        mask[index] = 1;
-        worldCells++;
-      }
+    if (worldMask[index] === 1) {
+      worldCells++;
     }
   }
 
   const warp = createBorderWarp(input);
   const report = input.report;
-  const biases = fitRegionBiases(input, mask, warp, worldCells, fraction =>
+  const biases = fitRegionBiases(input, worldMask, warp, worldCells, fraction =>
     report?.(fraction * FIT_PROGRESS)
   );
-  const grown = growRegions(input, mask, sampleWarp(input, warp, 1), biases, 1, {
+  const grown = growRegions(input, worldMask, sampleWarp(input, warp, 1), biases, 1, {
     signal: input.signal,
     worldCells,
     report: fraction => report?.(FIT_PROGRESS + fraction * (GROW_PROGRESS - FIT_PROGRESS)),
   });
   const counts = checkPartition({
     owner: grown.owner,
-    mask,
+    mask: worldMask,
     width,
     height,
     regionCount: regions.length,

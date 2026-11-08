@@ -30,24 +30,26 @@ function build(regions: readonly RegionMarker[]): {
   mask: Uint8Array;
   worldCells: number;
 } {
-  const input: RegionPartitionInput = {
-    regions,
-    layout: { evenness: 0.5, irregularity: 0 },
-    dimensions: DIMENSIONS,
-    shape: 'disc',
-    random: new RandomFactory(5),
-    space: createWorldSpace(DIMENSIONS),
-  };
   const mask = new Uint8Array(41 * 41);
   let worldCells = 0;
+  const space = createWorldSpace(DIMENSIONS);
   for (let y = 0; y < 41; y++) {
     for (let x = 0; x < 41; x++) {
-      if (containsNormalized('disc', input.space.cellToNormalized(x, y))) {
+      if (containsNormalized('disc', space.cellToNormalized(x, y))) {
         mask[y * 41 + x] = 1;
         worldCells++;
       }
     }
   }
+  const input: RegionPartitionInput = {
+    regions,
+    layout: { evenness: 0.5, irregularity: 0 },
+    dimensions: DIMENSIONS,
+    shape: 'disc',
+    worldMask: mask,
+    random: new RandomFactory(5),
+    space,
+  };
   return { input, mask, worldCells };
 }
 
@@ -78,6 +80,7 @@ describe('fitRegionBiases', () => {
       layout: { evenness: 0.5, irregularity: 0 },
       dimensions: tiny,
       shape: 'rectangle',
+      worldMask: new Uint8Array(4).fill(1),
       random: new RandomFactory(5),
       space: createWorldSpace(tiny),
     };
