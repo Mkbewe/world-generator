@@ -8,7 +8,14 @@ import {
   withScale,
   zoomAt,
 } from './view-transform';
-import type { LayerDataRecord, MapInfo } from '../../map-layers';
+import {
+  type LayerDataRecord,
+  type MapBaseLayerId,
+  type MapInfo,
+  OVERLAY_IDS,
+  type OverlayDescriptor,
+  overlayDescriptor,
+} from '../../map-layers';
 import type { WorldShape } from '../../world-shape';
 import { type MapLayer, type MapSize, matchesMapSize, type TileReporter } from '../layer';
 import { LayerPresenter } from '../layer-presenter';
@@ -20,14 +27,7 @@ import {
   renderTarget as renderTargetFor,
   viewTarget as viewTargetFor,
 } from '../preview-targets';
-import {
-  type MapBaseLayerId,
-  type MapOverlayId,
-  OVERLAY_BASE_LAYERS,
-  OVERLAY_IDS,
-  OVERLAY_LAYERS,
-  type SpatialMask,
-} from '../types';
+import { type MapOverlayId, type SpatialMask } from '../types';
 import { Viewport, type ViewportSize } from '../viewport';
 
 export interface MapViewElements {
@@ -41,7 +41,7 @@ export class MapView {
   private readonly overlays: OverlayController;
   private readonly presenter: LayerPresenter;
   private readonly viewport: Viewport;
-  private mask?: SpatialMask;
+  private masks: ReadonlyMap<MapBaseLayerId, SpatialMask> = new Map();
   private shape?: WorldShape;
   private overlayData: LayerDataRecord = {};
   private overlayInfo: MapInfo = {};
@@ -103,11 +103,11 @@ export class MapView {
   get overlayOptions() {
     const suppressed = this.suppressedOverlayIds();
     return OVERLAY_IDS.map(id => {
-      const source = OVERLAY_LAYERS[id].source;
+      const descriptor = overlayDescriptor(id);
       return {
         id,
-        labelKey: OVERLAY_LAYERS[id].labelKey,
-        available: id === 'world-boundary' ? this.mask !== undefined : this.hasOverlayData(source),
+        labelKey: descriptor.labelKey,
+        available: this.overlayAvailable(descriptor),
         visible: this.overlays.isVisible(id),
         disabled: suppressed.has(id),
       };
@@ -147,7 +147,7 @@ export class MapView {
   }
 
   setMasks(masks: ReadonlyMap<MapBaseLayerId, SpatialMask>): void {
-    this.mask = masks.get(OVERLAY_LAYERS['world-boundary'].source);
+    this.masks = masks;
     this.renderOverlays();
   }
 
@@ -262,7 +262,7 @@ export class MapView {
 
   reset(): void {
     this.presenter.reset();
-    this.mask = undefined;
+    this.masks = new Map();
     this.shape = undefined;
     this.overlayData = {};
     this.overlayInfo = {};
@@ -289,7 +289,7 @@ export class MapView {
 
   private renderOverlays(): void {
     this.overlays.render(
-      this.mask,
+      this.masks,
       this.shape,
       this.view,
       this.overlayData,
@@ -305,11 +305,17 @@ export class MapView {
       return suppressed;
     }
     for (const id of OVERLAY_IDS) {
-      if (OVERLAY_BASE_LAYERS[id] === layer) {
+      if (overlayDescriptor(id).baseLayer === layer) {
         suppressed.add(id);
       }
     }
     return suppressed;
+  }
+
+  private overlayAvailable(descriptor: OverlayDescriptor): boolean {
+    return descriptor.source !== undefined
+      ? this.hasOverlayData(descriptor.source)
+      : this.masks.has(descriptor.maskLayer);
   }
 
   private hasOverlayData(source: string): boolean {

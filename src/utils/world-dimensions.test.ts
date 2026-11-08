@@ -1,6 +1,7 @@
 import {
   cellOriginMeters,
   dimensionsFromMeters,
+  isWorldDimensions,
   metersPerSample,
   SAMPLE_BUDGET,
   validateDimensions,
@@ -37,6 +38,20 @@ describe('dimensionsFromMeters', () => {
     expect(() =>
       dimensionsFromMeters({ widthMeters: 10, heightMeters: 10, metersPerSample: 0 })
     ).toThrow('positive number');
+  });
+});
+
+describe('isWorldDimensions', () => {
+  it('accepts finite positive dimensions with a positive sample grid', () => {
+    expect(isWorldDimensions(square)).toBe(true);
+  });
+
+  it('rejects malformed captured dimensions', () => {
+    expect(isWorldDimensions(undefined)).toBe(false);
+    expect(isWorldDimensions('nope')).toBe(false);
+    expect(isWorldDimensions({ ...square, widthMeters: 0 })).toBe(false);
+    expect(isWorldDimensions({ ...square, sampleWidth: 0 })).toBe(false);
+    expect(isWorldDimensions({ ...square, sampleHeight: Number.NaN })).toBe(false);
   });
 });
 

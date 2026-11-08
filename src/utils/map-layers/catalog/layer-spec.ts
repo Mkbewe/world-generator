@@ -27,6 +27,22 @@ export interface LayerGroupSpec {
   readonly labelKey: MessageKey;
 }
 
+/**
+ * Overlay presentation of a catalog entry. Availability, defaults and
+ * suppression live here instead of in parallel renderer maps.
+ */
+export interface OverlaySpec<TId extends string = string> {
+  readonly id: string;
+  readonly labelKey: MessageKey;
+  readonly defaultVisible: boolean;
+  /** Base layer this overlay duplicates; suppressed while that layer is displayed. */
+  readonly baseLayer?: TId;
+  /** Layer whose spatial mask gives the overlay its world frame. */
+  readonly maskLayer: TId;
+  /** Data key that gates the overlay; absent for overlays backed by a mask. */
+  readonly source?: string;
+}
+
 /** Fields every catalog entry shares. */
 interface LayerSpecBase<TId extends string = string> {
   readonly id: TId;
@@ -37,6 +53,10 @@ interface LayerSpecBase<TId extends string = string> {
   readonly group?: LayerGroupSpec;
   /** Whether the settings panel exposes a form for this layer. */
   readonly settingsForm?: boolean;
+  /** Whether a cursor readout descriptor is registered for this layer. */
+  readonly readout?: boolean;
+  /** Overlay presentation of this layer or its data. */
+  readonly overlay?: OverlaySpec<TId>;
 }
 
 /** Declarative description of one renderable raster. */

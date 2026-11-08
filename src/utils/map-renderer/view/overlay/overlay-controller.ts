@@ -1,37 +1,32 @@
-import { HeatZoneOverlayRenderer } from './heat-zone-overlay-renderer';
-import { MoistureOverlayRenderer } from './moisture-overlay-renderer';
-import { OceanCurrentOverlayRenderer } from './ocean-current-overlay-renderer';
+import { OVERLAY_COMPONENTS } from './overlay-components';
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
-import { WorldBoundaryOverlayRenderer } from './world-boundary-overlay-renderer';
-import type { LayerDataRecord } from '../../../map-layers';
+import { type LayerDataRecord, type MapBaseLayerId, overlayDescriptor } from '../../../map-layers';
 import type { WorldShape } from '../../../world-shape';
-import {
-  DEFAULT_OVERLAY_VISIBILITY,
-  type MapInfo,
-  type MapOverlayId,
-  type SpatialMask,
-} from '../../types';
+import type { MapInfo, MapOverlayId, SpatialMask } from '../../types';
 import { effectivePixelRatio, type Viewport, type ViewportSize } from '../../viewport';
 import { WorldBoundaryRenderer } from '../../world-boundary-renderer';
 import type { ViewTransform } from '../view-transform';
 
-const EMPTY_INFO: MapInfo = {};
 const EMPTY_SUPPRESSED: ReadonlySet<MapOverlayId> = new Set();
+const EMPTY_DATA: LayerDataRecord = {};
+const EMPTY_INFO: MapInfo = {};
+
+interface ActiveOverlay {
+  readonly renderer: OverlayRenderer;
+  readonly frame: OverlayFrame;
+}
 
 /** Composites the visible overlays in painter order: fields, then the outline. */
 export class OverlayController {
   private readonly boundary: WorldBoundaryRenderer;
   private readonly renderers: readonly OverlayRenderer[];
-  private visible: Record<MapOverlayId, boolean> = { ...DEFAULT_OVERLAY_VISIBILITY };
+  private visible: Record<string, boolean> = {};
   private rendered?: {
-    world: SpatialMask;
+    worlds: readonly SpatialMask[];
     viewport: ViewportSize;
     shape: WorldShape;
     view: ViewTransform;
-    heatMap?: Int16Array;
-    moistureMap?: Float32Array;
-    currentMap?: Float32Array;
-    currentStrength?: Float32Array;
+    data: LayerDataRecord;
     info: MapInfo;
     activeIds: readonly MapOverlayId[];
   };
@@ -42,16 +37,11 @@ export class OverlayController {
     private readonly viewport: Viewport
   ) {
     this.boundary = new WorldBoundaryRenderer(canvas);
-    this.renderers = [
-      new HeatZoneOverlayRenderer(),
-      new MoistureOverlayRenderer(),
-      new OceanCurrentOverlayRenderer(),
-      new WorldBoundaryOverlayRenderer(this.boundary),
-    ];
+    this.renderers = OVERLAY_COMPONENTS.map(component => component.createRenderer(canvas));
   }
 
   isVisible(id: MapOverlayId): boolean {
-    return this.visible[id];
+    return this.visible[id] ?? overlayDescriptor(id).defaultVisible;
   }
 
   setVisible(id: MapOverlayId, visible: boolean): void {
@@ -66,32 +56,24 @@ export class OverlayController {
   }
 
   render(
-    world: SpatialMask | undefined,
+    masks: ReadonlyMap<MapBaseLayerId, SpatialMask>,
     shape: WorldShape | undefined,
     view: ViewTransform,
-    data: LayerDataRecord = {},
+    data: LayerDataRecord = EMPTY_DATA,
     info: MapInfo = EMPTY_INFO,
     suppressed: ReadonlySet<MapOverlayId> = EMPTY_SUPPRESSED
   ): void {
     const viewport = this.size();
-    if (!viewport || !world || !shape) {
+    if (!viewport || !shape) {
       this.clear();
       return;
     }
-    const frame: OverlayFrame = { canvas: this.canvas, world, shape, viewport, view, data, info };
-    const active = this.renderers.filter(
-      renderer =>
-        this.visible[renderer.id] && !suppressed.has(renderer.id) && renderer.isAvailable(frame)
-    );
+    const active = this.activeOverlays(masks, shape, viewport, view, data, info, suppressed);
     if (active.length === 0) {
       this.clear();
       return;
     }
-    const heatMap = heatZoneMapOf(data);
-    const moistureMap = moistureMapOf(data);
-    const currentMap = float32MapOf(data, 'oceanCurrentMap');
-    const currentStrength = float32MapOf(data, 'oceanCurrentStrength');
-    if (this.isUnchanged(frame, active, heatMap, moistureMap, currentMap, currentStrength)) {
+    if (this.isUnchanged(viewport, shape, view, data, info, active)) {
       return;
     }
 
@@ -99,20 +81,17 @@ export class OverlayController {
     this.rendered = undefined;
     try {
       this.prepare(viewport);
-      for (const renderer of active) {
+      for (const { renderer, frame } of active) {
         renderer.render(frame);
       }
       this.rendered = {
-        world,
+        worlds: active.map(({ frame }) => frame.world),
         viewport,
         shape,
         view,
-        heatMap,
-        moistureMap,
-        currentMap,
-        currentStrength,
+        data,
         info,
-        activeIds: active.map(renderer => renderer.id),
+        activeIds: active.map(({ renderer }) => renderer.id),
       };
     } catch (error) {
       // Overlays are best-effort; base layer errors are reported elsewhere.
@@ -126,35 +105,69 @@ export class OverlayController {
   reset(): void {
     this.rendered = undefined;
     this.renderDurationMs = 0;
-    this.visible = { ...DEFAULT_OVERLAY_VISIBILITY };
+    this.visible = {};
     this.boundary.clear();
   }
 
+  private activeOverlays(
+    masks: ReadonlyMap<MapBaseLayerId, SpatialMask>,
+    shape: WorldShape,
+    viewport: ViewportSize,
+    view: ViewTransform,
+    data: LayerDataRecord,
+    info: MapInfo,
+    suppressed: ReadonlySet<MapOverlayId>
+  ): readonly ActiveOverlay[] {
+    const active: ActiveOverlay[] = [];
+    for (const renderer of this.renderers) {
+      if (!this.isVisible(renderer.id) || suppressed.has(renderer.id)) {
+        continue;
+      }
+      const mask = masks.get(overlayDescriptor(renderer.id).maskLayer);
+      if (!mask) {
+        continue;
+      }
+      const frame: OverlayFrame = {
+        canvas: this.canvas,
+        world: mask,
+        shape,
+        viewport,
+        view,
+        data,
+        info,
+      };
+      if (renderer.isAvailable(frame)) {
+        active.push({ renderer, frame });
+      }
+    }
+    return active;
+  }
+
   private isUnchanged(
-    frame: OverlayFrame,
-    active: readonly OverlayRenderer[],
-    heatMap: Int16Array | undefined,
-    moistureMap: Float32Array | undefined,
-    currentMap: Float32Array | undefined,
-    currentStrength: Float32Array | undefined
+    viewport: ViewportSize,
+    shape: WorldShape,
+    view: ViewTransform,
+    data: LayerDataRecord,
+    info: MapInfo,
+    active: readonly ActiveOverlay[]
   ): boolean {
     const rendered = this.rendered;
     return (
-      rendered?.world === frame.world &&
-      rendered.shape === frame.shape &&
-      rendered.view.scale === frame.view.scale &&
-      rendered.view.centerX === frame.view.centerX &&
-      rendered.view.centerY === frame.view.centerY &&
-      rendered.viewport.width === frame.viewport.width &&
-      rendered.viewport.height === frame.viewport.height &&
-      rendered.viewport.devicePixelRatio === frame.viewport.devicePixelRatio &&
-      rendered.heatMap === heatMap &&
-      rendered.moistureMap === moistureMap &&
-      rendered.currentMap === currentMap &&
-      rendered.currentStrength === currentStrength &&
-      rendered.info === frame.info &&
+      rendered !== undefined &&
+      rendered.shape === shape &&
+      rendered.view.scale === view.scale &&
+      rendered.view.centerX === view.centerX &&
+      rendered.view.centerY === view.centerY &&
+      rendered.viewport.width === viewport.width &&
+      rendered.viewport.height === viewport.height &&
+      rendered.viewport.devicePixelRatio === viewport.devicePixelRatio &&
+      sameRecord(rendered.data, data) &&
+      rendered.info === info &&
       rendered.activeIds.length === active.length &&
-      active.every((renderer, index) => rendered.activeIds[index] === renderer.id)
+      active.every(
+        ({ renderer, frame }, index) =>
+          rendered.activeIds[index] === renderer.id && rendered.worlds[index] === frame.world
+      )
     );
   }
 
@@ -176,16 +189,9 @@ export class OverlayController {
   }
 }
 
-function heatZoneMapOf(data: LayerDataRecord): Int16Array | undefined {
-  const value = data.heatZoneMap;
-  return value instanceof Int16Array ? value : undefined;
-}
-
-function moistureMapOf(data: LayerDataRecord): Float32Array | undefined {
-  return float32MapOf(data, 'moistureBaseMap');
-}
-
-function float32MapOf(data: LayerDataRecord, key: string): Float32Array | undefined {
-  const value = data[key];
-  return value instanceof Float32Array ? value : undefined;
+/** Shallow reference comparison: overlay data is a flat record of rasters. */
+function sameRecord(left: LayerDataRecord, right: LayerDataRecord): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  return leftKeys.length === rightKeys.length && leftKeys.every(key => left[key] === right[key]);
 }

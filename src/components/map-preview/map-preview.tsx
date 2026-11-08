@@ -8,13 +8,14 @@ import { usePreviewControls } from './hooks/use-preview-controls';
 import { usePreviewFullscreen } from './hooks/use-preview-fullscreen';
 import { useTabSync } from './hooks/use-tab-sync';
 import { LayerNavigation } from './lib/layer-navigation';
+import { readoutItems } from './lib/readout-registry';
 import {
   type GenerationProgressState,
   tabForLayer,
   usePreviewStore,
   useViewSyncStore,
 } from '../../stores';
-import { readoutItems, worldDimensions } from '../../utils/map-readout';
+import { worldDimensions } from '../../utils/map-readout';
 import { layerRegistry, type MapBaseLayerId, type MapRenderer } from '../../utils/map-renderer';
 import { GenerationProgress } from '../generation-progress';
 import { LayerTabs } from '../layer-tabs';

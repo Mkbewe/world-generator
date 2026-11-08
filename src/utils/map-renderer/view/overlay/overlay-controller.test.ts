@@ -2,7 +2,7 @@ import { HeatZoneOverlayRenderer } from './heat-zone-overlay-renderer';
 import { MoistureOverlayRenderer } from './moisture-overlay-renderer';
 import { OceanCurrentOverlayRenderer } from './ocean-current-overlay-renderer';
 import { OverlayController } from './overlay-controller';
-import type { SpatialMask } from '../../types';
+import type { MapBaseLayerId, SpatialMask } from '../../types';
 import { Viewport } from '../../viewport';
 import { WorldBoundaryRenderer } from '../../world-boundary-renderer';
 import { fitView } from '../view-transform';
@@ -10,6 +10,10 @@ import { fitView } from '../view-transform';
 function setup() {
   const viewport = new Viewport(document.createElement('div'), vi.fn());
   return new OverlayController(document.createElement('canvas'), viewport);
+}
+
+function worldMasks(world: SpatialMask): ReadonlyMap<MapBaseLayerId, SpatialMask> {
+  return new Map([['world-shape', world]]);
 }
 
 describe('OverlayController', () => {
@@ -26,7 +30,7 @@ describe('OverlayController', () => {
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     expect(controller.size()?.devicePixelRatio).toBe(effective);
     expect(render).toHaveBeenCalledWith(
       world,
@@ -87,7 +91,7 @@ describe('OverlayController', () => {
 
     controller.setVisible('heat-zones', true);
     controller.render(
-      world,
+      worldMasks(world),
       'disc',
       fitView(),
       { heatZoneMap: new Int16Array([0]) },
@@ -123,7 +127,7 @@ describe('OverlayController', () => {
     };
 
     controller.setVisible('heat-zones', true);
-    controller.render(world, 'disc', fitView(), { heatZoneMap: map }, info);
+    controller.render(worldMasks(world), 'disc', fitView(), { heatZoneMap: map }, info);
 
     expect(drawZones).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -158,7 +162,7 @@ describe('OverlayController', () => {
     controller.setVisible('heat-zones', true);
     controller.setVisible('moisture', true);
     controller.render(
-      world,
+      worldMasks(world),
       'disc',
       fitView(),
       { heatZoneMap: new Int16Array([0]), moistureBaseMap: new Float32Array([0.5]) },
@@ -189,7 +193,9 @@ describe('OverlayController', () => {
     };
 
     controller.setVisible('moisture', true);
-    controller.render(world, 'disc', fitView(), { moistureBaseMap: new Float32Array([0.5]) });
+    controller.render(worldMasks(world), 'disc', fitView(), {
+      moistureBaseMap: new Float32Array([0.5]),
+    });
 
     expect(drawMoisture).toHaveBeenCalledOnce();
   });
@@ -213,15 +219,15 @@ describe('OverlayController', () => {
     const strength = new Float32Array([0.5]);
 
     controller.setVisible('ocean-currents', true);
-    controller.render(world, 'disc', fitView(), {
+    controller.render(worldMasks(world), 'disc', fitView(), {
       oceanCurrentMap: map,
       oceanCurrentStrength: strength,
     });
-    controller.render(world, 'disc', fitView(), {
+    controller.render(worldMasks(world), 'disc', fitView(), {
       oceanCurrentMap: map,
       oceanCurrentStrength: strength,
     });
-    controller.render(world, 'disc', fitView(), {
+    controller.render(worldMasks(world), 'disc', fitView(), {
       oceanCurrentMap: map,
       oceanCurrentStrength: new Float32Array([0.6]),
     });
@@ -248,7 +254,7 @@ describe('OverlayController', () => {
     controller.setVisible('heat-zones', true);
     controller.setVisible('heat-zones', false);
     controller.render(
-      world,
+      worldMasks(world),
       'disc',
       fitView(),
       { heatZoneMap: new Int16Array([0]) },
@@ -269,21 +275,21 @@ describe('OverlayController', () => {
     const controller = setup();
     const world = {} as SpatialMask;
 
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     expect(render).toHaveBeenCalledWith(world, expect.anything(), 'disc', fitView());
 
-    controller.render(world, undefined, fitView());
+    controller.render(worldMasks(world), undefined, fitView());
     expect(clear).toHaveBeenCalledOnce();
     expect(render).toHaveBeenCalledOnce();
 
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     expect(render).toHaveBeenCalledTimes(2);
 
     controller.setVisible('world-boundary', false);
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     expect(clear).toHaveBeenCalledTimes(2);
 
-    controller.render(undefined, undefined, fitView());
+    controller.render(new Map(), undefined, fitView());
     expect(clear).toHaveBeenCalledTimes(2);
   });
 
@@ -296,19 +302,19 @@ describe('OverlayController', () => {
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, 'disc', fitView());
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     measure.mockReturnValue({ width: 10, height: 10, devicePixelRatio: 4 });
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     expect(render).toHaveBeenCalledOnce();
 
     measure.mockReturnValue({ width: 12, height: 10, devicePixelRatio: 4 });
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     measure.mockReturnValue({ width: 12, height: 14, devicePixelRatio: 4 });
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     measure.mockReturnValue({ width: 12, height: 14, devicePixelRatio: 1 });
-    controller.render(world, 'disc', fitView());
-    controller.render({} as SpatialMask, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
+    controller.render(worldMasks({} as SpatialMask), 'disc', fitView());
     expect(render).toHaveBeenCalledTimes(5);
   });
 
@@ -318,17 +324,17 @@ describe('OverlayController', () => {
     const render = vi.spyOn(WorldBoundaryRenderer.prototype, 'stroke').mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     controller.setVisible('world-boundary', false);
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     controller.setVisible('world-boundary', true);
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     measure.mockReturnValue(undefined);
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     measure.mockReturnValue(viewport);
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     controller.reset();
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     expect(render).toHaveBeenCalledTimes(4);
   });
 
@@ -347,9 +353,9 @@ describe('OverlayController', () => {
       .mockImplementation(() => {});
     const controller = setup();
     const world = {} as SpatialMask;
-    controller.render(world, 'disc', fitView());
-    controller.render(world, 'disc', fitView());
-    controller.render(world, 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
+    controller.render(worldMasks(world), 'disc', fitView());
     expect(render).toHaveBeenCalledTimes(2);
   });
 

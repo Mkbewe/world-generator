@@ -1,9 +1,14 @@
 export {
   hasCurrentRasterOutputs,
+  findOverlayDescriptor,
   LAYER_CATALOG,
+  OVERLAY_CATALOG,
+  OVERLAY_IDS,
+  overlayDescriptor,
   RASTER_CATALOG,
   selectRasters,
 } from './catalog/catalog';
+export type { MapOverlayId, OverlayDescriptor } from './catalog/catalog';
 export {
   compilePalette,
   BASE_CLIMATE_ZONE_COLORS,
@@ -22,6 +27,7 @@ export type {
   DiscreteOverflow,
   LayerGroupSpec,
   LayerSpec,
+  OverlaySpec,
   PaletteSpec,
   RampStop,
   RasterData,
