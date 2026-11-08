@@ -2,10 +2,10 @@ import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
 import type { MessageKey } from '../../i18n';
 import type { MacroRegionConfig, MacroRegionDeformation } from '../map-generator/types';
-import type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
+import type { MapBaseLayerId, MapInfo, MapOverlayId, MapRasters } from '../map-layers';
 import type { WorldShape } from '../world-shape';
 
-export type { MapBaseLayerId, MapInfo, MapRasters } from '../map-layers';
+export type { MapBaseLayerId, MapInfo, MapOverlayId, MapRasters } from '../map-layers';
 
 /** Immutable spatial data usable by layers and overlays. */
 export interface SpatialMask {
@@ -33,33 +33,6 @@ export interface MapSnapshotData extends MapSize, MapMetadata {
   layers: MapRasters;
   info?: MapInfo;
 }
-
-export const OVERLAY_LAYERS = {
-  'world-boundary': { labelKey: 'overlays.world-boundary', source: 'world-shape' },
-  'heat-zones': { labelKey: 'overlays.heat-zones', source: 'heatZoneMap' },
-  'moisture': { labelKey: 'overlays.moisture', source: 'moistureBaseMap' },
-  'ocean-currents': { labelKey: 'overlays.ocean-currents', source: 'oceanCurrentMap' },
-} as const;
-
-export type MapOverlayId = keyof typeof OVERLAY_LAYERS;
-
-/** Overlays that duplicate their own base layer and should be suppressed there. */
-export const OVERLAY_BASE_LAYERS: Partial<Record<MapOverlayId, MapBaseLayerId>> = {
-  'heat-zones': 'heat-zones',
-  'moisture': 'moisture',
-  'ocean-currents': 'ocean-currents',
-};
-
-/** ID in declaration order, for iteration. */
-export const OVERLAY_IDS = Object.keys(OVERLAY_LAYERS) as MapOverlayId[];
-
-/** Overlays drawn before the user changes anything. */
-export const DEFAULT_OVERLAY_VISIBILITY: Record<MapOverlayId, boolean> = {
-  'world-boundary': true,
-  'heat-zones': false,
-  'moisture': false,
-  'ocean-currents': false,
-};
 
 export interface MapLayerOption<TId extends string> {
   id: TId;

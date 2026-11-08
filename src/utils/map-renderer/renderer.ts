@@ -1,9 +1,5 @@
-import {
-  HeatZoneOverlayInspector,
-  MoistureOverlayInspector,
-  OceanCurrentOverlayInspector,
-  OverlayInspectorRegistry,
-} from './view/overlay/inspection';
+import { OverlayInspectorRegistry } from './view/overlay/inspection';
+import { OVERLAY_COMPONENTS } from './view/overlay/overlay-components';
 import { fitView, isFitted, type ViewTransform } from './view/view-transform';
 import {
   isLayerHit,
@@ -16,7 +12,6 @@ import {
 import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
 import {
-  DEFAULT_OVERLAY_VISIBILITY,
   type MapBaseLayerId,
   type MapInfo,
   type MapInspection,
@@ -26,12 +21,10 @@ import {
   type MapOverlayInspection,
   type MapOverlayOption,
   type MapSnapshotData,
-  OVERLAY_IDS,
-  OVERLAY_LAYERS,
   type RenderStatistics,
 } from './types';
 import { type MapPointerSample, MapView, type MapViewElements } from './view';
-import type { LayerDataRecord } from '../map-layers';
+import { type LayerDataRecord, OVERLAY_IDS, overlayDescriptor } from '../map-layers';
 import type { WorldShape } from '../world-shape';
 
 export interface MapRendererState {
@@ -65,9 +58,9 @@ export function emptyRenderState(): MapRendererState {
     })),
     overlays: OVERLAY_IDS.map(id => ({
       id,
-      labelKey: OVERLAY_LAYERS[id].labelKey,
+      labelKey: overlayDescriptor(id).labelKey,
       available: false,
-      visible: DEFAULT_OVERLAY_VISIBILITY[id],
+      visible: overlayDescriptor(id).defaultVisible,
     })),
     info: {},
     zoom: 1,
@@ -87,11 +80,12 @@ export class MapRenderer {
   private mapSize?: MapSize;
   private info: MapInfo = {};
   private overlayData: LayerDataRecord = {};
-  private readonly overlayInspectors = new OverlayInspectorRegistry([
-    new HeatZoneOverlayInspector(),
-    new MoistureOverlayInspector(),
-    new OceanCurrentOverlayInspector(),
-  ]);
+  private readonly overlayInspectors = new OverlayInspectorRegistry(
+    OVERLAY_COMPONENTS.flatMap(component => {
+      const inspector = 'createInspector' in component ? component.createInspector() : undefined;
+      return inspector ? [inspector] : [];
+    })
+  );
 
   constructor(
     elements: MapViewElements,

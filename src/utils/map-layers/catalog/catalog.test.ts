@@ -1,4 +1,10 @@
-import { hasCurrentRasterOutputs, LAYER_CATALOG, RASTER_CATALOG } from './catalog';
+import {
+  hasCurrentRasterOutputs,
+  LAYER_CATALOG,
+  OVERLAY_CATALOG,
+  overlayDescriptor,
+  RASTER_CATALOG,
+} from './catalog';
 import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
 import { RASTER_OUTPUT_KEYS } from '../../map-generator/pipeline/stage-outputs';
 
@@ -33,5 +39,25 @@ describe('LAYER_CATALOG', () => {
     for (const spec of RASTER_CATALOG) {
       expect(outputs.has(spec.source)).toBe(true);
     }
+  });
+
+  it('derives every overlay descriptor from its catalog entry', () => {
+    expect(OVERLAY_CATALOG.map(overlay => overlay.id)).toEqual([
+      'world-boundary',
+      'heat-zones',
+      'moisture',
+      'ocean-currents',
+    ]);
+    expect(overlayDescriptor('world-boundary')).toMatchObject({
+      maskLayer: 'world-shape',
+      source: undefined,
+      defaultVisible: true,
+    });
+    expect(overlayDescriptor('heat-zones')).toMatchObject({
+      baseLayer: 'heat-zones',
+      maskLayer: 'world-shape',
+      source: 'heatZoneMap',
+      defaultVisible: false,
+    });
   });
 });

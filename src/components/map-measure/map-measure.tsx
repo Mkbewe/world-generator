@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 
 import { useElementSize } from '../../hooks/use-element-size';
 import { formatDistance } from '../../utils/format';
+import { createWorldSpace } from '../../utils/map-generator/space';
 import { type Measurement, measurementMeters, segmentMeters } from '../../utils/map-readout';
 import { PRESENTATION_MARGIN, project, type ViewTransform } from '../../utils/map-renderer';
 import { roundDistance } from '../../utils/measure';
@@ -55,6 +56,7 @@ export function MapMeasure({
   if (!measurement || width <= 0 || height <= 0 || measurement.points.length === 0) {
     return null;
   }
+  const space = createWorldSpace(dimensions);
   const padding = Math.min(PRESENTATION_MARGIN, width * 0.1, height * 0.1);
   const projection = project(
     viewTransform,
@@ -83,12 +85,12 @@ export function MapMeasure({
         start,
         end,
         preview: index === samples.length - 1 && preview !== undefined,
-        meters: segmentMeters(dimensions, startSample, endSample),
+        meters: segmentMeters(space, startSample, endSample),
       });
     }
   }
   const metersPerPixel = dimensions.widthMeters / dimensions.sampleWidth / projection.cellSize;
-  const totalMeters = measurementMeters(dimensions, measurement);
+  const totalMeters = measurementMeters(space, measurement);
   const last = path[path.length - 1];
   const previous = path[path.length - 2] ?? last;
   const normal = last ? normalOf(previous, last) : { x: 0, y: -1 };

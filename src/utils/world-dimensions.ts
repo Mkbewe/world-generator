@@ -5,6 +5,19 @@ export interface WorldDimensions {
   readonly sampleHeight: number;
 }
 
+/** Narrows dimensions captured with a map; malformed values cannot measure anything. */
+export function isWorldDimensions(value: unknown): value is WorldDimensions {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const { widthMeters, heightMeters, sampleWidth, sampleHeight } = value as WorldDimensions;
+  const numbers = [widthMeters, heightMeters, sampleWidth, sampleHeight];
+  if (!numbers.every(entry => typeof entry === 'number' && Number.isFinite(entry))) {
+    return false;
+  }
+  return widthMeters > 0 && heightMeters > 0 && sampleWidth >= 1 && sampleHeight >= 1;
+}
+
 /** Physical world side length in meters. */
 export type WorldSize = number;
 

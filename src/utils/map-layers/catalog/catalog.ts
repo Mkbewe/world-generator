@@ -1,5 +1,6 @@
-import type { LayerSpec } from './layer-spec';
-import type { LayerDataRecord, MapRasters } from './types';
+import type { LayerSpec, OverlaySpec } from './layer-spec';
+import type { LayerDataRecord, MapBaseLayerId, MapRasters } from './types';
+import type { MessageKey } from '../../../i18n';
 import { isHeatZoneInfoList } from '../../map-generator/info-definitions';
 import { PIPELINE_STAGES } from '../../map-generator/pipeline/stage-definitions';
 import {
@@ -37,6 +38,13 @@ const CATALOG_ENTRIES = [
     dataType: 'uint8',
     providesMask: { insideValue: 1 },
     settingsForm: true,
+    readout: true,
+    overlay: {
+      id: 'world-boundary',
+      labelKey: 'overlays.world-boundary',
+      defaultVisible: true,
+      maskLayer: 'world-shape',
+    },
     palette: { kind: 'solid', color: [16, 42, 67] },
   },
   {
@@ -48,6 +56,7 @@ const CATALOG_ENTRIES = [
     clipTo: 'world-shape',
     boundarySource: 'region',
     settingsForm: true,
+    readout: true,
     palette: { kind: 'discrete', colors: REGION_COLORS, overflow: 'cycle' },
   },
   {
@@ -59,6 +68,15 @@ const CATALOG_ENTRIES = [
     clipTo: 'world-shape',
     skipValue: -1,
     settingsForm: true,
+    readout: true,
+    overlay: {
+      id: 'heat-zones',
+      labelKey: 'overlays.heat-zones',
+      defaultVisible: false,
+      baseLayer: 'heat-zones',
+      maskLayer: 'world-shape',
+      source: 'heatZoneMap',
+    },
     group: { id: 'base-climate', labelKey: 'layers.baseClimate' },
     palette: HEAT_ZONE_FALLBACK_PALETTE,
     paletteFromInfo: info =>
@@ -74,6 +92,15 @@ const CATALOG_ENTRIES = [
     dataType: 'float32',
     clipTo: 'world-shape',
     settingsForm: false,
+    readout: true,
+    overlay: {
+      id: 'moisture',
+      labelKey: 'overlays.moisture',
+      defaultVisible: false,
+      baseLayer: 'moisture',
+      maskLayer: 'world-shape',
+      source: 'moistureBaseMap',
+    },
     group: { id: 'base-climate', labelKey: 'layers.baseClimate' },
     palette: { kind: 'ramp', stops: MOISTURE_STOPS },
   },
@@ -85,6 +112,15 @@ const CATALOG_ENTRIES = [
     dataSources: ['oceanCurrentStrength'],
     clipTo: 'world-shape',
     settingsForm: false,
+    readout: true,
+    overlay: {
+      id: 'ocean-currents',
+      labelKey: 'overlays.ocean-currents',
+      defaultVisible: false,
+      baseLayer: 'ocean-currents',
+      maskLayer: 'world-shape',
+      source: 'oceanCurrentMap',
+    },
     group: { id: 'base-climate', labelKey: 'layers.baseClimate' },
   },
   {
@@ -94,6 +130,7 @@ const CATALOG_ENTRIES = [
     source: 'geologyPlan',
     clipTo: 'world-shape',
     settingsForm: true,
+    readout: true,
   },
   {
     id: 'heightmap',
@@ -103,6 +140,7 @@ const CATALOG_ENTRIES = [
     dataType: 'float32',
     clipTo: 'world-shape',
     settingsForm: true,
+    readout: true,
     palette: { kind: 'ramp', stops: HEIGHTMAP_STOPS },
   },
 ] as const satisfies readonly BoundLayerSpec[];
@@ -125,6 +163,73 @@ function stageIndex(id: string): number {
 }
 
 type CatalogEntry = (typeof LAYER_CATALOG)[number];
+
+type OverlayEntry = Extract<CatalogEntry, { readonly overlay: unknown }>;
+
+type OverlayIdOfEntry<T> = T extends {
+  readonly overlay: { readonly id: infer Id extends string };
+}
+  ? Id
+  : never;
+
+/** Every overlay the catalog declares, derived from its layer entry. */
+export type MapOverlayId = OverlayIdOfEntry<CatalogEntry>;
+
+/** One overlay's presentation facts, resolved from its catalog entry. */
+export interface OverlayDescriptor {
+  readonly id: MapOverlayId;
+  readonly labelKey: MessageKey;
+  readonly defaultVisible: boolean;
+  /** Base layer this overlay duplicates; suppressed while that layer is displayed. */
+  readonly baseLayer?: MapBaseLayerId;
+  /** Layer whose spatial mask gives the overlay its world frame. */
+  readonly maskLayer: MapBaseLayerId;
+  /** Data key that gates the overlay; absent for overlays backed by a mask. */
+  readonly source?: string;
+}
+
+function hasOverlay(entry: CatalogEntry): entry is OverlayEntry {
+  return 'overlay' in entry && entry.overlay !== undefined;
+}
+
+const OVERLAY_ENTRIES = LAYER_CATALOG.filter(hasOverlay);
+
+function overlayIdOf(entry: OverlayEntry): MapOverlayId {
+  return entry.overlay.id;
+}
+
+function overlayDescriptorOf(entry: OverlayEntry): OverlayDescriptor {
+  const overlay: OverlaySpec<MapBaseLayerId> = entry.overlay;
+  return {
+    id: overlayIdOf(entry),
+    labelKey: overlay.labelKey,
+    defaultVisible: overlay.defaultVisible,
+    baseLayer: overlay.baseLayer,
+    maskLayer: overlay.maskLayer,
+    source: overlay.source,
+  };
+}
+
+export const OVERLAY_CATALOG: readonly OverlayDescriptor[] =
+  OVERLAY_ENTRIES.map(overlayDescriptorOf);
+export const OVERLAY_IDS: readonly MapOverlayId[] = OVERLAY_ENTRIES.map(overlayIdOf);
+
+const OVERLAYS_BY_ID = new Map<MapOverlayId, OverlayDescriptor>(
+  OVERLAY_CATALOG.map(descriptor => [descriptor.id, descriptor])
+);
+
+export function overlayDescriptor(id: MapOverlayId): OverlayDescriptor {
+  const descriptor = OVERLAYS_BY_ID.get(id);
+  if (!descriptor) {
+    throw new Error(`Unknown overlay: ${id}`);
+  }
+  return descriptor;
+}
+
+/** Runtime lookup for inspection payloads that carry a plain string ID. */
+export function findOverlayDescriptor(id: string): OverlayDescriptor | undefined {
+  return OVERLAY_CATALOG.find(descriptor => descriptor.id === id);
+}
 
 /** Catalog entries that carry a raster. */
 export const RASTER_CATALOG = LAYER_CATALOG.filter(

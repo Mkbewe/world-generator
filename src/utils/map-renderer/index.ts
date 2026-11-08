@@ -8,7 +8,6 @@ export type { MapSize } from './layer';
 export { FIT_VIEW_SCALE, MAX_VIEW_SCALE, MIN_VIEW_SCALE, project } from './view';
 export type { ViewTransform } from './view';
 export { PRESENTATION_MARGIN } from './preview-targets';
-export { OVERLAY_LAYERS } from './types';
 export type {
   LayerGroupNode,
   LayerHit,
