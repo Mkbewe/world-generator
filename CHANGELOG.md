@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.14.1](https://github.com/Mkbewe/world-generator/compare/v0.14.0...v0.14.1) (2026-11-09)
+
+### Code Refactoring
+
+* **[519](https://github.com/Mkbewe/world-generator/issues/519):** make readouts pluggable ([#531](https://github.com/Mkbewe/world-generator/issues/531)) ([aca881d](https://github.com/Mkbewe/world-generator/commit/aca881d3502a1540d1dfac1ca063384d8492a706))
+* **[520](https://github.com/Mkbewe/world-generator/issues/520):** make geology stage read world mask ([#532](https://github.com/Mkbewe/world-generator/issues/532)) ([56d6524](https://github.com/Mkbewe/world-generator/commit/56d652479c0b73044585179e02ee0faa8398b9cb))
+
+  - declare reads of worldMask alongside heatZoneMap on GeologyStage
+  - pass worldMask from context state through buildGeologyPlan to
+  createRegionPartition
+  - eliminate redundant containsNormalized re-rasterisation in region
+  partition
+  - validate worldMask dimension matching and update geology test suites
+* **[522](https://github.com/Mkbewe/world-generator/issues/522):** deduplicate raster geometry helpers ([#533](https://github.com/Mkbewe/world-generator/issues/533)) ([f42e9e4](https://github.com/Mkbewe/world-generator/commit/f42e9e49162dc76c34b5b3776e13b374e8e76d07))
+* **[523](https://github.com/Mkbewe/world-generator/issues/523):** add map domain path aliases ([#534](https://github.com/Mkbewe/world-generator/issues/534)) ([37e66c8](https://github.com/Mkbewe/world-generator/commit/37e66c826ecc7da1ef31a470d35c1be675d1085f))
+
+  - Configure TypeScript, Vite, and ESLint aliases for map domains
+  - Migrate deep map-domain imports
+  - Document alias usage in AGENTS.md
+
 ## [0.14.0](https://github.com/Mkbewe/world-generator/compare/v0.13.0...v0.14.0) (2026-11-07)
 
 ### Features
