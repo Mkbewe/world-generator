@@ -4,6 +4,20 @@
  * raster cells for screen gutters. Both use the same algorithm and the same
  * neighbour rules, with their own step costs and initial border value.
  */
+export function regionBorderDistances(
+  owners: Int16Array,
+  width: number,
+  height: number
+): Float32Array {
+  return gridDistanceTransform(owners, width, height, {
+    borderDistance: 0.5,
+    farDistance: width + height,
+    stepX: 1,
+    stepY: 1,
+    diagonal: Math.SQRT2,
+  });
+}
+
 export interface GridDistanceOptions {
   /** Distance written on a cell that touches another region, in caller units. */
   readonly borderDistance: number;

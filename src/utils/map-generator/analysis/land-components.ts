@@ -1,4 +1,5 @@
 import type { WorldDimensions } from '../../world-dimensions';
+import { floodFill4 } from '../flood-fill';
 import type { GeologyPlan } from '../types';
 
 export interface LandComponent {
@@ -108,30 +109,28 @@ export function analyzeLand(input: LandAnalysisInput): LandAnalysis {
     }
     const id = components.length;
     const cells: number[] = [];
-    const queue: number[] = [start];
-    labels[start] = id;
     let touchesEdge = false;
     let widest = 1;
 
-    while (queue.length > 0) {
-      const index = queue.pop();
-      if (index === undefined) {
-        break;
-      }
-      cells.push(index);
-      widest = Math.max(widest, thickness[index]);
-      const x = index % sampleWidth;
-      const y = (index - x) / sampleWidth;
-      if (x === 0 || y === 0 || x === sampleWidth - 1 || y === sampleHeight - 1) {
-        touchesEdge = true;
-      }
-      for (const neighbour of neighbours(index, x, y, sampleWidth)) {
-        if (isLand[neighbour] === 1 && labels[neighbour] === -1) {
-          labels[neighbour] = id;
-          queue.push(neighbour);
+    floodFill4({
+      width: sampleWidth,
+      height: sampleHeight,
+      start,
+      tryVisit: index => {
+        if (isLand[index] !== 1 || labels[index] !== -1) {
+          return false;
         }
-      }
-    }
+        labels[index] = id;
+        return true;
+      },
+      onVisit: (index, x, y) => {
+        cells.push(index);
+        widest = Math.max(widest, thickness[index]);
+        if (x === 0 || y === 0 || x === sampleWidth - 1 || y === sampleHeight - 1) {
+          touchesEdge = true;
+        }
+      },
+    });
 
     const regionCells = new Map<string, number>();
     for (const index of cells) {
@@ -174,20 +173,6 @@ export function analyzeLand(input: LandAnalysisInput): LandAnalysis {
   };
 }
 
-/** 4-neighbour indices of a cell, skipping the ones outside the raster. */
-function* neighbours(index: number, x: number, y: number, width: number): Generator<number> {
-  if (x > 0) {
-    yield index - 1;
-  }
-  if (x < width - 1) {
-    yield index + 1;
-  }
-  if (y > 0) {
-    yield index - width;
-  }
-  yield index + width;
-}
-
 /** Chebyshev-free thickness: cell distance to the nearest non-land cell. */
 function distanceToWater(isLand: Uint8Array, width: number, height: number): Float32Array {
   const distance = new Float32Array(isLand.length);
@@ -219,7 +204,7 @@ function distanceToWater(isLand: Uint8Array, width: number, height: number): Flo
     const x = index % width;
     const y = (index - x) / width;
     const next = distance[index] + 1;
-    for (const neighbour of neighbours(index, x, y, width)) {
+    for (const neighbour of neighbours(index, x, y, width, height)) {
       if (isLand[neighbour] === 1 && distance[neighbour] === 0) {
         distance[neighbour] = next;
         queue.push(neighbour);
@@ -227,6 +212,23 @@ function distanceToWater(isLand: Uint8Array, width: number, height: number): Flo
     }
   }
   return distance;
+}
+
+function neighbours(index: number, x: number, y: number, width: number, height: number): number[] {
+  const positions: number[] = [];
+  if (x > 0) {
+    positions.push(index - 1);
+  }
+  if (x + 1 < width) {
+    positions.push(index + 1);
+  }
+  if (y > 0) {
+    positions.push(index - width);
+  }
+  if (y + 1 < height) {
+    positions.push(index + width);
+  }
+  return positions;
 }
 
 /** Region id of one provenance index; undefined for outside or stale indices. */

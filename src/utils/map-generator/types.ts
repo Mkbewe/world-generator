@@ -1,3 +1,4 @@
+import type { RingBandGeometry } from './geometry';
 import type { MessageKey } from '../../i18n';
 import type { WorldDimensions } from '../world-dimensions';
 import type { WorldShape } from '../world-shape';
@@ -21,22 +22,7 @@ export interface MacroRegionPoint {
   readonly y: number;
 }
 
-export type MacroRegionGeometry =
-  | {
-      readonly kind: 'ring';
-      readonly center: MacroRegionPoint;
-      readonly innerRadius: number;
-      readonly outerRadius: number;
-    }
-  | {
-      readonly kind: 'band';
-      /** x creates a vertical band; y creates a horizontal band. */
-      readonly axis: 'x' | 'y';
-      /** Position on the selected axis, normalized to 0..1. */
-      readonly center: number;
-      /** Full band width in normalized world units. */
-      readonly width: number;
-    };
+export type MacroRegionGeometry = RingBandGeometry<MacroRegionPoint>;
 
 /** A categorical narrative zone; each generated cell belongs to exactly one region. */
 export interface MacroRegionConfig {
@@ -71,22 +57,7 @@ export const HEAT_ZONE_CLASSES = ['cold', 'temperate', 'warm'] as const;
 
 export type HeatZoneClass = (typeof HEAT_ZONE_CLASSES)[number];
 
-export type HeatZoneGeometry =
-  | {
-      readonly kind: 'ring';
-      readonly center: WorldPoint;
-      readonly innerRadius: number;
-      readonly outerRadius: number;
-    }
-  | {
-      readonly kind: 'band';
-      /** x creates a vertical band; y creates a horizontal band. */
-      readonly axis: 'x' | 'y';
-      /** Position on the selected axis, normalized to 0..1. */
-      readonly center: number;
-      /** Full band width in normalized world units. */
-      readonly width: number;
-    };
+export type HeatZoneGeometry = RingBandGeometry<WorldPoint>;
 
 /** One editable heat zone: a band or ring with a thermal class. */
 export interface HeatZoneConfig {

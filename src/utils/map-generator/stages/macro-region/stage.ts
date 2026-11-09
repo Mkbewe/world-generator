@@ -5,6 +5,12 @@ import {
 } from './border-displacement';
 import { DEFAULT_MACRO_DEFORMATION, DEFAULT_MACRO_REGIONS, MAX_MACRO_REGIONS } from './defaults';
 import { GenerationCancelledError } from '../../errors';
+import {
+  containsCoordinate,
+  distanceToCoordinate,
+  isNormalized,
+  validateGeometry,
+} from '../../geometry';
 import type { MapContext } from '../../pipeline/context';
 import { assertStageOutput, type MapStage } from '../../pipeline/stage';
 import { MACRO_REGION_STAGE, type PipelineStageId } from '../../pipeline/stage-definitions';
@@ -135,7 +141,7 @@ export class MacroRegionStage implements MapStage<
       if (region.role !== 'base' && region.role !== 'overlay') {
         throw new RangeError(`Macro region "${region.id}" has an invalid role.`);
       }
-      validateGeometry(region.id, region.geometry);
+      validateGeometry(region.id, region.geometry, 'Macro region');
       if (!isNormalized(region.danger)) {
         throw new RangeError(`Macro region "${region.id}" danger must be within 0..1.`);
       }
@@ -241,44 +247,4 @@ function axisCoordinate(
   y: number
 ): number {
   return geometry.axis === 'x' ? x : y;
-}
-
-function containsCoordinate(geometry: MacroRegionGeometry, coordinate: number): boolean {
-  if (geometry.kind === 'ring') {
-    return coordinate >= geometry.innerRadius && coordinate <= geometry.outerRadius;
-  }
-  return Math.abs(coordinate - geometry.center) <= geometry.width / 2;
-}
-
-function distanceToCoordinate(geometry: MacroRegionGeometry, coordinate: number): number {
-  if (geometry.kind === 'ring') {
-    return Math.max(coordinate - geometry.outerRadius, geometry.innerRadius - coordinate, 0);
-  }
-  return Math.max(Math.abs(coordinate - geometry.center) - geometry.width / 2, 0);
-}
-
-function validateGeometry(id: string, geometry: MacroRegionGeometry): void {
-  if (geometry.kind === 'ring') {
-    if (!isNormalized(geometry.center.x) || !isNormalized(geometry.center.y)) {
-      throw new RangeError(`Macro region "${id}" center must be within 0..1.`);
-    }
-    if (!(geometry.innerRadius >= 0 && geometry.outerRadius > geometry.innerRadius)) {
-      throw new RangeError(`Macro region "${id}" must have a valid radial range.`);
-    }
-    return;
-  }
-
-  if (geometry.axis !== 'x' && geometry.axis !== 'y') {
-    throw new RangeError(`Macro region "${id}" axis must be "x" or "y".`);
-  }
-  if (!isNormalized(geometry.center)) {
-    throw new RangeError(`Macro region "${id}" center must be within 0..1.`);
-  }
-  if (!(geometry.width > 0 && geometry.width <= 1)) {
-    throw new RangeError(`Macro region "${id}" width must be within 0..1.`);
-  }
-}
-
-function isNormalized(value: number): boolean {
-  return Number.isFinite(value) && value >= 0 && value <= 1;
 }

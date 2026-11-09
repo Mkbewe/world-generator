@@ -1,4 +1,5 @@
 import { GenerationCancelledError } from '../../../errors';
+import { floodFill4 } from '../../../flood-fill';
 
 export interface PartitionCheckInput {
   readonly owner: Int16Array;
@@ -75,40 +76,26 @@ function connected(
     return false;
   }
   const token = region + 1;
-  const pending = [start];
-  visited[start] = token;
-  let reached = 1;
+  let reached = 0;
 
-  const visit = (neighbour: number): void => {
-    if (owner[neighbour] === region && visited[neighbour] !== token) {
-      visited[neighbour] = token;
-      pending.push(neighbour);
+  floodFill4({
+    width,
+    height,
+    start,
+    tryVisit: index => {
+      if (owner[index] !== region || visited[index] === token) {
+        return false;
+      }
+      visited[index] = token;
+      return true;
+    },
+    onVisit: _index => {
+      if (signal?.aborted) {
+        throw new GenerationCancelledError();
+      }
       reached++;
-    }
-  };
+    },
+  });
 
-  while (pending.length > 0) {
-    const cell = pending.pop();
-    if (cell === undefined) {
-      continue;
-    }
-    if (signal?.aborted) {
-      throw new GenerationCancelledError();
-    }
-    const x = cell % width;
-    const y = (cell - x) / width;
-    if (x > 0) {
-      visit(cell - 1);
-    }
-    if (x + 1 < width) {
-      visit(cell + 1);
-    }
-    if (y > 0) {
-      visit(cell - width);
-    }
-    if (y + 1 < height) {
-      visit(cell + width);
-    }
-  }
   return reached === count;
 }

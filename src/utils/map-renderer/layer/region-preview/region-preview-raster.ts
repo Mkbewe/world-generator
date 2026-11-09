@@ -1,4 +1,4 @@
-import { gridDistanceTransform } from '../../../grid-distance';
+import { regionBorderDistances as borderDistances } from '../../../grid-distance';
 import { smoothstep } from '../../../math';
 import type { MapProjection } from '../../view/view-transform';
 import type { MapSize } from '../layer';
@@ -53,13 +53,7 @@ export function regionBorderDistances(
   width: number,
   height: number
 ): Float32Array {
-  return gridDistanceTransform(owners, width, height, {
-    borderDistance: 0.5,
-    farDistance: width + height,
-    stepX: 1,
-    stepY: 1,
-    diagonal: Math.SQRT2,
-  });
+  return borderDistances(owners, width, height);
 }
 
 export interface RegionTileInput {
@@ -116,7 +110,8 @@ export function paintRegionPixels(pixels: Uint8ClampedArray, input: RegionTileIn
   }
   pixels.fill(255);
   for (let row = 0; row < height; row++) {
-    const mapY = (top + row + 0.5 - projection.top) / projection.cellSize;
+    const pixelY = top + row;
+    const mapY = (pixelY + 0.5 - projection.top) / projection.cellSize;
     if (mapY < 0 || mapY >= mapSize.height) {
       continue;
     }

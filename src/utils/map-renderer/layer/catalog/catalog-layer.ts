@@ -8,6 +8,7 @@ import {
 } from '../../../map-layers';
 import { type RenderTarget, targetKey } from '../../preview-targets';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
+import { cellAtPixel } from '../../view/cell-at-pixel';
 import { yieldToBrowser } from '../geology/geology-yield';
 import { type LayerTile, MapLayer, type MapSize, type TileReporter } from '../layer';
 
@@ -144,26 +145,22 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   /** Samples the nearest source cell for every pixel of the output tile. */
   private paintNearestTile(pixels: Uint8ClampedArray, target: RenderTarget, tile: LayerTile): void {
     const { projection } = target;
-    const inverseCellSize = 1 / projection.cellSize;
     const insideValue = this.spec.providesMask?.insideValue;
     const skipValue = this.spec.skipValue;
     const clipMask = this.clipMask;
     const mapWidth = this.size.width;
-    const mapHeight = this.size.height;
+    const mapSize = this.size;
 
     for (let row = 0; row < tile.height; row++) {
-      const cellY = Math.floor((tile.y + row + 0.5 - projection.top) * inverseCellSize);
-      if (cellY < 0 || cellY >= mapHeight) {
-        continue;
-      }
-      const rowIndex = cellY * mapWidth;
       let offset = row * tile.width * 4;
       for (let column = 0; column < tile.width; column++, offset += 4) {
-        const cellX = Math.floor((tile.x + column + 0.5 - projection.left) * inverseCellSize);
-        if (cellX < 0 || cellX >= mapWidth) {
+        const cellIndex = cellAtPixel(projection, mapSize, tile.x + column, tile.y + row);
+        if (cellIndex < 0) {
           continue;
         }
-        const value = this.data[rowIndex + cellX];
+        const cellX = cellIndex % mapWidth;
+        const cellY = (cellIndex - cellX) / mapWidth;
+        const value = this.data[cellIndex];
         if (insideValue !== undefined && value !== insideValue) {
           continue;
         }

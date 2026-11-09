@@ -1,4 +1,5 @@
-import type { HeatZoneConfig, HeatZoneGeometry, WorldPoint } from '../../types';
+import { containsGeometry, distanceToGeometry } from '../../geometry';
+import type { HeatZoneConfig, WorldPoint } from '../../types';
 
 export type HeatZoneDistance = (left: WorldPoint, right: WorldPoint) => number;
 
@@ -17,7 +18,7 @@ export function createHeatZoneSampler(
 
   return point => {
     for (let index = zones.length - 1; index >= 0; index--) {
-      if (contains(zones[index].geometry, point, distance)) {
+      if (containsGeometry(zones[index].geometry, point, distance)) {
         return index;
       }
     }
@@ -34,35 +35,11 @@ function nearestZoneIndex(
   let nearestDistance = Infinity;
 
   for (const [index, zone] of zones.entries()) {
-    const value = distanceToZone(zone.geometry, point, distance);
+    const value = distanceToGeometry(zone.geometry, point, distance);
     if (value < nearestDistance) {
       nearest = index;
       nearestDistance = value;
     }
   }
   return nearest;
-}
-
-function contains(
-  geometry: HeatZoneGeometry,
-  point: WorldPoint,
-  distance: HeatZoneDistance
-): boolean {
-  if (geometry.kind === 'ring') {
-    const radius = distance(point, geometry.center);
-    return radius >= geometry.innerRadius && radius <= geometry.outerRadius;
-  }
-  return Math.abs(point[geometry.axis] - geometry.center) <= geometry.width / 2;
-}
-
-function distanceToZone(
-  geometry: HeatZoneGeometry,
-  point: WorldPoint,
-  distance: HeatZoneDistance
-): number {
-  if (geometry.kind === 'ring') {
-    const radius = distance(point, geometry.center);
-    return Math.max(geometry.innerRadius - radius, radius - geometry.outerRadius, 0);
-  }
-  return Math.max(Math.abs(point[geometry.axis] - geometry.center) - geometry.width / 2, 0);
 }
