@@ -1,5 +1,5 @@
 import type { RegionPartitionInput } from './partition-types';
-import { NoiseSource } from '../../../random';
+import { createBorderWarp as createNoiseBorderWarp } from '../../../irregularity';
 import type { WorldPoint } from '../../../types';
 import { MAX_BORDER_DISPLACEMENT } from '../defaults';
 
@@ -40,16 +40,9 @@ export function sampleWarp(
 export function createBorderWarp(
   input: RegionPartitionInput
 ): ((point: WorldPoint) => WorldPoint) | undefined {
-  const amount = input.layout.irregularity * MAX_BORDER_DISPLACEMENT;
-  if (amount === 0) {
-    return undefined;
-  }
-  const spec = { frequency: 3, octaves: 2, persistence: 0.5, lacunarity: 2 };
-  const noise = new NoiseSource(input.random, 'geology.border-warp');
-  const noiseX = noise.scalar(spec, 'x');
-  const noiseY = noise.scalar(spec, 'y');
-  return point => ({
-    x: point.x + noiseX(point.x, point.y) * amount,
-    y: point.y + noiseY(point.x, point.y) * amount,
-  });
+  return createNoiseBorderWarp(
+    input.random,
+    'geology.border-warp',
+    input.layout.irregularity * MAX_BORDER_DISPLACEMENT
+  );
 }

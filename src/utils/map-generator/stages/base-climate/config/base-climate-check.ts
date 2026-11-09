@@ -1,9 +1,5 @@
-import {
-  type BaseClimateConfig,
-  HEAT_ZONE_CLASSES,
-  type HeatZoneGeometry,
-  OCEAN_CURRENT_FLOWS,
-} from '../../../types';
+import { isNormalized, validateGeometry } from '../../../geometry';
+import { type BaseClimateConfig, HEAT_ZONE_CLASSES, OCEAN_CURRENT_FLOWS } from '../../../types';
 import {
   MAX_HEAT_ZONE_IRREGULARITY,
   MAX_HEAT_ZONES,
@@ -56,7 +52,7 @@ export function validateBaseClimateConfig(config: BaseClimateConfig): void {
     if (!HEAT_ZONE_CLASSES.includes(zone.thermal)) {
       throw new RangeError(`Heat zone "${zone.id}" has an invalid thermal class.`);
     }
-    validateGeometry(zone.id, zone.geometry);
+    validateGeometry(zone.id, zone.geometry, 'Heat zone');
   }
 
   for (const source of config.currents) {
@@ -92,34 +88,4 @@ export function isBaseClimateConfig(value: unknown): value is BaseClimateConfig 
   } catch {
     return false;
   }
-}
-
-function validateGeometry(id: string, geometry: HeatZoneGeometry): void {
-  if (geometry.kind === 'ring') {
-    if (!isNormalized(geometry.center.x) || !isNormalized(geometry.center.y)) {
-      throw new RangeError(`Heat zone "${id}" center must be within 0..1.`);
-    }
-    if (
-      !Number.isFinite(geometry.innerRadius) ||
-      !Number.isFinite(geometry.outerRadius) ||
-      !(geometry.innerRadius >= 0 && geometry.outerRadius > geometry.innerRadius)
-    ) {
-      throw new RangeError(`Heat zone "${id}" must have a valid radial range.`);
-    }
-    return;
-  }
-
-  if (geometry.axis !== 'x' && geometry.axis !== 'y') {
-    throw new RangeError(`Heat zone "${id}" axis must be "x" or "y".`);
-  }
-  if (!isNormalized(geometry.center)) {
-    throw new RangeError(`Heat zone "${id}" center must be within 0..1.`);
-  }
-  if (!(geometry.width > 0 && geometry.width <= 1)) {
-    throw new RangeError(`Heat zone "${id}" width must be within 0..1.`);
-  }
-}
-
-function isNormalized(value: number): boolean {
-  return Number.isFinite(value) && value >= 0 && value <= 1;
 }

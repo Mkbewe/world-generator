@@ -3,6 +3,7 @@ import type { PixelWriter, RasterData } from '../../../map-layers';
 import { containsWorld } from '../../../world-shape';
 import type { RenderTarget } from '../../preview-targets';
 import type { SpatialMask } from '../../types';
+import { cellAtPixel } from '../../view/cell-at-pixel';
 import type { LayerTile, MapSize } from '../layer';
 
 const SAMPLES_PER_AXIS = 4;
@@ -81,18 +82,16 @@ export class SmoothLayerPainter {
     const inverse = 1 / projection.cellSize;
     const color = new Uint8ClampedArray(4);
     for (let row = 0; row < tile.height; row++) {
-      const pixelY = tile.y + row;
-      const cellY = Math.floor((pixelY + 0.5 - projection.top) * inverse);
-      if (cellY < 0 || cellY >= this.size.height) {
-        continue;
-      }
       let offset = row * tile.width * 4;
       for (let column = 0; column < tile.width; column++, offset += 4) {
         const pixelX = tile.x + column;
-        const cellX = Math.floor((pixelX + 0.5 - projection.left) * inverse);
-        if (cellX < 0 || cellX >= this.size.width) {
+        const pixelY = tile.y + row;
+        const cellIndex = cellAtPixel(projection, this.size, pixelX, pixelY);
+        if (cellIndex < 0) {
           continue;
         }
+        const cellX = cellIndex % this.size.width;
+        const cellY = (cellIndex - cellX) / this.size.width;
         if (!this.isBoundaryPixel(pixelX, pixelY, cellX, cellY, target)) {
           if (this.mode !== 'clipped') {
             const value = this.valueAt(cellX, cellY);
