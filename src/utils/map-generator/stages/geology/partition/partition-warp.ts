@@ -1,6 +1,7 @@
+import { createBorderWarp as createNoiseBorderWarp } from '@generator/irregularity';
+import type { WorldPoint } from '@generator/types';
+
 import type { RegionPartitionInput } from './partition-types';
-import { createBorderWarp as createNoiseBorderWarp } from '../../../irregularity';
-import type { WorldPoint } from '../../../types';
 import { MAX_BORDER_DISPLACEMENT } from '../defaults';
 
 /** Precomputed warped coordinates of every sampled cell, indexed by raster cell. */

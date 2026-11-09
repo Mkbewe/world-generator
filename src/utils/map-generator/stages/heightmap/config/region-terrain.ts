@@ -2,7 +2,8 @@ import type {
   GeologicalRegionType,
   RegionTerrainConfig,
   RegionTerrainParameter,
-} from '../../../types';
+} from '@generator/types';
+
 import { MAX_GEOLOGICAL_REGIONS } from '../../geology';
 
 /**

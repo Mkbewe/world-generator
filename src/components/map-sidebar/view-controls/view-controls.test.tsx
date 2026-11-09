@@ -1,9 +1,9 @@
+import { MAX_VIEW_SCALE, MIN_VIEW_SCALE } from '@renderer';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ViewControls } from './view-controls';
-import { MAX_VIEW_SCALE, MIN_VIEW_SCALE } from '../../../utils/map-renderer';
 
 function renderControls(overrides: Partial<Parameters<typeof ViewControls>[0]> = {}) {
   const props = {

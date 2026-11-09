@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-import type { HeatZoneConfig } from '../../../../../utils/map-generator/types';
+import type { HeatZoneConfig } from '@generator/types';
 
 export interface HeatZoneSelection {
   readonly zone?: HeatZoneConfig;

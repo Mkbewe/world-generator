@@ -1,6 +1,7 @@
+import type { MapOverlayInspection } from '@renderer/types';
+
 import type { OverlayInspectionInput, OverlayInspector } from './overlay-inspector';
 import { cellIndexAt, isInsideWorld } from './world-cell';
-import type { MapOverlayInspection } from '../../../types';
 
 /** Reads the BaseClimate current under one world cell. */
 export class OceanCurrentOverlayInspector implements OverlayInspector {

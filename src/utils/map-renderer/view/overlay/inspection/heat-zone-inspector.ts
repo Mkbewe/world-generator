@@ -1,7 +1,8 @@
+import { isHeatZoneInfoList } from '@generator/info-definitions';
+import type { MapOverlayInspection } from '@renderer/types';
+
 import type { OverlayInspectionInput, OverlayInspector } from './overlay-inspector';
 import { cellIndexAt } from './world-cell';
-import { isHeatZoneInfoList } from '../../../../map-generator/info-definitions';
-import type { MapOverlayInspection } from '../../../types';
 
 /** Reads the BaseClimate thermal zone under one cell. */
 export class HeatZoneOverlayInspector implements OverlayInspector {

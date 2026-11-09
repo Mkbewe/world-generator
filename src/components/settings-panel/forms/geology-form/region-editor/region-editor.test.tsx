@@ -1,10 +1,10 @@
+import type { GeologicalRegionConfig } from '@generator/types';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { RegionEditor } from './region-editor';
-import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
 
 const LAGOON: GeologicalRegionConfig = {
   type: 'lagoon',

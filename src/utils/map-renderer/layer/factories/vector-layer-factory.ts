@@ -1,4 +1,5 @@
-import type { LayerDataRecord } from '../../../map-layers';
+import type { LayerDataRecord } from '@layers';
+
 import type { WorldShape } from '../../../world-shape';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
 import type { MapLayer, MapSize } from '../layer';

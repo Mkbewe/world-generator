@@ -1,8 +1,4 @@
-import type {
-  HeatZoneConfig,
-  HeatZoneGeometry,
-  WorldPoint,
-} from '../../../../utils/map-generator/types';
+import type { HeatZoneConfig, HeatZoneGeometry, WorldPoint } from '@generator/types';
 
 /** How the heat zones are laid out; the config itself stores geometry per zone. */
 export type HeatZoneLayout = 'horizontal' | 'vertical' | 'rings';

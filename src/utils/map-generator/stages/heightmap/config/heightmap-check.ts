@@ -1,4 +1,5 @@
-import type { HeightmapConfig } from '../../../types';
+import type { HeightmapConfig } from '@generator/types';
+
 import { MAX_ISLET_FREQUENCY, MAX_RELIEF, MIN_ISLET_FREQUENCY, MIN_RELIEF } from '../defaults';
 
 /** Whether unknown data is a heightmap configuration within its domain limits. */

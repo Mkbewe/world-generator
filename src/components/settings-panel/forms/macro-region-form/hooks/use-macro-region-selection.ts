@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
+import type { MacroRegionConfig } from '@generator/types';
 
 export interface MacroRegionSelection {
   readonly region?: MacroRegionConfig;

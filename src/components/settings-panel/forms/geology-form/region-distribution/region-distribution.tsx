@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import type { GeologicalRegionType } from '@generator/types';
+import { geologyRegionColor } from '@layers';
 import { Flex, Text } from '@radix-ui/themes';
 
-import type { GeologicalRegionType } from '../../../../../utils/map-generator/types';
-import { geologyRegionColor } from '../../../../../utils/map-layers';
 import { type BoundaryDraft, DistributionBar } from '../../../../distribution-bar';
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
 import { GEOLOGY_SHARE_COPY } from '../../lib/share-copy';

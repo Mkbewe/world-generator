@@ -1,9 +1,9 @@
+import { emptyRenderState, type MapOverlayOption } from '@renderer';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { OverlayControls } from './overlay-controls';
-import { emptyRenderState, type MapOverlayOption } from '../../../utils/map-renderer';
 
 function overlay(available: boolean): MapOverlayOption {
   return { id: 'world-boundary', labelKey: 'overlays.world-boundary', visible: false, available };

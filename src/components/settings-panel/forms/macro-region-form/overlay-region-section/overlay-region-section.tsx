@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { MAX_MACRO_REGIONS } from '@generator/stages/macro-region/defaults';
+import { regionColor } from '@layers';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
-import { MAX_MACRO_REGIONS } from '../../../../../utils/map-generator/stages/macro-region/defaults';
-import { regionColor } from '../../../../../utils/map-layers';
 import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { useMacroRegionSelection } from '../hooks/use-macro-region-selection';
 import { baseRegions, overlayRegions } from '../lib/boundary-model';

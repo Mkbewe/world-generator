@@ -1,5 +1,6 @@
+import type { BaseClimateConfig } from '@generator/types';
+
 import { isBaseClimateConfig, validateBaseClimateConfig } from './base-climate-check';
-import type { BaseClimateConfig } from '../../../types';
 import {
   BASE_CLIMATE_PRESETS,
   baseClimatePresetConfig,

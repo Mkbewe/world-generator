@@ -1,8 +1,8 @@
+import type { GeologicalRegionType } from '@generator/types';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { RegionDistribution } from './region-distribution';
-import type { GeologicalRegionType } from '../../../../../utils/map-generator/types';
 import type { BoundaryDraft } from '../../../../distribution-bar';
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
 

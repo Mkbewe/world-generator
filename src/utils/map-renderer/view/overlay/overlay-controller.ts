@@ -1,6 +1,7 @@
+import { type LayerDataRecord, type MapBaseLayerId, overlayDescriptor } from '@layers';
+
 import { OVERLAY_COMPONENTS } from './overlay-components';
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
-import { type LayerDataRecord, type MapBaseLayerId, overlayDescriptor } from '../../../map-layers';
 import type { WorldShape } from '../../../world-shape';
 import type { MapInfo, MapOverlayId, SpatialMask } from '../../types';
 import { effectivePixelRatio, type Viewport, type ViewportSize } from '../../viewport';

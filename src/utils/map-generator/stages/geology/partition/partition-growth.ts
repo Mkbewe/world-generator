@@ -1,8 +1,9 @@
+import { GenerationCancelledError } from '@generator/errors';
+import type { WorldPoint } from '@generator/types';
+
 import { FrontierHeap } from './frontier-heap';
 import type { RegionPartitionInput } from './partition-types';
 import type { WarpSamples } from './partition-warp';
-import { GenerationCancelledError } from '../../../errors';
-import type { WorldPoint } from '../../../types';
 
 /** Claims between two progress reports of the final pass. */
 const REPORT_EVERY = 4096;

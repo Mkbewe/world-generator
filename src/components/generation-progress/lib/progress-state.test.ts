@@ -1,6 +1,7 @@
+import type { StageInfo, StageStatistics } from '@generator';
+
 import { planProgress, ProgressTracker } from './progress-state';
 import type { GenerationProgressState } from '../../../stores';
-import type { StageInfo, StageStatistics } from '../../../utils/map-generator';
 
 const stageInfos = [
   { id: 'world-shape', nameKey: 'stages.worldShape' },

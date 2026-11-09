@@ -1,5 +1,6 @@
+import type { MacroRegionGeometry } from '@generator/types';
+
 import type { MessageKey } from '../../../../i18n';
-import type { MacroRegionGeometry } from '../../../../utils/map-generator/types';
 
 /** Name and explanation of a share edited on a distribution bar. */
 export interface ShareCopy {

@@ -1,5 +1,6 @@
+import type { GeologyPlan, HeightmapConfig, WorldPoint } from '@generator/types';
+
 import { clamp01, smoothstep } from '../../../../math';
-import type { GeologyPlan, HeightmapConfig, WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
 import type { RegionShape } from '../config/region-shape';
 import {

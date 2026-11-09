@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next';
-import { Flex } from '@radix-ui/themes';
-
-import { RegionTerrainEditor } from './region-terrain-editor';
-import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
 import {
   defaultRegionTerrain,
   MAX_ISLET_FREQUENCY,
   MAX_RELIEF,
   MIN_ISLET_FREQUENCY,
   MIN_RELIEF,
-} from '../../../../utils/map-generator/stages/heightmap';
-import { geologyRegionColor } from '../../../../utils/map-layers';
+} from '@generator/stages/heightmap';
+import { geologyRegionColor } from '@layers';
+import { Flex } from '@radix-ui/themes';
+
+import { RegionTerrainEditor } from './region-terrain-editor';
+import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
 import { percent } from '../../../lib/percent';
 import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';

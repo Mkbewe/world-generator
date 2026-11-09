@@ -1,4 +1,3 @@
-import type { MessageKey } from '../../../i18n';
 import type {
   LayerGroupNode,
   LayerTreeNode,
@@ -6,7 +5,9 @@ import type {
   MapLayerNavigation,
   MapLayerNode,
   MapLayerOption,
-} from '../../../utils/map-renderer';
+} from '@renderer';
+
+import type { MessageKey } from '../../../i18n';
 
 interface NavigationLeaf {
   readonly id: MapBaseLayerId;

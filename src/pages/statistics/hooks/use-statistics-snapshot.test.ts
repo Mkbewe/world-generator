@@ -1,3 +1,5 @@
+import type { StageStatistics } from '@generator';
+import type { RenderStatistics } from '@renderer';
 import { renderHook } from '@testing-library/react';
 
 import { useStatisticsSnapshot } from './use-statistics-snapshot';
@@ -6,8 +8,6 @@ import {
   useMapConfigStore,
   useRenderStatisticsStore,
 } from '../../../stores';
-import type { StageStatistics } from '../../../utils/map-generator';
-import type { RenderStatistics } from '../../../utils/map-renderer';
 
 const WORLD = {
   dimensions: { widthMeters: 3000, heightMeters: 2000, sampleWidth: 300, sampleHeight: 200 },

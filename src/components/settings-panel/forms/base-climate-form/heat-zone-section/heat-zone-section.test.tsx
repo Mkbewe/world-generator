@@ -1,3 +1,4 @@
+import { MAX_HEAT_ZONES } from '@generator/stages/base-climate/defaults';
 import { Theme } from '@radix-ui/themes';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -5,7 +6,6 @@ import userEvent from '@testing-library/user-event';
 import { HeatZoneSection } from './heat-zone-section';
 import { BASE_CLIMATE_FORM_DEFAULTS, useBaseClimateFormStore } from '../../../../../stores';
 import { zoneShares } from '../../../../../stores/form/base-climate-form/lib/zone-model';
-import { MAX_HEAT_ZONES } from '../../../../../utils/map-generator/stages/base-climate/defaults';
 
 function renderSection() {
   render(

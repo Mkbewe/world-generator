@@ -1,12 +1,13 @@
-import type { MessageKey } from '../../../../../i18n';
 import {
   createHorizontalLayout,
   createRadialLayout,
   createRadialPolesLayout,
   createVerticalLayout,
   type MacroRegionLayout,
-} from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
-import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
+} from '@generator/stages/macro-region/editor/presets';
+import type { MacroRegionConfig } from '@generator/types';
+
+import type { MessageKey } from '../../../../../i18n';
 
 export type MacroRegionPresetId = 'rings' | 'horizontal' | 'vertical' | 'rings-with-poles';
 

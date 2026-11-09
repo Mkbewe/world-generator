@@ -1,11 +1,12 @@
-import { SelectiveRegeneration } from './regeneration';
 import {
   DEFAULT_MACRO_REGIONS,
   type MapConfig,
   type StageInfo,
   type StageStatistics,
-} from '../../../utils/map-generator';
-import { PIPELINE_STAGES } from '../../../utils/map-generator/pipeline/stage-definitions';
+} from '@generator';
+import { PIPELINE_STAGES } from '@generator/pipeline/stage-definitions';
+
+import { SelectiveRegeneration } from './regeneration';
 
 const config: MapConfig = {
   world: {

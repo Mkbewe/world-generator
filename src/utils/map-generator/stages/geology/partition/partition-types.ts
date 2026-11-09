@@ -1,8 +1,9 @@
+import type { RandomFactory } from '@generator/random';
+import type { WorldSpace } from '@generator/space';
+import type { GeologyLayoutConfig } from '@generator/types';
+
 import type { WorldDimensions } from '../../../../world-dimensions';
 import type { WorldShape } from '../../../../world-shape';
-import type { RandomFactory } from '../../../random';
-import type { WorldSpace } from '../../../space';
-import type { GeologyLayoutConfig } from '../../../types';
 import type { RegionMarker } from '../placement/partition-markers';
 
 export interface RegionPartitionInput {

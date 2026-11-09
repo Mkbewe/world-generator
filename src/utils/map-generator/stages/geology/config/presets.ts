@@ -3,7 +3,8 @@ import type {
   GeologicalRegionType,
   GeologyConfig,
   GeologyLayoutConfig,
-} from '../../../types';
+} from '@generator/types';
+
 import { MAX_GEOLOGICAL_REGIONS } from '../defaults';
 
 /** Starter configurations offered by the Geology form. */

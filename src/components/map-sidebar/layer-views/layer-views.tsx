@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Flex, RadioCards, Text } from '@radix-ui/themes';
+import type { MapBaseLayerId, MapLayerNavigation, MapLayerNode } from '@renderer';
 
-import type { MapBaseLayerId, MapLayerNavigation, MapLayerNode } from '../../../utils/map-renderer';
 import styles from './layer-views.module.scss';
 
 interface LayerViewsProps extends MapLayerNavigation {

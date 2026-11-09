@@ -1,9 +1,10 @@
+import { GenerationCancelledError } from '@generator/errors';
+import type { WorldPoint } from '@generator/types';
+
 import { IsletRelief } from './islet-relief';
 import { gridDistanceTransform } from '../../../../grid-distance';
 import { clamp01, smoothstep } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import { GenerationCancelledError } from '../../../errors';
-import type { WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
 import type { RegionShape } from '../config/region-shape';
 import {

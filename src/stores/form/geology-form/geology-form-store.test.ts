@@ -1,7 +1,7 @@
+import { MAX_GEOLOGICAL_REGIONS } from '@generator/stages/geology';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { GEOLOGY_FORM_DEFAULTS, geologyConfigOf, useGeologyFormStore } from './geology-form-store';
-import { MAX_GEOLOGICAL_REGIONS } from '../../../utils/map-generator/stages/geology';
 
 describe('geology form store', () => {
   beforeEach(() => {

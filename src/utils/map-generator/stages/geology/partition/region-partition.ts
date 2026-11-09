@@ -1,10 +1,11 @@
+import { GenerationCancelledError } from '@generator/errors';
+
 import { fitRegionBiases } from './partition-bias';
 import { growRegions } from './partition-growth';
 import type { RegionPartition, RegionPartitionInput } from './partition-types';
 import { createBorderWarp, sampleWarp } from './partition-warp';
 import { gridDistanceTransform } from '../../../../grid-distance';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import { GenerationCancelledError } from '../../../errors';
 import { checkPartition } from '../validation/partition-check';
 
 export type { RegionPartition, RegionPartitionInput } from './partition-types';

@@ -1,11 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import { REGION_TERRAIN_SUPPORT } from '@generator/stages/heightmap';
+import type { GeologicalRegionType, RegionTerrainConfig } from '@generator/types';
 import { Card, Flex, Text } from '@radix-ui/themes';
 
-import { REGION_TERRAIN_SUPPORT } from '../../../../../utils/map-generator/stages/heightmap';
-import type {
-  GeologicalRegionType,
-  RegionTerrainConfig,
-} from '../../../../../utils/map-generator/types';
 import { percent } from '../../../../lib/percent';
 import { SliderField } from '../../../../slider-field';
 import { regionTypeOption } from '../../geology-form/lib/region-options';

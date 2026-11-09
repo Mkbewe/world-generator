@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import type { MacroRegionConfig } from '@generator/types';
 
 import { useMacroRegionFormStore } from '../../../../../../stores';
-import type { MacroRegionConfig } from '../../../../../../utils/map-generator/types';
 import { colorString } from '../../../../../lib/color';
 import { SliderField } from '../../../../../slider-field';
 import { dangerColor } from '../../lib/color';

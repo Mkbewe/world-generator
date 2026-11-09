@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import type { HeatZoneConfig } from '@generator/types';
+import { heatZoneColor } from '@layers';
 import { TrashIcon } from '@radix-ui/react-icons';
 import { Box, Button, Card, Flex, RadioCards, Text, TextField } from '@radix-ui/themes';
 
 import { useBaseClimateFormStore } from '../../../../../stores';
-import type { HeatZoneConfig } from '../../../../../utils/map-generator/types';
-import { heatZoneColor } from '../../../../../utils/map-layers';
 import { colorString } from '../../../../lib/color';
 import { MoveControls } from '../../../../move-controls';
 import { HEAT_ZONE_CLASS_OPTIONS } from '../lib/thermal-options';

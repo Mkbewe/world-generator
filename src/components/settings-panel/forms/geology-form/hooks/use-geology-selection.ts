@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
+import { defaultRegionConfig } from '@generator/stages/geology';
+import type { GeologicalRegionConfig } from '@generator/types';
 
 import { useViewSyncStore } from '../../../../../stores';
-import { defaultRegionConfig } from '../../../../../utils/map-generator/stages/geology';
-import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
 import { regionId, regionIndex } from '../../lib/region-id';
 
 export interface GeologySelection {

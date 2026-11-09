@@ -1,5 +1,5 @@
-import type { MacroRegionLayout } from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
-import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
+import type { MacroRegionLayout } from '@generator/stages/macro-region/editor/presets';
+import type { MacroRegionConfig } from '@generator/types';
 
 export interface MacroRegionLayoutChange {
   readonly regions: readonly MacroRegionConfig[];

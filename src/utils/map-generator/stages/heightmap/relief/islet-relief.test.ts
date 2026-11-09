@@ -1,5 +1,6 @@
+import type { GeologyPlan, HeightmapConfig } from '@generator/types';
+
 import { IsletRelief } from './islet-relief';
-import type { GeologyPlan, HeightmapConfig } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
 import { REGION_SHAPES } from '../config/region-shape';
 

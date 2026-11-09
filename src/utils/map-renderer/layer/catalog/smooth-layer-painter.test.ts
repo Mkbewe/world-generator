@@ -1,5 +1,6 @@
+import { compilePalette } from '@layers';
+
 import { SmoothLayerPainter } from './smooth-layer-painter';
-import { compilePalette } from '../../../map-layers';
 import type { RenderTarget } from '../../preview-targets';
 import { layerRegistry } from '../layer-registry';
 

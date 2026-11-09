@@ -1,12 +1,13 @@
+import { GenerationCancelledError } from '@generator/errors';
+import { RandomFactory } from '@generator/random';
+import { createWorldSpace } from '@generator/space';
+
 import { fitRegionBiases } from './partition-bias';
 import { growRegions } from './partition-growth';
 import type { RegionPartitionInput } from './partition-types';
 import { sampleWarp } from './partition-warp';
 import type { WorldDimensions } from '../../../../world-dimensions';
 import { containsNormalized } from '../../../../world-shape';
-import { GenerationCancelledError } from '../../../errors';
-import { RandomFactory } from '../../../random';
-import { createWorldSpace } from '../../../space';
 import type { RegionMarker } from '../placement/partition-markers';
 
 const DIMENSIONS: WorldDimensions = {

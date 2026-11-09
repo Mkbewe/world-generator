@@ -5,7 +5,8 @@ import {
   type GeologyPlan,
   HEAT_ZONE_CLASSES,
   type HeatZoneClass,
-} from '../../../types';
+} from '@generator/types';
+
 import {
   MAX_GEOLOGICAL_REGIONS,
   MAX_REGION_SIZE,

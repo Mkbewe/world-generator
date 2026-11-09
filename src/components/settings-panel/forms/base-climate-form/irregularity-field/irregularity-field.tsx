@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import { MAX_HEAT_ZONE_IRREGULARITY } from '@generator/stages/base-climate/defaults';
 import { Flex, Text } from '@radix-ui/themes';
 
 import { useBaseClimateFormStore } from '../../../../../stores';
-import { MAX_HEAT_ZONE_IRREGULARITY } from '../../../../../utils/map-generator/stages/base-climate/defaults';
 import { SliderField } from '../../../../slider-field';
 import { irregularityKey } from '../../lib/irregularity';
 

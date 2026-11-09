@@ -1,6 +1,7 @@
+import type { HeatZoneInfo } from '@generator/info-definitions';
+import { heatZoneColor } from '@layers';
+
 import { paintHeatZonePixels } from './heat-zone-overlay-renderer';
-import type { HeatZoneInfo } from '../../../map-generator/info-definitions';
-import { heatZoneColor } from '../../../map-layers';
 
 const zones: readonly HeatZoneInfo[] = [
   { id: 'cold', label: 'Cold', thermal: 'cold' },

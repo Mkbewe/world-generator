@@ -1,11 +1,7 @@
+import { compilePalette, type PixelWriter, type RasterData, type RasterLayerSpec } from '@layers';
+
 import type { SmoothGeometry } from './smooth-geometry';
 import { type SmoothLayerMode, SmoothLayerPainter } from './smooth-layer-painter';
-import {
-  compilePalette,
-  type PixelWriter,
-  type RasterData,
-  type RasterLayerSpec,
-} from '../../../map-layers';
 import { type RenderTarget, targetKey } from '../../preview-targets';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
 import { cellAtPixel } from '../../view/cell-at-pixel';

@@ -1,7 +1,8 @@
+import { RandomFactory } from '@generator/random';
+import { createWorldSpace } from '@generator/space';
+
 import { placePartitionMarkers, type RegionMarker } from './partition-markers';
 import { containsNormalized } from '../../../../world-shape';
-import { RandomFactory } from '../../../random';
-import { createWorldSpace } from '../../../space';
 import { geologyPresetConfig } from '../config/presets';
 
 const DIMENSIONS = { widthMeters: 2000, heightMeters: 2000, sampleWidth: 129, sampleHeight: 129 };

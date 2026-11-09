@@ -1,7 +1,8 @@
+import type { MapOverlayInspection } from '@renderer/types';
+
 import type { OverlayInspectionInput, OverlayInspector } from './overlay-inspector';
 import { cellIndexAt, isInsideWorld } from './world-cell';
 import { formatPercent } from '../../../../format';
-import type { MapOverlayInspection } from '../../../types';
 
 /** Reads the base moisture under one world cell. */
 export class MoistureOverlayInspector implements OverlayInspector {

@@ -1,3 +1,16 @@
+import { baseClimatePresetConfig } from '@generator';
+import {
+  MAX_HEAT_ZONE_IRREGULARITY,
+  MAX_HEAT_ZONES,
+} from '@generator/stages/base-climate/defaults';
+import type {
+  BaseClimateConfig,
+  HeatZoneClass,
+  HeatZoneConfig,
+  HeatZoneGeometry,
+  OceanCurrentConfig,
+} from '@generator/types';
+
 import {
   clampZoneBoundaries,
   convertLayout,
@@ -10,18 +23,6 @@ import {
   splitLargestZone,
   zonesFromBoundaries,
 } from './lib/zone-model';
-import { baseClimatePresetConfig } from '../../../utils/map-generator';
-import {
-  MAX_HEAT_ZONE_IRREGULARITY,
-  MAX_HEAT_ZONES,
-} from '../../../utils/map-generator/stages/base-climate/defaults';
-import type {
-  BaseClimateConfig,
-  HeatZoneClass,
-  HeatZoneConfig,
-  HeatZoneGeometry,
-  OceanCurrentConfig,
-} from '../../../utils/map-generator/types';
 import { createStore } from '../../create-store';
 
 /** Layout families offered as starting points in the form. */

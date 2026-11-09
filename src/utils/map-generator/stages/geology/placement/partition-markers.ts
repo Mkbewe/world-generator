@@ -1,16 +1,17 @@
-import { clamp01 } from '../../../../math';
-import type { WorldDimensions } from '../../../../world-dimensions';
-import { containsNormalized, type WorldShape } from '../../../../world-shape';
-import { GenerationCancelledError } from '../../../errors';
-import type { RandomFactory } from '../../../random';
-import type { SeededRandom } from '../../../random/seeded-random';
-import type { WorldSpace } from '../../../space';
+import { GenerationCancelledError } from '@generator/errors';
+import type { RandomFactory } from '@generator/random';
+import type { SeededRandom } from '@generator/random/seeded-random';
+import type { WorldSpace } from '@generator/space';
 import type {
   GeologicalRegionConfig,
   GeologicalRegionType,
   HeatZoneClass,
   WorldPoint,
-} from '../../../types';
+} from '@generator/types';
+
+import { clamp01 } from '../../../../math';
+import type { WorldDimensions } from '../../../../world-dimensions';
+import { containsNormalized, type WorldShape } from '../../../../world-shape';
 
 /** Seed-resolved marker of one region; the input of the region partition. */
 export interface RegionMarker {

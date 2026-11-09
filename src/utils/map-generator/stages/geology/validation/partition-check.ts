@@ -1,5 +1,5 @@
-import { GenerationCancelledError } from '../../../errors';
-import { floodFill4 } from '../../../flood-fill';
+import { GenerationCancelledError } from '@generator/errors';
+import { floodFill4 } from '@generator/flood-fill';
 
 export interface PartitionCheckInput {
   readonly owner: Int16Array;

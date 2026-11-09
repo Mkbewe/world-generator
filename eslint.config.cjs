@@ -47,6 +47,9 @@ module.exports = [
     settings: {
       'boundaries/root-path': __dirname,
       'import/resolver': {
+        typescript: {
+          project: './tsconfig.json',
+        },
         node: {
           extensions: ['.js', '.jsx', '.ts', '.tsx'],
         },

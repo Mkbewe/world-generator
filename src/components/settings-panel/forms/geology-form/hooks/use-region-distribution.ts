@@ -1,5 +1,6 @@
-import { MIN_REGION_SIZE } from '../../../../../utils/map-generator/stages/geology';
-import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
+import { MIN_REGION_SIZE } from '@generator/stages/geology';
+import type { GeologicalRegionConfig } from '@generator/types';
+
 import { type BoundaryDraft, useBoundaryDraft } from '../../../../distribution-bar';
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
 import { moveBoundary, regionShares, shareBoundaries } from '../lib/region-shares';

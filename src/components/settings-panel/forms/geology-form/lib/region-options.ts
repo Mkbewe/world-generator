@@ -1,8 +1,6 @@
+import { GEOLOGICAL_REGION_TYPES, type GeologicalRegionType } from '@generator';
+
 import type { MessageKey } from '../../../../../i18n';
-import {
-  GEOLOGICAL_REGION_TYPES,
-  type GeologicalRegionType,
-} from '../../../../../utils/map-generator';
 
 export interface RegionTypeOption {
   readonly id: GeologicalRegionType;

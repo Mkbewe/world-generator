@@ -1,3 +1,5 @@
+import { createWorldSpace } from '@generator/space';
+
 import {
   cliffinessAt,
   formProfile,
@@ -6,7 +8,6 @@ import {
   type ProfileInput,
 } from './profiles';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import { createWorldSpace } from '../../../space';
 import type { HeightmapNoiseBands } from '../bands';
 import { REGION_SHAPES, type RegionShape } from '../config/region-shape';
 import type { IslandBay, IslandForm } from '../forms/forms';

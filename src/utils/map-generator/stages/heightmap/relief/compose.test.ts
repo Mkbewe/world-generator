@@ -1,7 +1,8 @@
+import { createWorldSpace } from '@generator/space';
+import type { GeologicalRegionPlan, GeologyPlan, HeightmapConfig } from '@generator/types';
+
 import { composeSurfaces, measureShoreDistance, textureLand } from './compose';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import { createWorldSpace } from '../../../space';
-import type { GeologicalRegionPlan, GeologyPlan, HeightmapConfig } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
 import { REGION_SHAPES } from '../config/region-shape';
 import type { FieldContext } from '../field';

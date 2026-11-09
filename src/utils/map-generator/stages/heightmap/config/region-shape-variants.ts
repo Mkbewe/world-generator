@@ -1,6 +1,7 @@
+import type { GeologicalRegionType, HeatZoneClass } from '@generator/types';
+
 import { REGION_SHAPES, type RegionShape } from './region-shape';
 import { clamp01 } from '../../../../math';
-import type { GeologicalRegionType, HeatZoneClass } from '../../../types';
 
 type RegionShapeOverride = Partial<RegionShape>;
 

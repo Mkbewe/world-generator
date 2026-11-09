@@ -1,10 +1,10 @@
+import { createBandOverlay } from '@generator/stages/macro-region/editor/presets';
 import { Theme } from '@radix-ui/themes';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { OverlayRegionCard } from './overlay-region-card';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../../../stores';
-import { createBandOverlay } from '../../../../../../utils/map-generator/stages/macro-region/editor/presets';
 
 describe('OverlayRegionCard', () => {
   beforeEach(() => {

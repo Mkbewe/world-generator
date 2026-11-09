@@ -1,4 +1,4 @@
-import type { GeologicalRegionType } from '../../../types';
+import type { GeologicalRegionType } from '@generator/types';
 
 /**
  * How one region type builds its islands from stamped forms. The numbers are

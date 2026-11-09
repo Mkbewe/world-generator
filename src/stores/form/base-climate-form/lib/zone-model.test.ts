@@ -1,3 +1,6 @@
+import { baseClimatePresetConfig } from '@generator';
+import type { HeatZoneConfig } from '@generator/types';
+
 import {
   clampZoneBoundaries,
   convertLayout,
@@ -12,8 +15,6 @@ import {
   zonesFromBoundaries,
   zoneShares,
 } from './zone-model';
-import { baseClimatePresetConfig } from '../../../../utils/map-generator';
-import type { HeatZoneConfig } from '../../../../utils/map-generator/types';
 
 const earth = baseClimatePresetConfig('earth-like');
 const ringWorld = baseClimatePresetConfig('ring-world');
