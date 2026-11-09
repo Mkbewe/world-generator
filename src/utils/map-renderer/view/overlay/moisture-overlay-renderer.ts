@@ -1,5 +1,6 @@
+import { compilePalette, MOISTURE_STOPS } from '@layers';
+
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
-import { compilePalette, MOISTURE_STOPS } from '../../../map-layers';
 import { projectWithPadding } from '../../preview-targets';
 
 /** Alpha of the moisture tint over the base map. */

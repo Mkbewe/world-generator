@@ -1,4 +1,14 @@
 import {
+  DEFAULT_MACRO_DEFORMATION,
+  MAX_MACRO_REGIONS,
+} from '@generator/stages/macro-region/defaults';
+import {
+  createBandOverlay,
+  type MacroRegionLayout,
+} from '@generator/stages/macro-region/editor/presets';
+import type { MacroRegionConfig, MacroRegionDeformation } from '@generator/types';
+
+import {
   applyRegionBoundaries,
   baseRegions,
   regionBoundaries,
@@ -10,15 +20,6 @@ import {
   macroRegionPreset,
   type MacroRegionPresetId,
 } from '../../../components/settings-panel/forms/macro-region-form/lib/presets';
-import {
-  DEFAULT_MACRO_DEFORMATION,
-  MAX_MACRO_REGIONS,
-} from '../../../utils/map-generator/stages/macro-region/defaults';
-import {
-  createBandOverlay,
-  type MacroRegionLayout,
-} from '../../../utils/map-generator/stages/macro-region/editor/presets';
-import type { MacroRegionConfig, MacroRegionDeformation } from '../../../utils/map-generator/types';
 import { createStore } from '../../create-store';
 
 const DEFAULT_PRESET = macroRegionPreset('rings-with-poles');

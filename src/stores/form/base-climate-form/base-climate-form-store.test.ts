@@ -1,11 +1,12 @@
+import { baseClimatePresetConfig, isBaseClimateConfig } from '@generator';
+import { MAX_HEAT_ZONES } from '@generator/stages/base-climate/defaults';
+
 import { zoneBoundaries, zoneShares } from './lib/zone-model';
 import {
   BASE_CLIMATE_FORM_DEFAULTS,
   baseClimateConfigOf,
   useBaseClimateFormStore,
 } from './base-climate-form-store';
-import { baseClimatePresetConfig, isBaseClimateConfig } from '../../../utils/map-generator';
-import { MAX_HEAT_ZONES } from '../../../utils/map-generator/stages/base-climate/defaults';
 
 function reset(): void {
   useBaseClimateFormStore.setState({ ...BASE_CLIMATE_FORM_DEFAULTS });

@@ -1,4 +1,4 @@
-import type { GeologicalRegionType } from '../../../map-generator/types';
+import type { GeologicalRegionType } from '@generator/types';
 
 /** Half-height of the anchor icon; three times the old dot radius. */
 export const ANCHOR_ICON_SIZE_PX = 10.5;

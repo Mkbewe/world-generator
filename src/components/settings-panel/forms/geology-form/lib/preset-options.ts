@@ -1,5 +1,6 @@
+import type { GeologyPreset } from '@generator';
+
 import type { MessageKey } from '../../../../../i18n';
-import type { GeologyPreset } from '../../../../../utils/map-generator';
 
 export interface PresetOption {
   readonly id: GeologyPreset;

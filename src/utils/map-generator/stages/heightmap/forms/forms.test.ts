@@ -1,15 +1,16 @@
-import { buildRegionForms, collectRegionInteriors } from './forms';
-import type { WorldDimensions } from '../../../../world-dimensions';
-import { containsNormalized } from '../../../../world-shape';
-import { RandomFactory } from '../../../random';
-import { createWorldSpace } from '../../../space';
+import { RandomFactory } from '@generator/random';
+import { createWorldSpace } from '@generator/space';
 import type {
   GeologicalRegionPlan,
   GeologicalRegionType,
   GeologyPlan,
   RegionTerrainConfig,
   WorldPoint,
-} from '../../../types';
+} from '@generator/types';
+
+import { buildRegionForms, collectRegionInteriors } from './forms';
+import type { WorldDimensions } from '../../../../world-dimensions';
+import { containsNormalized } from '../../../../world-shape';
 import { REGION_SHAPES, type RegionShape } from '../config/region-shape';
 import { regionShapeFor } from '../config/region-shape-variants';
 

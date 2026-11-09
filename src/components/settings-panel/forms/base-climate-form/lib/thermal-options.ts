@@ -1,5 +1,6 @@
+import { HEAT_ZONE_CLASSES, type HeatZoneClass } from '@generator/types';
+
 import type { MessageKey } from '../../../../../i18n';
-import { HEAT_ZONE_CLASSES, type HeatZoneClass } from '../../../../../utils/map-generator/types';
 
 export interface HeatZoneClassOption {
   readonly id: HeatZoneClass;

@@ -1,5 +1,6 @@
+import { PRESENTATION_MARGIN, project } from '@renderer';
+
 import { formatDistance } from '../../../utils/format';
-import { PRESENTATION_MARGIN, project } from '../../../utils/map-renderer';
 import { roundDistance } from '../../../utils/measure';
 import type { WorldDimensions } from '../../../utils/world-dimensions';
 

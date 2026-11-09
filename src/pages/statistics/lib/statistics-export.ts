@@ -1,6 +1,7 @@
+import type { WorldConfig } from '@generator';
+import type { RenderStatistics } from '@renderer';
+
 import type { GenerationStatistics } from '../../../stores';
-import type { WorldConfig } from '../../../utils/map-generator';
-import type { RenderStatistics } from '../../../utils/map-renderer';
 
 /** Everything the statistics page shows: the map, its generation and its rendering. */
 export interface StatisticsSnapshot {

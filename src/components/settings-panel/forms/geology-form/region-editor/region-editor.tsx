@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import type { GeologicalRegionConfig } from '@generator/types';
 import { Card, Flex, RadioCards, Text } from '@radix-ui/themes';
 
-import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
 import { REGION_TYPE_OPTIONS } from '../lib/region-options';
 
 export interface RegionEditorProps {

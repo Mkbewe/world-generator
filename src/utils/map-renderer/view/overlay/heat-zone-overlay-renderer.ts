@@ -1,6 +1,7 @@
+import { type HeatZoneInfo, isHeatZoneInfoList } from '@generator/info-definitions';
+import { heatZoneColor } from '@layers';
+
 import type { OverlayFrame, OverlayRenderer } from './overlay-renderer';
-import { type HeatZoneInfo, isHeatZoneInfoList } from '../../../map-generator/info-definitions';
-import { heatZoneColor } from '../../../map-layers';
 import { projectWithPadding } from '../../preview-targets';
 
 /** Alpha of the zone fill over the base map. */

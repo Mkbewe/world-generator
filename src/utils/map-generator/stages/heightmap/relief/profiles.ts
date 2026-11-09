@@ -1,7 +1,8 @@
+import type { WorldSpace } from '@generator/space';
+import type { WorldPoint } from '@generator/types';
+
 import { clamp01, smoothstep } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import type { WorldSpace } from '../../../space';
-import type { WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
 import type { RegionShape } from '../config/region-shape';
 import { SHELF_DEPTH_METERS } from '../defaults';

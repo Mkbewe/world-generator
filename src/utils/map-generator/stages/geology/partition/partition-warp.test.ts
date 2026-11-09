@@ -1,8 +1,9 @@
+import { RandomFactory } from '@generator/random';
+import { createWorldSpace } from '@generator/space';
+
 import type { RegionPartitionInput } from './partition-types';
 import { createBorderWarp, sampleWarp } from './partition-warp';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import { RandomFactory } from '../../../random';
-import { createWorldSpace } from '../../../space';
 
 const DIMENSIONS: WorldDimensions = {
   widthMeters: 1000,

@@ -1,5 +1,6 @@
+import { MOISTURE_STOPS } from '@layers';
+
 import { paintMoisturePixels } from './moisture-overlay-renderer';
-import { MOISTURE_STOPS } from '../../../map-layers';
 
 describe('paintMoisturePixels', () => {
   it('paints the moisture ramp and clips to the world mask', () => {

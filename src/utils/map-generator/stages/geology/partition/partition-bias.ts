@@ -1,7 +1,8 @@
+import type { WorldPoint } from '@generator/types';
+
 import { growRegions } from './partition-growth';
 import type { RegionPartitionInput } from './partition-types';
 import { sampleWarp } from './partition-warp';
-import type { WorldPoint } from '../../../types';
 
 /** Sampled cells used to fit the region biases before the full-resolution pass. */
 const FIT_SAMPLES = 10_000;

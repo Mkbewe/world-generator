@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { MapRenderer } from '@renderer';
 
 import { useGenerationSession } from './use-generation-session';
 import {
@@ -15,7 +16,6 @@ import {
   useMapConfigStore,
   useWorldShapeFormStore,
 } from '../../../stores';
-import type { MapRenderer } from '../../../utils/map-renderer';
 import { buildGenerationConfig } from '../lib/generation-config';
 import { worldGenerationSession } from '../lib/world-generation-session';
 

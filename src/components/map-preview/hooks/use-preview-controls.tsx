@@ -1,8 +1,8 @@
 import { type RefObject, useCallback, useMemo } from 'react';
+import type { Measurement } from '@readout';
+import type { MapOverlayId, MapRenderer, MapRendererState } from '@renderer';
 
 import { usePreviewStore } from '../../../stores';
-import type { Measurement } from '../../../utils/map-readout';
-import type { MapOverlayId, MapRenderer, MapRendererState } from '../../../utils/map-renderer';
 import type { WorldDimensions } from '../../../utils/world-dimensions';
 import { MapMeasure } from '../../map-measure';
 import { ScaleBar } from '../../scale-bar';

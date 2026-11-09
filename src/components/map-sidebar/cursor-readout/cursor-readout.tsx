@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DrawingPinFilledIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Text } from '@radix-ui/themes';
+import type { ReadoutItem } from '@readout';
 import type { TFunction } from 'i18next';
 
-import type { ReadoutItem } from '../../../utils/map-readout';
 import styles from './cursor-readout.module.scss';
 
 export interface CursorReadoutProps {

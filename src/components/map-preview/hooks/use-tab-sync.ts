@@ -1,7 +1,7 @@
 import { type RefObject, useEffect } from 'react';
+import type { MapBaseLayerId, MapRenderer } from '@renderer';
 
 import { layerForTab, useViewSyncStore } from '../../../stores';
-import type { MapBaseLayerId, MapRenderer } from '../../../utils/map-renderer';
 
 interface UseTabSyncOptions {
   rendererRef: RefObject<MapRenderer | null>;

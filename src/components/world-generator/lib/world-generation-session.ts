@@ -1,9 +1,3 @@
-import { SelectiveRegeneration } from './regeneration';
-import {
-  type GenerationProgressState,
-  type GenerationStatistics,
-  usePreviewStore,
-} from '../../../stores';
 import {
   DEFAULT_MACRO_DEFORMATION,
   DEFAULT_MACRO_REGIONS,
@@ -14,19 +8,22 @@ import {
   selectDomainOutputs,
   selectMapInfo,
   selectPersistentRasters,
-} from '../../../utils/map-generator';
-import {
-  hasCurrentRasterOutputs,
-  type LayerDataRecord,
-  type MapRasters,
-} from '../../../utils/map-layers';
+} from '@generator';
+import { hasCurrentRasterOutputs, type LayerDataRecord, type MapRasters } from '@layers';
 import {
   type GeneratedMapSnapshot,
   layerRegistry,
   mapPersistence,
   type MapRenderer,
   mapRepository,
-} from '../../../utils/map-renderer';
+} from '@renderer';
+
+import { SelectiveRegeneration } from './regeneration';
+import {
+  type GenerationProgressState,
+  type GenerationStatistics,
+  usePreviewStore,
+} from '../../../stores';
 import { planProgress, ProgressTracker } from '../../generation-progress';
 
 /** Run metadata kept while the run is active, so a late renderer can catch up. */

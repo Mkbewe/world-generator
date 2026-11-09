@@ -1,8 +1,9 @@
+import type { SeededRandom } from '@generator/random';
+import type { WorldSpace } from '@generator/space';
+import type { WorldPoint } from '@generator/types';
+
 import type { IslandForm, RegionFormsInput } from './forms';
 import { clamp01 } from '../../../../math';
-import type { SeededRandom } from '../../../random';
-import type { WorldSpace } from '../../../space';
-import type { WorldPoint } from '../../../types';
 import type { RegionShape } from '../config/region-shape';
 import { BORDER_GATE_FADE_METERS, BORDER_GATE_METERS } from '../defaults';
 

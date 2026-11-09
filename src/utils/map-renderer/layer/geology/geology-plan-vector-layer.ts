@@ -1,8 +1,9 @@
+import { isGeologyPlan } from '@generator/stages/geology';
+import type { GeologyPlan, WorldPoint } from '@generator/types';
+import { geologyRegionColor } from '@layers';
+
 import { paintLabels, regionCentres } from './geology-labels';
 import { yieldToBrowser } from './geology-yield';
-import { isGeologyPlan } from '../../../map-generator/stages/geology';
-import type { GeologyPlan, WorldPoint } from '../../../map-generator/types';
-import { geologyRegionColor } from '../../../map-layers';
 import { type RenderTarget, targetKey } from '../../preview-targets';
 import type { LayerHit, MapBaseLayerId, SpatialMask } from '../../types';
 import type { VectorLayerFactory } from '../factories/vector-layer-factory';

@@ -1,5 +1,6 @@
+import type { PixelWriter, RasterData } from '@layers';
+
 import type { SmoothGeometry } from './smooth-geometry';
-import type { PixelWriter, RasterData } from '../../../map-layers';
 import { containsWorld } from '../../../world-shape';
 import type { RenderTarget } from '../../preview-targets';
 import type { SpatialMask } from '../../types';

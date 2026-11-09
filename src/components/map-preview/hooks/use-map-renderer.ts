@@ -1,12 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { emptyRenderState, type MapOverlayId, MapRenderer, type MapRendererState } from '@renderer';
 
 import { usePreviewStore, useRenderStatisticsStore } from '../../../stores';
-import {
-  emptyRenderState,
-  type MapOverlayId,
-  MapRenderer,
-  type MapRendererState,
-} from '../../../utils/map-renderer';
 import type { LayerNavigation } from '../lib/layer-navigation';
 
 interface UseMapRendererOptions {

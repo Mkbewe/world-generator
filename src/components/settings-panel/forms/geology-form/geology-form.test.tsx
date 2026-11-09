@@ -1,3 +1,4 @@
+import { geologyRegionColor } from '@layers';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -12,7 +13,6 @@ import {
   useViewSyncStore,
   VIEW_SYNC_DEFAULTS,
 } from '../../../../stores';
-import { geologyRegionColor } from '../../../../utils/map-layers';
 
 function renderForm() {
   return render(

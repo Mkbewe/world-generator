@@ -1,8 +1,6 @@
-import {
-  MAX_REGION_SIZE,
-  MIN_REGION_SIZE,
-} from '../../../../../utils/map-generator/stages/geology';
-import type { GeologicalRegionConfig } from '../../../../../utils/map-generator/types';
+import { MAX_REGION_SIZE, MIN_REGION_SIZE } from '@generator/stages/geology';
+import type { GeologicalRegionConfig } from '@generator/types';
+
 import type { DistributionSegment } from '../../../../lib/distribution-segment';
 import { regionId } from '../../lib/region-id';
 

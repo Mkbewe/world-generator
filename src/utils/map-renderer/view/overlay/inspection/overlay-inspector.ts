@@ -1,6 +1,6 @@
-import type { LayerDataRecord } from '../../../../map-layers';
-import type { MapSize } from '../../../layer';
-import type { MapInfo, MapOverlayId, MapOverlayInspection } from '../../../types';
+import type { MapSize } from '@renderer/layer';
+import type { MapInfo, MapOverlayId, MapOverlayInspection } from '@renderer/types';
+import type { LayerDataRecord } from '@layers';
 
 /** Data every overlay inspector receives for one source cell. */
 export interface OverlayInspectionInput {

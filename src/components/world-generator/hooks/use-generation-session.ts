@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
+import type { MapRenderer } from '@renderer';
 
-import type { MapRenderer } from '../../../utils/map-renderer';
 import { worldGenerationSession } from '../lib/world-generation-session';
 
 export interface GenerationSession {

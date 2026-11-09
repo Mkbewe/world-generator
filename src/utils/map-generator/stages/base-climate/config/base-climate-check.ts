@@ -1,5 +1,6 @@
-import { isNormalized, validateGeometry } from '../../../geometry';
-import { type BaseClimateConfig, HEAT_ZONE_CLASSES, OCEAN_CURRENT_FLOWS } from '../../../types';
+import { isNormalized, validateGeometry } from '@generator/geometry';
+import { type BaseClimateConfig, HEAT_ZONE_CLASSES, OCEAN_CURRENT_FLOWS } from '@generator/types';
+
 import {
   MAX_HEAT_ZONE_IRREGULARITY,
   MAX_HEAT_ZONES,

@@ -1,4 +1,13 @@
 import { useTranslation } from 'react-i18next';
+import {
+  type GeologyPreset,
+  geologyPresetConfig,
+  MAX_GEOLOGICAL_REGIONS,
+  MIN_GEOLOGICAL_REGIONS,
+} from '@generator/stages/geology';
+import { defaultRegionTerrain } from '@generator/stages/heightmap';
+import type { GeologicalRegionConfig } from '@generator/types';
+import { geologyRegionColor } from '@layers';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useGeologySelection } from './hooks/use-geology-selection';
@@ -7,15 +16,6 @@ import { PRESET_OPTIONS } from './lib/preset-options';
 import { RegionDistribution } from './region-distribution';
 import { RegionEditor } from './region-editor';
 import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
-import {
-  type GeologyPreset,
-  geologyPresetConfig,
-  MAX_GEOLOGICAL_REGIONS,
-  MIN_GEOLOGICAL_REGIONS,
-} from '../../../../utils/map-generator/stages/geology';
-import { defaultRegionTerrain } from '../../../../utils/map-generator/stages/heightmap';
-import type { GeologicalRegionConfig } from '../../../../utils/map-generator/types';
-import { geologyRegionColor } from '../../../../utils/map-layers';
 import { percent } from '../../../lib/percent';
 import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';

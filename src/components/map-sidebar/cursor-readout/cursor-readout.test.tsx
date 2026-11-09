@@ -1,9 +1,9 @@
 import { Theme } from '@radix-ui/themes';
+import type { ReadoutItem } from '@readout';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { CursorReadout } from './cursor-readout';
-import type { ReadoutItem } from '../../../utils/map-readout';
 
 const ITEMS: readonly ReadoutItem[] = [
   { id: 'position', labelKey: 'readout.position', value: 'X 1' },

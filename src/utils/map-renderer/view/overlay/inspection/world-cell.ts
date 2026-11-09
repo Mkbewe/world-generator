@@ -1,4 +1,4 @@
-import type { MapSize } from '../../../layer';
+import type { MapSize } from '@renderer/layer';
 
 /** Whether the map cell lies inside the world mask stored with the rasters. */
 export function isInsideWorld(value: unknown, index: number): boolean {

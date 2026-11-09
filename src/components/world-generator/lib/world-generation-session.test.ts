@@ -1,5 +1,3 @@
-import { WorldGenerationSession } from './world-generation-session';
-import { PREVIEW_DEFAULTS, usePreviewStore } from '../../../stores';
 import {
   type GenerationEvent,
   type MapConfig,
@@ -7,13 +5,16 @@ import {
   type RunGeneration,
   type StageInfo,
   type StageStatistics,
-} from '../../../utils/map-generator';
-import { PIPELINE_STAGES } from '../../../utils/map-generator/pipeline/stage-definitions';
-import { DEFAULT_MACRO_REGIONS } from '../../../utils/map-generator/stages/macro-region/defaults';
-import type { MapRasters } from '../../../utils/map-layers';
-import { MapRenderer, mapRepository } from '../../../utils/map-renderer';
-import { MapLayer } from '../../../utils/map-renderer/layer';
-import { Viewport } from '../../../utils/map-renderer/viewport';
+} from '@generator';
+import { PIPELINE_STAGES } from '@generator/pipeline/stage-definitions';
+import { DEFAULT_MACRO_REGIONS } from '@generator/stages/macro-region/defaults';
+import { MapRenderer, mapRepository } from '@renderer';
+import { MapLayer } from '@renderer/layer';
+import { Viewport } from '@renderer/viewport';
+import type { MapRasters } from '@layers';
+
+import { WorldGenerationSession } from './world-generation-session';
+import { PREVIEW_DEFAULTS, usePreviewStore } from '../../../stores';
 
 const config: MapConfig = {
   world: {

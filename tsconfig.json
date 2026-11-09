@@ -1,5 +1,15 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@generator": ["./src/utils/map-generator"],
+      "@generator/*": ["./src/utils/map-generator/*"],
+      "@layers": ["./src/utils/map-layers"],
+      "@layers/*": ["./src/utils/map-layers/*"],
+      "@readout": ["./src/utils/map-readout"],
+      "@readout/*": ["./src/utils/map-readout/*"],
+      "@renderer": ["./src/utils/map-renderer"],
+      "@renderer/*": ["./src/utils/map-renderer/*"]
+    },
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],

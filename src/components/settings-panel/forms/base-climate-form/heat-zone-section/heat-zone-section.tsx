@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { MAX_HEAT_ZONES } from '@generator/stages/base-climate/defaults';
+import { heatZoneColor } from '@layers';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
@@ -9,8 +11,6 @@ import {
   zoneBoundaries,
   zoneSegments,
 } from '../../../../../stores/form/base-climate-form';
-import { MAX_HEAT_ZONES } from '../../../../../utils/map-generator/stages/base-climate/defaults';
-import { heatZoneColor } from '../../../../../utils/map-layers';
 import { DistributionBar, useBoundaryDraft } from '../../../../distribution-bar';
 import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { HeatZoneCard } from '../heat-zone-card';

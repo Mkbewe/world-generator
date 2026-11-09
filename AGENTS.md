@@ -5,6 +5,13 @@
 World Generator — React + TypeScript + Vite app. Package manager: pnpm.
 See `README.md` and `docs/world-generation-roadmap.md` for architecture.
 
+## Import aliases
+
+- `@generator`, `@layers`, `@readout`, and `@renderer` map to their
+  corresponding folders in `src/utils/`; their subpaths use the same aliases.
+- Use these aliases for deep imports into those domains; keep `./` and `../`
+  for neighbouring files. Other imports use relative paths.
+
 ## Commands
 
 - `pnpm run check:all` — typecheck, ESLint, Stylelint, Prettier and tests; run before finishing work

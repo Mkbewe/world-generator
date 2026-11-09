@@ -1,10 +1,11 @@
+import { GenerationCancelledError } from '@generator/errors';
+import { RandomFactory } from '@generator/random';
+import { createWorldSpace } from '@generator/space';
+import type { GeologicalRegionConfig } from '@generator/types';
+
 import { createRegionPartition, regionBorderDistances } from './region-partition';
 import type { WorldDimensions } from '../../../../world-dimensions';
 import { containsNormalized, type WorldShape } from '../../../../world-shape';
-import { GenerationCancelledError } from '../../../errors';
-import { RandomFactory } from '../../../random';
-import { createWorldSpace } from '../../../space';
-import type { GeologicalRegionConfig } from '../../../types';
 import { geologyPresetConfig } from '../config/presets';
 import { placePartitionMarkers, type RegionMarker } from '../placement/partition-markers';
 

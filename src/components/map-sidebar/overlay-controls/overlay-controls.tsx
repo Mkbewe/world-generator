@@ -1,8 +1,8 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { LayersIcon } from '@radix-ui/react-icons';
 import { Card, Flex, Switch, Text } from '@radix-ui/themes';
+import type { MapOverlayId, MapRendererState } from '@renderer';
 
-import type { MapOverlayId, MapRendererState } from '../../../utils/map-renderer';
 import styles from './overlay-controls.module.scss';
 
 interface OverlayControlsProps {

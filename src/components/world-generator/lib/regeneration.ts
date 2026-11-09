@@ -6,7 +6,7 @@ import {
   selectDirtyStageIds,
   type StageInfo,
   type StageStatistics,
-} from '../../../utils/map-generator';
+} from '@generator';
 
 /**
  * Selective regeneration state kept between runs: the configuration and the real

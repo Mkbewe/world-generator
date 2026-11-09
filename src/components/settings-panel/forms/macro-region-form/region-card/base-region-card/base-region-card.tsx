@@ -1,7 +1,7 @@
 import { memo } from 'react';
+import type { MacroRegionConfig } from '@generator/types';
 import { Card, Flex } from '@radix-ui/themes';
 
-import type { MacroRegionConfig } from '../../../../../../utils/map-generator/types';
 import { RegionCardDanger } from '../region-card-danger';
 import { RegionCardHeader } from '../region-card-header';
 

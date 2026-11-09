@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import type { MacroRegionLayout } from '@generator/stages/macro-region/editor/presets';
 import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
-import type { MacroRegionLayout } from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
 import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
 
 export function BaseLayoutField() {

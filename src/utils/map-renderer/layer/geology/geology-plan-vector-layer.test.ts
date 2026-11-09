@@ -1,5 +1,6 @@
+import type { GeologyPlan } from '@generator/types';
+
 import { GeologyPlanVectorLayer, geologyPlanVectorLayerFactory } from './geology-plan-vector-layer';
-import type { GeologyPlan } from '../../../map-generator/types';
 import type { RenderTarget } from '../../preview-targets';
 import type { SpatialMask } from '../../types';
 

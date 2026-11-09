@@ -34,6 +34,26 @@ function localFlags(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), localFlags()],
+  resolve: {
+    alias: [
+      {
+        find: '@generator',
+        replacement: fileURLToPath(new URL('./src/utils/map-generator', import.meta.url)),
+      },
+      {
+        find: '@layers',
+        replacement: fileURLToPath(new URL('./src/utils/map-layers', import.meta.url)),
+      },
+      {
+        find: '@readout',
+        replacement: fileURLToPath(new URL('./src/utils/map-readout', import.meta.url)),
+      },
+      {
+        find: '@renderer',
+        replacement: fileURLToPath(new URL('./src/utils/map-renderer', import.meta.url)),
+      },
+    ],
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

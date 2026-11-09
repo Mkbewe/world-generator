@@ -1,10 +1,11 @@
-import { LayerNavigation } from './layer-navigation';
 import {
   layerRegistry,
   type LayerTreeNode,
   type MapBaseLayerId,
   type MapLayerOption,
-} from '../../../utils/map-renderer';
+} from '@renderer';
+
+import { LayerNavigation } from './layer-navigation';
 
 const tree: readonly LayerTreeNode[] = [
   { id: 'world-shape', labelKey: 'layers.worldShape' },

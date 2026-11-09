@@ -1,6 +1,7 @@
+import type { RegionTerrainConfig } from '@generator/types';
+import type { RegionTerrainParameter } from '@generator';
+
 import type { MessageKey } from '../../../../../i18n';
-import type { RegionTerrainParameter } from '../../../../../utils/map-generator';
-import type { RegionTerrainConfig } from '../../../../../utils/map-generator/types';
 
 export interface TerrainSliderOption {
   readonly id: RegionTerrainParameter;

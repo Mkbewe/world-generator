@@ -1,3 +1,8 @@
+import { GenerationCancelledError } from '@generator/errors';
+import type { RandomFactory } from '@generator/random';
+import type { WorldSpace } from '@generator/space';
+import type { WorldPoint } from '@generator/types';
+
 import {
   cliffinessAt,
   formProfile,
@@ -9,10 +14,6 @@ import {
 import { gridDistanceTransform } from '../../../../grid-distance';
 import { clamp01, smoothstep } from '../../../../math';
 import type { WorldDimensions } from '../../../../world-dimensions';
-import { GenerationCancelledError } from '../../../errors';
-import type { RandomFactory } from '../../../random';
-import type { WorldSpace } from '../../../space';
-import type { WorldPoint } from '../../../types';
 import type { HeightmapNoiseBands } from '../bands';
 import type { RegionShape } from '../config/region-shape';
 import { defaultRegionTerrain } from '../config/region-terrain';

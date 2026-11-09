@@ -1,14 +1,15 @@
-import { mainCentre, nextCentre } from './placement';
-import { clamp01 } from '../../../../math';
-import type { WorldDimensions } from '../../../../world-dimensions';
-import type { RandomFactory, SeededRandom } from '../../../random';
-import type { WorldSpace } from '../../../space';
+import type { RandomFactory, SeededRandom } from '@generator/random';
+import type { WorldSpace } from '@generator/space';
 import type {
   GeologicalRegionPlan,
   GeologyPlan,
   RegionTerrainConfig,
   WorldPoint,
-} from '../../../types';
+} from '@generator/types';
+
+import { mainCentre, nextCentre } from './placement';
+import { clamp01 } from '../../../../math';
+import type { WorldDimensions } from '../../../../world-dimensions';
 import type { RegionShape } from '../config/region-shape';
 import {
   BORDER_GATE_FADE_METERS,

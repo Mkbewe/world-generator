@@ -1,4 +1,4 @@
-import { DEFAULT_GEOLOGY_CONFIG } from '../../../utils/map-generator/stages/geology';
+import { DEFAULT_GEOLOGY_CONFIG } from '@generator/stages/geology';
 import {
   DEFAULT_HEIGHTMAP_CONFIG,
   defaultRegionTerrainSlots,
@@ -6,12 +6,9 @@ import {
   MAX_RELIEF,
   MIN_ISLET_FREQUENCY,
   MIN_RELIEF,
-} from '../../../utils/map-generator/stages/heightmap';
-import type {
-  GeologicalRegionType,
-  HeightmapConfig,
-  RegionTerrainConfig,
-} from '../../../utils/map-generator/types';
+} from '@generator/stages/heightmap';
+import type { GeologicalRegionType, HeightmapConfig, RegionTerrainConfig } from '@generator/types';
+
 import { createStore } from '../../create-store';
 
 /**

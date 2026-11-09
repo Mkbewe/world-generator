@@ -1,4 +1,4 @@
-import type { MacroRegionConfig } from '../../../types';
+import type { MacroRegionConfig } from '@generator/types';
 
 export type MacroRegionLayout = 'radial' | 'horizontal' | 'vertical';
 

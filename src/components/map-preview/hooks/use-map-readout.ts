@@ -8,9 +8,8 @@ import {
   useRef,
   useState,
 } from 'react';
-
-import type { InspectorReadout, Measurement, PointerSample } from '../../../utils/map-readout';
-import type { MapRenderer, MapRendererState } from '../../../utils/map-renderer';
+import type { InspectorReadout, Measurement, PointerSample } from '@readout';
+import type { MapRenderer, MapRendererState } from '@renderer';
 
 const TAP_MOVE_TOLERANCE_PX = 8;
 const WHEEL_ZOOM_SPEED = 0.0015;

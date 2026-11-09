@@ -1,6 +1,7 @@
+import type { GenerationEvent, StageInfo } from '@generator';
+
 import type { MessageKey } from '../../../i18n';
 import type { GenerationProgressState, GenerationStageProgress } from '../../../stores';
-import type { GenerationEvent, StageInfo } from '../../../utils/map-generator';
 
 export class ProgressTracker {
   private state: GenerationProgressState;

@@ -5,7 +5,8 @@ import type {
   MacroRegionConfig,
   MacroRegionDeformation,
   MapConfig,
-} from '../../../utils/map-generator';
+} from '@generator';
+
 import { summarizeWorldGrid } from '../../../utils/world-grid';
 
 export interface GenerationConfigInput {

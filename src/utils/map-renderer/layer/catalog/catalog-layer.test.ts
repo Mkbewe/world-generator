@@ -1,5 +1,6 @@
+import type { LayerSpec } from '@layers';
+
 import { CatalogLayer } from './catalog-layer';
-import type { LayerSpec } from '../../../map-layers';
 import type { RenderTarget } from '../../preview-targets';
 import { layerRegistry } from '../layer-registry';
 

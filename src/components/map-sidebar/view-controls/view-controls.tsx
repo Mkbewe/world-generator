@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import { MAX_VIEW_SCALE, MIN_VIEW_SCALE } from '@renderer';
 import { MagnifyingGlassIcon, MinusIcon, PlusIcon, ResetIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, IconButton, Text } from '@radix-ui/themes';
 
-import { MAX_VIEW_SCALE, MIN_VIEW_SCALE } from '../../../utils/map-renderer';
 import styles from './view-controls.module.scss';
 
 interface ViewControlsProps {

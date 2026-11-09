@@ -1,9 +1,9 @@
 import { Theme } from '@radix-ui/themes';
+import type { MapLayerNode } from '@renderer';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { LayerViews } from './layer-views';
-import type { MapLayerNode } from '../../../utils/map-renderer';
 
 function climateTabs(macroRegionAvailable = true): readonly MapLayerNode[] {
   return [

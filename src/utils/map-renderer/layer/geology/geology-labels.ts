@@ -1,10 +1,11 @@
+import type { GeologicalRegionPlan, WorldPoint } from '@generator/types';
+
 import {
   ANCHOR_ICON_SIZE_PX,
   paintAnchor,
   paintTypeIcon,
   TYPE_ICON_SIZE_PX,
 } from './geology-glyphs';
-import type { GeologicalRegionPlan, WorldPoint } from '../../../map-generator/types';
 import type { SpatialMask } from '../../types';
 import type { MapProjection } from '../../view/view-transform';
 import { effectivePixelRatio } from '../../viewport';

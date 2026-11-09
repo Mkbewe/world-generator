@@ -1,10 +1,10 @@
+import type { RegionTerrainConfig } from '@generator/types';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { RegionTerrainEditor } from './region-terrain-editor';
-import type { RegionTerrainConfig } from '../../../../../utils/map-generator/types';
 
 const TERRAIN: RegionTerrainConfig = {
   landShare: 0.3,

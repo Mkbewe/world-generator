@@ -8,12 +8,9 @@ import {
   MAX_REGION_SIZE,
   MIN_GEOLOGICAL_REGIONS,
   MIN_REGION_SIZE,
-} from '../../../utils/map-generator/stages/geology';
-import type {
-  GeologicalRegionConfig,
-  GeologyConfig,
-  GeologyLayoutConfig,
-} from '../../../utils/map-generator/types';
+} from '@generator/stages/geology';
+import type { GeologicalRegionConfig, GeologyConfig, GeologyLayoutConfig } from '@generator/types';
+
 import { createStore } from '../../create-store';
 
 /**

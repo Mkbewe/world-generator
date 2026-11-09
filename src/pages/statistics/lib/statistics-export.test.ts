@@ -1,9 +1,10 @@
+import type { StageStatistics } from '@generator';
+
 import {
   downloadStatisticsExport,
   statisticsExportFileName,
   type StatisticsSnapshot,
 } from './statistics-export';
-import type { StageStatistics } from '../../../utils/map-generator';
 
 const STAGE: StageStatistics = {
   stageId: 'world-shape',

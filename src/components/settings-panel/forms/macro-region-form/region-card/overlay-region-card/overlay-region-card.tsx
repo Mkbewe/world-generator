@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import type { MacroRegionConfig } from '@generator/types';
 import { Card, Flex, SegmentedControl } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../../stores';
-import type { MacroRegionConfig } from '../../../../../../utils/map-generator/types';
 import { InfoLabel } from '../../../../../info-label';
 import { SegmentedControlScroll } from '../../../../../segmented-control-scroll';
 import { SliderField } from '../../../../../slider-field';

@@ -1,4 +1,10 @@
 import {
+  createBandOverlay,
+  createRadialLayout,
+} from '@generator/stages/macro-region/editor/presets';
+import type { MacroRegionConfig } from '@generator/types';
+
+import {
   applyRegionBoundaries,
   MIN_MACRO_REGION_SHARE,
   regionBoundaries,
@@ -6,11 +12,6 @@ import {
   removeBaseRegion,
   splitLargestRegion,
 } from './boundary-model';
-import {
-  createBandOverlay,
-  createRadialLayout,
-} from '../../../../../utils/map-generator/stages/macro-region/editor/presets';
-import type { MacroRegionConfig } from '../../../../../utils/map-generator/types';
 
 describe('macro region sizing', () => {
   it('expresses adjacent regions as one set of shared boundaries', () => {
