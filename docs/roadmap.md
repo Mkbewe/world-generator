@@ -23,9 +23,9 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
 - **Pipeline** — etapy World shape, Macro regions, BaseClimate, Geology
   i Heightmap działają w workerze, z postępem, statystykami, selektywnym
   przeliczaniem i pamięcią sesji między widokami.
-- **BaseClimate** — domyślny Ring world przypisuje strefy ciepła regionom
-  geologii; bazowa wilgotność i prądy dochodzą w tym samym etapie, a overlaye
-  Heat zones, Moisture baseline i Ocean currents są kolejnym krokiem.
+- **BaseClimate** — domyślny preset Ring world definiuje strefy ciepła; bazowa
+  wilgotność i prądy dochodzą w tym samym etapie, a overlaye
+  Heat zones, Moisture baseline i Ocean currents są dostępne w podglądzie.
 - **Geologia** — świat dzieli się na prowincje o typie i charakterze
   (ordinary, volcanic, lagoon, fjord), z granicami, presetami i udziałami
   powierzchni; strefa ciepła w środku każdej formy wyspy wybiera wariant
@@ -34,14 +34,15 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
   jedną skupioną wyspę, z płaskimi i górzystymi masami, klifami, kraterami
   i lagunami; poziom wody jest stały w rastrze (bez suwaka poziomu morza),
   a wysepki pojawiają się tylko na płytkim szelfie przy brzegach.
-- **Ustawienia** — zakładka na etap: kształt i rozmiar świata, makroregiony,
-  geologia (typ regionu) oraz heightmapa (rzeźba globalna i suwaki regionów);
-  stan formularzy jest pamiętany, a spięcie zakładek z podglądem opcjonalne.
-- **Podgląd** — katalog warstw (shape, macro, geology, heightmap), nakładki,
-  odczyt pod kursorem, zoom/pan, tryb pełnoekranowy, miarka i skala; warstwy
-  rysują się progresywnie, w rozdzielczości ekranu.
-- **Statystyki** — czasy i metryki etapów oraz renderowania, osobna strona
-  statystyk.
+- **Ustawienia** — formularze ogólne, World shape, Macro regions, BaseClimate,
+  Geology i Heightmap; stan formularzy jest pamiętany, a spięcie zakładek
+  z podglądem opcjonalne.
+- **Podgląd** — katalog warstw World shape, Macro regions, Heat zones, Moisture,
+  Ocean currents, Geology i Heightmap; dostępne są też nakładki, odczyt pod
+  kursorem, zoom/pan, tryb pełnoekranowy, miarka i skala. Warstwy rysują się
+  progresywnie, w rozdzielczości ekranu.
+- **Statystyki** — czasy i metryki etapów oraz renderowania na osobnej stronie;
+  dostępny jest eksport statystyk do JSON.
 
 ## 3. Rzeźba terenu — co zostaje — [częściowo]
 
@@ -52,7 +53,9 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
 
 ## 4. Kolejne etapy pipeline'u — [planowane]
 
-Kolejność może się jeszcze zmienić; każdy etap czyta wyniki poprzednich.
+Etapy deklarują dane wejściowe i wyjściowe. Wykonanie respektuje te zależności;
+sama pozycja etapu na liście nie oznacza zależności od wszystkich etapów przed
+nim.
 
 1. **Climate** — ciągła temperatura, wilgotność, hydrologia i woda; gradienty
    stref, wpływ wysokości, wiatru i cienia opadowego.
@@ -63,9 +66,10 @@ Kolejność może się jeszcze zmienić; każdy etap czyta wyniki poprzednich.
 
 ## 5. Presety świata i geografia — [planowane]
 
-Preset świata (topologia, strefy ciepła, zagrożenie) i preset geografii
-(lista prowincji) będą niezależnymi wyborami, które można łączyć i edytować.
-Na start kilka gotowych światów i geografii, później tryb zaawansowany.
+Główne presety świata (m.in. topologia, strefy ciepła i zagrożenie) oraz presety
+geografii (lista prowincji) będą niezależnymi wyborami, które można łączyć
+i edytować. To presety całego świata, a nie presety pojedynczych formularzy
+etapów. Na start kilka gotowych światów i geografii, później tryb zaawansowany.
 
 ## 6. Topologia i krawędzie — [planowane]
 
@@ -73,19 +77,21 @@ Na razie dysk albo prostokąt bez zawijania. Docelowo: świat cylindryczny
 z bezszwowym zawijaniem, konfigurowalne krawędzie (klif, ocean, lodowa ściana)
 oraz spójna okresowość szumu i sąsiedztw.
 
-## 7. Eksploracja i eksport — [planowane]
+## 7. Eksploracja i eksport — [częściowo]
 
-- Prosta podstrona zwiedzania świata z kamerą i znacznikiem postaci; to demo,
-  nie silnik gry.
-- Eksport paczki danych dla Godota (rastry i manifest z seedem, wymiarami,
-  warstwami i lokacjami) jako pomysł na przyszłość, bez integracji.
+- **Eksploracja** — prosta podstrona zwiedzania świata z kamerą i znacznikiem
+  postaci; to demo, nie silnik gry [planowane].
+- **Eksport** — eksport statystyk do JSON działa. Eksport paczki danych dla
+  Godota (rastry i manifest z seedem, wymiarami, warstwami i lokacjami) oraz
+  eksport warstw mapy pozostają planami; nie ma jeszcze integracji z Godotem.
 
 ## 8. Wydajność i pamięć — [częściowo]
 
 Podgląd rysuje w rozdzielczości okna i nie trzyma pełnowymiarowych canvasów.
 Otwarte tematy: kopie danych przy `postMessage` (albo SharedArrayBuffer),
 budżet pamięci cache warstw, reużycie workera i — dopiero po pomiarach —
-przeniesienie ciężkiego rysowania na WebGL/WebGPU.
+przeniesienie ciężkiego rysowania na WebGL/WebGPU. Wyniki researchu i propozycja
+etapowego prototypu: [renderer GPU](./map-renderer-gpu-proposal.md).
 
 ## 9. Pozostałe kierunki — [planowane / odłożone]
 
