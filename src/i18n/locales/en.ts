@@ -103,7 +103,7 @@ const en = {
   'forms.irregularity.small': 'Small',
   'forms.irregularity.medium': 'Medium',
   'forms.irregularity.large': 'Large',
-  'forms.distribution.aria': 'Region width distribution',
+  'forms.distribution.hint': 'Drag a boundary to adjust the distribution.',
   'forms.share.area': 'Area share',
   'forms.share.areaDescription': "Each region's share of the world's area.",
   'forms.share.ringThickness': 'Ring thickness',
@@ -171,8 +171,6 @@ const en = {
   'forms.macroRegion.dangerDescription':
     'Target gameplay danger used to constrain biome variants, encounters, and rewards.',
   'forms.macroRegion.regionBoundariesAria': 'Region boundaries',
-  'forms.macroRegion.distributionHint':
-    'Drag a boundary on the bar to resize the two neighbouring regions.',
   'forms.baseClimate.presets': 'Presets',
   'forms.baseClimate.presetRing': 'Ring',
   'forms.baseClimate.presetRingDescription': 'Temperate core, warm ring and a cold rim.',
@@ -198,9 +196,6 @@ const en = {
   'forms.baseClimate.heatZones': 'Heat zones ({{count}})',
   'forms.baseClimate.addZone': 'Add zone',
   'forms.baseClimate.boundariesAria': 'Heat zone boundaries',
-  'forms.baseClimate.distributionAria': 'Heat zone distribution',
-  'forms.baseClimate.distributionHint':
-    'Drag a boundary on the bar to resize the two neighbouring zones.',
   'forms.baseClimate.heatZonesAria': 'Heat zones',
   'forms.baseClimate.zoneLabelAria': 'Zone label',
   'forms.baseClimate.removeZone': 'Remove {{label}}',
@@ -249,9 +244,6 @@ const en = {
   'forms.geology.regionTypeAria': 'Region type',
   'forms.geology.character': 'Character: {{character}}',
   'forms.geology.areaAria': 'Geology region areas',
-  'forms.geology.areaDistributionAria': 'Geology region area distribution',
-  'forms.geology.areaHint': 'Drag a boundary to change the area of the two neighbouring regions.',
-  'forms.geology.regionShareLabel': 'Region {{index}}: {{type}} ({{percent}}%)',
   'forms.geology.typeOrdinary': 'Ordinary',
   'forms.geology.typeOrdinaryDescription': 'Broad irregular uplifts',
   'forms.geology.typeVolcanic': 'Volcanic',

@@ -104,7 +104,7 @@ const pl = {
   'forms.irregularity.small': 'Mała',
   'forms.irregularity.medium': 'Średnia',
   'forms.irregularity.large': 'Duża',
-  'forms.distribution.aria': 'Rozkład szerokości regionów',
+  'forms.distribution.hint': 'Przeciągnij granicę, aby zmienić rozkład.',
   'forms.share.area': 'Udział powierzchni',
   'forms.share.areaDescription': 'Udział każdego regionu w powierzchni świata.',
   'forms.share.ringThickness': 'Grubość pierścienia',
@@ -173,8 +173,6 @@ const pl = {
   'forms.macroRegion.dangerDescription':
     'Docelowy poziom zagrożenia rozgrywki, używany do ograniczania wariantów biomów, spotkań i nagród.',
   'forms.macroRegion.regionBoundariesAria': 'Granice regionów',
-  'forms.macroRegion.distributionHint':
-    'Przeciągnij granicę na pasku, aby zmienić rozmiar dwóch sąsiednich regionów.',
   'forms.baseClimate.presets': 'Presety',
   'forms.baseClimate.presetRing': 'Pierścień',
   'forms.baseClimate.presetRingDescription': 'Umiarkowany rdzeń, ciepły pierścień i zimna krawędź.',
@@ -201,9 +199,6 @@ const pl = {
   'forms.baseClimate.heatZones': 'Strefy cieplne ({{count}})',
   'forms.baseClimate.addZone': 'Dodaj strefę',
   'forms.baseClimate.boundariesAria': 'Granice stref cieplnych',
-  'forms.baseClimate.distributionAria': 'Rozkład stref cieplnych',
-  'forms.baseClimate.distributionHint':
-    'Przeciągnij granicę na pasku, aby zmienić rozmiar dwóch sąsiednich stref.',
   'forms.baseClimate.heatZonesAria': 'Strefy cieplne',
   'forms.baseClimate.zoneLabelAria': 'Etykieta strefy',
   'forms.baseClimate.removeZone': 'Usuń {{label}}',
@@ -253,9 +248,6 @@ const pl = {
   'forms.geology.regionTypeAria': 'Typ regionu',
   'forms.geology.character': 'Charakter: {{character}}',
   'forms.geology.areaAria': 'Obszary regionów geologicznych',
-  'forms.geology.areaDistributionAria': 'Rozkład obszarów regionów geologicznych',
-  'forms.geology.areaHint': 'Przeciągnij granicę, aby zmienić obszar dwóch sąsiednich regionów.',
-  'forms.geology.regionShareLabel': 'Region {{index}}: {{type}} ({{percent}}%)',
   'forms.geology.typeOrdinary': 'Zwykły',
   'forms.geology.typeOrdinaryDescription': 'Szerokie nieregularne wyniesienia',
   'forms.geology.typeVolcanic': 'Wulkaniczny',

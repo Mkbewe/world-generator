@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Flex } from '@radix-ui/themes';
+import { Flex, Text } from '@radix-ui/themes';
 
 import { type BoundaryDraft } from './hooks/use-boundary-draft';
 import { BoundaryHandle } from './boundary-handle';
@@ -14,9 +14,8 @@ interface DistributionBarProps {
   draft: BoundaryDraft;
   /** Smallest share one side may keep, in percent of the whole bar. */
   minShare?: number;
-  colorForIndex?: (index: number) => readonly [number, number, number];
-  labelForIndex?: (index: number) => string;
-  ariaLabel?: string;
+  /** Accessible name for the grouping container; sets role='group'. */
+  groupAriaLabel?: string;
   /** What the shares mean, e.g. ring thickness along the radius. */
   header?: { readonly label: string; readonly description: string };
 }
@@ -25,26 +24,26 @@ export function DistributionBar({
   segments,
   draft,
   minShare,
-  colorForIndex,
-  labelForIndex,
-  ariaLabel,
+  groupAriaLabel,
   header,
 }: DistributionBarProps) {
   const { t } = useTranslation();
-  const label = ariaLabel ?? t('forms.distribution.aria');
 
   return (
-    <Flex direction='column' gap='2'>
+    <Flex
+      direction='column'
+      gap='2'
+      role={groupAriaLabel ? 'group' : undefined}
+      aria-label={groupAriaLabel}
+    >
       {header && <InfoLabel label={header.label} description={header.description} />}
-      <div className={styles.distribution} aria-label={label}>
+      <div className={styles.distribution}>
         {segments.map((segment, index) => (
           <div
             key={segment.id}
             className={styles.distributionSegment}
-            title={labelForIndex?.(index)}
-            aria-label={labelForIndex?.(index)}
             style={{
-              backgroundColor: colorString(colorForIndex?.(index) ?? regionColor(index)),
+              backgroundColor: colorString(segment.color ?? regionColor(index)),
               width: `${draft.shares[index]}%`,
             }}
           >
@@ -64,6 +63,11 @@ export function DistributionBar({
           />
         ))}
       </div>
+      {draft.boundaries.length > 0 && (
+        <Text size='1' color='gray'>
+          {t('forms.distribution.hint')}
+        </Text>
+      )}
     </Flex>
   );
 }

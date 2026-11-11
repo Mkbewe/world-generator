@@ -5,18 +5,18 @@ import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
-import { useBoundaryDraft } from '../../../../distribution-bar';
+import { DistributionBar, useBoundaryDraft } from '../../../../distribution-bar';
 import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { macroRegionShareCopy } from '../../lib/share-copy';
 import { useMacroRegionSelection } from '../hooks/use-macro-region-selection';
 import {
   baseRegions,
   clampBoundaries,
+  MIN_MACRO_REGION_SHARE,
   regionBoundaries,
   regionSegments,
 } from '../lib/boundary-model';
 import { BaseRegionCard } from '../region-card';
-import { RegionDistribution } from '../region-distribution';
 
 /** Base regions: the share bar, their tabs and the selected region fields. */
 export function BaseRegionSection() {
@@ -56,7 +56,16 @@ export function BaseRegionSection() {
           <PlusIcon /> {t('forms.macroRegion.addRegion')}
         </Button>
       </Flex>
-      <RegionDistribution segments={segments} draft={draft} header={shareCopy} />
+      <DistributionBar
+        groupAriaLabel={t('forms.macroRegion.regionBoundariesAria')}
+        segments={segments}
+        draft={draft}
+        minShare={MIN_MACRO_REGION_SHARE}
+        header={{
+          label: t(shareCopy.labelKey),
+          description: t(shareCopy.descriptionKey),
+        }}
+      />
       <RegionTabs
         items={tabItems}
         selectedIndex={selectedIndex}

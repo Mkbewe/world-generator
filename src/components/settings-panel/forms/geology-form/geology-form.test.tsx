@@ -83,10 +83,10 @@ describe('GeologyForm', () => {
     expect(screen.getByRole('tab', { name: 'Region 5' })).toBeInTheDocument();
   });
 
-  it('uses map colours and identifies each region on the area bar', () => {
+  it('uses map colours on the area bar', () => {
     renderForm();
 
-    const volcanic = screen.getByTitle('Region 2: Volcanic (23%)');
+    const volcanic = screen.getByText('23%');
     const [red, green, blue] = geologyRegionColor('volcanic', 1);
     expect(volcanic).toHaveStyle({ backgroundColor: `rgb(${red}, ${green}, ${blue})` });
   });
