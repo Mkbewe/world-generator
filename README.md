@@ -2,6 +2,9 @@
 
 World Generator is a React + Vite application for generating procedural island and terrain-inspired worlds.
 
+For instructions on configuring and exploring a world, see the
+[User Guide](docs/user-guide.md).
+
 ## Local development
 
 ### Requirements
@@ -42,54 +45,36 @@ pnpm check:all
 Stylelint validates all SCSS files using the rules in `.stylelintrc.json`.
 Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 
-## Generation preview
+## Architecture
 
-The home page runs the map generation pipeline in a Web Worker. The pipeline
-contains three implemented stages:
+The application separates configuration, world generation, and map presentation.
 
-1. `WorldShapeStage` creates a disc or rectangular `worldMask`.
-2. `MacroRegionStage` assigns every masked cell to exactly one macro region in
-   `macroRegionIdMap`, with its own deterministic border noise.
-3. `GeologyStage` divides the world into one to ten geological provinces and
-   produces the owner raster (`regionOwnerMap`) and the distance from every
-   region border (`regionBorderDistanceMap`). Geology plans regions only — it
-   creates no heights and no islands.
+### Generation and data flow
 
-The preview exposes these results as base map layers and the `World boundary`
-overlay. The map viewer keeps raw numeric layers separate from rendering, so
-future stages such as height, temperature, moisture, hydrology and biomes can be
-added without changing the rendering layer.
+- The React forms build a typed `MapConfig`. Generation starts explicitly from
+  the settings panel; changing a control does not automatically regenerate.
+- `src/utils/map-generator` runs in a Web Worker and contains five stages:
+  World Shape, Macro Regions, BaseClimate, Geology, and Heightmap. Each stage
+  declares the data it reads and writes. The execution order is derived from
+  those dependencies; the presentation order is not itself a dependency graph.
+- The worker streams stage lifecycle, progress, and output data. `postMessage`
+  copies stage output to the main thread; the sample budget accounts for that
+  copy. The final result contains generation statistics, while map outputs are
+  collected from stage events.
+- Non-raster metadata travels through `MapInfo`. `MAP_INFO_CATALOG` derives
+  entries such as heat-zone descriptions, macro-region labels, and world
+  dimensions from the generation config.
 
-World settings use physical units. The shape form takes a size in meters (3, 6
-and 12 km presets plus a custom value from 3000 to 12 000 m) and a terrain detail
-in meters per sample (1, 2, 4, 8 or 16 m). The form shows the derived sample grid
-and the estimated generation data before generating. Generation is validated against
-a shared sample budget derived from an 864 MB budget for the generation data
-(stage rasters and their copy sent to the main thread; renderer canvases are
-counted separately by the render statistics). When the requested detail exceeds
-it, the form clamps the grid to the budget and shows a warning while keeping the
-requested physical size.
+### Map rendering
 
-The cursor readout shows the hovered cell under `Position` and the matching
-distance in meters under `Distance`, using shared `X`/`Y` columns.
-
-The preview opens in a fullscreen overlay from the header toggle and closes with
-`Esc` or the same toggle. There the map canvas fills the workspace while keeping
-the map's aspect ratio, so on wide screens zooming (mouse wheel or the `-`/`+`
-steps in the `View` section) reveals more of the map to the sides. Dragging pans,
-a tap or click pins the cursor readout (inside and outside the fullscreen mode),
-and leaving the mode resets the view to the whole map.
-
-Non-raster metadata travels through a generic `MapInfo` channel attached to the
-snapshot: `MAP_INFO_CATALOG` derives entries such as the macro region labels and
-the world dimensions from the generation config, so the readout keeps showing
-labels and scale that match the generated map.
-
-Generation always runs in a Web Worker, which announces its stages up front and
-then streams lifecycle events with each stage's output data and progress; these
-drive the indicator below the map. The final result carries generation statistics
-only — generated layers are persisted from the stage events so the last map can
-be restored after navigation.
+- `src/utils/map-layers` declares the raster and vector layer catalog.
+- `src/utils/map-renderer` builds the preview from generator outputs using
+  progressive, screen-resolution Canvas2D rendering, overlays, a layer cache,
+  and render metrics.
+- World dimensions use physical units independently of sample-grid resolution.
+  The generation sample budget is derived from an 864 MB data budget and
+  accounts for stage rasters plus their main-thread copy; renderer canvases are
+  measured separately.
 
 For local visual testing, an optional delay can be enabled between stages:
 
@@ -107,7 +92,8 @@ during generation. Finished runs keep their map configuration, per-stage
 generation statistics and render statistics (layer timings, tiles, source and
 buffer resolutions, buffer sizes, first-tile time and presentation/overlay
 time); the `/statistics` page presents them together. All of it lives in memory
-for the session, so a full page refresh clears it.
+for the session, so a full page refresh clears it. The page also exports the
+statistics snapshot as JSON.
 
 ## Project structure
 
