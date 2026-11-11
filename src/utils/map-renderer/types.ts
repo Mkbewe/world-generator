@@ -47,6 +47,25 @@ export interface LayerHit {
   readonly oceanCurrent?: { readonly angle: number; readonly strength: number };
 }
 
+/** Domain-neutral map element highlighted in the preview. */
+export interface MapFeatureSelection {
+  readonly layerId: MapBaseLayerId;
+  readonly featureId: string;
+}
+
+export function isSameFeatureSelection(
+  left: MapFeatureSelection | undefined,
+  right: MapFeatureSelection | undefined
+): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (!left || !right) {
+    return false;
+  }
+  return left.layerId === right.layerId && left.featureId === right.featureId;
+}
+
 /** Raster value of the displayed layer at a source cell. */
 export interface RasterMapInspection {
   readonly kind: 'raster';

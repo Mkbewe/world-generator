@@ -1,3 +1,4 @@
+import type { GeologyPlan } from '@generator/types';
 import { Theme } from '@radix-ui/themes';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -40,6 +41,25 @@ function renderPreview() {
       </Theme>
     ),
     renderer,
+  };
+}
+
+function geologyPlanFixture(): GeologyPlan {
+  return {
+    regions: [
+      {
+        id: 'region-1',
+        centre: { x: 0.5, y: 0.5 },
+        thermal: 'temperate',
+        weight: 1,
+        type: 'ordinary',
+        areaSquareMeters: 100,
+      },
+    ],
+    regionRasterSize: { width: 4, height: 4 },
+    regionOwnerMap: new Int16Array(16).fill(0),
+    regionBorderDistanceMap: new Float32Array(16).fill(100),
+    worldAreaSquareMeters: 400,
   };
 }
 
@@ -448,6 +468,8 @@ describe('MapPreview tab sync', () => {
       lineTo: vi.fn(),
       closePath: vi.fn(),
       arc: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      fill: vi.fn(),
       stroke: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
     usePreviewStore.setState({ ...PREVIEW_DEFAULTS });
@@ -517,5 +539,59 @@ describe('MapPreview tab sync', () => {
     await user.click(screen.getByRole('tab', { name: 'World shape' }));
 
     expect(useViewSyncStore.getState().settingsTab).toBe('general');
+  });
+
+  it('routes readout actions to their declared feature and linked settings tab', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 400,
+      right: 400,
+      bottom: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    const { renderer } = renderPreview();
+    const instance = renderer.current;
+    if (!instance) {
+      throw new Error('Expected a renderer.');
+    }
+
+    await act(async () => {
+      const geologyPlan = geologyPlanFixture();
+      instance.setInfo({ geologyPlan });
+      await instance.ready;
+    });
+    expect(instance.state.error).toBeUndefined();
+    expect(instance.state.layers.find(layer => layer.id === 'geology')?.available).toBe(true);
+    act(() => {
+      useViewSyncStore.setState({ linked: true, settingsTab: 'world-shape' });
+    });
+    expect(instance.state.displayedLayer).toBe('world-shape');
+
+    vi.spyOn(instance, 'inspect').mockReturnValue({
+      kind: 'vector',
+      layerId: 'geology',
+      labelKey: 'layers.geology',
+      hit: { id: 'region-1' },
+    });
+    fireEvent.pointerMove(screen.getByLabelText('Generated map preview'), {
+      clientX: 100,
+      clientY: 100,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Edit region' }));
+    await act(async () => {
+      await instance.ready;
+    });
+
+    expect(useViewSyncStore.getState()).toMatchObject({
+      selectedFeature: { layerId: 'geology', featureId: 'region-1' },
+      settingsTab: 'geology',
+    });
+    expect(instance.state.displayedLayer).toBe('geology');
   });
 });

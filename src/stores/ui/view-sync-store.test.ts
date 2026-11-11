@@ -1,6 +1,16 @@
-import { layerForTab, tabForLayer, useViewSyncStore, VIEW_SYNC_DEFAULTS } from './view-sync-store';
+import {
+  featureIdOnLayer,
+  layerForTab,
+  tabForLayer,
+  useViewSyncStore,
+  VIEW_SYNC_DEFAULTS,
+} from './view-sync-store';
 
 describe('view sync store', () => {
+  beforeEach(() => {
+    useViewSyncStore.setState({ ...VIEW_SYNC_DEFAULTS });
+  });
+
   it('maps stage tabs and preview layers both ways', () => {
     expect(layerForTab('geology')).toBe('geology');
     expect(layerForTab('general')).toBeUndefined();
@@ -18,14 +28,43 @@ describe('view sync store', () => {
     expect(VIEW_SYNC_DEFAULTS).toEqual({
       settingsTab: 'general',
       linked: false,
-      selectedRegionId: undefined,
+      selectedFeature: undefined,
     });
     expect(useViewSyncStore.getState().linked).toBe(false);
   });
 
-  it('tracks the region selected for editing', () => {
-    useViewSyncStore.getState().setSelectedRegion('region-3');
+  it('tracks the feature selected for editing', () => {
+    useViewSyncStore.getState().selectFeature({ layerId: 'geology', featureId: 'region-3' });
 
-    expect(useViewSyncStore.getState().selectedRegionId).toBe('region-3');
+    expect(useViewSyncStore.getState().selectedFeature).toEqual({
+      layerId: 'geology',
+      featureId: 'region-3',
+    });
+  });
+
+  it('clears the selected feature', () => {
+    useViewSyncStore.getState().selectFeature({ layerId: 'geology', featureId: 'region-3' });
+    useViewSyncStore.getState().selectFeature(undefined);
+
+    expect(useViewSyncStore.getState().selectedFeature).toBeUndefined();
+  });
+
+  it('updates the feature and settings tab together when a target tab is provided', () => {
+    useViewSyncStore
+      .getState()
+      .selectFeature({ layerId: 'geology', featureId: 'region-3' }, 'heightmap');
+
+    expect(useViewSyncStore.getState()).toMatchObject({
+      selectedFeature: { layerId: 'geology', featureId: 'region-3' },
+      settingsTab: 'heightmap',
+    });
+  });
+
+  it('returns the feature id only for the matching layer', () => {
+    const selection = { layerId: 'geology' as const, featureId: 'region-3' };
+
+    expect(featureIdOnLayer(selection, 'geology')).toBe('region-3');
+    expect(featureIdOnLayer(selection, 'heightmap')).toBeUndefined();
+    expect(featureIdOnLayer(undefined, 'geology')).toBeUndefined();
   });
 });

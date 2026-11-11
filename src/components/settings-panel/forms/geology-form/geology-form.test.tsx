@@ -109,15 +109,23 @@ describe('GeologyForm', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Region 3' }));
 
-    expect(useViewSyncStore.getState().selectedRegionId).toBe('region-3');
+    expect(useViewSyncStore.getState().selectedFeature).toEqual({
+      layerId: 'geology',
+      featureId: 'region-3',
+    });
   });
 
   it('falls back to the first region when the selection leaves the active count', () => {
-    useViewSyncStore.setState({ selectedRegionId: 'region-5' });
+    useViewSyncStore.setState({
+      selectedFeature: { layerId: 'geology', featureId: 'region-5' },
+    });
     useGeologyFormStore.getState().setRegionCount(2);
 
     renderForm();
 
-    expect(useViewSyncStore.getState().selectedRegionId).toBe('region-1');
+    expect(useViewSyncStore.getState().selectedFeature).toEqual({
+      layerId: 'geology',
+      featureId: 'region-1',
+    });
   });
 });

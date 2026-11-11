@@ -1,5 +1,7 @@
 export {
+  featureIdOnLayer,
   layerForTab,
+  type MapFeatureSelection,
   type SettingsTab,
   tabForLayer,
   useViewSyncStore,

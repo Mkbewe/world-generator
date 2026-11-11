@@ -44,7 +44,10 @@ describe('HeightmapForm', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Region 3' }));
 
-    expect(useViewSyncStore.getState().selectedRegionId).toBe('region-3');
+    expect(useViewSyncStore.getState().selectedFeature).toEqual({
+      layerId: 'geology',
+      featureId: 'region-3',
+    });
     expect(screen.getByText('Region 3 — Lagoon')).toBeInTheDocument();
     expect(screen.queryByText('Mountainousness')).not.toBeInTheDocument();
   });

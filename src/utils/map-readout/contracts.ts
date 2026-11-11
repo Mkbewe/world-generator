@@ -1,5 +1,6 @@
 import type { MessageKey } from '../../i18n';
 import type { WorldSpace } from '../map-generator/space';
+import type { MapBaseLayerId } from '../map-layers';
 import type { WorldDimensions } from '../world-dimensions';
 
 export interface TranslatedText {
@@ -42,6 +43,13 @@ export interface ReadoutLine {
 export interface ReadoutAction {
   readonly id: string;
   readonly labelKey: MessageKey;
+  readonly target: ReadoutActionTarget;
+}
+
+export interface ReadoutActionTarget {
+  readonly layerId: MapBaseLayerId;
+  readonly featureId: string;
+  readonly settingsTab: MapBaseLayerId;
 }
 
 export interface ReadoutItem {

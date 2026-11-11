@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { defaultRegionConfig } from '@generator/stages/geology';
 import type { GeologicalRegionConfig } from '@generator/types';
 
-import { useViewSyncStore } from '../../../../../stores';
+import { featureIdOnLayer, useViewSyncStore } from '../../../../../stores';
 import { regionId, regionIndex } from '../../lib/region-id';
 
 export interface GeologySelection {
@@ -19,21 +19,23 @@ export function useGeologySelection(
   regionCount: number,
   slots: readonly GeologicalRegionConfig[]
 ): GeologySelection {
-  const selectedRegionId = useViewSyncStore(state => state.selectedRegionId);
-  const setSelectedRegion = useViewSyncStore(state => state.setSelectedRegion);
-  const selectedIndex = activeIndex(selectedRegionId, regionCount);
+  const selectedFeature = useViewSyncStore(state => state.selectedFeature);
+  const selectFeature = useViewSyncStore(state => state.selectFeature);
+  const geologyFeatureId = featureIdOnLayer(selectedFeature, 'geology');
+  const selectedIndex = activeIndex(geologyFeatureId, regionCount);
   const activeRegionId = regionId(selectedIndex);
 
   useEffect(() => {
-    if (selectedRegionId !== undefined && selectedRegionId !== activeRegionId) {
-      setSelectedRegion(activeRegionId);
+    if (geologyFeatureId === undefined || geologyFeatureId === activeRegionId) {
+      return;
     }
-  }, [activeRegionId, selectedRegionId, setSelectedRegion]);
+    selectFeature({ layerId: 'geology', featureId: activeRegionId });
+  }, [activeRegionId, geologyFeatureId, selectFeature]);
 
   return {
     selectedIndex,
     region: slots[selectedIndex] ?? defaultRegionConfig(),
-    selectRegion: index => setSelectedRegion(regionId(index)),
+    selectRegion: index => selectFeature({ layerId: 'geology', featureId: regionId(index) }),
   };
 }
 
