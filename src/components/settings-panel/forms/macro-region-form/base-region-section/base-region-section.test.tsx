@@ -42,7 +42,6 @@ describe('BaseRegionSection', () => {
     renderSection();
 
     expect(screen.getByText('Base regions (4)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Region width distribution')).toBeInTheDocument();
     expect(within(screen.getByLabelText('Region boundaries')).getAllByRole('slider')).toHaveLength(
       3
     );

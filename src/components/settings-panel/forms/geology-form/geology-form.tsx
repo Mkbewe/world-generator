@@ -13,13 +13,14 @@ import { Button, Flex, Text } from '@radix-ui/themes';
 import { useGeologySelection } from './hooks/use-geology-selection';
 import { useRegionDistribution } from './hooks/use-region-distribution';
 import { PRESET_OPTIONS } from './lib/preset-options';
-import { RegionDistribution } from './region-distribution';
 import { RegionEditor } from './region-editor';
 import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
+import { DistributionBar } from '../../../distribution-bar';
 import { percent } from '../../../lib/percent';
 import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';
 import { regionId } from '../lib/region-id';
+import { GEOLOGY_SHARE_COPY } from '../lib/share-copy';
 
 /** Starter presets, shared layout and per-region settings of the geology map. */
 export function GeologyForm(): React.JSX.Element {
@@ -43,6 +44,10 @@ export function GeologyForm(): React.JSX.Element {
   }));
   const { selectedIndex, region, selectRegion } = useGeologySelection(regionCount, slots);
   const { segments, draft, minShare } = useRegionDistribution(activeSlots, setRegionShareBoundary);
+  const distributionSegments = segments.map((segment, index) => ({
+    ...segment,
+    color: geologyRegionColor(regionTypes[index], index),
+  }));
 
   /** A preset resets every region's terrain to the defaults of its type. */
   const applyPresetWithTerrain = (preset: GeologyPreset): void => {
@@ -88,11 +93,15 @@ export function GeologyForm(): React.JSX.Element {
         onChange={setRegionCount}
       />
       {regionCount > 1 && (
-        <RegionDistribution
-          segments={segments}
+        <DistributionBar
+          groupAriaLabel={t('forms.geology.areaAria')}
+          segments={distributionSegments}
           draft={draft}
           minShare={minShare}
-          types={regionTypes}
+          header={{
+            label: t(GEOLOGY_SHARE_COPY.labelKey),
+            description: t(GEOLOGY_SHARE_COPY.descriptionKey),
+          }}
         />
       )}
       <SliderField

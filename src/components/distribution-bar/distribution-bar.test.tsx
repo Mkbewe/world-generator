@@ -68,4 +68,67 @@ describe('DistributionBar', () => {
 
     expect(screen.getByText('Ring thickness')).toBeInTheDocument();
   });
+
+  it('renders the generic hint when there are adjustable boundaries', () => {
+    render(
+      <Theme>
+        <DistributionBar segments={segments} draft={createDraft()} />
+      </Theme>
+    );
+
+    expect(screen.getByText('Drag a boundary to adjust the distribution.')).toBeInTheDocument();
+  });
+
+  it('omits the generic hint when there are no boundaries', () => {
+    render(
+      <Theme>
+        <DistributionBar
+          segments={[{ id: 'only', percent: 100 }]}
+          draft={createDraft({ boundaries: [], shares: [100] })}
+        />
+      </Theme>
+    );
+
+    expect(
+      screen.queryByText('Drag a boundary to adjust the distribution.')
+    ).not.toBeInTheDocument();
+  });
+
+  it('sets group role and label when groupAriaLabel is provided', () => {
+    render(
+      <Theme>
+        <DistributionBar
+          segments={segments}
+          draft={createDraft()}
+          groupAriaLabel='Zone distribution group'
+        />
+      </Theme>
+    );
+
+    expect(screen.getByRole('group', { name: 'Zone distribution group' })).toBeInTheDocument();
+  });
+
+  it('applies custom segment colors without hover titles or segment labels', () => {
+    const customSegments: readonly DistributionSegment[] = [
+      { id: 'custom-1', percent: 50, color: [255, 0, 0] },
+      { id: 'custom-2', percent: 50, color: [0, 255, 0] },
+    ];
+
+    render(
+      <Theme>
+        <DistributionBar
+          segments={customSegments}
+          draft={createDraft({ boundaries: [50], shares: [50, 50] })}
+        />
+      </Theme>
+    );
+
+    const [redSegment, greenSegment] = screen.getAllByText('50%');
+    expect(redSegment).toHaveStyle({ backgroundColor: 'rgb(255, 0, 0)' });
+    expect(greenSegment).toHaveStyle({ backgroundColor: 'rgb(0, 255, 0)' });
+    expect(redSegment).not.toHaveAttribute('title');
+    expect(redSegment).not.toHaveAttribute('aria-label');
+    expect(greenSegment).not.toHaveAttribute('title');
+    expect(greenSegment).not.toHaveAttribute('aria-label');
+  });
 });

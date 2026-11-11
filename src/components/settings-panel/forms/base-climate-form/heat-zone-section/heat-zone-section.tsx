@@ -16,7 +16,6 @@ import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { HeatZoneCard } from '../heat-zone-card';
 import { useHeatZoneSelection } from '../hooks/use-heat-zone-selection';
 import { heatZoneShareCopy } from '../lib/share-copy';
-import { heatZoneClassKey } from '../lib/thermal-options';
 
 export function HeatZoneSection() {
   const { t } = useTranslation();
@@ -44,6 +43,10 @@ export function HeatZoneSection() {
     label: item.label,
     color: heatZoneColor(item.thermal, item.id),
   }));
+  const distributionSegments = segments.map((segment, index) => ({
+    ...segment,
+    color: heatZoneColor(zones[index]?.thermal ?? 'temperate', zones[index]?.id),
+  }));
 
   return (
     <Flex direction='column' gap='2'>
@@ -55,32 +58,16 @@ export function HeatZoneSection() {
           <PlusIcon /> {t('forms.baseClimate.addZone')}
         </Button>
       </Flex>
-      <div role='group' aria-label={t('forms.baseClimate.boundariesAria')}>
-        <DistributionBar
-          segments={segments}
-          draft={draft}
-          minShare={MIN_HEAT_ZONE_SHARE}
-          ariaLabel={t('forms.baseClimate.distributionAria')}
-          header={{
-            label: t(share.labelKey),
-            description: t(share.descriptionKey),
-          }}
-          colorForIndex={index =>
-            heatZoneColor(zones[index]?.thermal ?? 'temperate', zones[index]?.id)
-          }
-          labelForIndex={index => {
-            const item = zones[index];
-            if (!item) {
-              return '';
-            }
-            const share = Math.round(draft.shares[index] ?? 0);
-            return `${item.label}: ${t(heatZoneClassKey(item.thermal))} (${share}%)`;
-          }}
-        />
-      </div>
-      <Text size='1' color='gray'>
-        {t('forms.baseClimate.distributionHint')}
-      </Text>
+      <DistributionBar
+        groupAriaLabel={t('forms.baseClimate.boundariesAria')}
+        segments={distributionSegments}
+        draft={draft}
+        minShare={MIN_HEAT_ZONE_SHARE}
+        header={{
+          label: t(share.labelKey),
+          description: t(share.descriptionKey),
+        }}
+      />
       <RegionTabs
         items={tabItems}
         selectedIndex={selectedIndex}
