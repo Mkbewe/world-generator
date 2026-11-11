@@ -397,6 +397,12 @@ const pl = {
   'statistics.metrics.heightDescription': 'Wysokość siatki w komórkach.',
   'statistics.metrics.cells': 'Komórki',
   'statistics.metrics.cellsDescription': 'Łączna liczba komórek (szerokość × wysokość).',
+  'statistics.metrics.zones': 'Strefy',
+  'statistics.metrics.zonesDescription':
+    'Liczba stref cieplnych skonfigurowanych dla klimatu bazowego.',
+  'statistics.metrics.coveredCells': 'Pokryte komórki',
+  'statistics.metrics.coveredCellsDescription':
+    'Komórki, dla których obliczono wartości klimatu bazowego.',
   'statistics.metrics.filledCells': 'Wypełnione komórki',
   'statistics.metrics.filledCellsDescription': 'Komórki leżące wewnątrz kształtu świata.',
   'statistics.metrics.coverage': 'Pokrycie',
@@ -425,8 +431,27 @@ const pl = {
   'statistics.metrics.meanDescription': 'Średnia wysokość komórki w metrach.',
   'statistics.metrics.stdDev': 'Rozrzut wysokości',
   'statistics.metrics.stdDevDescription': 'Odchylenie standardowe wysokości komórek w metrach.',
+  'statistics.metrics.moistureMin': 'Minimalna wilgotność',
+  'statistics.metrics.moistureMinDescription':
+    'Najniższa wartość wilgotności bazowej w pokrytych komórkach.',
+  'statistics.metrics.moistureMax': 'Maksymalna wilgotność',
+  'statistics.metrics.moistureMaxDescription':
+    'Najwyższa wartość wilgotności bazowej w pokrytych komórkach.',
+  'statistics.metrics.moistureMean': 'Średnia wilgotność',
+  'statistics.metrics.moistureMeanDescription':
+    'Średnia wartość wilgotności bazowej w pokrytych komórkach.',
+  'statistics.metrics.moistureStdDev': 'Rozrzut wilgotności',
+  'statistics.metrics.moistureStdDevDescription':
+    'Odchylenie standardowe wilgotności bazowej w pokrytych komórkach.',
   'statistics.metrics.landShare': 'Udział lądu',
   'statistics.metrics.landShareDescription': 'Udział świata powyżej poziomu morza.',
+  'statistics.metrics.coldShare': 'Udział stref zimnych',
+  'statistics.metrics.coldShareDescription': 'Udział pokrytych komórek w strefach zimnych.',
+  'statistics.metrics.temperateShare': 'Udział stref umiarkowanych',
+  'statistics.metrics.temperateShareDescription':
+    'Udział pokrytych komórek w strefach umiarkowanych.',
+  'statistics.metrics.warmShare': 'Udział stref ciepłych',
+  'statistics.metrics.warmShareDescription': 'Udział pokrytych komórek w strefach ciepłych.',
   'statistics.metrics.bytes': 'Dane',
   'statistics.metrics.bytesDescription': 'Rozmiar danych warstwy wytworzonych przez ten etap.',
   'readout.position': 'Pozycja',

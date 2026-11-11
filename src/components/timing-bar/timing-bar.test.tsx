@@ -9,18 +9,18 @@ describe('TimingBar', () => {
       <Theme>
         <TimingBar
           segments={[
-            { key: 'a', label: 'Alpha', durationMs: 30 },
-            { key: 'b', label: 'Beta', durationMs: 0 },
-            { key: 'c', label: 'Overhead', durationMs: 20, muted: true },
+            { key: 'a', nameKey: 'stages.worldShape', durationMs: 30 },
+            { key: 'b', nameKey: 'stages.macroRegion', durationMs: 0 },
+            { key: 'c', nameKey: 'statistics.generation.overhead', durationMs: 20, muted: true },
           ]}
         />
       </Theme>
     );
 
     expect(screen.getByText('Timing')).toBeInTheDocument();
-    expect(screen.getByText('Alpha · 30.0 ms')).toBeInTheDocument();
+    expect(screen.getByText('World shape · 30.0 ms')).toBeInTheDocument();
     expect(screen.getByText('Overhead · 20.0 ms')).toBeInTheDocument();
-    expect(screen.queryByText('Beta · 0.0 ms')).not.toBeInTheDocument();
+    expect(screen.queryByText('Macro region · 0.0 ms')).not.toBeInTheDocument();
     expect(screen.getByText('60%')).toBeInTheDocument();
     expect(screen.getByText('40%')).toBeInTheDocument();
   });
@@ -30,8 +30,8 @@ describe('TimingBar', () => {
       <Theme>
         <TimingBar
           segments={[
-            { key: 'a', label: 'Alpha', durationMs: 99 },
-            { key: 'b', label: 'Beta', durationMs: 1 },
+            { key: 'a', nameKey: 'stages.worldShape', durationMs: 99 },
+            { key: 'b', nameKey: 'stages.macroRegion', durationMs: 1 },
           ]}
         />
       </Theme>
@@ -44,7 +44,7 @@ describe('TimingBar', () => {
   it('renders nothing without durations', () => {
     render(
       <Theme>
-        <TimingBar segments={[{ key: 'a', label: 'Alpha', durationMs: 0 }]} />
+        <TimingBar segments={[{ key: 'a', nameKey: 'stages.worldShape', durationMs: 0 }]} />
       </Theme>
     );
 

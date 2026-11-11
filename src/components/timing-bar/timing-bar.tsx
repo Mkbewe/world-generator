@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Flex, Text } from '@radix-ui/themes';
 
+import type { MessageKey } from '../../i18n';
 import { formatDuration } from '../../utils/format';
 import styles from './timing-bar.module.scss';
 
@@ -8,7 +9,7 @@ const MIN_LABEL_PERCENT = 6;
 
 export interface TimingSegment {
   key: string;
-  label: string;
+  nameKey: MessageKey;
   durationMs: number;
   muted?: boolean;
 }
@@ -33,6 +34,7 @@ export function TimingBar({ segments }: TimingBarProps) {
       <div className={styles.timeline}>
         {visible.map((segment, index) => {
           const percent = (segment.durationMs / total) * 100;
+          const label = t(segment.nameKey);
           return (
             <div
               key={segment.key}
@@ -41,7 +43,7 @@ export function TimingBar({ segments }: TimingBarProps) {
               data-muted={segment.muted}
               style={{ width: `${percent}%` }}
               title={t('statistics.timingTooltip', {
-                label: segment.label,
+                label,
                 duration: formatDuration(segment.durationMs),
               })}
             >
@@ -53,18 +55,21 @@ export function TimingBar({ segments }: TimingBarProps) {
         })}
       </div>
       <Flex gap='3' wrap='wrap'>
-        {visible.map((segment, index) => (
-          <Flex key={segment.key} align='center' gap='1'>
-            <span
-              className={styles.timelineDot}
-              data-index={index % 4}
-              data-muted={segment.muted}
-            />
-            <Text size='2' color='gray'>
-              {segment.label} · {formatDuration(segment.durationMs)}
-            </Text>
-          </Flex>
-        ))}
+        {visible.map((segment, index) => {
+          const label = t(segment.nameKey);
+          return (
+            <Flex key={segment.key} align='center' gap='1'>
+              <span
+                className={styles.timelineDot}
+                data-index={index % 4}
+                data-muted={segment.muted}
+              />
+              <Text size='2' color='gray'>
+                {label} · {formatDuration(segment.durationMs)}
+              </Text>
+            </Flex>
+          );
+        })}
       </Flex>
     </Flex>
   );

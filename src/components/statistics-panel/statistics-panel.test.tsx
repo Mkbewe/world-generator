@@ -8,20 +8,36 @@ describe('StatisticsPanel', () => {
     render(
       <Theme>
         <StatisticsPanel
-          title='Statistics'
-          summary={[{ label: 'Seed', value: '1', description: 'Seed.' }]}
-          timing={[{ key: 'a', label: 'Alpha', durationMs: 10 }]}
-          timingNote='Timing note.'
-          sections={[{ key: 'a', title: 'Alpha', trailing: '10.0 ms', metrics: [] }]}
+          model={{
+            titleKey: 'statistics.generation.title',
+            summary: [
+              {
+                key: 'seed',
+                labelKey: 'statistics.map.seed',
+                descriptionKey: 'statistics.map.seedDescription',
+                value: '1',
+              },
+            ],
+            timing: [{ key: 'a', nameKey: 'stages.worldShape', durationMs: 10 }],
+            unmeasuredDurationMs: 125,
+            sections: [
+              {
+                key: 'a',
+                titleKey: 'stages.worldShape',
+                durationMs: 10,
+                metrics: [],
+              },
+            ],
+          }}
         />
       </Theme>
     );
 
-    expect(screen.getByRole('heading', { name: 'Statistics' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Generation' })).toBeInTheDocument();
     expect(screen.getByText('Seed')).toBeInTheDocument();
     expect(screen.getByText('Timing')).toBeInTheDocument();
-    expect(screen.getByText('Alpha · 10.0 ms')).toBeInTheDocument();
-    expect(screen.getByText('Timing note.')).toBeInTheDocument();
-    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(screen.getByText('World shape · 10.0 ms')).toBeInTheDocument();
+    expect(screen.getByText(/125\.0 ms/)).toBeInTheDocument();
+    expect(screen.getByText('World shape')).toBeInTheDocument();
   });
 });
