@@ -1,5 +1,5 @@
-import type { MessageKey } from '../../i18n';
-import type { MetricKind } from '../../utils/format';
+import type { MessageKey } from '../../../i18n';
+import type { MetricKind } from '../../../utils/format';
 
 export interface MetricDescriptorKeys {
   readonly labelKey: MessageKey;
@@ -28,6 +28,16 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptorKeys> = {
     labelKey: 'statistics.metrics.cells',
     kind: 'number',
     descriptionKey: 'statistics.metrics.cellsDescription',
+  },
+  zones: {
+    labelKey: 'statistics.metrics.zones',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.zonesDescription',
+  },
+  coveredCells: {
+    labelKey: 'statistics.metrics.coveredCells',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.coveredCellsDescription',
   },
   filledCells: {
     labelKey: 'statistics.metrics.filledCells',
@@ -99,10 +109,49 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptorKeys> = {
     precision: 1,
     descriptionKey: 'statistics.metrics.stdDevDescription',
   },
+  moistureMin: {
+    labelKey: 'statistics.metrics.moistureMin',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.moistureMinDescription',
+  },
+  moistureMax: {
+    labelKey: 'statistics.metrics.moistureMax',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.moistureMaxDescription',
+  },
+  moistureMean: {
+    labelKey: 'statistics.metrics.moistureMean',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.moistureMeanDescription',
+  },
+  moistureStdDev: {
+    labelKey: 'statistics.metrics.moistureStdDev',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.moistureStdDevDescription',
+  },
   landShare: {
     labelKey: 'statistics.metrics.landShare',
     kind: 'ratio',
     descriptionKey: 'statistics.metrics.landShareDescription',
+  },
+  coldShare: {
+    labelKey: 'statistics.metrics.coldShare',
+    kind: 'ratio',
+    descriptionKey: 'statistics.metrics.coldShareDescription',
+  },
+  temperateShare: {
+    labelKey: 'statistics.metrics.temperateShare',
+    kind: 'ratio',
+    descriptionKey: 'statistics.metrics.temperateShareDescription',
+  },
+  warmShare: {
+    labelKey: 'statistics.metrics.warmShare',
+    kind: 'ratio',
+    descriptionKey: 'statistics.metrics.warmShareDescription',
   },
   bytes: {
     labelKey: 'statistics.metrics.bytes',

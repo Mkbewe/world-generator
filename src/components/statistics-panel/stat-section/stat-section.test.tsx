@@ -6,11 +6,21 @@ import type { StatisticsSection } from '../types';
 
 const section: StatisticsSection = {
   key: 'noise',
-  title: 'Noise',
-  trailing: '20.0 ms',
+  titleKey: 'stages.worldShape',
+  durationMs: 20,
   metrics: [
-    { label: 'Mean', value: '0.500', description: 'Average noise value.' },
-    { label: 'Samples', value: '2,000', description: 'Number of samples.' },
+    {
+      key: 'mean',
+      labelKey: 'statistics.metrics.mean',
+      value: '0.500',
+      descriptionKey: 'statistics.metrics.meanDescription',
+    },
+    {
+      key: 'cells',
+      labelKey: 'statistics.metrics.cells',
+      value: '2,000',
+      descriptionKey: 'statistics.metrics.cellsDescription',
+    },
   ],
 };
 
@@ -22,11 +32,11 @@ describe('StatSection', () => {
       </Theme>
     );
 
-    expect(screen.getByText('Noise')).toBeInTheDocument();
+    expect(screen.getByText('World shape')).toBeInTheDocument();
     expect(screen.getByText('20.0 ms')).toBeInTheDocument();
-    expect(screen.getByText('Mean')).toBeInTheDocument();
+    expect(screen.getByText('Mean height')).toBeInTheDocument();
     expect(screen.getByText('0.500')).toBeInTheDocument();
-    expect(screen.getByText('Samples')).toBeInTheDocument();
+    expect(screen.getByText('Cells')).toBeInTheDocument();
     expect(screen.getByText('2,000')).toBeInTheDocument();
   });
 });

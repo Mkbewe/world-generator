@@ -6,9 +6,12 @@ import { Button, Card, Flex, Heading, Text } from '@radix-ui/themes';
 import { useStatisticsSnapshot } from './hooks/use-statistics-snapshot';
 import { downloadStatisticsExport, statisticsExportFileName } from './lib/statistics-export';
 import { ExportDialog } from '../../components/export-dialog';
-import { GenerationStatisticsPanel } from '../../components/generation-statistics';
-import { MapStatisticsPanel } from '../../components/map-statistics';
-import { RenderStatisticsPanel } from '../../components/render-statistics';
+import {
+  buildGenerationStatisticsModel,
+  buildMapStatisticsModel,
+  buildRenderStatisticsModel,
+  StatisticsPanel,
+} from '../../components/statistics-panel';
 
 export function StatisticsPage() {
   const snapshot = useStatisticsSnapshot();
@@ -40,19 +43,21 @@ export function StatisticsPage() {
     downloadStatisticsExport(snapshot, statisticsExportFileName(snapshot.world));
   };
 
+  const totalDurationMs =
+    snapshot.rendering?.elapsedDurationMs ?? snapshot.generation.totalDurationMs;
+
+  const mapModel = buildMapStatisticsModel(snapshot.world, totalDurationMs);
+  const generationModel = buildGenerationStatisticsModel(snapshot.generation);
+  const renderModel = buildRenderStatisticsModel(snapshot.rendering);
+
   return (
     <Flex direction='column' gap='5'>
       <Flex justify='end'>
         <Button onClick={() => setIsExportOpen(true)}>{t('statisticsPage.export')}</Button>
       </Flex>
-      <MapStatisticsPanel
-        world={snapshot.world}
-        totalDurationMs={
-          snapshot.rendering?.elapsedDurationMs ?? snapshot.generation.totalDurationMs
-        }
-      />
-      <GenerationStatisticsPanel statistics={snapshot.generation} />
-      {snapshot.rendering && <RenderStatisticsPanel statistics={snapshot.rendering} />}
+      <StatisticsPanel model={mapModel} />
+      <StatisticsPanel model={generationModel} />
+      {renderModel && <StatisticsPanel model={renderModel} />}
       <ExportDialog
         isOpen={isExportOpen}
         onOpenChange={setIsExportOpen}

@@ -1,43 +1,41 @@
+import { useTranslation } from 'react-i18next';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 
 import { StatSection } from './stat-section';
 import { SummaryGrid } from './summary-grid';
-import type { StatisticsMetric, StatisticsSection } from './types';
-import { TimingBar, type TimingSegment } from '../timing-bar';
+import type { StatisticsViewModel } from './types';
+import { formatDuration } from '../../utils/format';
+import { TimingBar } from '../timing-bar';
 import styles from './statistics-panel.module.scss';
 
-interface StatisticsPanelProps {
-  title: string;
-  summary?: readonly StatisticsMetric[];
-  timing?: readonly TimingSegment[];
-  timingNote?: string;
-  sections?: readonly StatisticsSection[];
+export interface StatisticsPanelProps {
+  model: StatisticsViewModel;
 }
 
-export function StatisticsPanel({
-  title,
-  summary = [],
-  timing = [],
-  timingNote,
-  sections = [],
-}: StatisticsPanelProps) {
+export function StatisticsPanel({ model }: StatisticsPanelProps) {
+  const { t } = useTranslation();
+  const timingNote =
+    model.unmeasuredDurationMs !== undefined && model.unmeasuredDurationMs > 0
+      ? t('statistics.additionalTime', { duration: formatDuration(model.unmeasuredDurationMs) })
+      : undefined;
+
   return (
     <Card size={{ initial: '2', sm: '3' }} className={styles.root}>
       <Flex direction='column' gap='4'>
         <Heading size='5' color='violet'>
-          {title}
+          {t(model.titleKey)}
         </Heading>
         <Separator size='4' />
-        {summary.length > 0 && <SummaryGrid items={summary} />}
-        <TimingBar segments={timing} />
+        {model.summary.length > 0 && <SummaryGrid items={model.summary} />}
+        {model.timing.length > 0 && <TimingBar segments={model.timing} />}
         {timingNote && (
           <Text size='1' color='gray'>
             {timingNote}
           </Text>
         )}
-        {sections.length > 0 && (
+        {model.sections.length > 0 && (
           <Flex direction='column' gap='3'>
-            {sections.map(section => (
+            {model.sections.map(section => (
               <StatSection key={section.key} section={section} />
             ))}
           </Flex>

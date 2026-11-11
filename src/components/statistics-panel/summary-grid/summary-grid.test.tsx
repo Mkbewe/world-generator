@@ -5,8 +5,18 @@ import { SummaryGrid } from './summary-grid';
 import type { StatisticsMetric } from '../types';
 
 const items: StatisticsMetric[] = [
-  { label: 'Seed', value: '123456', description: 'Seed.' },
-  { label: 'Cells', value: '5,000', description: 'Cells.' },
+  {
+    key: 'seed',
+    labelKey: 'statistics.map.seed',
+    value: '123456',
+    descriptionKey: 'statistics.map.seedDescription',
+  },
+  {
+    key: 'cells',
+    labelKey: 'statistics.map.cells',
+    value: '5,000',
+    descriptionKey: 'statistics.map.cellsDescription',
+  },
 ];
 
 describe('SummaryGrid', () => {
