@@ -8,6 +8,7 @@ export type {
   Measurement,
   PointerSample,
   ReadoutAction,
+  ReadoutActionTarget,
   ReadoutContext,
   ReadoutDefinition,
   ReadoutHit,

@@ -224,7 +224,7 @@ describe('MapRenderer', () => {
     await preview.ready;
     preview.select('world-shape');
 
-    preview.setSelectedRegion('region-2');
+    preview.setSelection({ layerId: 'geology', featureId: 'region-2' });
     await preview.ready;
 
     expect(preview.state.displayedLayer).toBe('world-shape');

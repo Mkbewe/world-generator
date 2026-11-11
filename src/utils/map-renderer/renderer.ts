@@ -13,6 +13,7 @@ import { RenderMetrics } from './metrics';
 import { MapScene } from './scene';
 import {
   type MapBaseLayerId,
+  type MapFeatureSelection,
   type MapInfo,
   type MapInspection,
   type MapLayerOption,
@@ -326,14 +327,14 @@ export class MapRenderer {
   }
 
   /**
-   * Highlights one domain element in the preview, e.g. the edited region. A
+   * Highlights the selected map feature in layers that support it. A
    * selection repaint never takes the view over: the displayed layer is
    * presented again, a hidden one is prepared quietly and shows its highlight
    * once the user selects it.
    */
-  setSelectedRegion(regionId: string | undefined): void {
+  setSelection(selection: MapFeatureSelection | undefined): void {
     const displayed = this.view.displayedLayer;
-    for (const layer of this.scene.setSelection(regionId)) {
+    for (const layer of this.scene.setSelection(selection)) {
       this.queue.enqueue(layer, layer.id !== displayed);
     }
   }

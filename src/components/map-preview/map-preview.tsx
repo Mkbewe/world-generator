@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
+import type { ReadoutAction } from '@readout';
 
 import { useMapReadout } from './hooks/use-map-readout';
 import { useMapRenderer } from './hooks/use-map-renderer';
@@ -50,7 +51,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
   });
   const hasMap = preview.layers.some(layer => layer.available);
   const dimensions = worldDimensions(preview.info);
-  const selectedRegionId = useViewSyncStore(state => state.selectedRegionId);
+  const selectedFeature = useViewSyncStore(state => state.selectedFeature);
 
   const { clearMeasurement } = readout;
 
@@ -64,25 +65,16 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
   }, [clearMeasurement, isFullscreen, rendererRef]);
 
   useEffect(() => {
-    rendererRef.current?.setSelectedRegion(selectedRegionId);
-  }, [preview.info, rendererRef, selectedRegionId]);
+    rendererRef.current?.setSelection(selectedFeature);
+  }, [preview.info, rendererRef, selectedFeature]);
 
-  /** The readout's edit action opens the region in the Geology form. */
-  const handleReadoutAction = useCallback(
-    (actionId: string): void => {
-      if (actionId !== 'edit-region') {
-        return;
-      }
-      const inspection = readout.readout?.inspection;
-      if (inspection?.kind !== 'vector' || !inspection.hit) {
-        return;
-      }
-      const { setSelectedRegion, setSettingsTab } = useViewSyncStore.getState();
-      setSelectedRegion(inspection.hit.id);
-      setSettingsTab('geology');
-    },
-    [readout.readout]
-  );
+  /** Applies a readout action's declared feature and settings target. */
+  const handleReadoutAction = useCallback((action: ReadoutAction): void => {
+    const { target } = action;
+    useViewSyncStore
+      .getState()
+      .selectFeature({ layerId: target.layerId, featureId: target.featureId }, target.settingsTab);
+  }, []);
 
   /** Applies a selection: the renderer switches and the preview store remembers it. */
   const selectLayer = useCallback(

@@ -53,12 +53,36 @@ describe('MapScene', () => {
 
     expect(added.map(layer => layer.id)).toEqual(['geology']);
 
-    const repainted = scene.setSelection('region-2');
+    const geologySelection = { layerId: 'geology' as const, featureId: 'region-2' };
+    const repainted = scene.setSelection(geologySelection);
 
     expect(repainted.map(layer => layer.id)).toEqual(['geology']);
     expect(repainted[0]).toBe(added[0]);
-    expect(scene.setSelection('region-2')).toEqual([]);
+    expect(scene.setSelection({ layerId: 'geology', featureId: 'region-2' })).toEqual([]);
     expect(scene.setSelection(undefined).map(layer => layer.id)).toEqual(['geology']);
+  });
+
+  it('ignores a selection whose layer does not highlight', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+    scene.setInfo({ geologyPlan: PLAN });
+
+    expect(
+      scene.setSelection({ layerId: 'world-shape', featureId: 'region-2' }).map(layer => layer.id)
+    ).toEqual([]);
+  });
+
+  it('clears a geology highlight when the selection moves to another layer', () => {
+    const scene = new MapScene(new LayerCache());
+    scene.start({ width: 4, height: 4 });
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+    scene.setInfo({ geologyPlan: PLAN });
+    scene.setSelection({ layerId: 'geology', featureId: 'region-2' });
+
+    expect(
+      scene.setSelection({ layerId: 'world-shape', featureId: 'land' }).map(layer => layer.id)
+    ).toEqual(['geology']);
   });
 
   it('renders region geometry with its own deterministic border field', () => {

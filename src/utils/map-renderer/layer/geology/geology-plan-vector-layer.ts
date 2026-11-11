@@ -5,7 +5,7 @@ import { geologyRegionColor } from '@layers';
 import { paintLabels, regionCentres } from './geology-labels';
 import { yieldToBrowser } from './geology-yield';
 import { type RenderTarget, targetKey } from '../../preview-targets';
-import type { LayerHit, MapBaseLayerId, SpatialMask } from '../../types';
+import type { LayerHit, MapBaseLayerId, MapFeatureSelection, SpatialMask } from '../../types';
 import type { VectorLayerFactory } from '../factories/vector-layer-factory';
 import {
   type LayerPresentation,
@@ -69,8 +69,11 @@ export class GeologyPlanVectorLayer extends MapLayer {
   }
 
   /** Repainting is enough for a selection: the derived rasters stay cached. */
-  override applySelection(selection: string | undefined): boolean {
-    const index = selection ? this.plan.regions.findIndex(region => region.id === selection) : -1;
+  override applySelection(selection: MapFeatureSelection | undefined): boolean {
+    const index =
+      selection?.layerId === this.id
+        ? this.plan.regions.findIndex(region => region.id === selection.featureId)
+        : -1;
     if (index === this.highlightIndex) {
       return false;
     }

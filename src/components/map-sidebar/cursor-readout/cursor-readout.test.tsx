@@ -76,7 +76,15 @@ describe('CursorReadout', () => {
         id: 'edit-region',
         labelKey: 'readout.editRegion',
         value: '',
-        action: { id: 'edit-region', labelKey: 'readout.editRegion' },
+        action: {
+          id: 'edit-region',
+          labelKey: 'readout.editRegion',
+          target: {
+            layerId: 'geology',
+            featureId: 'region-3',
+            settingsTab: 'geology',
+          },
+        },
       },
     ];
 
@@ -88,7 +96,7 @@ describe('CursorReadout', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit region' }));
 
-    expect(onAction).toHaveBeenCalledWith('edit-region');
+    expect(onAction).toHaveBeenCalledWith(items[items.length - 1]?.action);
   });
 
   it('renders repeated line labels without duplicate keys', () => {

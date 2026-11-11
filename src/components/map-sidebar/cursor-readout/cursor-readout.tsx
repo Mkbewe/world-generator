@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DrawingPinFilledIcon } from '@radix-ui/react-icons';
 import { Button, Card, Flex, Text } from '@radix-ui/themes';
-import type { ReadoutItem } from '@readout';
+import type { ReadoutAction, ReadoutItem } from '@readout';
 import type { TFunction } from 'i18next';
 
 import styles from './cursor-readout.module.scss';
@@ -10,8 +10,8 @@ import styles from './cursor-readout.module.scss';
 export interface CursorReadoutProps {
   items: readonly ReadoutItem[];
   pinned?: boolean;
-  /** Called with the action id when a button entry is pressed. */
-  onAction?: (actionId: string) => void;
+  /** Called when a readout action is pressed. */
+  onAction?: (action: ReadoutAction) => void;
   /** Renders without its own card, for use inside a shared panel. */
   bare?: boolean;
 }
@@ -57,7 +57,7 @@ export function CursorReadout({
 
 interface ReadoutEntryProps {
   item: ReadoutItem;
-  onAction?: (actionId: string) => void;
+  onAction?: (action: ReadoutAction) => void;
 }
 
 function ReadoutEntry({ item, onAction }: ReadoutEntryProps) {
@@ -80,7 +80,7 @@ function ReadoutEntry({ item, onAction }: ReadoutEntryProps) {
     const label = t(action.labelKey);
     return (
       <div className={styles.action}>
-        <Button size='1' variant='soft' onClick={() => onAction?.(action.id)} aria-label={label}>
+        <Button size='1' variant='soft' onClick={() => onAction?.(action)} aria-label={label}>
           {label}
         </Button>
       </div>

@@ -22,7 +22,14 @@ import {
   type VectorLayerFactoryRegistry,
 } from '../layer';
 import type { SmoothGeometry } from '../layer/catalog/smooth-geometry';
-import type { MapBaseLayerId, MapLayerOption, MapMetadata, SpatialMask } from '../types';
+import {
+  isSameFeatureSelection,
+  type MapBaseLayerId,
+  type MapFeatureSelection,
+  type MapLayerOption,
+  type MapMetadata,
+  type SpatialMask,
+} from '../types';
 
 /** Owns the current map's layers and readiness; scheduling and drawing belong to the renderer. */
 export class MapScene {
@@ -33,7 +40,7 @@ export class MapScene {
   private dimensionsMeters?: MapMetadata['dimensionsMeters'];
   private info: MapInfo = {};
   private data: LayerDataRecord = {};
-  private selection?: string;
+  private selection?: MapFeatureSelection;
   private readonly layers = new Map<MapBaseLayerId, MapLayer>();
   private readonly available = new Set<MapBaseLayerId>();
 
@@ -149,8 +156,8 @@ export class MapScene {
    * Element the studio highlights, e.g. the region being edited. Layers
    * that support selection repaint; an unchanged selection is a no-op.
    */
-  setSelection(selection: string | undefined): readonly MapLayer[] {
-    if (this.selection === selection) {
+  setSelection(selection: MapFeatureSelection | undefined): readonly MapLayer[] {
+    if (isSameFeatureSelection(this.selection, selection)) {
       return [];
     }
     this.selection = selection;

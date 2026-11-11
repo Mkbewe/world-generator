@@ -37,6 +37,11 @@ describe('geologyReadout', () => {
     expect(item(info, 'edit-region')?.action).toEqual({
       id: 'edit-region',
       labelKey: 'readout.editRegion',
+      target: {
+        layerId: 'geology',
+        featureId: 'region-2',
+        settingsTab: 'geology',
+      },
     });
   });
 

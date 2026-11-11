@@ -1,6 +1,6 @@
 import type { MessageKey } from '../../../i18n';
 import { type RenderTarget, targetKey } from '../preview-targets';
-import type { LayerHit, MapBaseLayerId } from '../types';
+import type { LayerHit, MapBaseLayerId, MapFeatureSelection } from '../types';
 
 export interface MapSize {
   width: number;
@@ -112,7 +112,7 @@ export abstract class MapLayer {
    * Applies the element highlighted in the preview; returns whether the layer
    * must repaint. Layers without a selection keep the default.
    */
-  applySelection(_selection: string | undefined): boolean {
+  applySelection(_selection: MapFeatureSelection | undefined): boolean {
     return false;
   }
 

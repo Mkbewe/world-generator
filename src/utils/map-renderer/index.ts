@@ -16,6 +16,7 @@ export type {
   MapLayerNode,
   MapLayerOption,
   MapBaseLayerId,
+  MapFeatureSelection,
   MapInfo,
   MapInspection,
   MapRasters,
@@ -32,3 +33,4 @@ export type {
   VectorMapInspection,
   VectorRenderLayerStatistics,
 } from './types';
+export { isSameFeatureSelection } from './types';

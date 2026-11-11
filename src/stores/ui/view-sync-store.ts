@@ -1,6 +1,8 @@
 import { LAYER_CATALOG } from '../../utils/map-layers';
-import { type MapBaseLayerId } from '../../utils/map-renderer';
+import { type MapBaseLayerId, type MapFeatureSelection } from '../../utils/map-renderer';
 import { createStore } from '../create-store';
+
+export type { MapFeatureSelection };
 
 /** Settings form tabs: the shared general tab plus one per map layer with a form. */
 export type SettingsTab = 'general' | MapBaseLayerId;
@@ -15,28 +17,40 @@ export interface ViewSyncValues {
   settingsTab: SettingsTab;
   /** Whether settings tabs and preview layers follow each other. */
   linked: boolean;
-  /** Region selected for editing in the Geology form and highlighted on the map. */
-  selectedRegionId?: string;
+  /** Feature selected for editing and highlighted on the map. */
+  selectedFeature?: MapFeatureSelection;
 }
 
 export const VIEW_SYNC_DEFAULTS: ViewSyncValues = {
   settingsTab: 'general',
   linked: false,
-  selectedRegionId: undefined,
+  selectedFeature: undefined,
 };
 
 interface ViewSyncState extends ViewSyncValues {
   setSettingsTab: (tab: SettingsTab) => void;
   setLinked: (linked: boolean) => void;
-  setSelectedRegion: (regionId: string | undefined) => void;
+  selectFeature: (feature: MapFeatureSelection | undefined, settingsTab?: SettingsTab) => void;
 }
 
 export const useViewSyncStore = createStore<ViewSyncState>(set => ({
   ...VIEW_SYNC_DEFAULTS,
   setSettingsTab: settingsTab => set({ settingsTab }),
   setLinked: linked => set({ linked }),
-  setSelectedRegion: selectedRegionId => set({ selectedRegionId }),
+  selectFeature: (selectedFeature, settingsTab) =>
+    set(state => ({
+      selectedFeature,
+      ...(settingsTab === undefined || settingsTab === state.settingsTab ? {} : { settingsTab }),
+    })),
 }));
+
+/** Feature id when the selection belongs to `layerId`; otherwise undefined. */
+export function featureIdOnLayer(
+  selection: MapFeatureSelection | undefined,
+  layerId: MapBaseLayerId
+): string | undefined {
+  return selection?.layerId === layerId ? selection.featureId : undefined;
+}
 
 /** Preview layer a settings tab drives; the general tab has no counterpart. */
 export function layerForTab(tab: SettingsTab): MapBaseLayerId | undefined {

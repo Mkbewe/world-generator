@@ -34,7 +34,15 @@ export const geologyReadout = defineVectorReadout('geology', parseGeology, (plan
       id: 'edit-region',
       labelKey: 'readout.editRegion',
       value: '',
-      action: { id: 'edit-region', labelKey: 'readout.editRegion' },
+      action: {
+        id: 'edit-region',
+        labelKey: 'readout.editRegion',
+        target: {
+          layerId: 'geology',
+          featureId: region.id,
+          settingsTab: 'geology',
+        },
+      },
     },
   ];
 });
