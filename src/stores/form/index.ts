@@ -4,6 +4,7 @@ export {
   useBaseClimateFormStore,
 } from './base-climate-form';
 export { GENERAL_FORM_DEFAULTS, DEFAULT_SEED, useGeneralFormStore } from './general-form';
+export { applyGeologyPreset, updateGeologicalRegion } from './lib/geology-form-actions';
 export { GEOLOGY_FORM_DEFAULTS, geologyConfigOf, useGeologyFormStore } from './geology-form';
 export {
   HEIGHTMAP_FORM_DEFAULTS,
