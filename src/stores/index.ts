@@ -9,6 +9,8 @@ export {
   heightmapConfigOf,
   DEFAULT_SEED,
   DEFAULT_WORLD_SIZE,
+  applyGeologyPreset,
+  updateGeologicalRegion,
   MACRO_REGION_FORM_DEFAULTS,
   useBaseClimateFormStore,
   useGeneralFormStore,

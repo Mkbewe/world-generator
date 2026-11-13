@@ -1,12 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import {
-  type GeologyPreset,
-  geologyPresetConfig,
-  MAX_GEOLOGICAL_REGIONS,
-  MIN_GEOLOGICAL_REGIONS,
-} from '@generator/stages/geology';
-import { defaultRegionTerrain } from '@generator/stages/heightmap';
-import type { GeologicalRegionConfig } from '@generator/types';
+import { MAX_GEOLOGICAL_REGIONS, MIN_GEOLOGICAL_REGIONS } from '@generator/stages/geology';
 import { geologyRegionColor } from '@layers';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
@@ -14,7 +7,11 @@ import { useGeologySelection } from './hooks/use-geology-selection';
 import { useRegionDistribution } from './hooks/use-region-distribution';
 import { PRESET_OPTIONS } from './lib/preset-options';
 import { GeologicalRegionCard } from './geological-region-card';
-import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
+import {
+  applyGeologyPreset,
+  updateGeologicalRegion,
+  useGeologyFormStore,
+} from '../../../../stores';
 import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../color-swatch-tabs';
 import { DistributionBar } from '../../../distribution-bar';
 import { percent } from '../../../lib/percent';
@@ -30,11 +27,7 @@ export function GeologyForm(): React.JSX.Element {
   const slots = useGeologyFormStore(state => state.slots);
   const setRegionCount = useGeologyFormStore(state => state.setRegionCount);
   const setLayout = useGeologyFormStore(state => state.setLayout);
-  const setRegion = useGeologyFormStore(state => state.setRegion);
   const setRegionShareBoundary = useGeologyFormStore(state => state.setRegionShareBoundary);
-  const applyPreset = useGeologyFormStore(state => state.applyPreset);
-  const setRegionTerrain = useHeightmapFormStore(state => state.setRegionTerrain);
-  const resetRegionTerrains = useHeightmapFormStore(state => state.resetRegionTerrains);
   const activeSlots = slots.slice(0, regionCount);
   const regionTypes = activeSlots.map(slot => slot.type);
   const tabItems: readonly ColorSwatchTabOption[] = regionTypes.map((type, index) => ({
@@ -52,20 +45,6 @@ export function GeologyForm(): React.JSX.Element {
     color: geologyRegionColor(regionTypes[index], index),
   }));
 
-  /** A preset resets every region's terrain to the defaults of its type. */
-  const applyPresetWithTerrain = (preset: GeologyPreset): void => {
-    applyPreset(preset);
-    resetRegionTerrains(geologyPresetConfig(preset).regions.map(entry => entry.type));
-  };
-
-  /** A type change swaps the region's terrain for the defaults of the new type. */
-  const changeRegion = (patch: Partial<GeologicalRegionConfig>): void => {
-    setRegion(selectedIndex, patch);
-    if (patch.type) {
-      setRegionTerrain(selectedIndex, defaultRegionTerrain(patch.type));
-    }
-  };
-
   return (
     <Flex direction='column' gap='4'>
       <Text size='1' color='gray'>
@@ -78,7 +57,7 @@ export function GeologyForm(): React.JSX.Element {
             type='button'
             size='2'
             variant='surface'
-            onClick={() => applyPresetWithTerrain(option.id)}
+            onClick={() => applyGeologyPreset(option.id)}
           >
             {t(option.labelKey)}
           </Button>
@@ -144,7 +123,7 @@ export function GeologyForm(): React.JSX.Element {
           selectedId,
           onSelect: selectRegionById,
         }}
-        onChange={changeRegion}
+        onChange={patch => updateGeologicalRegion(selectedIndex, patch)}
       />
     </Flex>
   );
