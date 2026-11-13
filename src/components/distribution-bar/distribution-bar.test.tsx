@@ -25,10 +25,10 @@ function createDraft(overrides: Partial<BoundaryDraft> = {}): BoundaryDraft {
   };
 }
 
-function renderBar(draft: BoundaryDraft) {
+function renderBar(draft: BoundaryDraft, selectedId?: string) {
   render(
     <Theme>
-      <DistributionBar segments={segments} draft={draft} />
+      <DistributionBar segments={segments} draft={draft} selectedId={selectedId} />
     </Theme>
   );
 }
@@ -41,6 +41,13 @@ describe('DistributionBar', () => {
     expect(screen.getByText('10%')).toBeInTheDocument();
     expect(screen.getAllByText('25%')).toHaveLength(2);
     expect(screen.getAllByRole('slider')).toHaveLength(3);
+  });
+
+  it('marks the selected segment', () => {
+    renderBar(createDraft({ boundaries: [40, 50, 75], shares: [40, 10, 25, 25] }), 'b');
+
+    expect(screen.getByText('10%')).toHaveAttribute('data-selected');
+    expect(screen.getByText('40%')).not.toHaveAttribute('data-selected');
   });
 
   it('reports keyboard steps from a handle', async () => {

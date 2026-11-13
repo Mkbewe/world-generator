@@ -24,7 +24,7 @@ export function HeatZoneSection() {
   const ringExtent = useBaseClimateFormStore(state => state.ringExtent);
   const setZoneBoundaries = useBaseClimateFormStore(state => state.setZoneBoundaries);
   const addZone = useBaseClimateFormStore(state => state.addZone);
-  const { selectedItem: zone, selectedIndex, selectedId, selectId } = useIdSelection(zones);
+  const { selectedItem: zone, selectedId, selectId } = useIdSelection(zones);
   const boundaries = zoneBoundaries(zones, layout, ringExtent);
   const segments = zoneSegments(zones, layout, ringExtent);
   const draft = useBoundaryDraft(
@@ -62,6 +62,7 @@ export function HeatZoneSection() {
         groupAriaLabel={t('forms.baseClimate.boundariesAria')}
         segments={distributionSegments}
         draft={draft}
+        selectedId={selectedId}
         minShare={MIN_HEAT_ZONE_SHARE}
         header={{
           label: t(share.labelKey),
@@ -77,9 +78,12 @@ export function HeatZoneSection() {
       {zone && (
         <HeatZoneCard
           zone={zone}
+          selection={{
+            ids: zones.map(item => item.id),
+            selectedId,
+            onSelect: selectId,
+          }}
           canRemove={zones.length > 1}
-          canMoveEarlier={selectedIndex > 0}
-          canMoveLater={selectedIndex < zones.length - 1}
         />
       )}
     </Flex>

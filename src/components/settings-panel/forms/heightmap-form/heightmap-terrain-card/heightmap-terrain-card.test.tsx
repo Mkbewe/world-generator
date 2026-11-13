@@ -4,7 +4,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { RegionTerrainEditor } from './region-terrain-editor';
+import { HeightmapTerrainCard } from './heightmap-terrain-card';
+import type { EditorCardSelectionControlsProps } from '../../../../editor-card-selection-controls';
 
 const TERRAIN: RegionTerrainConfig = {
   landShare: 0.3,
@@ -15,24 +16,36 @@ const TERRAIN: RegionTerrainConfig = {
   ringShare: 0.4,
 };
 
-describe('RegionTerrainEditor', () => {
+const SELECTION: EditorCardSelectionControlsProps = {
+  ids: ['region-1', 'region-2', 'region-3'],
+  selectedId: 'region-3',
+  onSelect: () => {},
+};
+
+function renderCard(overrides: { type?: 'lagoon' | 'ordinary'; onChange?: () => void } = {}) {
+  return render(
+    <Theme>
+      <HeightmapTerrainCard
+        index={2}
+        type={overrides.type ?? 'lagoon'}
+        terrain={TERRAIN}
+        selection={SELECTION}
+        onChange={overrides.onChange ?? (() => {})}
+      />
+    </Theme>
+  );
+}
+
+describe('HeightmapTerrainCard', () => {
   it('shows the region number and the character of its type', () => {
-    render(
-      <Theme>
-        <RegionTerrainEditor index={2} type='lagoon' terrain={TERRAIN} onChange={() => {}} />
-      </Theme>
-    );
+    renderCard();
 
     expect(screen.getByText('Region 3 — Lagoon')).toBeInTheDocument();
     expect(screen.getByText('Low reef rings, lagoons and sandy islets')).toBeInTheDocument();
   });
 
   it('shows only the terrain sliders its region type supports', () => {
-    render(
-      <Theme>
-        <RegionTerrainEditor index={0} type='lagoon' terrain={TERRAIN} onChange={() => {}} />
-      </Theme>
-    );
+    renderCard();
 
     expect(screen.getAllByRole('slider')).toHaveLength(5);
     expect(screen.getByText('Land share')).toBeInTheDocument();
@@ -44,11 +57,7 @@ describe('RegionTerrainEditor', () => {
   });
 
   it('shows mountainousness for ordinary regions', () => {
-    render(
-      <Theme>
-        <RegionTerrainEditor index={0} type='ordinary' terrain={TERRAIN} onChange={() => {}} />
-      </Theme>
-    );
+    renderCard({ type: 'ordinary' });
 
     expect(screen.getByText('Mountainousness')).toBeInTheDocument();
     expect(screen.getAllByRole('slider')).toHaveLength(5);
@@ -57,11 +66,7 @@ describe('RegionTerrainEditor', () => {
   it('patches a single terrain value from the slider', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(
-      <Theme>
-        <RegionTerrainEditor index={0} type='lagoon' terrain={TERRAIN} onChange={onChange} />
-      </Theme>
-    );
+    renderCard({ onChange });
 
     const landShare = screen.getAllByRole('slider')[0];
     if (!landShare) {
@@ -71,5 +76,12 @@ describe('RegionTerrainEditor', () => {
     await user.keyboard('{ArrowRight}');
 
     expect(onChange).toHaveBeenCalledWith({ landShare: expect.closeTo(0.35, 6) });
+  });
+
+  it('shows the selection controls in the card header', () => {
+    renderCard();
+
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 });

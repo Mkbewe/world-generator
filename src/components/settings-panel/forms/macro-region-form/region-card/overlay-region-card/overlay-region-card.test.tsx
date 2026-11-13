@@ -5,6 +5,13 @@ import userEvent from '@testing-library/user-event';
 
 import { OverlayRegionCard } from './overlay-region-card';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from '../../../../../../stores';
+import type { EditorCardSelectionControlsProps } from '../../../../../editor-card-selection-controls';
+
+const SELECTION: EditorCardSelectionControlsProps = {
+  ids: ['band-1'],
+  selectedId: 'band-1',
+  onSelect: () => {},
+};
 
 describe('OverlayRegionCard', () => {
   beforeEach(() => {
@@ -17,7 +24,7 @@ describe('OverlayRegionCard', () => {
     useMacroRegionFormStore.setState(state => ({ regions: [...state.regions, band] }));
     render(
       <Theme>
-        <OverlayRegionCard region={band} index={0} />
+        <OverlayRegionCard region={band} index={0} selection={SELECTION} />
       </Theme>
     );
 
@@ -44,7 +51,7 @@ describe('OverlayRegionCard', () => {
     const region = useMacroRegionFormStore.getState().regions[0];
     render(
       <Theme>
-        <OverlayRegionCard region={region} index={0} />
+        <OverlayRegionCard region={region} index={0} selection={SELECTION} />
       </Theme>
     );
 

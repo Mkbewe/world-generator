@@ -1,14 +1,23 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MacroRegionConfig } from '@generator/types';
-import { Card, Flex } from '@radix-ui/themes';
+import { regionColor } from '@layers';
+import { TrashIcon } from '@radix-ui/react-icons';
+import { Button, Flex, TextField } from '@radix-ui/themes';
 
+import { useMacroRegionFormStore } from '../../../../../../stores';
+import { EditorCard } from '../../../../../editor-card';
+import { EditorCardHeader } from '../../../../../editor-card-header';
+import { EditorCardSelectionControls } from '../../../../../editor-card-selection-controls';
 import { RegionCardDanger } from '../region-card-danger';
-import { RegionCardHeader } from '../region-card-header';
 
 interface BaseRegionCardProps {
   region: MacroRegionConfig;
   index: number;
   canRemove: boolean;
+  selectionIds: readonly string[];
+  selectedId?: string;
+  onSelect: (id: string) => void;
 }
 
 /** Memoized so a boundary drag only re-renders the two cards it resizes. */
@@ -16,13 +25,45 @@ export const BaseRegionCard = memo(function BaseRegionCard({
   region,
   index,
   canRemove,
+  selectionIds,
+  selectedId,
+  onSelect,
 }: BaseRegionCardProps) {
+  const { t } = useTranslation();
+  const updateRegion = useMacroRegionFormStore(state => state.updateRegion);
+  const removeRegion = useMacroRegionFormStore(state => state.removeRegion);
+
   return (
-    <Card size='1' variant='surface'>
-      <Flex direction='column' gap='2'>
-        <RegionCardHeader region={region} index={index} canRemove={canRemove} />
-        <RegionCardDanger region={region} />
-      </Flex>
-    </Card>
+    <EditorCard>
+      <EditorCardHeader
+        color={regionColor(index)}
+        actions={
+          <Flex gap='1' align='center'>
+            <EditorCardSelectionControls
+              ids={selectionIds}
+              selectedId={selectedId}
+              onSelect={onSelect}
+            />
+            <Button
+              size='1'
+              variant='soft'
+              color='red'
+              aria-label={t('forms.macroRegion.removeRegion', { label: region.label })}
+              disabled={!canRemove}
+              onClick={() => removeRegion(region.id)}
+            >
+              <TrashIcon />
+            </Button>
+          </Flex>
+        }
+      >
+        <TextField.Root
+          value={region.label}
+          aria-label={t('forms.macroRegion.regionLabelAria')}
+          onChange={event => updateRegion(region.id, { label: event.target.value })}
+        />
+      </EditorCardHeader>
+      <RegionCardDanger region={region} />
+    </EditorCard>
   );
 });

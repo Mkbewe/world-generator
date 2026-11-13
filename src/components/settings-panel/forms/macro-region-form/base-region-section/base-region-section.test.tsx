@@ -145,4 +145,18 @@ describe('BaseRegionSection', () => {
 
     expect(screen.getByRole('button', { name: /Add region/ })).toBeDisabled();
   });
+
+  it('moves the selection with the card controls without reordering regions', async () => {
+    const user = userEvent.setup();
+    renderSection();
+    const idsBefore = useMacroRegionFormStore.getState().regions.map(region => region.id);
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(screen.getByRole('button', { name: 'Region 2' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(useMacroRegionFormStore.getState().regions.map(region => region.id)).toEqual(idsBefore);
+  });
 });

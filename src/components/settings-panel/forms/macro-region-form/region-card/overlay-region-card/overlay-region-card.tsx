@@ -1,17 +1,32 @@
 import { useTranslation } from 'react-i18next';
 import type { MacroRegionConfig } from '@generator/types';
-import { Card, Flex, SegmentedControl } from '@radix-ui/themes';
+import { regionColor } from '@layers';
+import { TrashIcon } from '@radix-ui/react-icons';
+import { Button, Flex, SegmentedControl, TextField } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../../stores';
+import { EditorCard } from '../../../../../editor-card';
+import { EditorCardHeader } from '../../../../../editor-card-header';
+import {
+  EditorCardSelectionControls,
+  type EditorCardSelectionControlsProps,
+} from '../../../../../editor-card-selection-controls';
 import { InfoLabel } from '../../../../../info-label';
 import { SegmentedControlScroll } from '../../../../../segmented-control-scroll';
 import { SliderField } from '../../../../../slider-field';
 import { irregularityKey, MAX_IRREGULARITY } from '../../../lib/irregularity';
 import { RegionCardDanger } from '../region-card-danger';
-import { RegionCardHeader } from '../region-card-header';
 
-export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig; index: number }) {
+interface OverlayRegionCardProps {
+  region: MacroRegionConfig;
+  index: number;
+  selection: EditorCardSelectionControlsProps;
+}
+
+export function OverlayRegionCard({ region, index, selection }: OverlayRegionCardProps) {
   const { t } = useTranslation();
+  const updateRegion = useMacroRegionFormStore(state => state.updateRegion);
+  const removeRegion = useMacroRegionFormStore(state => state.removeRegion);
   const updateOverlay = useMacroRegionFormStore(state => state.updateOverlay);
   const deformation = useMacroRegionFormStore(state => state.deformation);
   if (region.geometry.kind !== 'band') {
@@ -24,67 +39,87 @@ export function OverlayRegionCard({ region, index }: { region: MacroRegionConfig
     : [t('forms.macroRegion.west'), t('forms.macroRegion.east')];
 
   return (
-    <Card size='1' variant='surface'>
-      <Flex direction='column' gap='2'>
-        <RegionCardHeader region={region} index={index} />
-        <Flex direction='column' gap='1'>
-          <InfoLabel
-            label={t('forms.macroRegion.direction')}
-            description={t('forms.macroRegion.directionDescription')}
-          />
-          <SegmentedControlScroll>
-            <SegmentedControl.Root
+    <EditorCard>
+      <EditorCardHeader
+        color={regionColor(index)}
+        actions={
+          <Flex gap='1' align='center'>
+            <EditorCardSelectionControls {...selection} />
+            <Button
               size='1'
-              value={geometry.axis}
-              onValueChange={axis => updateOverlay(region.id, { axis: axis as 'x' | 'y' })}
+              variant='soft'
+              color='red'
+              aria-label={t('forms.macroRegion.removeRegion', { label: region.label })}
+              onClick={() => removeRegion(region.id)}
             >
-              <SegmentedControl.Item value='y'>
-                {t('forms.macroRegion.horizontal')}
-              </SegmentedControl.Item>
-              <SegmentedControl.Item value='x'>
-                {t('forms.macroRegion.vertical')}
-              </SegmentedControl.Item>
-            </SegmentedControl.Root>
-          </SegmentedControlScroll>
-        </Flex>
-        <SliderField
-          label={t('forms.macroRegion.position')}
-          description={t(
-            horizontal
-              ? 'forms.macroRegion.positionHorizontalDescription'
-              : 'forms.macroRegion.positionVerticalDescription'
-          )}
-          value={geometry.center * 100}
-          min={0}
-          max={100}
-          step={1}
-          format={value => `${Math.round(value)}%`}
-          rangeLabels={positionLabels}
-          onChange={center => updateOverlay(region.id, { center: center / 100 })}
+              <TrashIcon />
+            </Button>
+          </Flex>
+        }
+      >
+        <TextField.Root
+          value={region.label}
+          aria-label={t('forms.macroRegion.regionLabelAria')}
+          onChange={event => updateRegion(region.id, { label: event.target.value })}
         />
-        <SliderField
-          label={t('forms.macroRegion.width')}
-          description={t('forms.macroRegion.widthDescription')}
-          value={geometry.width * 100}
-          min={5}
-          max={100}
-          step={1}
-          format={value => `${Math.round(value)}%`}
-          onChange={width => updateOverlay(region.id, { width: width / 100 })}
+      </EditorCardHeader>
+      <Flex direction='column' gap='1'>
+        <InfoLabel
+          label={t('forms.macroRegion.direction')}
+          description={t('forms.macroRegion.directionDescription')}
         />
-        <SliderField
-          label={t('forms.macroRegion.overlayIrregularity')}
-          description={t('forms.macroRegion.overlayIrregularityDescription')}
-          value={region.irregularity ?? deformation.amplitude}
-          min={0}
-          max={MAX_IRREGULARITY}
-          step={0.01}
-          format={value => t(irregularityKey(value))}
-          rangeLabels={[t('forms.irregularity.none'), t('forms.irregularity.large')]}
-          onChange={value => updateOverlay(region.id, { irregularity: value })}
-        />
-        <RegionCardDanger region={region} />
+        <SegmentedControlScroll>
+          <SegmentedControl.Root
+            size='1'
+            value={geometry.axis}
+            onValueChange={axis => updateOverlay(region.id, { axis: axis as 'x' | 'y' })}
+          >
+            <SegmentedControl.Item value='y'>
+              {t('forms.macroRegion.horizontal')}
+            </SegmentedControl.Item>
+            <SegmentedControl.Item value='x'>
+              {t('forms.macroRegion.vertical')}
+            </SegmentedControl.Item>
+          </SegmentedControl.Root>
+        </SegmentedControlScroll>
       </Flex>
-    </Card>
+      <SliderField
+        label={t('forms.macroRegion.position')}
+        description={t(
+          horizontal
+            ? 'forms.macroRegion.positionHorizontalDescription'
+            : 'forms.macroRegion.positionVerticalDescription'
+        )}
+        value={geometry.center * 100}
+        min={0}
+        max={100}
+        step={1}
+        format={value => `${Math.round(value)}%`}
+        rangeLabels={positionLabels}
+        onChange={center => updateOverlay(region.id, { center: center / 100 })}
+      />
+      <SliderField
+        label={t('forms.macroRegion.width')}
+        description={t('forms.macroRegion.widthDescription')}
+        value={geometry.width * 100}
+        min={5}
+        max={100}
+        step={1}
+        format={value => `${Math.round(value)}%`}
+        onChange={width => updateOverlay(region.id, { width: width / 100 })}
+      />
+      <SliderField
+        label={t('forms.macroRegion.overlayIrregularity')}
+        description={t('forms.macroRegion.overlayIrregularityDescription')}
+        value={region.irregularity ?? deformation.amplitude}
+        min={0}
+        max={MAX_IRREGULARITY}
+        step={0.01}
+        format={value => t(irregularityKey(value))}
+        rangeLabels={[t('forms.irregularity.none'), t('forms.irregularity.large')]}
+        onChange={value => updateOverlay(region.id, { irregularity: value })}
+      />
+      <RegionCardDanger region={region} />
+    </EditorCard>
   );
 }

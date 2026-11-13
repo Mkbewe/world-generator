@@ -65,7 +65,17 @@ export function OverlayRegionSection() {
           ariaLabel={t('forms.macroRegion.overlayRegionsAria')}
         />
       )}
-      {region && <OverlayRegionCard region={region} index={baseCount + selectedIndex} />}
+      {region && (
+        <OverlayRegionCard
+          region={region}
+          index={baseCount + selectedIndex}
+          selection={{
+            ids: overlays.map(item => item.id),
+            selectedId,
+            onSelect: selectId,
+          }}
+        />
+      )}
     </Flex>
   );
 }

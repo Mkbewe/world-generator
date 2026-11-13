@@ -152,31 +152,6 @@ export function removeZoneFrom(
   return zonesFromBoundaries(nextZones, layout, ringExtent, nextBoundaries);
 }
 
-/** Moves a zone one slot earlier or later; the slots keep their extents. */
-export function moveZoneIn(
-  zones: readonly HeatZoneConfig[],
-  layout: HeatZoneLayout,
-  ringExtent: number,
-  id: string,
-  direction: -1 | 1
-): readonly HeatZoneConfig[] {
-  const index = zones.findIndex(zone => zone.id === id);
-  const target = index + direction;
-  if (index < 0 || target < 0 || target >= zones.length) {
-    return zones;
-  }
-  const boundaries = zoneBoundaries(zones, layout, ringExtent);
-  const next = [...zones];
-  const current = next[index];
-  const other = next[target];
-  if (!current || !other) {
-    return zones;
-  }
-  next[index] = other;
-  next[target] = current;
-  return zonesFromBoundaries(next, layout, ringExtent, boundaries);
-}
-
 /** Converts all zones to another layout family while keeping their relative shares. */
 export function convertLayout(
   zones: readonly HeatZoneConfig[],

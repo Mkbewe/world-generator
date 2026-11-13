@@ -128,4 +128,26 @@ describe('GeologyForm', () => {
       featureId: 'region-1',
     });
   });
+
+  it('moves the selection with the card controls without reordering regions', async () => {
+    const user = userEvent.setup();
+    renderForm();
+    const typesBefore = useGeologyFormStore.getState().slots.map(slot => slot.type);
+
+    await user.click(screen.getByRole('button', { name: 'Region 3' }));
+    await user.click(screen.getByRole('button', { name: 'Previous' }));
+
+    expect(useViewSyncStore.getState().selectedFeature).toEqual({
+      layerId: 'geology',
+      featureId: 'region-2',
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(useViewSyncStore.getState().selectedFeature).toEqual({
+      layerId: 'geology',
+      featureId: 'region-3',
+    });
+    expect(useGeologyFormStore.getState().slots.map(slot => slot.type)).toEqual(typesBefore);
+  });
 });
