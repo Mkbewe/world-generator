@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
 import type { ReadoutAction } from '@readout';
 
+import { useMapGestures } from './hooks/use-map-gestures';
+import { useMapMeasurement } from './hooks/use-map-measurement';
 import { useMapReadout } from './hooks/use-map-readout';
 import { useMapRenderer } from './hooks/use-map-renderer';
 import { usePreviewControls } from './hooks/use-preview-controls';
@@ -40,15 +42,22 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     [navigation, preview.layers, preview.displayedLayer, layerTree]
   );
   const [measuring, setMeasuring] = useState(true);
-  const readout = useMapReadout(rendererRef, canvasRef, preview, {
+  const measuringActive = isFullscreen && measuring;
+  const readout = useMapReadout(rendererRef, preview);
+  const measurement = useMapMeasurement({ active: measuringActive });
+  const gestures = useMapGestures({
+    rendererRef,
+    canvasRef,
     zoomable: isFullscreen,
-    measuring: isFullscreen && measuring,
+    measuring: measuringActive,
+    readout,
+    measurement,
   });
   const hasMap = preview.layers.some(layer => layer.available);
   const dimensions = worldDimensions(preview.info);
   const selectedFeature = useViewSyncStore(state => state.selectedFeature);
 
-  const { clearMeasurement } = readout;
+  const { clear: clearMeasurement } = measurement;
 
   useEffect(() => {
     if (isFullscreen) {
@@ -111,11 +120,11 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     wrapperRef,
     preview,
     dimensions,
-    measurement: readout.measurement,
+    measurement: measurement.measurement,
     isFullscreen,
     measuring,
     setMeasuring,
-    onClearMeasurement: readout.clearMeasurement,
+    onClearMeasurement: measurement.clear,
   });
 
   return (
@@ -142,9 +151,9 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             wrapperRef={wrapperRef}
             canvasRef={canvasRef}
             overlayRef={overlayRef}
-            handlers={readout.handlers}
+            handlers={gestures.handlers}
             ready={hasMap}
-            panning={readout.panning}
+            panning={gestures.panning}
             expanded={isFullscreen}
           >
             {canvasChildren}
@@ -156,7 +165,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             onLayerChange={handleLayerChange}
             onOverlayChange={handleOverlayChange}
             inspector={{
-              items: readoutItems(readout.readout, preview.info, readout.measurement, {
+              items: readoutItems(readout.readout, preview.info, measurement.measurement, {
                 actions: !isFullscreen,
               }),
               pinned: readout.pinned,
