@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Flex } from '@radix-ui/themes';
 
 import { MenuDrawer } from './menu-drawer';
@@ -12,17 +12,18 @@ interface MobileMenuProps {
 
 export function MobileMenu({ onToggleTheme, currentTheme }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  useEscapeKey(isOpen, () => setIsOpen(false));
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+  useEscapeKey(isOpen, close);
 
   return (
     <Flex display={{ initial: 'flex', sm: 'none' }}>
-      <MenuTrigger isOpen={isOpen} onOpen={() => setIsOpen(true)} />
+      <MenuTrigger isOpen={isOpen} onOpen={() => setIsOpen(true)} buttonRef={triggerRef} />
       {isOpen && (
-        <MenuDrawer
-          onClose={() => setIsOpen(false)}
-          onToggleTheme={onToggleTheme}
-          currentTheme={currentTheme}
-        />
+        <MenuDrawer onClose={close} onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
       )}
     </Flex>
   );

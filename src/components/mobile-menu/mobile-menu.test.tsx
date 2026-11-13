@@ -86,6 +86,37 @@ describe('MobileMenu', () => {
     expect(screen.queryByRole('button', { name: /^Theme:/ })).not.toBeInTheDocument();
   });
 
+  it('moves focus into the drawer and returns it on Escape', async () => {
+    const user = userEvent.setup();
+    renderMenu();
+
+    const trigger = screen.getByRole('button', { name: /open menu/i });
+    await user.click(trigger);
+
+    expect(screen.getByRole('button', { name: /close menu/i })).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('heading', { name: 'Menu' })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it('wraps keyboard focus inside the modal drawer', async () => {
+    const user = userEvent.setup();
+    renderMenu({ onToggleTheme: () => {}, currentTheme: 'light' });
+
+    const trigger = screen.getByRole('button', { name: /open menu/i });
+    await user.click(trigger);
+    const close = screen.getByRole('button', { name: /close menu/i });
+    expect(close).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: 'Theme: Light' })).toHaveFocus();
+
+    await user.tab();
+    expect(close).toHaveFocus();
+  });
+
   it('should close after navigating through a menu link', async () => {
     const user = userEvent.setup();
     renderMenu();

@@ -42,6 +42,12 @@ const pl = {
   'statisticsPage.exportJson': 'Plik JSON',
   'mapCanvas.placeholder': 'Wygeneruj mapę, aby zobaczyć podgląd.',
   'mapCanvas.label': 'Podgląd wygenerowanej mapy',
+  'mapCanvas.keyboardHint':
+    'Strzałki przesuwają mapę, plus i minus zmieniają zoom, a zero resetuje widok.',
+  'measureControls.title': 'Pomiary',
+  'measureControls.toggle': 'Linijka',
+  'measureControls.hint':
+    'Kliknij, aby dodać punkty. Prawy przycisk kończy, ponowny czyści; Backspace cofa.',
   'selectionControls.previous': 'Poprzedni',
   'selectionControls.next': 'Następny',
   'scaleBar.label': 'Skala: {{label}}',

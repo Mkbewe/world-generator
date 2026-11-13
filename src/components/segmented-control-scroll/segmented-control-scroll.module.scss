@@ -2,6 +2,14 @@
   max-width: 100%;
   min-width: 0;
   overflow-x: auto;
+  padding: 3px;
   padding-bottom: var(--space-1);
+  margin: -3px;
   scrollbar-width: thin;
+}
+
+.scroll [role='radio']:focus-visible {
+  border-radius: var(--radius-2);
+  outline: 2px solid var(--violet-8);
+  outline-offset: 2px;
 }

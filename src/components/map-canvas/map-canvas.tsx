@@ -1,4 +1,5 @@
 import {
+  type KeyboardEventHandler,
   memo,
   type MouseEventHandler,
   type PointerEventHandler,
@@ -8,7 +9,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text } from '@radix-ui/themes';
+import { Text, VisuallyHidden } from '@radix-ui/themes';
 
 import styles from './map-canvas.module.scss';
 
@@ -20,6 +21,7 @@ export interface MapCanvasHandlers {
   onPointerUp: PointerEventHandler<HTMLCanvasElement>;
   onPointerCancel: PointerEventHandler<HTMLCanvasElement>;
   onContextMenu: MouseEventHandler<HTMLCanvasElement>;
+  onKeyDown: KeyboardEventHandler<HTMLCanvasElement>;
 }
 
 interface MapCanvasProps {
@@ -84,6 +86,8 @@ export const MapCanvas = memo(function MapCanvas({
           data-ready={ready || undefined}
           data-panning={panning || undefined}
           aria-label={t('mapCanvas.label')}
+          aria-describedby={expanded && ready ? 'map-canvas-help' : undefined}
+          tabIndex={ready && expanded ? 0 : -1}
           {...handlers}
         />
         <canvas
@@ -94,6 +98,11 @@ export const MapCanvas = memo(function MapCanvas({
           aria-hidden='true'
         />
         {children}
+        {expanded && ready && (
+          <VisuallyHidden>
+            <span id='map-canvas-help'>{t('mapCanvas.keyboardHint')}</span>
+          </VisuallyHidden>
+        )}
       </div>
     </div>
   );

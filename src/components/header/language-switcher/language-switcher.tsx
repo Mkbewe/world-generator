@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { Box, Button, DropdownMenu, Flex, RadioGroup, Text } from '@radix-ui/themes';
@@ -15,6 +15,7 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
   const { t } = useTranslation();
   const { locale, setLocale } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const optionsId = useId();
   const currentLabel = LOCALE_OPTIONS[locale].label;
   const accessibleName = `${t('header.language')}: ${currentLabel}`;
@@ -32,6 +33,7 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
     return (
       <Box>
         <Button
+          ref={triggerRef}
           variant='ghost'
           color='gray'
           className={styles.setting}
@@ -58,6 +60,13 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
             onValueChange={value => {
               setLocale(resolveLocale(value));
               setIsOpen(false);
+            }}
+            onKeyDown={event => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                setIsOpen(false);
+                triggerRef.current?.focus();
+              }
             }}
             aria-label={t('header.language')}
             className={styles.inlineOptions}

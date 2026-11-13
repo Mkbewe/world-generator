@@ -74,6 +74,7 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
                   variant='surface'
                   title={t(isFullscreen ? 'header.exitFullscreen' : 'header.enterFullscreen')}
                   aria-label={t(isFullscreen ? 'header.exitFullscreen' : 'header.enterFullscreen')}
+                  aria-pressed={isFullscreen}
                 >
                   {isFullscreen ? <ExitFullScreenIcon /> : <EnterFullScreenIcon />}
                 </IconButton>

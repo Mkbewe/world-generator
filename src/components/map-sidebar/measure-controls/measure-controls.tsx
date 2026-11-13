@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { MixerHorizontalIcon, RulerHorizontalIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
@@ -11,12 +12,14 @@ export interface MeasureControlsProps {
 
 /** Distance measuring controls of the preview. */
 export function MeasureControls({ measuring, onToggleMeasuring }: MeasureControlsProps) {
+  const { t } = useTranslation();
+
   return (
     <Flex direction='column' gap='3'>
       <Flex align='center' gap='2' className={styles.title}>
         <MixerHorizontalIcon width={20} height={20} />
         <Text size='3' weight='bold'>
-          Controls
+          {t('measureControls.title')}
         </Text>
       </Flex>
       <Flex align='center' gap='2'>
@@ -28,11 +31,11 @@ export function MeasureControls({ measuring, onToggleMeasuring }: MeasureControl
           onClick={onToggleMeasuring}
         >
           <RulerHorizontalIcon />
-          Measure
+          {t('measureControls.toggle')}
         </Button>
       </Flex>
       <Text size='1' color='gray'>
-        Click to add points. Right-click to finish, again to clear; Backspace to undo.
+        {t('measureControls.hint')}
       </Text>
     </Flex>
   );

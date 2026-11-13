@@ -38,6 +38,8 @@ describe('BoundaryHandle', () => {
     expect(handle).toHaveAttribute('aria-valuenow', '25');
     expect(handle).toHaveAttribute('aria-valuemin', '8');
     expect(handle).toHaveAttribute('aria-valuemax', '92');
+    expect(handle).toHaveAttribute('aria-valuetext', '25%');
+    expect(handle).toHaveAttribute('aria-orientation', 'horizontal');
   });
 
   it('reports pointer moves against the rect cached on pointer down', () => {
@@ -87,8 +89,13 @@ describe('BoundaryHandle', () => {
     const handle = screen.getByRole('slider');
 
     handle.focus();
-    await user.keyboard('{ArrowLeft}');
+    await user.keyboard('{ArrowLeft}{ArrowRight}{PageUp}{PageDown}{Home}{End}');
 
-    expect(handlers.onStep).toHaveBeenCalledWith(0, -1);
+    expect(handlers.onStep).toHaveBeenNthCalledWith(1, 0, -1);
+    expect(handlers.onStep).toHaveBeenNthCalledWith(2, 0, 1);
+    expect(handlers.onStep).toHaveBeenNthCalledWith(3, 0, 10);
+    expect(handlers.onStep).toHaveBeenNthCalledWith(4, 0, -10);
+    expect(handlers.onStep).toHaveBeenNthCalledWith(5, 0, -17);
+    expect(handlers.onStep).toHaveBeenNthCalledWith(6, 0, 67);
   });
 });

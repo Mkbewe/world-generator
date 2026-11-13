@@ -309,6 +309,33 @@ describe('MapPreview readout', () => {
     expect(renderer.current?.viewTransform).toEqual({ scale: 1, centerX: 0.5, centerY: 0.5 });
   });
 
+  it('pans and zooms with the keyboard in fullscreen', async () => {
+    const user = userEvent.setup();
+    const { onReady, renderer } = createOnReady();
+    render(
+      <Theme>
+        <HeaderActionsProvider>
+          <FullscreenBridge />
+          <MapPreview onReady={onReady} progressKey={0} />
+        </HeaderActionsProvider>
+      </Theme>
+    );
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+    expect(canvas).toHaveAttribute('tabindex', '-1');
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    expect(canvas).toHaveAttribute('tabindex', '0');
+
+    const scaleBefore = renderer.current?.viewTransform.scale ?? 0;
+    canvas.focus();
+    fireEvent.keyDown(canvas, { key: '+' });
+    expect(renderer.current?.viewTransform.scale).toBeGreaterThan(scaleBefore);
+
+    const centerBefore = renderer.current?.viewTransform.centerX ?? 0;
+    fireEvent.keyDown(canvas, { key: 'ArrowRight' });
+    expect(renderer.current?.viewTransform.centerX).toBeGreaterThan(centerBefore);
+  });
+
   it('unlocks the reset control when the fitted map is panned', async () => {
     const user = userEvent.setup();
     const { onReady } = createOnReady();

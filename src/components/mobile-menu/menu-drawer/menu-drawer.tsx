@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router';
 import { Cross1Icon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
@@ -6,6 +7,39 @@ import { Button, Flex, IconButton, Text, VisuallyHidden } from '@radix-ui/themes
 import { LanguageSwitcher } from '../../header';
 import { isActivePath, NAVIGATION_ITEMS } from '../../navigation';
 import styles from './menu-drawer.module.scss';
+
+function focusableElements(container: HTMLElement): HTMLElement[] {
+  return [...container.getElementsByTagName('*')].filter(
+    (element): element is HTMLElement => element instanceof HTMLElement && element.tabIndex >= 0
+  );
+}
+
+function handleTab(event: KeyboardEvent, container: HTMLElement): void {
+  if (event.key !== 'Tab') {
+    return;
+  }
+  const focusable = focusableElements(container);
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (!first || !last) {
+    event.preventDefault();
+    return;
+  }
+  if (!container.contains(document.activeElement)) {
+    event.preventDefault();
+    first.focus();
+    return;
+  }
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+    return;
+  }
+  if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 interface MenuDrawerProps {
   onClose: () => void;
@@ -16,8 +50,21 @@ interface MenuDrawerProps {
 export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerProps) {
   const { pathname } = useLocation();
   const { t } = useTranslation();
+  const drawerRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const themeLabel = currentTheme === 'light' ? t('theme.light') : t('theme.dark');
   const themeIcon = currentTheme === 'light' ? <SunIcon /> : <MoonIcon />;
+
+  useEffect(() => {
+    const drawer = drawerRef.current;
+    if (!drawer) {
+      return;
+    }
+    closeRef.current?.focus();
+    const listener = (event: KeyboardEvent): void => handleTab(event, drawer);
+    drawer.addEventListener('keydown', listener);
+    return () => drawer.removeEventListener('keydown', listener);
+  }, []);
 
   return (
     <div className={styles.overlay}>
@@ -29,9 +76,11 @@ export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerP
         onClick={onClose}
       />
       <section
+        id='mobile-menu'
+        ref={drawerRef}
         className={styles.drawer}
         role='dialog'
-        aria-modal='false'
+        aria-modal='true'
         aria-labelledby='mobile-menu-title'
       >
         <Flex justify='between' align='center' mb='6'>
@@ -39,6 +88,7 @@ export function MenuDrawer({ onClose, onToggleTheme, currentTheme }: MenuDrawerP
             {t('mobileMenu.title')}
           </h2>
           <IconButton
+            ref={closeRef}
             size='3'
             variant='ghost'
             color='gray'
