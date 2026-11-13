@@ -17,7 +17,6 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "task": "node scripts/task.mjs",
-    "commit": "node scripts/commit.mjs",
     "preview": "vite preview",
     "prepare": "husky",
     "check:all": "pnpm run typecheck && pnpm run lint && pnpm run lint:scss && pnpm run format && pnpm run test",
