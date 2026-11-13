@@ -130,7 +130,8 @@ Every push to `master` is automatically deployed to the **dev** environment
 
 ## Commit naming convention
 
-Use Conventional Commits.
+Use Conventional Commits. Subjects start with a lowercase letter; acronyms and
+module names keep their case.
 
 Examples:
 
@@ -159,8 +160,8 @@ CI runs on pull requests and pushes to `master` (`ci.yml`) with two jobs:
 **Tests** — the full Vitest suite.
 
 A separate workflow (`pr-title-check.yml`) validates that PR titles follow
-Conventional Commits (type prefix, lowercase subject). These checks are the main
-safety gate before merge.
+Conventional Commits (type prefix, subject starting with a lowercase letter).
+These checks are the main safety gate before merge.
 
 ## Versioning and releases
 

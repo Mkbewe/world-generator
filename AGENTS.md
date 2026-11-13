@@ -30,7 +30,8 @@ See `README.md` and `docs/roadmap.md` for architecture.
   `refactor(542): unify feature selection handling`; never use an area name such
   as `map` or `ui` as the scope. Read the number from the branch or task context;
   ask for it if unavailable.
-- Commit subjects are at most 72 characters (enforced by commitlint)
+- Commit subjects start with a lowercase letter; acronyms and module names keep
+  their case, and the subject is at most 72 characters (enforced by commitlint)
 - when the user asks for a commit name, answer with one message only: the
   Conventional Commits header and, when the change set is large, a body that
   lists the changes as bullet points
