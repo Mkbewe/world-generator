@@ -34,9 +34,10 @@
 }
 
 .navLink {
+  position: relative;
   display: block;
   width: 100%;
-  padding: 0.75rem 0;
+  padding: 0.75rem var(--space-2);
   color: var(--gray-11);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
@@ -47,8 +48,16 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--violet-8);
-    outline-offset: -2px;
+    outline: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border: 2px solid var(--violet-8);
+      border-radius: var(--radius-2);
+      pointer-events: none;
+    }
   }
 }
 
@@ -67,11 +76,12 @@
 }
 
 .setting.setting {
+  position: relative;
   width: 100%;
   height: auto;
   margin: 0;
   justify-content: space-between;
-  padding: 0.875rem 0;
+  padding: 0.875rem var(--space-2);
   border-radius: 0;
   border-top: 1px solid var(--gray-6);
   text-align: left;
@@ -82,7 +92,16 @@
   }
 
   &:focus-visible {
-    outline-offset: -2px;
+    outline: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border: 2px solid var(--violet-8);
+      border-radius: var(--radius-2);
+      pointer-events: none;
+    }
   }
 }
 

@@ -10,6 +10,7 @@ const HANDLERS: MapCanvasHandlers = {
   onPointerUp: () => {},
   onPointerCancel: () => {},
   onContextMenu: () => {},
+  onKeyDown: () => {},
 };
 
 function renderCanvas(ready: boolean) {
@@ -77,6 +78,23 @@ describe('MapCanvas', () => {
     });
 
     expect(screen.queryByText('Generate a map to see the preview.')).toBeNull();
+  });
+
+  it('describes keyboard controls only in fullscreen mode', () => {
+    const { rerender, props } = renderCanvas(true);
+    const canvas = screen.getByLabelText('Generated map preview');
+    expect(canvas).not.toHaveAttribute('aria-describedby');
+
+    rerender(
+      <Theme>
+        <MapCanvas {...props} ready expanded />
+      </Theme>
+    );
+
+    expect(canvas).toHaveAttribute('aria-describedby', 'map-canvas-help');
+    expect(
+      screen.getByText('Arrow keys pan the map, plus and minus zoom, and zero resets the view.')
+    ).toBeInTheDocument();
   });
 
   it('renders the overlay canvas hidden from assistive tech', () => {

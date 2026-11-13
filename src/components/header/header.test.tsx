@@ -71,8 +71,12 @@ describe('Header', () => {
     renderHeader();
 
     const trigger = screen.getByRole('button', { name: 'Enter fullscreen' });
+    expect(trigger).toHaveAttribute('aria-pressed', 'false');
     await user.click(trigger);
-    expect(screen.getByRole('button', { name: 'Exit fullscreen' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Exit fullscreen' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
 
     await user.click(screen.getByRole('button', { name: 'Leave fullscreen' }));
 

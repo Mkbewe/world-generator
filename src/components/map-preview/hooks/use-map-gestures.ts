@@ -1,4 +1,5 @@
 import {
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type RefObject,
@@ -204,6 +205,45 @@ export function useMapGestures({
     [finish, measuring]
   );
 
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLCanvasElement>): void => {
+      const renderer = rendererRef.current;
+      if (!zoomable || !renderer) {
+        return;
+      }
+      const panStep = 24;
+      switch (event.key) {
+        case 'ArrowLeft':
+          renderer.panByPixels(panStep, 0);
+          break;
+        case 'ArrowRight':
+          renderer.panByPixels(-panStep, 0);
+          break;
+        case 'ArrowUp':
+          renderer.panByPixels(0, panStep);
+          break;
+        case 'ArrowDown':
+          renderer.panByPixels(0, -panStep);
+          break;
+        case '+':
+        case '=':
+          renderer.zoomIn();
+          break;
+        case '-':
+        case '_':
+          renderer.zoomOut();
+          break;
+        case '0':
+          renderer.resetView();
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+    },
+    [rendererRef, zoomable]
+  );
+
   const handlers = useMemo(
     () => ({
       onPointerMove: handlePointerMove,
@@ -211,8 +251,16 @@ export function useMapGestures({
       onPointerUp: handlePointerUp,
       onPointerCancel: handlePointerCancel,
       onContextMenu: handleContextMenu,
+      onKeyDown: handleKeyDown,
     }),
-    [handleContextMenu, handlePointerCancel, handlePointerDown, handlePointerMove, handlePointerUp]
+    [
+      handleContextMenu,
+      handleKeyDown,
+      handlePointerCancel,
+      handlePointerDown,
+      handlePointerMove,
+      handlePointerUp,
+    ]
   );
 
   return { handlers, panning };

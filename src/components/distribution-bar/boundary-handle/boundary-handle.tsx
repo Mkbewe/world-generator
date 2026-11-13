@@ -48,20 +48,39 @@ export function BoundaryHandle({
       type='button'
       role='slider'
       aria-label={t('distribution.boundary', { index: index + 1 })}
+      aria-orientation='horizontal'
       aria-valuemin={minShare}
       aria-valuemax={100 - minShare}
       aria-valuenow={Math.round(boundary)}
+      aria-valuetext={`${Math.round(boundary)}%`}
       className={styles.distributionHandle}
       style={{ left: `${boundary}%` }}
       onKeyDown={event => {
-        if (event.key === 'ArrowLeft') {
-          event.preventDefault();
-          onStep(index, -1);
+        let delta: number;
+        switch (event.key) {
+          case 'ArrowLeft':
+            delta = -1;
+            break;
+          case 'ArrowRight':
+            delta = 1;
+            break;
+          case 'PageDown':
+            delta = -10;
+            break;
+          case 'PageUp':
+            delta = 10;
+            break;
+          case 'Home':
+            delta = minShare - boundary;
+            break;
+          case 'End':
+            delta = 100 - minShare - boundary;
+            break;
+          default:
+            return;
         }
-        if (event.key === 'ArrowRight') {
-          event.preventDefault();
-          onStep(index, 1);
-        }
+        event.preventDefault();
+        onStep(index, delta);
       }}
       onPointerDown={event => {
         activePointer.current = event.pointerId;

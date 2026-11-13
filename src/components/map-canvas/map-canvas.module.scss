@@ -68,6 +68,11 @@
   touch-action: none;
 }
 
+.canvas:focus-visible {
+  outline: 2px solid var(--violet-8);
+  outline-offset: 2px;
+}
+
 .canvas[data-ready] {
   cursor: crosshair;
 }

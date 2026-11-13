@@ -75,6 +75,20 @@ describe('LanguageSwitcher', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('closes the drawer row on Escape and returns focus to its trigger', async () => {
+    const user = userEvent.setup();
+    renderSwitcher('row');
+
+    const trigger = screen.getByRole('button', { name: triggerName() });
+    await user.click(trigger);
+    screen.getByRole('radio', { name: localeLabel(DEFAULT_LOCALE) }).focus();
+
+    await user.keyboard('{Escape}');
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
+
   it('opens a menu with the flag and name of every supported locale', async () => {
     const user = userEvent.setup();
     renderSwitcher();

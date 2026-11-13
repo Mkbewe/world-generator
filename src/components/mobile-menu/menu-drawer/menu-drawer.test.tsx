@@ -22,6 +22,13 @@ function renderDrawer({ onClose = () => {}, onToggleTheme, currentTheme }: Rende
 }
 
 describe('MenuDrawer', () => {
+  it('exposes modal dialog semantics and focuses its close action', () => {
+    renderDrawer();
+
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
+    expect(screen.getByRole('button', { name: 'Close menu' })).toHaveFocus();
+  });
+
   it('renders the navigation links and closes after navigating', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
