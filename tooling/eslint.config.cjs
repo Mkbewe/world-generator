@@ -1,15 +1,18 @@
+const path = require('node:path');
 const { FlatCompat } = require('@eslint/eslintrc');
 const js = require('@eslint/js');
 const boundaries = require('eslint-plugin-boundaries');
 const checkFile = require('eslint-plugin-check-file');
 
+const projectRoot = path.resolve(__dirname, '..');
+
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
+  baseDirectory: projectRoot,
   recommendedConfig: js.configs.recommended,
 });
 
 module.exports = [
-  ...compat.config(require('./.eslintrc.json')),
+  ...compat.config(require('./eslintrc.json')),
   {
     plugins: {
       'check-file': checkFile,
@@ -45,10 +48,10 @@ module.exports = [
       boundaries,
     },
     settings: {
-      'boundaries/root-path': __dirname,
+      'boundaries/root-path': projectRoot,
       'import/resolver': {
         typescript: {
-          project: './tsconfig.json',
+          project: path.join(projectRoot, 'tsconfig.json'),
         },
         node: {
           extensions: ['.js', '.jsx', '.ts', '.tsx'],

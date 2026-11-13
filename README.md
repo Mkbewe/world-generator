@@ -42,7 +42,7 @@ pnpm test
 pnpm check:all
 ```
 
-Stylelint validates all SCSS files using the rules in `.stylelintrc.json`.
+Stylelint validates all SCSS files using the rules in `tooling/stylelint.config.json`.
 Use `pnpm lint:scss:fix` to apply safe automatic fixes.
 
 ## Architecture
@@ -108,6 +108,11 @@ statistics snapshot as JSON.
 - `src/stores` holds global UI state: form values per settings tab, generation
   progress and statistics, map config, preview selection and render statistics.
 - `src/components/generation-progress` renders the current stage and progress.
+- `tooling/` contains shared tool configuration for Vite, Vitest, ESLint,
+  Stylelint, commitlint, lint-staged and release-it.
+- VS Code extension settings point at the `tooling/` configs:
+  `eslint.options.overrideConfigFile`, `stylelint.configFile` and
+  `vitest.rootConfig`.
 - `docs/roadmap.md` describes the pipeline, the current and
   planned stages, and future layer contracts, with per-section status markers.
 

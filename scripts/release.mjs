@@ -38,7 +38,9 @@ if (dryRun) {
 }
 
 execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
-execSync(`npx release-it ${nextVersion} --ci`, { stdio: 'inherit' });
+execSync(`npx release-it ${nextVersion} --ci --config tooling/release-it.config.js`, {
+  stdio: 'inherit',
+});
 
 /** Detects the bump from conventional commits since the last tag. */
 function detectReleaseType(currentVersion) {

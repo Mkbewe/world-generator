@@ -1,1 +1,1 @@
-pnpm exec commitlint --edit "$1" --color=false
+pnpm exec commitlint --config tooling/commitlint.config.cjs --edit "$1" --color=false
