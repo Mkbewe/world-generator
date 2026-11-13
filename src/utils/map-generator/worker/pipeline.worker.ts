@@ -1,3 +1,6 @@
-﻿import { type GenerationWorkerScope, startGenerationWorker } from './generation-worker';
+﻿import { isGenerationWorkerScope, startGenerationWorker } from './generation-worker';
 
-startGenerationWorker(globalThis as unknown as GenerationWorkerScope);
+if (!isGenerationWorkerScope(globalThis)) {
+  throw new Error('Generation worker scope is not available.');
+}
+startGenerationWorker(globalThis);

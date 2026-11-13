@@ -1,3 +1,4 @@
+import { isPipelineWorkerGenerateRequest } from './pipeline-worker.guards';
 import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerResponse,
@@ -10,14 +11,28 @@ import { isPersistentRasterValue, isRasterOutputKey } from '../pipeline/stage-ou
 import type { MapState } from '../types';
 
 export interface GenerationWorkerScope {
-  onmessage: ((event: MessageEvent<PipelineWorkerGenerateRequest>) => void) | null;
+  onmessage: ((event: MessageEvent<unknown>) => void) | null;
   postMessage(message: PipelineWorkerResponse): void;
+}
+
+export function isGenerationWorkerScope(value: unknown): value is GenerationWorkerScope {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'postMessage' in value &&
+    typeof value.postMessage === 'function'
+  );
 }
 
 /** Wires the pipeline into a worker scope; the worker entry calls it once. */
 export function startGenerationWorker(scope: GenerationWorkerScope): void {
   scope.onmessage = event => {
-    void generate(scope, event.data);
+    const request = event.data;
+    if (!isPipelineWorkerGenerateRequest(request)) {
+      scope.postMessage({ type: 'error', message: 'Invalid pipeline worker request.' });
+      return;
+    }
+    void generate(scope, request);
   };
 }
 

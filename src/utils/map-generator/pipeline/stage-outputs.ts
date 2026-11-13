@@ -89,12 +89,32 @@ function assignRasterOutput<Key extends RasterOutputKey>(
   outputs[key] = value as NonNullable<MapState[Key]>;
 }
 
+export function isDomainOutputKey(value: string): value is DomainOutputKey {
+  return (DOMAIN_OUTPUT_KEYS as readonly string[]).includes(value);
+}
+
 const domainReaders = {
   geologyPlan: isGeologyPlan,
   macroRegionAreas: isMacroRegionAreas,
 } satisfies {
   [Key in DomainOutputKey]: (value: unknown) => value is NonNullable<MapState[Key]>;
 };
+
+export function assertStageOutputValue(key: string, value: unknown): void {
+  if (isRasterOutputKey(key)) {
+    if (!isPersistentRasterValue(key, value)) {
+      throw new Error(`Stage output "${key}" has an invalid type.`);
+    }
+    return;
+  }
+  if (isDomainOutputKey(key)) {
+    if (!domainReaders[key](value)) {
+      throw new Error(`Stage output "${key}" has an invalid type.`);
+    }
+    return;
+  }
+  throw new Error(`Unknown stage output "${key}".`);
+}
 
 /** Per-region ground areas: a finite, non-negative number per region. */
 function isMacroRegionAreas(value: unknown): value is readonly number[] {
@@ -145,10 +165,17 @@ export function commitStageWrites<TState extends object, TId extends string = st
   }
   for (const key of writes) {
     const name = String(key);
-    if (!Object.hasOwn(data, name) || data[name] === undefined) {
+    if (!Object.hasOwn(data, name)) {
       throw new Error(`Stage "${stageId}" did not write "${name}".`);
     }
-    state[key] = data[name] as TState[typeof key];
+    const value = data[name];
+    if (value === undefined) {
+      throw new Error(`Stage "${stageId}" did not write "${name}".`);
+    }
+    if (isRasterOutputKey(name) || isDomainOutputKey(name)) {
+      assertStageOutputValue(name, value);
+    }
+    state[key] = value as TState[typeof key];
   }
 }
 

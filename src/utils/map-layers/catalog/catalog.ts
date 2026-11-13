@@ -152,10 +152,10 @@ const CATALOG_ENTRIES = [
  */
 export const LAYER_CATALOG = sortByPipelineOrder(CATALOG_ENTRIES);
 
-function sortByPipelineOrder<T extends readonly LayerSpec[]>(entries: T): T {
+function sortByPipelineOrder<T extends LayerSpec>(entries: readonly T[]): T[] {
   return [...entries].sort(
     (left, right) => stageIndex(left.group?.id ?? left.id) - stageIndex(right.group?.id ?? right.id)
-  ) as unknown as T;
+  );
 }
 
 function stageIndex(id: string): number {

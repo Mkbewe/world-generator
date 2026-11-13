@@ -1,7 +1,7 @@
+import { isPipelineWorkerResponse } from './pipeline-worker.guards';
 import type {
   PipelineWorkerGenerateRequest,
   PipelineWorkerGenerationResult,
-  PipelineWorkerResponse,
   PipelineWorkerReuse,
 } from './pipeline-worker.types';
 import { GenerationCancelledError } from '../errors';
@@ -52,11 +52,16 @@ export const runGeneration: RunGeneration = (config, options) =>
       settle(() => reject(new GenerationCancelledError()));
     };
 
-    const handleMessage = (event: MessageEvent<PipelineWorkerResponse>): void => {
+    const handleMessage = (event: MessageEvent<unknown>): void => {
       if (settled || signal?.aborted) {
         return;
       }
-      const message = event.data;
+      const data = event.data;
+      if (!isPipelineWorkerResponse(data)) {
+        settle(() => reject(new Error('Invalid pipeline worker message.')));
+        return;
+      }
+      const message = data;
       if (message.type === 'stages') {
         onStages?.(message.stages, message.skippedStageIds);
         return;
