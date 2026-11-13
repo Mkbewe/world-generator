@@ -70,6 +70,41 @@ describe('ExportDialog', () => {
     expect(onExport).toHaveBeenCalledWith('json');
   });
 
+  it('keeps the selected format valid when the format list changes', async () => {
+    const user = userEvent.setup();
+    const onExport = vi.fn();
+    const { rerender } = render(
+      <Theme>
+        <ExportDialog
+          isOpen
+          onOpenChange={() => {}}
+          title='Export Map'
+          formats={[
+            { id: 'png', label: 'PNG image' },
+            { id: 'json', label: 'JSON file' },
+          ]}
+          onExport={onExport}
+        />
+      </Theme>
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'PNG image' }));
+    rerender(
+      <Theme>
+        <ExportDialog
+          isOpen
+          onOpenChange={() => {}}
+          title='Export Map'
+          formats={[{ id: 'json', label: 'JSON file' }]}
+          onExport={onExport}
+        />
+      </Theme>
+    );
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+
+    expect(onExport).toHaveBeenCalledWith('json');
+  });
+
   it('reports closing when cancelled', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();

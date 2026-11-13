@@ -46,15 +46,4 @@ describe('OverlayRegionCard', () => {
       .regions.find(region => region.id === 'band-1');
     expect(updated?.geometry).toMatchObject({ axis: 'x' });
   });
-
-  it('renders nothing for a non-band geometry', () => {
-    const region = useMacroRegionFormStore.getState().regions[0];
-    render(
-      <Theme>
-        <OverlayRegionCard region={region} index={0} selection={SELECTION} />
-      </Theme>
-    );
-
-    expect(screen.queryByLabelText('Region label')).toBeNull();
-  });
 });

@@ -3,7 +3,7 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { VerticalTabs, type VerticalTabsProps } from './vertical-tabs';
+import { type VerticalTabItem, VerticalTabs, type VerticalTabsProps } from './vertical-tabs';
 
 const items = [
   {
@@ -83,6 +83,25 @@ describe('VerticalTabs', () => {
     await user.click(screen.getByRole('tab', { name: 'Export' }));
 
     expect(onValueChange).toHaveBeenCalledWith('export');
+  });
+
+  it('preserves the item value union in the change callback', async () => {
+    type TabValue = 'shape' | 'noise';
+    const typedItems: readonly VerticalTabItem<TabValue>[] = [
+      { value: 'shape', label: 'World shape', icon: <GlobeIcon />, content: <p>Shape</p> },
+      { value: 'noise', label: 'Noise', icon: <LayersIcon />, content: <p>Noise</p> },
+    ];
+    const onValueChange = vi.fn<(value: TabValue) => void>();
+    const user = userEvent.setup();
+
+    render(
+      <Theme>
+        <VerticalTabs items={typedItems} onValueChange={onValueChange} />
+      </Theme>
+    );
+    await user.click(screen.getByRole('tab', { name: 'Noise' }));
+
+    expect(onValueChange).toHaveBeenCalledWith('noise');
   });
 
   it('moves the tab stop to the active trigger', async () => {

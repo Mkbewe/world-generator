@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DrawingPinFilledIcon } from '@radix-ui/react-icons';
-import { Button, Card, Flex, Text } from '@radix-ui/themes';
+import { Button, Flex, Text } from '@radix-ui/themes';
 import type { ReadoutAction, ReadoutItem } from '@readout';
 import type { TFunction } from 'i18next';
 
@@ -12,19 +12,13 @@ export interface CursorReadoutProps {
   pinned?: boolean;
   /** Called when a readout action is pressed. */
   onAction?: (action: ReadoutAction) => void;
-  /** Renders without its own card, for use inside a shared panel. */
-  bare?: boolean;
 }
 
-/** A card with the hovered cell and layer value, pinned to the sidebar footer. */
-export function CursorReadout({
-  items,
-  pinned = false,
-  onAction,
-  bare = false,
-}: CursorReadoutProps) {
+/** The hovered cell and layer value, pinned to the sidebar footer. */
+export function CursorReadout({ items, pinned = false, onAction }: CursorReadoutProps) {
   const { t } = useTranslation();
-  const content = (
+
+  return (
     <Flex
       align='start'
       direction='column'
@@ -42,16 +36,6 @@ export function CursorReadout({
         <ReadoutEntry key={item.id} item={item} onAction={onAction} />
       ))}
     </Flex>
-  );
-
-  if (bare) {
-    return content;
-  }
-
-  return (
-    <Card size='1' variant='surface' className={styles.card}>
-      {content}
-    </Card>
   );
 }
 

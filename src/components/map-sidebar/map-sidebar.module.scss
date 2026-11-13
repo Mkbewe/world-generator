@@ -27,6 +27,14 @@
   width: auto;
 }
 
+.section {
+  min-width: 0;
+}
+
+.card {
+  margin-top: auto;
+}
+
 @include mobile {
   .sidebar {
     flex: 0 0 auto;

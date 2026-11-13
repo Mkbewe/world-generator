@@ -4,36 +4,42 @@ import { Flex, Heading, Separator, Tabs, Tooltip } from '@radix-ui/themes';
 
 import styles from './vertical-tabs.module.scss';
 
-export interface VerticalTabItem {
-  value: string;
+export interface VerticalTabItem<TValue extends string = string> {
+  value: TValue;
   /** Used as the tooltip text and the trigger's accessible name. */
   label: string;
   icon: ReactNode;
   content: ReactNode;
 }
 
-export interface VerticalTabsProps {
-  items: readonly VerticalTabItem[];
+export interface VerticalTabsProps<TValue extends string = string> {
+  items: readonly VerticalTabItem<TValue>[];
   /** Accessible name of the tab strip. */
   ariaLabel?: string;
-  defaultValue?: string;
+  defaultValue?: TValue;
   /** Pass together with `onValueChange` to control the active tab. */
-  value?: string;
-  onValueChange?: (value: string) => void;
+  value?: TValue;
+  onValueChange?: (value: TValue) => void;
   /** Which edge the icon strip sits on. */
   side?: 'left' | 'right';
 }
 
-export function VerticalTabs({
+export function VerticalTabs<TValue extends string = string>({
   items,
   ariaLabel,
   defaultValue,
   value,
   onValueChange,
   side = 'left',
-}: VerticalTabsProps) {
+}: VerticalTabsProps<TValue>) {
   const { t } = useTranslation();
   const label = ariaLabel ?? t('common.sections');
+  const handleValueChange = (next: string): void => {
+    const item = items.find(item => item.value === next);
+    if (item) {
+      onValueChange?.(item.value);
+    }
+  };
 
   return (
     <Tabs.Root
@@ -42,7 +48,7 @@ export function VerticalTabs({
       orientation='vertical'
       value={value}
       defaultValue={defaultValue ?? items[0]?.value}
-      onValueChange={onValueChange}
+      onValueChange={handleValueChange}
     >
       <Tabs.List className={styles.list} aria-label={label}>
         {items.map(item => (

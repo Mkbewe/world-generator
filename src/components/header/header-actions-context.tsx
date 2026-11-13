@@ -8,15 +8,14 @@ interface HeaderActions {
   setIsFullscreen: (fullscreen: boolean) => void;
 }
 
-export const HeaderActionsContext = createContext<HeaderActions>({
-  canFullscreen: false,
-  setCanFullscreen: () => {},
-  isFullscreen: false,
-  setIsFullscreen: () => {},
-});
+export const HeaderActionsContext = createContext<HeaderActions | undefined>(undefined);
 
-export function useHeaderActions() {
-  return useContext(HeaderActionsContext);
+export function useHeaderActions(): HeaderActions {
+  const actions = useContext(HeaderActionsContext);
+  if (!actions) {
+    throw new Error('useHeaderActions must be used within HeaderActionsProvider.');
+  }
+  return actions;
 }
 
 export function HeaderActionsProvider({ children }: { children: ReactNode }) {

@@ -1,20 +1,19 @@
 ﻿import { useTranslation } from 'react-i18next';
 import { LayersIcon } from '@radix-ui/react-icons';
-import { Card, Flex, Switch, Text } from '@radix-ui/themes';
+import { Flex, Switch, Text } from '@radix-ui/themes';
 import type { MapOverlayId, MapRendererState } from '@renderer';
 
 import styles from './overlay-controls.module.scss';
 
-interface OverlayControlsProps {
+export interface OverlayControlsProps {
   preview: MapRendererState;
   onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
-  /** Renders without its own card, for use inside a shared panel. */
-  bare?: boolean;
 }
 
-export function OverlayControls({ preview, onOverlayChange, bare = false }: OverlayControlsProps) {
+export function OverlayControls({ preview, onOverlayChange }: OverlayControlsProps) {
   const { t } = useTranslation();
-  const content = (
+
+  return (
     <Flex direction='column' gap='3'>
       <Flex align='center' gap='2' className={styles.title}>
         <LayersIcon width={20} height={20} />
@@ -40,15 +39,5 @@ export function OverlayControls({ preview, onOverlayChange, bare = false }: Over
         );
       })}
     </Flex>
-  );
-
-  if (bare) {
-    return content;
-  }
-
-  return (
-    <Card size='1' variant='surface' className={styles.overlays}>
-      {content}
-    </Card>
   );
 }

@@ -45,7 +45,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
   const setShape = useWorldShapeFormStore(state => state.setShape);
   const setSizeMeters = useWorldShapeFormStore(state => state.setSizeMeters);
   const setMetersPerSample = useWorldShapeFormStore(state => state.setMetersPerSample);
-  const formTabs: Partial<Record<MapBaseLayerId, Omit<VerticalTabItem, 'value'>>> = {
+  const formTabs: Partial<Record<MapBaseLayerId, Omit<VerticalTabItem<SettingsTab>, 'value'>>> = {
     'world-shape': {
       label: t('settings.worldShape'),
       icon: <GlobeIcon />,
@@ -81,7 +81,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
       content: <HeightmapForm />,
     },
   };
-  const tabs: readonly VerticalTabItem[] = [
+  const tabs: readonly VerticalTabItem<SettingsTab>[] = [
     {
       value: 'general',
       label: t('settings.general'),
@@ -94,10 +94,6 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
       return form ? [{ value: layer.id, ...form }] : [];
     }),
   ];
-
-  const handleTabChange = (value: string): void => {
-    setSettingsTab(value as SettingsTab);
-  };
 
   return (
     <Card size={{ initial: '2', sm: '3' }}>
@@ -114,7 +110,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
             items={tabs}
             ariaLabel={t('settings.ariaLabel')}
             value={activeTab}
-            onValueChange={handleTabChange}
+            onValueChange={setSettingsTab}
           />
         </Flex>
         <Flex direction='column' gap='4'>

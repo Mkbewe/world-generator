@@ -1,5 +1,10 @@
-import type { MacroRegionLayout } from '@generator/stages/macro-region/editor/presets';
+import type {
+  BandOverlayConfig,
+  MacroRegionLayout,
+} from '@generator/stages/macro-region/editor/presets';
 import type { MacroRegionConfig } from '@generator/types';
+
+export type BandOverlayRegion = BandOverlayConfig;
 
 export interface MacroRegionLayoutChange {
   readonly regions: readonly MacroRegionConfig[];
@@ -13,8 +18,12 @@ export function baseRegions(regions: readonly MacroRegionConfig[]): MacroRegionC
   return regions.filter(region => region.role === 'base');
 }
 
-export function overlayRegions(regions: readonly MacroRegionConfig[]): MacroRegionConfig[] {
-  return regions.filter(region => region.role === 'overlay');
+export function overlayRegions(regions: readonly MacroRegionConfig[]): BandOverlayRegion[] {
+  return regions.filter(isBandOverlayRegion);
+}
+
+function isBandOverlayRegion(region: MacroRegionConfig): region is BandOverlayRegion {
+  return region.role === 'overlay' && region.geometry.kind === 'band';
 }
 
 /** Spatial shares of base regions in their displayed order. */

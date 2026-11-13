@@ -13,4 +13,15 @@ describe('InfoLabel', () => {
 
     expect(screen.getByText('Coverage')).toBeInTheDocument();
   });
+
+  it('renders without a description', () => {
+    const { container } = render(
+      <Theme>
+        <InfoLabel label='Coverage' />
+      </Theme>
+    );
+
+    expect(screen.getByText('Coverage')).toBeInTheDocument();
+    expect(container.querySelector('svg')).toBeNull();
+  });
 });

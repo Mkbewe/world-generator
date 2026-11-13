@@ -20,10 +20,15 @@ describe('HeaderActionsProvider', () => {
     expect(result.current.isFullscreen).toBe(true);
   });
 
-  it('keeps working without a provider', () => {
-    const { result } = renderHook(() => useHeaderActions());
+  it('rejects use without a provider', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    expect(result.current.isFullscreen).toBe(false);
-    expect(() => result.current.setIsFullscreen(true)).not.toThrow();
+    try {
+      expect(() => renderHook(() => useHeaderActions())).toThrow(
+        'useHeaderActions must be used within HeaderActionsProvider.'
+      );
+    } finally {
+      error.mockRestore();
+    }
   });
 });

@@ -29,6 +29,9 @@ export function ExportDialog({
 }: ExportDialogProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState(formats[0]?.id ?? '');
+  const selectedId = formats.some(format => format.id === selected)
+    ? selected
+    : (formats[0]?.id ?? '');
 
   return createPortal(
     <AlertDialog.Root open={isOpen} onOpenChange={onOpenChange}>
@@ -41,7 +44,7 @@ export function ExportDialog({
             gap='2'
             size='1'
             mt='3'
-            value={selected}
+            value={selectedId}
             onValueChange={setSelected}
           >
             {formats.map(format => (
@@ -67,7 +70,7 @@ export function ExportDialog({
             </Button>
           </AlertDialog.Cancel>
           <AlertDialog.Action>
-            <Button variant='solid' onClick={() => onExport(selected)}>
+            <Button variant='solid' disabled={!selectedId} onClick={() => onExport(selectedId)}>
               {t('common.export')}
             </Button>
           </AlertDialog.Action>

@@ -3,10 +3,10 @@ import { Card, Flex, Separator } from '@radix-ui/themes';
 
 import { CursorReadout, type CursorReadoutProps } from './cursor-readout';
 import { LayerViews } from './layer-views';
-import { MeasureControls } from './measure-controls';
+import { MeasureControls, type MeasureControlsProps } from './measure-controls';
 import { OverlayControls } from './overlay-controls';
 import { PanelHeader, type PanelPosition } from './panel-header';
-import { ViewControls } from './view-controls';
+import { ViewControls, type ViewControlsProps } from './view-controls';
 import type {
   MapBaseLayerId,
   MapLayerNavigation,
@@ -15,81 +15,55 @@ import type {
 } from '../../utils/map-renderer';
 import styles from './map-sidebar.module.scss';
 
-interface MapSidebarProps {
+interface MapSidebarBaseProps {
   preview: MapRendererState;
   navigation: MapLayerNavigation;
   onLayerChange: (layer: MapBaseLayerId) => void;
   onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
-  /** Cursor readout rendered below the layer sections. */
-  inspector?: CursorReadoutProps;
-  /** Zoom controls rendered above the overlays. */
-  view?: {
-    zoom: number;
-    fitted: boolean;
-    zoomable: boolean;
-    onZoomIn: () => void;
-    onZoomOut: () => void;
-    onReset: () => void;
-  };
-  /** Distance measuring controls rendered under the view section. */
-  measure?: {
-    measuring: boolean;
-    onToggleMeasuring: () => void;
-  };
-  /** Floats the sidebar over the map; used by the fullscreen mode. */
-  expanded?: boolean;
 }
 
-export function MapSidebar({
-  preview,
-  navigation,
-  onLayerChange,
-  onOverlayChange,
-  inspector,
-  view,
-  measure,
-  expanded = false,
-}: MapSidebarProps) {
+interface MapSidebarInlineProps extends MapSidebarBaseProps {
+  readonly mode?: 'inline';
+  /** Cursor readout rendered below the layer sections. */
+  inspector?: CursorReadoutProps;
+}
+
+interface MapSidebarFullscreenProps extends MapSidebarBaseProps {
+  readonly mode: 'fullscreen';
+  /** Zoom controls rendered above the overlays. */
+  view: ViewControlsProps;
+  /** Distance measuring controls rendered under the view section. */
+  measure: MeasureControlsProps;
+  /** Cursor readout rendered below the layer sections. */
+  inspector: CursorReadoutProps;
+}
+
+export type MapSidebarProps = MapSidebarInlineProps | MapSidebarFullscreenProps;
+
+export function MapSidebar(props: MapSidebarProps) {
+  const { preview, navigation, onLayerChange, onOverlayChange } = props;
   const [collapsed, setCollapsed] = useState(false);
   const [position, setPosition] = useState<PanelPosition>('middle');
   const { tabs, activeTab } = navigation;
+  const hasLayerViews = tabs.some(tab => (tab.children?.length ?? 0) > 1);
+  const overlays = <OverlayControls preview={preview} onOverlayChange={onOverlayChange} />;
+  const layerViews = hasLayerViews ? (
+    <LayerViews tabs={tabs} activeTab={activeTab} onViewChange={onLayerChange} />
+  ) : null;
+  const readout = props.inspector ? <CursorReadout {...props.inspector} /> : null;
 
-  const divider = expanded ? <Separator size='4' /> : null;
-  const rendersViews = tabs.some(tab => (tab.children?.length ?? 0) > 1);
-  const sections = (
-    <>
-      {expanded && view && (
-        <>
-          <ViewControls {...view} bare />
-          {divider}
-        </>
-      )}
-      {expanded && measure && (
-        <>
-          <MeasureControls {...measure} />
-          {divider}
-        </>
-      )}
-      <OverlayControls preview={preview} onOverlayChange={onOverlayChange} bare={expanded} />
-      {rendersViews && (
-        <>
-          {divider}
-          <LayerViews tabs={tabs} activeTab={activeTab} onViewChange={onLayerChange} />
-        </>
-      )}
-      {inspector && (
-        <>
-          {divider}
-          <CursorReadout {...inspector} bare={expanded} />
-        </>
-      )}
-    </>
-  );
-
-  if (!expanded) {
+  if (props.mode !== 'fullscreen') {
     return (
       <Flex direction='column' gap='3' className={styles.sidebar}>
-        {sections}
+        <Card size='1' variant='surface' className={styles.section}>
+          {overlays}
+        </Card>
+        {layerViews}
+        {readout && (
+          <Card size='1' variant='surface' className={`${styles.section} ${styles.card}`}>
+            {readout}
+          </Card>
+        )}
       </Flex>
     );
   }
@@ -109,7 +83,23 @@ export function MapSidebar({
           onPositionChange={setPosition}
           onCollapsedChange={setCollapsed}
         />
-        {!collapsed && sections}
+        {!collapsed && (
+          <>
+            <ViewControls {...props.view} />
+            <Separator size='4' />
+            <MeasureControls {...props.measure} />
+            <Separator size='4' />
+            {overlays}
+            {layerViews && (
+              <>
+                <Separator size='4' />
+                {layerViews}
+              </>
+            )}
+            <Separator size='4' />
+            {readout}
+          </>
+        )}
       </Flex>
     </Card>
   );

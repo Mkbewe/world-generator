@@ -13,4 +13,4 @@ export {
   createRadialPolesLayout,
   createVerticalLayout,
 } from './editor/presets';
-export type { MacroRegionLayout } from './editor/presets';
+export type { BandOverlayConfig, MacroRegionLayout } from './editor/presets';
