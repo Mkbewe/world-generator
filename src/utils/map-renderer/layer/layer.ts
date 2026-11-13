@@ -197,6 +197,22 @@ export abstract class MapLayer {
     return context;
   }
 
+  protected paintOverview(
+    signal: AbortSignal,
+    paint: (context: CanvasRenderingContext2D, target: RenderTarget) => void
+  ): void {
+    const target = this.fallbackTarget();
+    if (
+      !target ||
+      (this.overviewSurfaceTarget && targetKey(this.overviewSurfaceTarget) === targetKey(target))
+    ) {
+      return;
+    }
+    signal.throwIfAborted();
+    paint(this.surfaceContext(this.overview, target), target);
+    this.overviewSurfaceTarget = target;
+  }
+
   /** Accumulates the cost of one drawn tile or frame. */
   protected addFrameStatistics(durationMs: number, tiles: number, pixels: number): void {
     const statistics = this.statistics;

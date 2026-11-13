@@ -2,11 +2,11 @@ import { compilePalette, type PixelWriter, type RasterData, type RasterLayerSpec
 
 import type { SmoothGeometry } from './smooth-geometry';
 import { type SmoothLayerMode, SmoothLayerPainter } from './smooth-layer-painter';
-import { type RenderTarget, targetKey } from '../../preview-targets';
+import type { RenderTarget } from '../../preview-targets';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
 import { cellAtPixel } from '../../view/cell-at-pixel';
-import { yieldToBrowser } from '../geology/geology-yield';
 import { type LayerTile, MapLayer, type MapSize, type TileReporter } from '../layer';
+import { paintProgressive } from '../progressive-paint';
 
 /** Progressive raster drawing splits the frame into this many tiles per axis. */
 const TILES_PER_AXIS = 10;
@@ -74,43 +74,37 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     context: CanvasRenderingContext2D,
     onTile?: TileReporter
   ): Promise<void> {
-    const { width, height } = target;
-    const tileWidth = Math.ceil(width / TILES_PER_AXIS);
-    const tileHeight = Math.ceil(height / TILES_PER_AXIS);
-    for (let top = 0; top < height; top += tileHeight) {
-      const tileH = Math.min(tileHeight, height - top);
-      for (let left = 0; left < width; left += tileWidth) {
-        signal.throwIfAborted();
-        const tileStartedAt = performance.now();
-        const tileW = Math.min(tileWidth, width - left);
-        const image = context.createImageData(tileW, tileH);
-        this.paintTile(image.data, target, { x: left, y: top, width: tileW, height: tileH });
-        context.putImageData(image, left, top);
-        onTile?.(left, top, tileW, tileH);
-        this.addFrameStatistics(performance.now() - tileStartedAt, 1, tileW * tileH);
-        await yieldToBrowser();
-      }
-    }
+    await paintProgressive({
+      signal,
+      target,
+      columns: TILES_PER_AXIS,
+      rows: TILES_PER_AXIS,
+      onTile,
+      paint: tile => {
+        const image = context.createImageData(tile.width, tile.height);
+        this.paintTile(image.data, target, tile);
+        context.putImageData(image, tile.x, tile.y);
+      },
+      onPainted: (tile, durationMs) =>
+        this.addFrameStatistics(durationMs, 1, tile.width * tile.height),
+    });
   }
 
   /** Paints the whole map once into a small surface, the fallback for fast view changes. */
   protected renderOverview(signal: AbortSignal): void {
-    const target = this.fallbackTarget();
-    if (!target) {
-      return;
-    }
-    if (this.overviewSurfaceTarget && targetKey(this.overviewSurfaceTarget) === targetKey(target)) {
-      return;
-    }
-    signal.throwIfAborted();
-    const context = this.surfaceContext(this.overview, target);
-    const image = context.createImageData(target.width, target.height);
-    this.paintTile(image.data, target, { x: 0, y: 0, width: target.width, height: target.height });
-    if (this.overviewExtendsColors) {
-      extendOverviewColors(image.data, target.width, target.height);
-    }
-    context.putImageData(image, 0, 0);
-    this.overviewSurfaceTarget = target;
+    this.paintOverview(signal, (context, target) => {
+      const image = context.createImageData(target.width, target.height);
+      this.paintTile(image.data, target, {
+        x: 0,
+        y: 0,
+        width: target.width,
+        height: target.height,
+      });
+      if (this.overviewExtendsColors) {
+        extendOverviewColors(image.data, target.width, target.height);
+      }
+      context.putImageData(image, 0, 0);
+    });
   }
 
   sample(x: number, y: number): number | undefined {

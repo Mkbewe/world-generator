@@ -67,6 +67,56 @@ describe('MapLayer.sample', () => {
 });
 
 describe('MapLayer rendering lifecycle', () => {
+  it('repaints when only the target projection changes', async () => {
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+      }),
+      putImageData: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const layer = worldLayer({ width: 2, height: 1 }, new Uint8Array([1, 1]));
+    const first = targetFor(layer.size);
+    const shifted = { ...first, projection: { ...first.projection, left: 1 } };
+
+    try {
+      await layer.prepare(new AbortController().signal, first);
+      expect(layer.renderedTarget).toEqual(first);
+
+      await layer.prepare(new AbortController().signal, shifted);
+      expect(layer.renderedTarget).toEqual(shifted);
+    } finally {
+      layer.dispose();
+      getContext.mockRestore();
+    }
+  });
+
+  it('reuses the overview while its target stays the same', async () => {
+    const images: { width: number; height: number }[] = [];
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      createImageData: (width: number, height: number) => {
+        images.push({ width, height });
+        return { data: new Uint8ClampedArray(width * height * 4) };
+      },
+      putImageData: vi.fn(),
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    const layer = worldLayer({ width: 2, height: 1 }, new Uint8Array([1, 1]));
+    const first = targetFor(layer.size);
+    const shifted = { ...first, projection: { ...first.projection, left: 1 } };
+
+    try {
+      await layer.prepare(new AbortController().signal, first);
+      images.length = 0;
+
+      await layer.prepare(new AbortController().signal, shifted);
+      expect(images).toHaveLength(2);
+    } finally {
+      layer.dispose();
+      getContext.mockRestore();
+    }
+  });
+
   it('extends overview edge colors for an opaque clipped fallback', async () => {
     const images: Uint8ClampedArray[] = [];
     const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({

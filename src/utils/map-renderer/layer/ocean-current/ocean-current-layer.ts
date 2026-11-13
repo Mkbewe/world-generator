@@ -1,5 +1,5 @@
 import { sampleOceanCurrentArrows, traceOceanCurrentArrows } from '../../ocean-current';
-import { type RenderTarget, targetKey } from '../../preview-targets';
+import type { RenderTarget } from '../../preview-targets';
 import type { LayerHit, MapBaseLayerId, SpatialMask } from '../../types';
 import { effectivePixelRatio } from '../../viewport';
 import type { VectorLayerFactory } from '../factories/vector-layer-factory';
@@ -63,17 +63,7 @@ export class OceanCurrentLayer extends MapLayer {
   }
 
   protected renderOverview(signal: AbortSignal): void {
-    const target = this.fallbackTarget();
-    if (
-      !target ||
-      (this.overviewSurfaceTarget && targetKey(this.overviewSurfaceTarget) === targetKey(target))
-    ) {
-      return;
-    }
-    signal.throwIfAborted();
-    const context = this.surfaceContext(this.overview, target);
-    this.paint(context, target);
-    this.overviewSurfaceTarget = target;
+    this.paintOverview(signal, (context, target) => this.paint(context, target));
   }
 
   private paint(context: CanvasRenderingContext2D, target: RenderTarget): void {

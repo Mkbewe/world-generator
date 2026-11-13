@@ -3,8 +3,7 @@ import type { GeologyPlan, WorldPoint } from '@generator/types';
 import { geologyRegionColor } from '@layers';
 
 import { paintLabels, regionCentres } from './geology-labels';
-import { yieldToBrowser } from './geology-yield';
-import { type RenderTarget, targetKey } from '../../preview-targets';
+import type { RenderTarget } from '../../preview-targets';
 import type { LayerHit, MapBaseLayerId, MapFeatureSelection, SpatialMask } from '../../types';
 import type { VectorLayerFactory } from '../factories/vector-layer-factory';
 import {
@@ -13,6 +12,7 @@ import {
   MapLayer,
   type MapSize,
 } from '../layer';
+import { paintProgressive } from '../progressive-paint';
 import { regionBorderSegments, strokeRegionBorders } from '../region-preview/region-preview-border';
 import {
   extendRegionOwners,
@@ -125,32 +125,22 @@ export class GeologyPlanVectorLayer extends MapLayer {
     target: RenderTarget,
     context: CanvasRenderingContext2D
   ): Promise<void> {
-    const tileHeight = Math.ceil(target.height / FRAME_STRIPES);
-    for (let top = 0; top < target.height; top += tileHeight) {
-      signal.throwIfAborted();
-      const height = Math.min(tileHeight, target.height - top);
-      const startedAt = performance.now();
-      this.paintTile(context, target, 0, top, target.width, height);
-      this.addFrameStatistics(performance.now() - startedAt, 1, target.width * height);
-      if (top + height < target.height) {
-        await yieldToBrowser();
-      }
-    }
+    await paintProgressive({
+      signal,
+      target,
+      columns: 1,
+      rows: FRAME_STRIPES,
+      paint: tile => this.paintTile(context, target, tile.x, tile.y, tile.width, tile.height),
+      onPainted: (tile, durationMs) =>
+        this.addFrameStatistics(durationMs, 1, tile.width * tile.height),
+    });
     this.paintRegionLabels(context, target);
   }
 
   protected renderOverview(signal: AbortSignal): void {
-    const target = this.fallbackTarget();
-    if (
-      !target ||
-      (this.overviewSurfaceTarget && targetKey(this.overviewSurfaceTarget) === targetKey(target))
-    ) {
-      return;
-    }
-    signal.throwIfAborted();
-    const context = this.surfaceContext(this.overview, target);
-    this.paintTile(context, target, 0, 0, target.width, target.height, false);
-    this.overviewSurfaceTarget = target;
+    this.paintOverview(signal, (context, target) => {
+      this.paintTile(context, target, 0, 0, target.width, target.height, false);
+    });
   }
 
   protected statisticsDetails(): Partial<LayerRenderStatistics> {
