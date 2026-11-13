@@ -35,7 +35,7 @@ describe('GeologyForm', () => {
     expect(screen.getByLabelText('Regions')).toBeInTheDocument();
     expect(screen.getByLabelText('Evenness')).toBeInTheDocument();
     expect(screen.getByLabelText('Border irregularity')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Region 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Region 1' })).toBeInTheDocument();
     expect(screen.getByLabelText('Geology region areas')).toBeInTheDocument();
     expect(screen.queryByText('Add area')).not.toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe('GeologyForm', () => {
     await user.click(screen.getByRole('button', { name: 'Mosaic' }));
 
     expect(useGeologyFormStore.getState().regionCount).toBe(5);
-    expect(screen.getByRole('tab', { name: 'Region 5' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Region 5' })).toBeInTheDocument();
   });
 
   it('uses map colours on the area bar', () => {
@@ -95,7 +95,7 @@ describe('GeologyForm', () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole('tab', { name: 'Region 2' }));
+    await user.click(screen.getByRole('button', { name: 'Region 2' }));
     await user.click(screen.getAllByText('Volcanic')[0] ?? screen.getByText('Volcanic'));
 
     const slots = useGeologyFormStore.getState().slots;
@@ -107,7 +107,7 @@ describe('GeologyForm', () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole('tab', { name: 'Region 3' }));
+    await user.click(screen.getByRole('button', { name: 'Region 3' }));
 
     expect(useViewSyncStore.getState().selectedFeature).toEqual({
       layerId: 'geology',

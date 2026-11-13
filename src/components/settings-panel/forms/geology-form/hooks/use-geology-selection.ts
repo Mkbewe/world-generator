@@ -7,8 +7,9 @@ import { regionId, regionIndex } from '../../lib/region-id';
 
 export interface GeologySelection {
   readonly selectedIndex: number;
+  readonly selectedId: string;
   readonly region: GeologicalRegionConfig;
-  selectRegion(index: number): void;
+  selectRegionById(id: string): void;
 }
 
 /**
@@ -34,8 +35,9 @@ export function useGeologySelection(
 
   return {
     selectedIndex,
+    selectedId: activeRegionId,
     region: slots[selectedIndex] ?? defaultRegionConfig(),
-    selectRegion: index => selectFeature({ layerId: 'geology', featureId: regionId(index) }),
+    selectRegionById: id => selectFeature({ layerId: 'geology', featureId: id }),
   };
 }
 

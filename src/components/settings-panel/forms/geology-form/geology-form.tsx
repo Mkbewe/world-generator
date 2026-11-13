@@ -15,9 +15,9 @@ import { useRegionDistribution } from './hooks/use-region-distribution';
 import { PRESET_OPTIONS } from './lib/preset-options';
 import { RegionEditor } from './region-editor';
 import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
+import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../color-swatch-tabs';
 import { DistributionBar } from '../../../distribution-bar';
 import { percent } from '../../../lib/percent';
-import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';
 import { regionId } from '../lib/region-id';
 import { GEOLOGY_SHARE_COPY } from '../lib/share-copy';
@@ -37,12 +37,15 @@ export function GeologyForm(): React.JSX.Element {
   const resetRegionTerrains = useHeightmapFormStore(state => state.resetRegionTerrains);
   const activeSlots = slots.slice(0, regionCount);
   const regionTypes = activeSlots.map(slot => slot.type);
-  const tabItems: readonly RegionTabItem[] = regionTypes.map((type, index) => ({
+  const tabItems: readonly ColorSwatchTabOption[] = regionTypes.map((type, index) => ({
     id: regionId(index),
     label: t('common.regionName', { index: index + 1 }),
     color: geologyRegionColor(type, index),
   }));
-  const { selectedIndex, region, selectRegion } = useGeologySelection(regionCount, slots);
+  const { selectedIndex, selectedId, region, selectRegionById } = useGeologySelection(
+    regionCount,
+    slots
+  );
   const { segments, draft, minShare } = useRegionDistribution(activeSlots, setRegionShareBoundary);
   const distributionSegments = segments.map((segment, index) => ({
     ...segment,
@@ -126,10 +129,10 @@ export function GeologyForm(): React.JSX.Element {
         rangeLabels={[t('forms.geology.rangeClean'), t('forms.geology.rangeRagged')]}
         onChange={irregularity => setLayout({ irregularity })}
       />
-      <RegionTabs
+      <ColorSwatchTabs
         items={tabItems}
-        selectedIndex={selectedIndex}
-        onSelect={selectRegion}
+        selectedId={selectedId}
+        onSelect={selectRegionById}
         ariaLabel={t('forms.geology.regionsAria')}
       />
       <RegionEditor index={selectedIndex} region={region} onChange={changeRegion} />

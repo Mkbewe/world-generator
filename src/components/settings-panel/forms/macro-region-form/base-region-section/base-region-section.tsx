@@ -4,11 +4,11 @@ import { regionColor } from '@layers';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
+import { useIdSelection } from '../../../../../hooks/use-id-selection';
 import { useMacroRegionFormStore } from '../../../../../stores';
+import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../../color-swatch-tabs';
 import { DistributionBar, useBoundaryDraft } from '../../../../distribution-bar';
-import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { macroRegionShareCopy } from '../../lib/share-copy';
-import { useMacroRegionSelection } from '../hooks/use-macro-region-selection';
 import {
   baseRegions,
   clampBoundaries,
@@ -26,7 +26,7 @@ export function BaseRegionSection() {
   const setRegionBoundaries = useMacroRegionFormStore(state => state.setRegionBoundaries);
   const addBaseRegion = useMacroRegionFormStore(state => state.addBaseRegion);
   const base = baseRegions(regions);
-  const { region, selectedIndex, selectRegion } = useMacroRegionSelection(base);
+  const { selectedItem: region, selectedIndex, selectedId, selectId } = useIdSelection(base);
   const segments = regionSegments(layout, regions);
   const boundaries = regionBoundaries(layout, regions);
   const draft = useBoundaryDraft(
@@ -40,7 +40,7 @@ export function BaseRegionSection() {
   );
   const atLimit = regions.length >= MAX_MACRO_REGIONS;
   const shareCopy = macroRegionShareCopy(layout === 'radial' ? 'ring' : 'band');
-  const tabItems: readonly RegionTabItem[] = base.map((item, index) => ({
+  const tabItems: readonly ColorSwatchTabOption[] = base.map((item, index) => ({
     id: item.id,
     label: item.label,
     color: regionColor(index),
@@ -66,10 +66,10 @@ export function BaseRegionSection() {
           description: t(shareCopy.descriptionKey),
         }}
       />
-      <RegionTabs
+      <ColorSwatchTabs
         items={tabItems}
-        selectedIndex={selectedIndex}
-        onSelect={selectRegion}
+        selectedId={selectedId}
+        onSelect={selectId}
         ariaLabel={t('forms.macroRegion.baseRegionsAria')}
       />
       {region && (
