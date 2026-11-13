@@ -1,13 +1,13 @@
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
+import { buildProgressViewModel, type ProgressSource } from './lib/progress-view-model';
 import { GenerationProgress } from './generation-progress';
-import type { GenerationProgressState } from '../../stores';
 
-function renderProgress(progress: GenerationProgressState) {
+function renderProgress(source: ProgressSource) {
   return render(
     <Theme>
-      <GenerationProgress progress={progress} />
+      <GenerationProgress model={buildProgressViewModel(source)} />
     </Theme>
   );
 }
@@ -85,8 +85,7 @@ describe('GenerationProgress', () => {
       ],
     });
 
-    expect(screen.getByText('1 / 3, 2 skipped')).toBeInTheDocument();
-    expect(screen.getAllByText('Skipped')).toHaveLength(2);
+    expect(screen.getByText('1 / 3 · skipped: 2')).toBeInTheDocument();
     expect(screen.getByText('300 ms')).toBeInTheDocument();
   });
 
