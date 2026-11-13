@@ -108,7 +108,7 @@ statistics snapshot as JSON.
 - `src/stores` holds global UI state: form values per settings tab, generation
   progress and statistics, map config, preview selection and render statistics.
 - `src/components/generation-progress` renders the current stage and progress.
-- `docs/world-generation-roadmap.md` describes the pipeline, the current and
+- `docs/roadmap.md` describes the pipeline, the current and
   planned stages, and future layer contracts, with per-section status markers.
 
 ## Branching strategy
