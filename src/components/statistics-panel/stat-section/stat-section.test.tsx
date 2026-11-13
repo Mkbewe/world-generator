@@ -39,4 +39,24 @@ describe('StatSection', () => {
     expect(screen.getByText('Cells')).toBeInTheDocument();
     expect(screen.getByText('2,000')).toBeInTheDocument();
   });
+
+  it('keeps the real duration of a reused section and marks it', () => {
+    render(
+      <Theme>
+        <StatSection section={{ ...section, reused: true }} />
+      </Theme>
+    );
+
+    expect(screen.getByText('20.0 ms · reused')).toBeInTheDocument();
+  });
+
+  it('shows only the reused marker when the recorded duration is zero', () => {
+    render(
+      <Theme>
+        <StatSection section={{ ...section, reused: true, durationMs: 0 }} />
+      </Theme>
+    );
+
+    expect(screen.getByText('reused')).toBeInTheDocument();
+  });
 });

@@ -49,6 +49,14 @@ describe('view sync store', () => {
     expect(useViewSyncStore.getState().selectedFeature).toBeUndefined();
   });
 
+  it('keeps the active settings tab when no target tab is provided', () => {
+    useViewSyncStore.setState({ settingsTab: 'heightmap' });
+
+    useViewSyncStore.getState().selectFeature({ layerId: 'geology', featureId: 'region-3' });
+
+    expect(useViewSyncStore.getState().settingsTab).toBe('heightmap');
+  });
+
   it('updates the feature and settings tab together when a target tab is provided', () => {
     useViewSyncStore
       .getState()
@@ -58,6 +66,16 @@ describe('view sync store', () => {
       selectedFeature: { layerId: 'geology', featureId: 'region-3' },
       settingsTab: 'heightmap',
     });
+  });
+
+  it('accepts the general tab as an explicit target', () => {
+    useViewSyncStore.setState({ settingsTab: 'geology' });
+
+    useViewSyncStore
+      .getState()
+      .selectFeature({ layerId: 'geology', featureId: 'region-3' }, 'general');
+
+    expect(useViewSyncStore.getState().settingsTab).toBe('general');
   });
 
   it('returns the feature id only for the matching layer', () => {

@@ -1,9 +1,9 @@
 import type { RefObject } from 'react';
+import type { Measurement } from '@readout';
+import type { ViewTransform } from '@renderer';
 
 import { calculateMeasurementGeometry } from './lib/measure-geometry';
 import { useElementSize } from '../../hooks/use-element-size';
-import type { Measurement } from '../../utils/map-readout';
-import type { ViewTransform } from '../../utils/map-renderer';
 import type { WorldDimensions } from '../../utils/world-dimensions';
 import styles from './map-measure.module.scss';
 
