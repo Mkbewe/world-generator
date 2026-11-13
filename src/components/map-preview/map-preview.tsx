@@ -126,6 +126,19 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     setMeasuring,
     onClearMeasurement: measurement.clear,
   });
+  const sidebarProps = {
+    preview,
+    navigation: navigationState,
+    onLayerChange: handleLayerChange,
+    onOverlayChange: handleOverlayChange,
+    inspector: {
+      items: readoutItems(readout.readout, preview.info, measurement.measurement, {
+        actions: !isFullscreen,
+      }),
+      pinned: readout.pinned,
+      onAction: handleReadoutAction,
+    },
+  };
 
   return (
     <Card
@@ -159,22 +172,11 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             {canvasChildren}
           </MapCanvas>
           <div className={styles.spacer} aria-hidden='true' />
-          <MapSidebar
-            preview={preview}
-            navigation={navigationState}
-            onLayerChange={handleLayerChange}
-            onOverlayChange={handleOverlayChange}
-            inspector={{
-              items: readoutItems(readout.readout, preview.info, measurement.measurement, {
-                actions: !isFullscreen,
-              }),
-              pinned: readout.pinned,
-              onAction: handleReadoutAction,
-            }}
-            view={view}
-            measure={measure}
-            expanded={isFullscreen}
-          />
+          {isFullscreen ? (
+            <MapSidebar {...sidebarProps} mode='fullscreen' view={view} measure={measure} />
+          ) : (
+            <MapSidebar {...sidebarProps} />
+          )}
         </Flex>
         {preview.error && (
           <Text size='2' color='red' role='alert'>

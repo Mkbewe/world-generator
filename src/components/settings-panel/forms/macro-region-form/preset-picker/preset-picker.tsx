@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Flex, RadioCards, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
-import { MACRO_REGION_PRESETS, type MacroRegionPresetId } from '../lib/presets';
+import { MACRO_REGION_PRESETS } from '../lib/presets';
 
 export function PresetPicker() {
   const { t } = useTranslation();
@@ -19,7 +19,12 @@ export function PresetPicker() {
         gap='2'
         size='1'
         value={activePreset ?? ''}
-        onValueChange={value => applyPreset(value as MacroRegionPresetId)}
+        onValueChange={value => {
+          const preset = MACRO_REGION_PRESETS.find(item => item.id === value);
+          if (preset) {
+            applyPreset(preset.id);
+          }
+        }}
       >
         {MACRO_REGION_PRESETS.map(preset => (
           <RadioCards.Item key={preset.id} value={preset.id}>

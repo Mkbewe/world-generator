@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { MAX_VIEW_SCALE, MIN_VIEW_SCALE } from '@renderer';
 import { MagnifyingGlassIcon, MinusIcon, PlusIcon, ResetIcon } from '@radix-ui/react-icons';
-import { Button, Card, Flex, IconButton, Text } from '@radix-ui/themes';
+import { Button, Flex, IconButton, Text } from '@radix-ui/themes';
 
 import styles from './view-controls.module.scss';
 
-interface ViewControlsProps {
+export interface ViewControlsProps {
   /** Current zoom relative to the fitted view; the default zoom shows the whole map. */
   zoom: number;
   /** Whether the view is the default fitted placement. */
@@ -15,8 +15,6 @@ interface ViewControlsProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
-  /** Renders without its own card, for use inside a shared panel. */
-  bare?: boolean;
 }
 
 export function ViewControls({
@@ -26,10 +24,10 @@ export function ViewControls({
   onZoomIn,
   onZoomOut,
   onReset,
-  bare = false,
 }: ViewControlsProps) {
   const { t } = useTranslation();
-  const content = (
+
+  return (
     <Flex direction='column' gap='3'>
       <Flex align='center' justify='between' gap='3'>
         <Flex align='center' gap='2' className={styles.title}>
@@ -85,15 +83,5 @@ export function ViewControls({
         </Flex>
       )}
     </Flex>
-  );
-
-  if (bare) {
-    return content;
-  }
-
-  return (
-    <Card size='1' variant='surface' className={styles.view}>
-      {content}
-    </Card>
   );
 }

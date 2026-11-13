@@ -1,6 +1,12 @@
 import type { MacroRegionConfig } from '@generator/types';
 
+import type { BandGeometry } from '../../../geometry';
+
 export type MacroRegionLayout = 'radial' | 'horizontal' | 'vertical';
+export type BandOverlayConfig = MacroRegionConfig & {
+  readonly role: 'overlay';
+  readonly geometry: BandGeometry;
+};
 
 const RADIAL_EXTENT = 0.5;
 const POLE_IRREGULARITY = 0.03;
@@ -54,7 +60,7 @@ export function createBandOverlay(
   center = 0.5,
   width = 0.2,
   danger = 1
-): MacroRegionConfig {
+): BandOverlayConfig {
   return {
     id,
     label,

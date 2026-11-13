@@ -76,6 +76,16 @@ function FullscreenBridge() {
   );
 }
 
+function renderWorldGenerator() {
+  return render(
+    <Theme>
+      <HeaderActionsProvider>
+        <WorldGenerator />
+      </HeaderActionsProvider>
+    </Theme>
+  );
+}
+
 describe('WorldGenerator', () => {
   beforeEach(() => {
     runGenerationMock.mockReset();
@@ -125,11 +135,7 @@ describe('WorldGenerator', () => {
       return pendingRun(options);
     });
     const disposeRenderer = vi.spyOn(MapRenderer.prototype, 'dispose');
-    const { unmount } = render(
-      <Theme>
-        <WorldGenerator />
-      </Theme>
-    );
+    const { unmount } = renderWorldGenerator();
     await userEvent.setup().click(screen.getByTestId('generate-map-button'));
     expect(runGenerationMock).toHaveBeenCalledOnce();
 
@@ -141,11 +147,7 @@ describe('WorldGenerator', () => {
     expect(disposeRenderer).toHaveBeenCalledOnce();
 
     const add = vi.spyOn(MapRenderer.prototype, 'add');
-    render(
-      <Theme>
-        <WorldGenerator />
-      </Theme>
-    );
+    renderWorldGenerator();
     const config = runConfig;
     if (!config) {
       throw new Error('Expected the run configuration.');
@@ -168,11 +170,7 @@ describe('WorldGenerator', () => {
       new Error('Pipeline completed without all required map data.')
     );
 
-    render(
-      <Theme>
-        <WorldGenerator />
-      </Theme>
-    );
+    renderWorldGenerator();
 
     await user.click(screen.getByTestId('generate-map-button'));
 
@@ -215,11 +213,7 @@ describe('WorldGenerator', () => {
       });
     });
 
-    render(
-      <Theme>
-        <WorldGenerator />
-      </Theme>
-    );
+    renderWorldGenerator();
 
     await user.click(screen.getByTestId('generate-map-button'));
     await act(async () => {});
@@ -250,11 +244,7 @@ describe('WorldGenerator', () => {
       return pendingRun(options);
     });
 
-    render(
-      <Theme>
-        <WorldGenerator />
-      </Theme>
-    );
+    renderWorldGenerator();
     await userEvent.setup().click(screen.getByTestId('generate-map-button'));
     await act(async () => {});
 
@@ -291,21 +281,13 @@ describe('WorldGenerator', () => {
       ],
     });
 
-    const { unmount } = render(
-      <Theme>
-        <WorldGenerator />
-      </Theme>
-    );
+    const { unmount } = renderWorldGenerator();
     expect(screen.getByText('Complete')).toBeInTheDocument();
 
     await act(async () => {
       unmount();
     });
-    render(
-      <Theme>
-        <WorldGenerator />
-      </Theme>
-    );
+    renderWorldGenerator();
 
     expect(screen.getByText('Complete')).toBeInTheDocument();
   });

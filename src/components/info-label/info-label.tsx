@@ -5,7 +5,7 @@ import styles from './info-label.module.scss';
 
 interface InfoLabelProps {
   label: string;
-  description: string;
+  description?: string;
 }
 
 export function InfoLabel({ label, description }: InfoLabelProps) {

@@ -3,7 +3,7 @@ import { Button, Flex, Text } from '@radix-ui/themes';
 
 import styles from './measure-controls.module.scss';
 
-interface MeasureControlsProps {
+export interface MeasureControlsProps {
   /** Whether clicks on the map add measurement points. */
   measuring: boolean;
   onToggleMeasuring: () => void;

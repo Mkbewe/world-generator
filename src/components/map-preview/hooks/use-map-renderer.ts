@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { emptyRenderState, type MapOverlayId, MapRenderer, type MapRendererState } from '@renderer';
+import { OVERLAY_IDS } from '@layers';
+import { emptyRenderState, MapRenderer, type MapRendererState } from '@renderer';
 
 import { usePreviewStore, useRenderStatisticsStore } from '../../../stores';
 import type { LayerNavigation } from '../lib/layer-navigation';
@@ -32,9 +33,10 @@ export function useMapRenderer({ navigation, onReady }: UseMapRendererOptions) {
       shouldDisplay: id => navigation.leadsToSelection(id, usePreviewStore.getState().layerTree),
       onRenderStatistics: setRenderStatistics,
     });
-    for (const [id, visible] of Object.entries(overlays)) {
+    for (const id of OVERLAY_IDS) {
+      const visible = overlays[id];
       if (visible !== undefined) {
-        renderer.setOverlay(id as MapOverlayId, visible);
+        renderer.setOverlay(id, visible);
       }
     }
     rendererRef.current = renderer;

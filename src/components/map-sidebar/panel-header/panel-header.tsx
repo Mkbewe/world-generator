@@ -8,7 +8,11 @@ import {
 } from '@radix-ui/react-icons';
 import { Flex, IconButton, SegmentedControl, Text } from '@radix-ui/themes';
 
-export type PanelPosition = 'top' | 'middle' | 'bottom';
+import { isOneOf } from '../../lib/option-value';
+
+const PANEL_POSITIONS = ['top', 'middle', 'bottom'] as const;
+
+export type PanelPosition = (typeof PANEL_POSITIONS)[number];
 
 interface PanelHeaderProps {
   collapsed: boolean;
@@ -39,7 +43,11 @@ export function PanelHeader({
           size='1'
           aria-label={t('panelHeader.position')}
           value={position}
-          onValueChange={value => onPositionChange(value as PanelPosition)}
+          onValueChange={value => {
+            if (isOneOf(value, PANEL_POSITIONS)) {
+              onPositionChange(value);
+            }
+          }}
         >
           <SegmentedControl.Item value='top' aria-label={t('panelHeader.moveTop')}>
             <ArrowUpIcon />

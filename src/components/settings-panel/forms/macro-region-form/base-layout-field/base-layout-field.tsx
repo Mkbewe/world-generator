@@ -3,7 +3,14 @@ import type { MacroRegionLayout } from '@generator/stages/macro-region/editor/pr
 import { Flex, SegmentedControl, Text } from '@radix-ui/themes';
 
 import { useMacroRegionFormStore } from '../../../../../stores';
+import { isOneOf } from '../../../../lib/option-value';
 import { SegmentedControlScroll } from '../../../../segmented-control-scroll';
+
+const MACRO_REGION_LAYOUTS = [
+  'radial',
+  'horizontal',
+  'vertical',
+] as const satisfies readonly MacroRegionLayout[];
 
 export function BaseLayoutField() {
   const { t } = useTranslation();
@@ -18,7 +25,11 @@ export function BaseLayoutField() {
       <SegmentedControlScroll>
         <SegmentedControl.Root
           value={layout}
-          onValueChange={value => applyLayout(value as MacroRegionLayout)}
+          onValueChange={value => {
+            if (isOneOf(value, MACRO_REGION_LAYOUTS)) {
+              applyLayout(value);
+            }
+          }}
         >
           <SegmentedControl.Item value='radial'>
             {t('forms.macroRegion.layoutRadial')}

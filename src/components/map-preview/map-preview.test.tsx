@@ -37,7 +37,9 @@ function renderPreview() {
   return {
     ...render(
       <Theme>
-        <MapPreview onReady={onReady} progressKey={0} />
+        <HeaderActionsProvider>
+          <MapPreview onReady={onReady} progressKey={0} />
+        </HeaderActionsProvider>
       </Theme>
     ),
     renderer,
