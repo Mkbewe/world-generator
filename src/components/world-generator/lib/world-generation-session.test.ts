@@ -4,16 +4,17 @@ import {
   type PipelineWorkerGenerationResult,
   type RunGeneration,
   type StageInfo,
-  type StageStatistics,
 } from '@generator';
-import { PIPELINE_STAGES } from '@generator/pipeline/stage-definitions';
 import { DEFAULT_MACRO_REGIONS } from '@generator/stages/macro-region/defaults';
-import { MapRenderer, mapRepository } from '@renderer';
+import { type GeneratedMapSnapshot, MapRenderer, mapRepository } from '@renderer';
 import { MapLayer } from '@renderer/layer';
 import { Viewport } from '@renderer/viewport';
-import type { MapRasters } from '@layers';
 
 import { WorldGenerationSession } from './world-generation-session';
+import type {
+  WorldGenerationCacheEntry,
+  WorldGenerationSnapshot,
+} from '../../../application/world-generation';
 import { PREVIEW_DEFAULTS, usePreviewStore } from '../../../stores';
 
 const config: MapConfig = {
@@ -48,21 +49,6 @@ function completed(stageId: string, data: Record<string, unknown>): GenerationEv
   };
 }
 
-function stageStatistics(
-  stageId: string,
-  status: StageStatistics['status'],
-  durationMs: number
-): StageStatistics {
-  return {
-    stageId,
-    stageNameKey: 'stages.worldShape',
-    status,
-    startedAt: 0,
-    finishedAt: durationMs,
-    durationMs,
-  };
-}
-
 function skipped(stageId: string): GenerationEvent {
   return {
     type: 'stage-skipped',
@@ -82,6 +68,11 @@ function skipped(stageId: string): GenerationEvent {
 }
 
 describe('WorldGenerationSession', () => {
+  it('keeps the generation snapshot compatible with the renderer repository', () => {
+    expectTypeOf<WorldGenerationSnapshot>().toMatchTypeOf<GeneratedMapSnapshot>();
+    expectTypeOf<GeneratedMapSnapshot>().toMatchTypeOf<WorldGenerationCacheEntry>();
+  });
+
   let renderer: MapRenderer;
   let runner: ReturnType<typeof vi.fn<RunGeneration>>;
   let session: WorldGenerationSession;
@@ -168,78 +159,6 @@ describe('WorldGenerationSession', () => {
     expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regions);
     expect(renderer.state.displayedLayer).toBe('macro-region');
     expect(onProgress.mock.lastCall?.[0].status).toBe('completed');
-  });
-
-  it('recomputes only the stages affected by the configuration change', async () => {
-    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
-    const withRegions = { ...config, macroRegions: DEFAULT_MACRO_REGIONS };
-    const planned = () => runner.mock.lastCall?.[1]?.reuse.dirtyStageIds;
-
-    await session.generate(config, vi.fn());
-    expect(planned()).toEqual(PIPELINE_STAGES.map(stage => stage.id));
-
-    await session.generate(withRegions, vi.fn());
-    expect(planned()).toEqual(['macro-region']);
-
-    await session.generate(withRegions, vi.fn());
-    expect(planned()).toEqual([]);
-  });
-
-  it('drops a snapshot with keys outside the persistent output set', async () => {
-    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
-    await session.generate(config, vi.fn());
-    // The same config would normally reuse everything, so a stale snapshot must
-    // also reset the baseline, not only its rasters.
-    mapRepository.save({
-      width: 2,
-      height: 2,
-      seed: '17',
-      shape: 'disc',
-      layers: {
-        worldMask: new Uint8Array(4).fill(1),
-        legacyMap: new Uint8Array(4),
-      } as unknown as MapRasters,
-    });
-
-    await session.generate(config, vi.fn());
-
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(
-      PIPELINE_STAGES.map(stage => stage.id)
-    );
-    expect(mapRepository.get()?.layers).not.toHaveProperty('legacyMap');
-  });
-
-  it('reuses the saved rasters for the clean stages', async () => {
-    const mask = new Uint8Array(4).fill(1);
-    const regions = new Uint8Array(4);
-    let run = 0;
-    runner.mockImplementation(async (_, options) => {
-      run += 1;
-      options?.onStages?.(stages, []);
-      if (run === 1) {
-        options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      } else {
-        options?.onEvent?.(skipped('world-shape'));
-      }
-      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
-      return { statistics: [], totalDurationMs: 1 };
-    });
-    session.attach(renderer);
-
-    await session.generate(config, vi.fn());
-    await renderer.ready;
-    await session.generate({ ...config, macroRegions: DEFAULT_MACRO_REGIONS }, vi.fn());
-    await renderer.ready;
-
-    expect(runner.mock.lastCall?.[1]?.reuse).toEqual({
-      dirtyStageIds: ['macro-region'],
-      cachedState: { worldMask: mask, macroRegionIdMap: regions },
-    });
-    expect(mapRepository.get()?.layers).toMatchObject({
-      worldMask: mask,
-      macroRegionIdMap: regions,
-    });
-    expect(renderer.state.displayedLayer).toBe('macro-region');
   });
 
   it('keeps the previous map visible and prepares only the new layers', async () => {
@@ -330,71 +249,6 @@ describe('WorldGenerationSession', () => {
     expect(renderer.state.displayedLayer).toBe('world-shape');
   });
 
-  it('keeps the real statistics of stages reused by the next run', async () => {
-    const mask = new Uint8Array(4).fill(1);
-    const regions = new Uint8Array(4);
-    let run = 0;
-    runner.mockImplementation(async (_, options) => {
-      run += 1;
-      options?.onStages?.(stages, []);
-      if (run === 1) {
-        options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-        options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
-        return {
-          statistics: [
-            stageStatistics('world-shape', 'completed', 120),
-            stageStatistics('macro-region', 'completed', 40),
-          ],
-          totalDurationMs: 160,
-        };
-      }
-      options?.onEvent?.(skipped('world-shape'));
-      options?.onEvent?.(completed('macro-region', { macroRegionIdMap: regions }));
-      return {
-        statistics: [
-          stageStatistics('world-shape', 'skipped', 0),
-          stageStatistics('macro-region', 'completed', 40),
-        ],
-        totalDurationMs: 40,
-      };
-    });
-
-    await session.generate(config, vi.fn());
-    const second = await session.generate(
-      { ...config, macroRegions: DEFAULT_MACRO_REGIONS },
-      vi.fn()
-    );
-
-    expect(
-      second?.statistics.map(stage => [stage.stageId, stage.status, stage.durationMs])
-    ).toEqual([
-      ['world-shape', 'skipped', 120],
-      ['macro-region', 'completed', 40],
-    ]);
-    expect(second?.totalDurationMs).toBe(40);
-  });
-
-  it('keeps the saved map and the baseline when a run fails', async () => {
-    const mask = new Uint8Array(4).fill(1);
-    runner.mockImplementation(async (_, options) => {
-      options?.onStages?.(stages, []);
-      options?.onEvent?.(completed('world-shape', { worldMask: mask }));
-      return { statistics: [], totalDurationMs: 1 };
-    });
-    await session.generate(config, vi.fn());
-    const saved = mapRepository.get();
-
-    const changed = { ...config, macroRegions: DEFAULT_MACRO_REGIONS };
-    runner.mockRejectedValue(new Error('generation failed'));
-    await expect(session.generate(changed, vi.fn())).rejects.toThrow('generation failed');
-
-    expect(mapRepository.get()).toBe(saved);
-
-    runner.mockResolvedValue({ statistics: [], totalDurationMs: 1 });
-    await session.generate(changed, vi.fn());
-    expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['macro-region']);
-  });
-
   it('rejects invalid raster payloads without saving an incomplete map', async () => {
     session.attach(renderer);
     const add = vi.spyOn(renderer, 'add');
@@ -474,14 +328,6 @@ describe('WorldGenerationSession', () => {
     expect(add).not.toHaveBeenCalled();
     expect(mapRepository.get()?.layers.worldMask).toBe(mask);
     expect(mapRepository.get()?.layers.macroRegionIdMap).toBe(regions);
-  });
-
-  it('does not save when the generator rejects its incomplete result', async () => {
-    session.attach(renderer);
-    runner.mockRejectedValue(new Error('Pipeline completed without all required map data.'));
-
-    await expect(session.generate(config, vi.fn())).rejects.toThrow('required map data');
-    expect(mapRepository.get()).toBeUndefined();
   });
 
   it('cancels generation while allowing queued rendering to finish', async () => {

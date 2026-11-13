@@ -55,6 +55,7 @@ module.exports = [
         },
       },
       'boundaries/elements': [
+        { type: 'application', pattern: 'src/application/**', partialMatch: false },
         { type: 'generator', pattern: 'src/utils/map-generator/**', partialMatch: false },
         { type: 'layers', pattern: 'src/utils/map-layers/**', partialMatch: false },
         { type: 'renderer', pattern: 'src/utils/map-renderer/**', partialMatch: false },
@@ -87,6 +88,7 @@ module.exports = [
                 { to: { element: { type: 'layers' } } },
                 { to: { element: { type: 'renderer' } } },
                 { to: { element: { type: 'readout' } } },
+                { to: { element: { type: 'application' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -104,6 +106,7 @@ module.exports = [
             {
               from: [{ element: { type: 'renderer' } }],
               disallow: [
+                { to: { element: { type: 'application' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -121,6 +124,7 @@ module.exports = [
               from: [{ element: { type: 'layers' } }],
               disallow: [
                 { to: { element: { type: 'renderer' } } },
+                { to: { element: { type: 'application' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -137,6 +141,7 @@ module.exports = [
             {
               from: [{ element: { type: 'readout' } }],
               disallow: [
+                { to: { element: { type: 'application' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -149,6 +154,25 @@ module.exports = [
                 { to: { element: { type: 'api' } } },
               ],
               message: 'Map readout must stay independent of UI layers.',
+            },
+            {
+              from: [{ element: { type: 'application' } }],
+              disallow: [
+                { to: { element: { type: 'renderer' } } },
+                { to: { element: { type: 'stores' } } },
+                { to: { element: { type: 'components' } } },
+                { to: { element: { type: 'layouts' } } },
+                { to: { element: { type: 'pages' } } },
+                { to: { element: { type: 'hooks' } } },
+                { to: { element: { type: 'i18n' } } },
+                { to: { element: { type: 'feature-flags' } } },
+                { to: { element: { type: 'config' } } },
+                { to: { element: { type: 'theme' } } },
+                { to: { element: { type: 'legacy-generator' } } },
+                { to: { element: { type: 'app' } } },
+                { to: { element: { type: 'api' } } },
+              ],
+              message: 'The application layer must stay independent of rendering and UI.',
             },
           ],
         },
