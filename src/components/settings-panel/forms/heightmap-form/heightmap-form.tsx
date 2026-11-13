@@ -9,7 +9,7 @@ import {
 import { geologyRegionColor } from '@layers';
 import { Flex } from '@radix-ui/themes';
 
-import { RegionTerrainEditor } from './region-terrain-editor';
+import { HeightmapTerrainCard } from './heightmap-terrain-card';
 import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
 import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../color-swatch-tabs';
 import { percent } from '../../../lib/percent';
@@ -70,10 +70,15 @@ export function HeightmapForm(): React.JSX.Element {
         onSelect={selectRegionById}
         ariaLabel={t('forms.heightmap.regionsAria')}
       />
-      <RegionTerrainEditor
+      <HeightmapTerrainCard
         index={selectedIndex}
         type={region.type}
         terrain={terrain}
+        selection={{
+          ids: tabItems.map(item => item.id),
+          selectedId,
+          onSelect: selectRegionById,
+        }}
         onChange={patch => setRegionTerrain(selectedIndex, patch)}
       />
     </Flex>

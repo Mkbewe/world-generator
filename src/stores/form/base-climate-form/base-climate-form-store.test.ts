@@ -177,17 +177,6 @@ describe('useBaseClimateFormStore', () => {
     expect(state().activePreset).toBeUndefined();
   });
 
-  it('moves a zone one slot earlier or later', () => {
-    const second = state().zones[1];
-    if (!second) {
-      throw new Error('Expected a second zone.');
-    }
-    state().moveZone(second.id, -1);
-
-    expect(state().zones[0]?.id).toBe(second.id);
-    expect(state().activePreset).toBeUndefined();
-  });
-
   it('exposes boundaries that match the edited zones', () => {
     state().applyPreset('horizontal');
     state().setZoneBoundaries([20, 40, 60, 90]);

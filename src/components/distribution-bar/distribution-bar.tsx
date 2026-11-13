@@ -12,6 +12,8 @@ import styles from './distribution-bar.module.scss';
 interface DistributionBarProps {
   segments: readonly DistributionSegment[];
   draft: BoundaryDraft;
+  /** Segment marked as the one currently edited on the card below. */
+  selectedId?: string;
   /** Smallest share one side may keep, in percent of the whole bar. */
   minShare?: number;
   /** Accessible name for the grouping container; sets role='group'. */
@@ -23,6 +25,7 @@ interface DistributionBarProps {
 export function DistributionBar({
   segments,
   draft,
+  selectedId,
   minShare,
   groupAriaLabel,
   header,
@@ -42,6 +45,7 @@ export function DistributionBar({
           <div
             key={segment.id}
             className={styles.distributionSegment}
+            data-selected={segment.id === selectedId || undefined}
             style={{
               backgroundColor: colorString(segment.color ?? regionColor(index)),
               width: `${draft.shares[index]}%`,

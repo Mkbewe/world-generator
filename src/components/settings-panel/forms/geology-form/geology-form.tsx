@@ -13,7 +13,7 @@ import { Button, Flex, Text } from '@radix-ui/themes';
 import { useGeologySelection } from './hooks/use-geology-selection';
 import { useRegionDistribution } from './hooks/use-region-distribution';
 import { PRESET_OPTIONS } from './lib/preset-options';
-import { RegionEditor } from './region-editor';
+import { GeologicalRegionCard } from './geological-region-card';
 import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
 import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../color-swatch-tabs';
 import { DistributionBar } from '../../../distribution-bar';
@@ -100,6 +100,7 @@ export function GeologyForm(): React.JSX.Element {
           groupAriaLabel={t('forms.geology.areaAria')}
           segments={distributionSegments}
           draft={draft}
+          selectedId={selectedId}
           minShare={minShare}
           header={{
             label: t(GEOLOGY_SHARE_COPY.labelKey),
@@ -135,7 +136,16 @@ export function GeologyForm(): React.JSX.Element {
         onSelect={selectRegionById}
         ariaLabel={t('forms.geology.regionsAria')}
       />
-      <RegionEditor index={selectedIndex} region={region} onChange={changeRegion} />
+      <GeologicalRegionCard
+        index={selectedIndex}
+        region={region}
+        selection={{
+          ids: tabItems.map(item => item.id),
+          selectedId,
+          onSelect: selectRegionById,
+        }}
+        onChange={changeRegion}
+      />
     </Flex>
   );
 }

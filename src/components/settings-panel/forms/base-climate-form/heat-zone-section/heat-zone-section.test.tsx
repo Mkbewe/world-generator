@@ -92,17 +92,26 @@ describe('HeatZoneSection', () => {
     expect(screen.getByRole('button', { name: /Add zone/ })).toBeDisabled();
   });
 
-  it('removes the selected zone and moves it between slots', async () => {
+  it('removes the selected zone', async () => {
     const user = userEvent.setup();
     renderSection();
 
-    await user.click(screen.getByRole('button', { name: 'Move later' }));
-    const state = useBaseClimateFormStore.getState();
-    expect(state.zones[0]?.label).toBe('Temperate north');
-    expect(state.zones[1]?.label).toBe('Polar north');
-
     await user.click(screen.getByRole('button', { name: 'Remove Polar north' }));
+
     expect(useBaseClimateFormStore.getState().zones).toHaveLength(4);
     expect(screen.getByText('Heat zones (4)')).toBeInTheDocument();
+  });
+
+  it('moves the selection with the card controls without reordering zones', async () => {
+    const user = userEvent.setup();
+    renderSection();
+    const labelsBefore = useBaseClimateFormStore.getState().zones.map(zone => zone.label);
+
+    expect(screen.getByLabelText('Zone label')).toHaveValue('Polar north');
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(screen.getByLabelText('Zone label')).toHaveValue(labelsBefore[1]);
+    expect(useBaseClimateFormStore.getState().zones.map(zone => zone.label)).toEqual(labelsBefore);
   });
 });

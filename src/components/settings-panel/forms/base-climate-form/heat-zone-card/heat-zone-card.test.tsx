@@ -4,13 +4,20 @@ import userEvent from '@testing-library/user-event';
 
 import { HeatZoneCard } from './heat-zone-card';
 import { BASE_CLIMATE_FORM_DEFAULTS, useBaseClimateFormStore } from '../../../../../stores';
+import type { EditorCardSelectionControlsProps } from '../../../../editor-card-selection-controls';
+
+const SELECTION: EditorCardSelectionControlsProps = {
+  ids: ['zone-1', 'zone-2'],
+  selectedId: 'zone-1',
+  onSelect: () => {},
+};
 
 function CardHarness() {
   const zone = useBaseClimateFormStore(state => state.zones[0]);
   if (!zone) {
     return null;
   }
-  return <HeatZoneCard zone={zone} canRemove canMoveEarlier={false} canMoveLater />;
+  return <HeatZoneCard zone={zone} selection={SELECTION} canRemove />;
 }
 
 function renderCard() {
@@ -45,16 +52,14 @@ describe('HeatZoneCard', () => {
     });
   });
 
-  it('moves and removes the zone', async () => {
+  it('removes the zone and no longer exposes the reorder controls', async () => {
     const user = userEvent.setup();
     renderCard();
 
-    expect(screen.getByRole('button', { name: 'Move earlier' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Move earlier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Move later' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Move later' }));
-    expect(useBaseClimateFormStore.getState().zones[0]?.label).toBe('Temperate north');
-
-    await user.click(screen.getByRole('button', { name: 'Remove Temperate north' }));
+    await user.click(screen.getByRole('button', { name: 'Remove Polar north' }));
     expect(useBaseClimateFormStore.getState().zones).toHaveLength(4);
   });
 });

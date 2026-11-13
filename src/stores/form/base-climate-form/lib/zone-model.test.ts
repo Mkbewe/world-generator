@@ -6,7 +6,6 @@ import {
   convertLayout,
   DEFAULT_RING_EXTENT,
   layoutOfZones,
-  moveZoneIn,
   removeZoneFrom,
   ringExtentOf,
   splitLargestZone,
@@ -120,35 +119,6 @@ describe('removeZoneFrom', () => {
   it('keeps the last zone', () => {
     const only = earth.zones.slice(0, 1);
     expect(removeZoneFrom(only, 'horizontal', DEFAULT_RING_EXTENT, only[0]?.id ?? '')).toBe(only);
-  });
-});
-
-describe('moveZoneIn', () => {
-  it('moves a zone one slot while the slots keep their extents', () => {
-    const zones = moveZoneIn(
-      earth.zones,
-      'horizontal',
-      DEFAULT_RING_EXTENT,
-      earth.zones[1]?.id ?? '',
-      -1
-    );
-
-    expect(zones.map(zone => zone.id)).toEqual([
-      earth.zones[1]?.id,
-      earth.zones[0]?.id,
-      earth.zones[2]?.id,
-      earth.zones[3]?.id,
-      earth.zones[4]?.id,
-    ]);
-    expect(zoneShares(zones, 'horizontal', DEFAULT_RING_EXTENT).map(Math.round)).toEqual([
-      20, 20, 20, 20, 20,
-    ]);
-  });
-
-  it('ignores moves outside the zone list', () => {
-    expect(
-      moveZoneIn(earth.zones, 'horizontal', DEFAULT_RING_EXTENT, earth.zones[0]?.id ?? '', -1)
-    ).toBe(earth.zones);
   });
 });
 

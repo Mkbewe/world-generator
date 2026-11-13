@@ -1,0 +1,13 @@
+.swatch {
+  inline-size: 1rem;
+  block-size: 1rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-1);
+}
+
+.content {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+}

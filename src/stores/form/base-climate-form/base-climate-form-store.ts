@@ -17,7 +17,6 @@ import {
   DEFAULT_RING_EXTENT,
   type HeatZoneLayout,
   layoutOfZones,
-  moveZoneIn,
   removeZoneFrom,
   ringExtentOf,
   splitLargestZone,
@@ -68,7 +67,6 @@ interface BaseClimateFormState {
   addZone: () => void;
   removeZone: (id: string) => void;
   updateZone: (id: string, patch: Partial<Pick<HeatZoneConfig, 'label' | 'thermal'>>) => void;
-  moveZone: (id: string, direction: -1 | 1) => void;
 }
 
 function createZoneId(existing: readonly HeatZoneConfig[]): string {
@@ -184,11 +182,6 @@ export const useBaseClimateFormStore = createStore<BaseClimateFormState>(set => 
     set(state => {
       const zones = state.zones.map(zone => (zone.id === id ? { ...zone, ...patch } : zone));
       return { zones, activePreset: undefined };
-    }),
-  moveZone: (id, direction) =>
-    set(state => {
-      const zones = moveZoneIn(state.zones, state.layout, state.ringExtent, id, direction);
-      return zones === state.zones ? state : { zones, activePreset: undefined };
     }),
 }));
 
