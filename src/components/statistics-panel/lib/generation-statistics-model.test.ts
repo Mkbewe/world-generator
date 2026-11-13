@@ -72,7 +72,7 @@ describe('generation-statistics-model', () => {
         },
       ]);
       expect(model.sections).toHaveLength(2);
-      expect(model.sections?.[0]).toEqual({
+      expect(model.sections[0]).toEqual({
         key: 'world-shape',
         titleKey: 'stages.worldShape',
         durationMs: 500,
@@ -92,8 +92,8 @@ describe('generation-statistics-model', () => {
           },
         ],
       });
-      expect(model.sections?.[1]?.durationMs).toBe(700);
-      expect(model.sections?.[1]?.reused).toBe(true);
+      expect(model.sections[1].durationMs).toBe(700);
+      expect(model.sections[1].reused).toBe(true);
     });
 
     it('omits overhead timing segment when stages account for all duration', () => {
@@ -105,7 +105,7 @@ describe('generation-statistics-model', () => {
       const model = buildGenerationStatisticsModel(stats);
 
       expect(model.timing).toBeDefined();
-      expect(model.timing?.[0]?.key).toBe('world-shape');
+      expect(model.timing[0].key).toBe('world-shape');
       expect(model.timing).toHaveLength(1);
     });
 
@@ -130,7 +130,7 @@ describe('generation-statistics-model', () => {
         ],
       };
 
-      const metrics = buildGenerationStatisticsModel(statistics).sections?.[0]?.metrics;
+      const metrics = buildGenerationStatisticsModel(statistics).sections[0].metrics;
 
       expect(metrics).toEqual([
         {

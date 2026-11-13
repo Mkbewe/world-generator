@@ -1,7 +1,7 @@
+import type { Measurement } from '@readout';
 import { render, screen } from '@testing-library/react';
 
 import { MapMeasure } from './map-measure';
-import type { Measurement } from '../../utils/map-readout';
 import type { WorldDimensions } from '../../utils/world-dimensions';
 
 const DIMENSIONS: WorldDimensions = {

@@ -110,7 +110,7 @@ describe('render-statistics-model', () => {
       };
       const metrics = buildLayerMetrics(layer);
 
-      expect(metrics[0]?.value).toBe('—');
+      expect(metrics[0].value).toBe('—');
     });
 
     it('builds metrics for vector layers reporting element counts', () => {
@@ -156,11 +156,11 @@ describe('render-statistics-model', () => {
 
       expect(model.titleKey).toBe('statistics.render.title');
       expect(model.summary).toHaveLength(5);
-      expect(model.summary?.[0]?.value).toBe('640 × 480');
-      expect(model.summary?.[1]?.value).toBe('2');
-      expect(model.summary?.[2]?.value).toBe('12.5 ms');
-      expect(model.summary?.[3]?.value).toBe('250.0 ms');
-      expect(model.summary?.[4]?.value).toBe('12 MB');
+      expect(model.summary[0].value).toBe('640 × 480');
+      expect(model.summary[1].value).toBe('2');
+      expect(model.summary[2].value).toBe('12.5 ms');
+      expect(model.summary[3].value).toBe('250.0 ms');
+      expect(model.summary[4].value).toBe('12 MB');
 
       expect(model.timing).toEqual([
         {
@@ -182,9 +182,9 @@ describe('render-statistics-model', () => {
 
       expect(model.unmeasuredDurationMs).toBe(1080);
       expect(model.sections).toHaveLength(1);
-      expect(model.sections?.[0]?.titleKey).toBe('layers.worldShape');
-      expect(model.sections?.[0]?.durationMs).toBe(100);
-      expect(model.sections?.[0]?.reused).toBeUndefined();
+      expect(model.sections[0].titleKey).toBe('layers.worldShape');
+      expect(model.sections[0].durationMs).toBe(100);
+      expect(model.sections[0].reused).toBeUndefined();
     });
 
     it('handles undefined viewport and missing first tile measurement', () => {
@@ -197,10 +197,10 @@ describe('render-statistics-model', () => {
 
       const model = buildModel(stats);
 
-      expect(model.summary?.[0]?.value).toBe('—');
-      expect(model.summary?.[1]?.value).toBe('—');
-      expect(model.summary?.[2]?.value).toBe('12.5 ms');
-      expect(model.summary?.[3]?.value).toBe('12 MB');
+      expect(model.summary[0].value).toBe('—');
+      expect(model.summary[1].value).toBe('—');
+      expect(model.summary[2].value).toBe('12.5 ms');
+      expect(model.summary[3].value).toBe('12 MB');
       expect(model.summary).toHaveLength(4);
       expect(model.unmeasuredDurationMs).toBeUndefined();
     });
@@ -213,8 +213,8 @@ describe('render-statistics-model', () => {
 
       const model = buildModel(stats);
 
-      expect(model.sections?.[0]?.reused).toBe(true);
-      expect(model.sections?.[0]?.durationMs).toBe(100);
+      expect(model.sections[0].reused).toBe(true);
+      expect(model.sections[0].durationMs).toBe(100);
     });
   });
 });
