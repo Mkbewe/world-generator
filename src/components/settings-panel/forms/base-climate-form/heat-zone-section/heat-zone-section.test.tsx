@@ -29,9 +29,11 @@ describe('HeatZoneSection', () => {
       within(screen.getByLabelText('Heat zone boundaries')).getAllByRole('slider')
     ).toHaveLength(4);
     expect(screen.getByText('Band width')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
-    expect(screen.getByRole('tab', { name: 'Polar north' })).toHaveAttribute(
-      'aria-selected',
+    expect(
+      within(screen.getByRole('group', { name: 'Heat zones' })).getAllByRole('button')
+    ).toHaveLength(5);
+    expect(screen.getByRole('button', { name: 'Polar north' })).toHaveAttribute(
+      'aria-pressed',
       'true'
     );
     expect(screen.getByLabelText('Zone label')).toHaveValue('Polar north');
@@ -42,7 +44,7 @@ describe('HeatZoneSection', () => {
     const user = userEvent.setup();
     renderSection();
 
-    await user.click(screen.getByRole('tab', { name: 'Equatorial' }));
+    await user.click(screen.getByRole('button', { name: 'Equatorial' }));
 
     const label = screen.getByLabelText('Zone label');
     await user.clear(label);

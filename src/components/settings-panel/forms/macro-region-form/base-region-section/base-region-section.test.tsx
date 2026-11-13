@@ -46,8 +46,13 @@ describe('BaseRegionSection', () => {
       3
     );
     expect(screen.getByText('Ring thickness')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(4);
-    expect(screen.getByRole('tab', { name: 'Region 1' })).toHaveAttribute('aria-selected', 'true');
+    expect(
+      within(screen.getByRole('group', { name: 'Base regions' })).getAllByRole('button')
+    ).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Region 1' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     expect(within(screen.getByLabelText('Danger')).getByRole('slider')).toBeInTheDocument();
   });
 
@@ -55,9 +60,12 @@ describe('BaseRegionSection', () => {
     const user = userEvent.setup();
     renderSection();
 
-    await user.click(screen.getByRole('tab', { name: 'Region 3' }));
+    await user.click(screen.getByRole('button', { name: 'Region 3' }));
 
-    expect(screen.getByRole('tab', { name: 'Region 3' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Region 3' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
     const label = screen.getByLabelText('Region label');
     await user.clear(label);
     await user.type(label, 'Wasteland');
@@ -124,7 +132,9 @@ describe('BaseRegionSection', () => {
     await user.click(screen.getByRole('button', { name: /Add region/ }));
 
     expect(screen.getByText('Base regions (5)')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
+    expect(
+      within(screen.getByRole('group', { name: 'Base regions' })).getAllByRole('button')
+    ).toHaveLength(5);
   });
 
   it('stops adding regions at the limit', () => {

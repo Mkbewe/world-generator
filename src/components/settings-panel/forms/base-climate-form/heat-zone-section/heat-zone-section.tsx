@@ -4,6 +4,7 @@ import { heatZoneColor } from '@layers';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
+import { useIdSelection } from '../../../../../hooks/use-id-selection';
 import { useBaseClimateFormStore } from '../../../../../stores';
 import {
   clampZoneBoundaries,
@@ -11,10 +12,9 @@ import {
   zoneBoundaries,
   zoneSegments,
 } from '../../../../../stores/form/base-climate-form';
+import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../../color-swatch-tabs';
 import { DistributionBar, useBoundaryDraft } from '../../../../distribution-bar';
-import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
 import { HeatZoneCard } from '../heat-zone-card';
-import { useHeatZoneSelection } from '../hooks/use-heat-zone-selection';
 import { heatZoneShareCopy } from '../lib/share-copy';
 
 export function HeatZoneSection() {
@@ -24,7 +24,7 @@ export function HeatZoneSection() {
   const ringExtent = useBaseClimateFormStore(state => state.ringExtent);
   const setZoneBoundaries = useBaseClimateFormStore(state => state.setZoneBoundaries);
   const addZone = useBaseClimateFormStore(state => state.addZone);
-  const { zone, selectedIndex, selectZone } = useHeatZoneSelection(zones);
+  const { selectedItem: zone, selectedIndex, selectedId, selectId } = useIdSelection(zones);
   const boundaries = zoneBoundaries(zones, layout, ringExtent);
   const segments = zoneSegments(zones, layout, ringExtent);
   const draft = useBoundaryDraft(
@@ -38,7 +38,7 @@ export function HeatZoneSection() {
   );
   const atLimit = zones.length >= MAX_HEAT_ZONES;
   const share = heatZoneShareCopy(layout);
-  const tabItems: readonly RegionTabItem[] = zones.map(item => ({
+  const tabItems: readonly ColorSwatchTabOption[] = zones.map(item => ({
     id: item.id,
     label: item.label,
     color: heatZoneColor(item.thermal, item.id),
@@ -68,10 +68,10 @@ export function HeatZoneSection() {
           description: t(share.descriptionKey),
         }}
       />
-      <RegionTabs
+      <ColorSwatchTabs
         items={tabItems}
-        selectedIndex={selectedIndex}
-        onSelect={selectZone}
+        selectedId={selectedId}
+        onSelect={selectId}
         ariaLabel={t('forms.baseClimate.heatZonesAria')}
       />
       {zone && (

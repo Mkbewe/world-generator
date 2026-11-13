@@ -11,8 +11,8 @@ import { Flex } from '@radix-ui/themes';
 
 import { RegionTerrainEditor } from './region-terrain-editor';
 import { useGeologyFormStore, useHeightmapFormStore } from '../../../../stores';
+import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../color-swatch-tabs';
 import { percent } from '../../../lib/percent';
-import { type RegionTabItem, RegionTabs } from '../../../region-tabs';
 import { SliderField } from '../../../slider-field';
 import { useGeologySelection } from '../geology-form/hooks/use-geology-selection';
 import { regionId } from '../lib/region-id';
@@ -27,12 +27,17 @@ export function HeightmapForm(): React.JSX.Element {
   const setRegionTerrain = useHeightmapFormStore(state => state.setRegionTerrain);
   const regionCount = useGeologyFormStore(state => state.regionCount);
   const slots = useGeologyFormStore(state => state.slots);
-  const tabItems: readonly RegionTabItem[] = slots.slice(0, regionCount).map((slot, index) => ({
-    id: regionId(index),
-    label: t('common.regionName', { index: index + 1 }),
-    color: geologyRegionColor(slot.type, index),
-  }));
-  const { selectedIndex, region, selectRegion } = useGeologySelection(regionCount, slots);
+  const tabItems: readonly ColorSwatchTabOption[] = slots
+    .slice(0, regionCount)
+    .map((slot, index) => ({
+      id: regionId(index),
+      label: t('common.regionName', { index: index + 1 }),
+      color: geologyRegionColor(slot.type, index),
+    }));
+  const { selectedIndex, selectedId, region, selectRegionById } = useGeologySelection(
+    regionCount,
+    slots
+  );
   const terrain = terrainSlots[selectedIndex] ?? defaultRegionTerrain(region.type);
 
   return (
@@ -59,10 +64,10 @@ export function HeightmapForm(): React.JSX.Element {
         rangeLabels={[t('forms.heightmap.rangeNone'), t('forms.heightmap.rangeMany')]}
         onChange={setIsletFrequency}
       />
-      <RegionTabs
+      <ColorSwatchTabs
         items={tabItems}
-        selectedIndex={selectedIndex}
-        onSelect={selectRegion}
+        selectedId={selectedId}
+        onSelect={selectRegionById}
         ariaLabel={t('forms.heightmap.regionsAria')}
       />
       <RegionTerrainEditor

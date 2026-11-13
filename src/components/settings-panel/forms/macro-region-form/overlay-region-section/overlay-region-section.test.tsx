@@ -1,5 +1,5 @@
 import { Theme } from '@radix-ui/themes';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { OverlayRegionSection } from './overlay-region-section';
@@ -23,7 +23,9 @@ describe('OverlayRegionSection', () => {
     renderSection();
 
     expect(screen.getByText('Overlay regions (2)')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(2);
+    expect(
+      within(screen.getByRole('group', { name: 'Overlay regions' })).getAllByRole('button')
+    ).toHaveLength(2);
     expect(screen.getByText('Direction')).toBeInTheDocument();
     expect(screen.getByText('Position')).toBeInTheDocument();
   });
@@ -42,9 +44,11 @@ describe('OverlayRegionSection', () => {
       { kind: 'band', axis: 'x', center: 0.5, width: 0.16 },
     ]);
     expect(screen.getByText('Overlay regions (4)')).toBeInTheDocument();
-    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(
+      within(screen.getByRole('group', { name: 'Overlay regions' })).getAllByRole('button')
+    ).toHaveLength(4);
 
-    await user.click(screen.getByRole('tab', { name: 'Region 7' }));
+    await user.click(screen.getByRole('button', { name: 'Region 7' }));
 
     expect(screen.getByText('North')).toBeInTheDocument();
     expect(screen.getByText('South')).toBeInTheDocument();

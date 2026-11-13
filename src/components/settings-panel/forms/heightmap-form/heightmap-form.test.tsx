@@ -33,7 +33,7 @@ describe('HeightmapForm', () => {
 
     expect(screen.getByText('Relief')).toBeInTheDocument();
     expect(screen.getByText('Islets and rocks')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Region 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Region 1' })).toBeInTheDocument();
     expect(screen.getByText('Region 1 — Ordinary')).toBeInTheDocument();
     expect(screen.getByText('Mountainousness')).toBeInTheDocument();
   });
@@ -42,7 +42,7 @@ describe('HeightmapForm', () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole('tab', { name: 'Region 3' }));
+    await user.click(screen.getByRole('button', { name: 'Region 3' }));
 
     expect(useViewSyncStore.getState().selectedFeature).toEqual({
       layerId: 'geology',

@@ -4,9 +4,9 @@ import { regionColor } from '@layers';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
+import { useIdSelection } from '../../../../../hooks/use-id-selection';
 import { useMacroRegionFormStore } from '../../../../../stores';
-import { type RegionTabItem, RegionTabs } from '../../../../region-tabs';
-import { useMacroRegionSelection } from '../hooks/use-macro-region-selection';
+import { type ColorSwatchTabOption, ColorSwatchTabs } from '../../../../color-swatch-tabs';
 import { baseRegions, overlayRegions } from '../lib/boundary-model';
 import { OverlayRegionCard } from '../region-card';
 
@@ -17,9 +17,9 @@ export function OverlayRegionSection() {
   const addOverlay = useMacroRegionFormStore(state => state.addOverlay);
   const baseCount = baseRegions(regions).length;
   const overlays = overlayRegions(regions);
-  const { region, selectedIndex, selectRegion } = useMacroRegionSelection(overlays);
+  const { selectedItem: region, selectedIndex, selectedId, selectId } = useIdSelection(overlays);
   const atLimit = regions.length >= MAX_MACRO_REGIONS;
-  const tabItems: readonly RegionTabItem[] = overlays.map((item, index) => ({
+  const tabItems: readonly ColorSwatchTabOption[] = overlays.map((item, index) => ({
     id: item.id,
     label: item.label,
     color: regionColor(baseCount + index),
@@ -58,10 +58,10 @@ export function OverlayRegionSection() {
         </Flex>
       </Flex>
       {overlays.length > 0 && (
-        <RegionTabs
+        <ColorSwatchTabs
           items={tabItems}
-          selectedIndex={selectedIndex}
-          onSelect={selectRegion}
+          selectedId={selectedId}
+          onSelect={selectId}
           ariaLabel={t('forms.macroRegion.overlayRegionsAria')}
         />
       )}
