@@ -186,6 +186,19 @@ describe('generation worker', () => {
     ]);
   });
 
+  it('reports a malformed request without starting the pipeline', () => {
+    scope.onmessage?.(new MessageEvent('message', { data: { type: 'generate' } }));
+
+    expect(messages).toEqual([{ type: 'error', message: 'Invalid pipeline worker request.' }]);
+  });
+
+  it('recognizes a worker-like global scope', async () => {
+    const { isGenerationWorkerScope } = await import('./generation-worker');
+
+    expect(isGenerationWorkerScope({})).toBe(false);
+    expect(isGenerationWorkerScope({ postMessage: vi.fn() })).toBe(true);
+  });
+
   it('rejects invalid final map data', async () => {
     // Import the same module instance used by the freshly loaded worker.
     const { WorldShapeStage } = await import('../stages/world-shape');

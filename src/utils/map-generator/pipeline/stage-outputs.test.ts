@@ -1,4 +1,6 @@
 import {
+  assertStageOutputValue,
+  commitStageWrites,
   isPersistentRasterValue,
   isRasterOutputKey,
   PERSISTENT_RASTER_TYPES,
@@ -52,5 +54,47 @@ describe('selectPersistentRasters', () => {
     expect(isRasterOutputKey('legacyMap')).toBe(false);
     expect(isPersistentRasterValue('worldMask', new Uint8Array(1))).toBe(true);
     expect(isPersistentRasterValue('worldMask', new Float32Array(1))).toBe(false);
+  });
+});
+
+describe('assertStageOutputValue', () => {
+  it('accepts supported raster and domain values', () => {
+    expect(() => assertStageOutputValue('worldMask', new Uint8Array(1))).not.toThrow();
+    expect(() => assertStageOutputValue('macroRegionAreas', [0, 2])).not.toThrow();
+  });
+
+  it('rejects malformed or unknown outputs', () => {
+    expect(() => assertStageOutputValue('worldMask', new Float32Array(1))).toThrow(
+      'Stage output "worldMask" has an invalid type.'
+    );
+    expect(() => assertStageOutputValue('macroRegionAreas', [1, -1])).toThrow(
+      'Stage output "macroRegionAreas" has an invalid type.'
+    );
+    expect(() => assertStageOutputValue('unknown', 1)).toThrow('Unknown stage output "unknown".');
+  });
+});
+
+describe('commitStageWrites', () => {
+  it('validates a value before writing it', () => {
+    const state: { worldMask?: Uint8Array } = {};
+
+    expect(() =>
+      commitStageWrites(state, 'world-shape', ['worldMask'], {
+        worldMask: new Float32Array(1),
+      })
+    ).toThrow('Stage output "worldMask" has an invalid type.');
+    expect(state.worldMask).toBeUndefined();
+
+    const mask = new Uint8Array(1);
+    commitStageWrites(state, 'world-shape', ['worldMask'], { worldMask: mask });
+    expect(state.worldMask).toBe(mask);
+  });
+
+  it('keeps arbitrary state keys outside the map output vocabulary', () => {
+    const state: { values?: string[] } = {};
+
+    commitStageWrites(state, 'custom', ['values'], { values: ['generated'] });
+
+    expect(state.values).toEqual(['generated']);
   });
 });

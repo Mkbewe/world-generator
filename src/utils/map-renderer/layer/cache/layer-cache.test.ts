@@ -1,5 +1,6 @@
 import { LayerCache } from './layer-cache';
 import { CatalogLayer } from '../catalog/catalog-layer';
+import type { MapLayer } from '../layer';
 import { layerRegistry } from '../layer-registry';
 
 function world(data: Uint8Array, width = 2, height = 2): CatalogLayer {
@@ -38,6 +39,32 @@ describe('LayerCache', () => {
     cache.evict(layer);
     expect(dispose).toHaveBeenCalledOnce();
     expect(cache.getOrCreate('world-shape', [mask], create)).not.toBe(layer);
+  });
+
+  it('rejects a cached value that is not a valid map layer', () => {
+    const cache = new LayerCache();
+    const invalid = { id: 'world-shape' } as unknown as MapLayer;
+    cache.getOrCreate('world-shape', [], () => invalid);
+
+    expect(() => cache.getOrCreate('world-shape', [], () => world(new Uint8Array(4)))).toThrow(
+      'not a valid map layer'
+    );
+  });
+
+  it('rejects a cached layer stored under a different id', () => {
+    const cache = new LayerCache();
+    const mask = world(new Uint8Array(4));
+    const wrongId = new CatalogLayer(
+      layerRegistry.raster('macro-region'),
+      { width: 2, height: 2 },
+      new Uint8Array(4),
+      mask
+    );
+    cache.getOrCreate('world-shape', [], () => wrongId);
+
+    expect(() => cache.getOrCreate('world-shape', [], () => world(new Uint8Array(4)))).toThrow(
+      'not a valid map layer'
+    );
   });
 
   it('preserves the previous entry if creating the replacement fails', () => {

@@ -1,4 +1,4 @@
-import type { PipelineWorkerResponse, PipelineWorkerReuse } from './pipeline-worker.types';
+import type { PipelineWorkerReuse } from './pipeline-worker.types';
 import { runGeneration } from './run-generation';
 import { GenerationCancelledError } from '../errors';
 import type { MapConfig } from '../types';
@@ -19,7 +19,7 @@ class FakeWorker {
     this.listeners.set(type, listeners);
   }
 
-  emitMessage(message: PipelineWorkerResponse): void {
+  emitMessage(message: unknown): void {
     for (const listener of this.listeners.get('message') ?? []) {
       listener({ data: message });
     }
@@ -104,6 +104,17 @@ describe('runGeneration', () => {
       stageCount: 1,
     });
     expect(onEvent).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed worker messages instead of exposing them as events', async () => {
+    const onEvent = vi.fn();
+    const promise = runGeneration(config, { onEvent, reuse });
+
+    FakeWorker.latest.emitMessage({ type: 'stage-progress' });
+
+    await expect(promise).rejects.toThrow('Invalid pipeline worker message.');
+    expect(onEvent).not.toHaveBeenCalled();
+    expect(FakeWorker.latest.terminate).toHaveBeenCalledOnce();
   });
 
   it('reports the worker error message', async () => {
