@@ -10,15 +10,10 @@ import { usePreviewFullscreen } from './hooks/use-preview-fullscreen';
 import { useTabSync } from './hooks/use-tab-sync';
 import { LayerNavigation } from './lib/layer-navigation';
 import { readoutItems } from './lib/readout-registry';
-import {
-  type GenerationProgressState,
-  tabForLayer,
-  usePreviewStore,
-  useViewSyncStore,
-} from '../../stores';
+import { tabForLayer, usePreviewStore, useViewSyncStore } from '../../stores';
 import { worldDimensions } from '../../utils/map-readout';
 import { layerRegistry, type MapBaseLayerId, type MapRenderer } from '../../utils/map-renderer';
-import { GenerationProgress } from '../generation-progress';
+import { GenerationProgress, type ProgressViewModel } from '../generation-progress';
 import { LayerTabs } from '../layer-tabs';
 import { MapCanvas } from '../map-canvas';
 import { MapSidebar } from '../map-sidebar';
@@ -26,7 +21,7 @@ import styles from './map-preview.module.scss';
 
 interface MapPreviewProps {
   onReady: (renderer: MapRenderer | undefined) => void;
-  progress?: GenerationProgressState;
+  progress?: ProgressViewModel;
   progressKey: number;
 }
 
@@ -177,7 +172,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             {preview.error}
           </Text>
         )}
-        {progress && !isFullscreen && <GenerationProgress key={progressKey} progress={progress} />}
+        {progress && !isFullscreen && <GenerationProgress key={progressKey} model={progress} />}
       </Flex>
     </Card>
   );

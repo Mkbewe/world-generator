@@ -1,13 +1,19 @@
+import { useMemo } from 'react';
 import { Flex, Grid, Text } from '@radix-ui/themes';
 
 import { useWorldGeneration } from './hooks/use-world-generation';
 import { useGenerationProgressStore } from '../../stores';
+import { buildProgressViewModel } from '../generation-progress';
 import { useHeaderActions } from '../header';
 import { MapPreview } from '../map-preview';
 import { SettingsPanel } from '../settings-panel';
 
 export function WorldGenerator() {
-  const progress = useGenerationProgressStore(state => state.progress);
+  const progressSource = useGenerationProgressStore(state => state.progress);
+  const progress = useMemo(
+    () => (progressSource ? buildProgressViewModel(progressSource) : undefined),
+    [progressSource]
+  );
   const { isGenerating, generationRun, error, onRendererReady, generate } = useWorldGeneration();
   const { isFullscreen } = useHeaderActions();
 

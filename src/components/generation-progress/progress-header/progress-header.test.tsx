@@ -1,9 +1,20 @@
 import { Theme } from '@radix-ui/themes';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 import { ProgressHeader } from './progress-header';
+import { i18n, i18nReady } from '../../../i18n';
 
 describe('ProgressHeader', () => {
+  beforeAll(async () => {
+    await i18nReady;
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
+  });
+
   it('shows the status, count and formatted time', () => {
     render(
       <Theme>
@@ -23,7 +34,7 @@ describe('ProgressHeader', () => {
       </Theme>
     );
 
-    expect(screen.getByText('2 / 3, 1 skipped')).toBeInTheDocument();
+    expect(screen.getByText('2 / 3 · skipped: 1')).toBeInTheDocument();
   });
 
   it('shows the failed state with milliseconds', () => {
@@ -36,5 +47,18 @@ describe('ProgressHeader', () => {
     expect(screen.getByText('Failed')).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
     expect(screen.getByText('340 ms')).toBeInTheDocument();
+  });
+
+  it('localizes the labels through the active catalogue', async () => {
+    await i18n.changeLanguage('pl');
+
+    render(
+      <Theme>
+        <ProgressHeader status='completed' completed={2} total={3} skipped={1} time={460} />
+      </Theme>
+    );
+
+    expect(screen.getByText('Gotowe')).toBeInTheDocument();
+    expect(screen.getByText('2 / 3 · pominięto: 1')).toBeInTheDocument();
   });
 });

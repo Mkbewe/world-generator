@@ -1,40 +1,37 @@
 import { Flex } from '@radix-ui/themes';
 
 import { useElapsed } from './hooks/use-elapsed';
+import { type ProgressViewModel } from './lib/progress-view-model';
 import { ProgressHeader } from './progress-header';
 import { StageBars } from './stage-bars';
 import { StageList } from './stage-list';
-import type { GenerationProgressState } from '../../stores';
 import styles from './generation-progress.module.scss';
 
 interface GenerationProgressProps {
-  progress: GenerationProgressState;
+  model: ProgressViewModel;
 }
 
-export function GenerationProgress({ progress }: GenerationProgressProps) {
-  const total = progress.stages.length;
-  const completed = progress.stages.filter(stage => stage.status === 'completed').length;
-  const skipped = progress.stages.filter(stage => stage.status === 'skipped').length;
-  const elapsed = useElapsed(progress.status, progress.startedAt);
-  const time = progress.totalDurationMs ?? elapsed;
+export function GenerationProgress({ model }: GenerationProgressProps) {
+  const elapsed = useElapsed(model.status, model.startedAt);
+  const time = model.totalDurationMs ?? elapsed;
 
   return (
     <Flex
       direction='column'
       gap='2'
       className={styles.root}
-      data-status={progress.status}
+      data-status={model.status}
       aria-live='polite'
     >
       <ProgressHeader
-        status={progress.status}
-        completed={completed}
-        total={total}
-        skipped={skipped}
+        status={model.status}
+        completed={model.completed}
+        total={model.total}
+        skipped={model.skipped}
         time={time}
       />
-      <StageBars stages={progress.stages} status={progress.status} />
-      <StageList stages={progress.stages} />
+      <StageBars stages={model.stages} complete={model.status === 'completed'} />
+      <StageList stages={model.stages} />
     </Flex>
   );
 }

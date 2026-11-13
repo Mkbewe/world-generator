@@ -1,11 +1,9 @@
-import type {
-  GenerationProgressState,
-  GenerationStageProgress,
-  GenerationStageStatus,
-} from '../../../stores';
+import { useTranslation } from 'react-i18next';
+
+import type { ProgressStageStatus, ProgressStageViewModel } from '../lib/progress-view-model';
 import styles from './stage-bars.module.scss';
 
-const STATUS_WIDTH: Record<GenerationStageStatus, (stage: GenerationStageProgress) => string> = {
+const STATUS_WIDTH: Record<ProgressStageStatus, (stage: ProgressStageViewModel) => string> = {
   pending: () => '0%',
   running: stage => `${stage.percentage}%`,
   completed: () => '100%',
@@ -13,25 +11,20 @@ const STATUS_WIDTH: Record<GenerationStageStatus, (stage: GenerationStageProgres
   skipped: () => '100%',
 };
 
-const STATUS_LABEL: Partial<Record<GenerationStageStatus, string>> = {
-  completed: 'completed',
-  skipped: 'skipped',
-};
-
 interface StageBarsProps {
-  stages: readonly GenerationStageProgress[];
-  status: GenerationProgressState['status'];
+  stages: readonly ProgressStageViewModel[];
+  complete: boolean;
 }
 
-export function StageBars({ stages, status }: StageBarsProps) {
+export function StageBars({ stages, complete }: StageBarsProps) {
+  const { t } = useTranslation();
+
   return (
-    <div className={styles.bars} data-complete={status === 'completed'}>
+    <div className={styles.bars} data-complete={complete}>
       {stages.map(stage => (
         <div key={stage.id} className={styles.bar} data-status={stage.status}>
           <div className={styles.barFill} style={{ width: STATUS_WIDTH[stage.status](stage) }} />
-          {STATUS_LABEL[stage.status] && (
-            <span className={styles.barLabel}>{STATUS_LABEL[stage.status]}</span>
-          )}
+          {stage.barLabelKey && <span className={styles.barLabel}>{t(stage.barLabelKey)}</span>}
         </div>
       ))}
     </div>

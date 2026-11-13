@@ -2,19 +2,36 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 
 import { StageList } from './stage-list';
-import type { GenerationStageProgress } from '../../../stores';
+import { buildProgressViewModel, type ProgressSource } from '../lib/progress-view-model';
 
-const stages: readonly GenerationStageProgress[] = [
-  { id: 'a', nameKey: 'stages.worldShape', status: 'completed', percentage: 100, durationMs: 120 },
-  { id: 'b', nameKey: 'stages.baseClimate', status: 'running', percentage: 40 },
-  { id: 'c', nameKey: 'stages.macroRegion', status: 'skipped', percentage: 0, durationMs: 0 },
-];
+const SOURCE: ProgressSource = {
+  status: 'running',
+  stages: [
+    {
+      id: 'a',
+      nameKey: 'stages.worldShape',
+      status: 'completed',
+      percentage: 100,
+      durationMs: 120,
+    },
+    { id: 'b', nameKey: 'stages.baseClimate', status: 'running', percentage: 40 },
+    {
+      id: 'c',
+      nameKey: 'stages.macroRegion',
+      status: 'skipped',
+      percentage: 0,
+      durationMs: 0,
+    },
+  ],
+};
+
+const STAGES = buildProgressViewModel(SOURCE).stages;
 
 describe('StageList', () => {
   it('lists every stage name and the duration when it was reported', () => {
     render(
       <Theme>
-        <StageList stages={stages} />
+        <StageList stages={STAGES} />
       </Theme>
     );
 
@@ -27,11 +44,11 @@ describe('StageList', () => {
   it('marks reused stages instead of showing their zero duration', () => {
     render(
       <Theme>
-        <StageList stages={stages} />
+        <StageList stages={STAGES} />
       </Theme>
     );
 
-    expect(screen.getByText('Skipped')).toBeInTheDocument();
+    expect(screen.getByText('skipped')).toBeInTheDocument();
     expect(screen.queryByText('0 ms')).toBeNull();
   });
 });
