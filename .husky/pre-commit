@@ -3,5 +3,5 @@ set -e
 export NO_COLOR=1
 
 pnpm typecheck
-pnpm exec lint-staged
-pnpm exec vitest run --reporter=dot --silent
+pnpm exec lint-staged --config tooling/lint-staged.config.mjs
+pnpm exec vitest run --config tooling/vitest.config.ts --reporter=dot --silent

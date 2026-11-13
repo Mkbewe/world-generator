@@ -81,7 +81,7 @@
       "rules": {}
     },
     {
-      "files": ["vite.config.ts", "vite.config.js", "eslint.config.js"],
+      "files": ["tooling/vite.config.ts", "tooling/vitest.config.ts"],
       "rules": {}
     }
   ]

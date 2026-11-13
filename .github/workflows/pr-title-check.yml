@@ -28,4 +28,4 @@ jobs:
       - name: Validate PR title with commitlint
         run: |
           npm install -g @commitlint/cli @commitlint/config-conventional
-          echo "${{ github.event.pull_request.title }}" | commitlint --config commitlint.config.cjs
+          echo "${{ github.event.pull_request.title }}" | commitlint --config tooling/commitlint.config.cjs

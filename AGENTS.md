@@ -18,7 +18,7 @@ See `README.md` and `docs/roadmap.md` for architecture.
   corresponding folders in `src/utils/`; their subpaths use the same aliases.
 - Use these aliases for deep imports into those domains; keep `./` and `../`
   for neighbouring files. Other imports use relative paths.
-- The aliases are declared in `tsconfig.json` and `vite.config.ts`;
+- The aliases are declared in `tsconfig.json` and `tooling/vite.config.ts`;
   `simple-import-sort` groups them with external packages.
 
 ## Commands

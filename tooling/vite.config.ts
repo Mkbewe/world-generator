@@ -3,14 +3,14 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 
-import pkg from './package.json' with { type: 'json' };
+import pkg from '../package.json' with { type: 'json' };
 
 // Dev-only stand-in for the Vercel `api/flags` function: `vite dev` does not run
 // serverless functions, so we serve feature-flag values from a gitignored
 // `flags.local.json`. Edit that file and refresh — no dev-server restart needed.
 // Missing/invalid file => empty response => the client falls back to FLAG_DEFAULTS.
 function localFlags(): Plugin {
-  const flagsPath = fileURLToPath(new URL('./flags.local.json', import.meta.url));
+  const flagsPath = fileURLToPath(new URL('../flags.local.json', import.meta.url));
 
   return {
     name: 'local-flags',
@@ -33,24 +33,25 @@ function localFlags(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+  root: fileURLToPath(new URL('..', import.meta.url)),
   plugins: [react(), localFlags()],
   resolve: {
     alias: [
       {
         find: '@generator',
-        replacement: fileURLToPath(new URL('./src/utils/map-generator', import.meta.url)),
+        replacement: fileURLToPath(new URL('../src/utils/map-generator', import.meta.url)),
       },
       {
         find: '@layers',
-        replacement: fileURLToPath(new URL('./src/utils/map-layers', import.meta.url)),
+        replacement: fileURLToPath(new URL('../src/utils/map-layers', import.meta.url)),
       },
       {
         find: '@readout',
-        replacement: fileURLToPath(new URL('./src/utils/map-readout', import.meta.url)),
+        replacement: fileURLToPath(new URL('../src/utils/map-readout', import.meta.url)),
       },
       {
         find: '@renderer',
-        replacement: fileURLToPath(new URL('./src/utils/map-renderer', import.meta.url)),
+        replacement: fileURLToPath(new URL('../src/utils/map-renderer', import.meta.url)),
       },
     ],
   },
@@ -63,7 +64,7 @@ export default defineConfig({
         // Make shared variables/mixins available in every .scss file without an
         // explicit @use. loadPaths lets partials be referenced by bare name
         // regardless of the importing file's depth.
-        loadPaths: [fileURLToPath(new URL('./src/styles', import.meta.url))],
+        loadPaths: [fileURLToPath(new URL('../src/styles', import.meta.url))],
         additionalData: '@use "variables" as *;\n@use "mixins" as *;\n',
       },
     },

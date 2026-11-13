@@ -12,6 +12,8 @@ function batch(command, args, files) {
 
 export default {
   '*': files => batch('prettier', ['--write', '--ignore-unknown'], files),
-  '*.{js,jsx,ts,tsx}': files => batch('eslint', ['--fix'], files),
-  '*.scss': files => batch('stylelint', ['--fix'], files),
+  '*.{js,jsx,ts,tsx}': files =>
+    batch('eslint', ['--fix', '--config', 'tooling/eslint.config.cjs'], files),
+  '*.scss': files =>
+    batch('stylelint', ['--fix', '--config', 'tooling/stylelint.config.json'], files),
 };
