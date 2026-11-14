@@ -60,7 +60,11 @@ describe('MapSidebar', () => {
   it('floats the sections with the panel header in fullscreen', () => {
     const container = renderSidebar('fullscreen');
 
-    expect(container.querySelector('[data-position]')).toHaveAttribute('data-position', 'middle');
+    expect(container.querySelector('[data-position]')).toHaveAttribute('data-position', 'top');
+    expect(screen.getAllByRole('radio').map(radio => radio.getAttribute('aria-label'))).toEqual([
+      'Move panels to top',
+      'Move panels to bottom',
+    ]);
     expect(screen.getByText('Panels')).toBeInTheDocument();
     expect(screen.getByText('View')).toBeInTheDocument();
     expect(screen.getByText('Controls')).toBeInTheDocument();

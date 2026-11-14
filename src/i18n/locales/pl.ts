@@ -56,7 +56,6 @@ const pl = {
   'panelHeader.title': 'Panele',
   'panelHeader.position': 'Położenie paneli',
   'panelHeader.moveTop': 'Przenieś panele na górę',
-  'panelHeader.center': 'Wyśrodkuj panele',
   'panelHeader.moveBottom': 'Przenieś panele na dół',
   'panelHeader.show': 'Pokaż panele',
   'panelHeader.hide': 'Ukryj panele',

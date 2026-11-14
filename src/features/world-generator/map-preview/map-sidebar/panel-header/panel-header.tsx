@@ -4,13 +4,12 @@ import {
   ArrowUpIcon,
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
-  HeightIcon,
 } from '@radix-ui/react-icons';
 import { Flex, IconButton, SegmentedControl, Text } from '@radix-ui/themes';
 
 import { isOneOf } from '../../../../../components/lib/option-value';
 
-const PANEL_POSITIONS = ['top', 'middle', 'bottom'] as const;
+const PANEL_POSITIONS = ['top', 'bottom'] as const;
 
 export type PanelPosition = (typeof PANEL_POSITIONS)[number];
 
@@ -51,9 +50,6 @@ export function PanelHeader({
         >
           <SegmentedControl.Item value='top' aria-label={t('panelHeader.moveTop')}>
             <ArrowUpIcon />
-          </SegmentedControl.Item>
-          <SegmentedControl.Item value='middle' aria-label={t('panelHeader.center')}>
-            <HeightIcon />
           </SegmentedControl.Item>
           <SegmentedControl.Item value='bottom' aria-label={t('panelHeader.moveBottom')}>
             <ArrowDownIcon />

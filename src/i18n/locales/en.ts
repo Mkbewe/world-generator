@@ -56,7 +56,6 @@ const en = {
   'panelHeader.title': 'Panels',
   'panelHeader.position': 'Panel position',
   'panelHeader.moveTop': 'Move panels to top',
-  'panelHeader.center': 'Center panels',
   'panelHeader.moveBottom': 'Move panels to bottom',
   'panelHeader.show': 'Show panels',
   'panelHeader.hide': 'Hide panels',
