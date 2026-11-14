@@ -1,5 +1,125 @@
 # Changelog
 
+## [0.14.2](https://github.com/Mkbewe/world-generator/compare/v0.14.1...v0.14.2) (2026-11-14)
+
+### Features
+
+* **[538](https://github.com/Mkbewe/world-generator/issues/538):** update info-label and layer-tabs components ([#589](https://github.com/Mkbewe/world-generator/issues/589)) ([6b27026](https://github.com/Mkbewe/world-generator/commit/6b270263cf2ad75b8d49932ce144c0a954cf8366))
+
+  - make description prop optional in InfoLabel component
+  - update layer-tabs to use selectedLayer for tab icon
+  - add isOneOf utility function for value validation
+  - improve overlay handling in use-map-renderer hook
+  - refactor MapSidebar to support inline and fullscreen modes
+  - enhance tests for MapSidebar and WorldGenerator components
+  - clean up unused styles and props in various components
+* **[539](https://github.com/Mkbewe/world-generator/issues/539):** implement color swatch tabs and replace region tabs usage ([#577](https://github.com/Mkbewe/world-generator/issues/577)) ([3667504](https://github.com/Mkbewe/world-generator/commit/36675040c6dbe84b5bfea0e9cd3d39851da3f15e))
+
+  - Add ColorSwatchTabs component for color selection
+  - Replace RegionTabs with ColorSwatchTabs in multiple forms
+  - Introduce useIdSelection hook for managing selected items by id
+
+### Documentation
+
+* refresh readme and add user guide ([#570](https://github.com/Mkbewe/world-generator/issues/570)) ([9ac41fd](https://github.com/Mkbewe/world-generator/commit/9ac41fdc38e8774abfe40e702b3fbe8c25543fb7))
+* update commit naming convention guidelines ([#583](https://github.com/Mkbewe/world-generator/issues/583)) ([5336239](https://github.com/Mkbewe/world-generator/commit/5336239c065d3efb0ccb34a109a57bae2c3de379))
+
+  - subjects must start with a lowercase letter
+  - acronyms and module names retain their case
+* update documentation references and improve clarity ([#575](https://github.com/Mkbewe/world-generator/issues/575)) ([b217f37](https://github.com/Mkbewe/world-generator/commit/b217f37443b999c4b16216c30c1fbc44747c75f9))
+
+  - Corrected links to the roadmap documentation
+  - Enhanced clarity in the documentation sections
+  - Removed obsolete commit script
+
+### Code Refactoring
+
+* **[536](https://github.com/Mkbewe/world-generator/issues/536):** finish release review follow-ups ([#594](https://github.com/Mkbewe/world-generator/issues/594)) ([8f1de44](https://github.com/Mkbewe/world-generator/commit/8f1de447a7642df504ccbdbf103bb6e010b21d05))
+
+  - add generic FormLink and RegionLink contracts for cross-form data
+  - pass the shared geology region link to the heightmap form via props
+  - share neutral world snapshot types between application and renderer
+  - handle Escape in the language switcher and enforce feature boundaries
+* **[537](https://github.com/Mkbewe/world-generator/issues/537):** organize root tooling configuration ([#592](https://github.com/Mkbewe/world-generator/issues/592)) ([a6b0962](https://github.com/Mkbewe/world-generator/commit/a6b09626e23b27c02f397feb6332a78cf4bfe3bc))
+
+  - move Vite, Vitest, ESLint, Stylelint, commitlint, lint-staged and
+  release-it configs into tooling
+  - update package scripts, Husky hooks, release workflow and
+  documentation paths
+  - keep TypeScript and Prettier configs at the root for tool discovery
+* **[540](https://github.com/Mkbewe/world-generator/issues/540):** replace region editors with terrain cards ([#578](https://github.com/Mkbewe/world-generator/issues/578)) ([2695c64](https://github.com/Mkbewe/world-generator/commit/2695c6445002a3947fff10a62b7c13c8a7674f19))
+* **[541](https://github.com/Mkbewe/world-generator/issues/541):** group world generator components as a feature ([#593](https://github.com/Mkbewe/world-generator/issues/593)) ([d96c958](https://github.com/Mkbewe/world-generator/commit/d96c9584ee789938f614533d04f94c6b96971bd1))
+
+  - move world generator UI, settings, preview and progress under
+  src/features/world-generator
+  - move macro-region boundary and preset policy into store-owned form
+  code
+  - move feature-only percent helper out of shared component helpers
+  - update imports, tests, documentation and feature lint limits
+  - fix the worker mock path after the test move
+* **[542](https://github.com/Mkbewe/world-generator/issues/542):** unify feature selection handling across components ([#574](https://github.com/Mkbewe/world-generator/issues/574)) ([e6c8038](https://github.com/Mkbewe/world-generator/commit/e6c80381b472bedc85696f54bc494c66ce71a2c5))
+
+  - Replace selectedRegionId with selectedFeature in state management
+  - Update readout actions to include target feature details
+  - Refactor tests to validate feature selection behavior
+* **[543](https://github.com/Mkbewe/world-generator/issues/543):** improve control accessibility ([#590](https://github.com/Mkbewe/world-generator/issues/590)) ([54df850](https://github.com/Mkbewe/world-generator/commit/54df85055740a016f044862f35fb689ebf25a809))
+
+  - add aria attributes for better screen reader support
+  - implement keyboard controls for map and menu interactions
+  - improve focus management in mobile menu and drawer
+* **[544](https://github.com/Mkbewe/world-generator/issues/544):** refactor generation progress model and related components ([#579](https://github.com/Mkbewe/world-generator/issues/579)) ([a56bdcd](https://github.com/Mkbewe/world-generator/commit/a56bdcddcf16fe87f852dbb267d15976b1619e43))
+
+  - replace progress state with a view model for better separation of
+  concerns
+  - update tests to reflect new model structure and improve localization
+  - enhance progress header and stage components for better readability
+* **[545](https://github.com/Mkbewe/world-generator/issues/545):** simplify map interaction handling and measurement logic ([#588](https://github.com/Mkbewe/world-generator/issues/588)) ([2e3b56d](https://github.com/Mkbewe/world-generator/commit/2e3b56ddbdb91fbfb7896f8b556cb833a90320cf))
+
+  - consolidate gesture handling into a dedicated hook
+  - streamline measurement state management
+  - improve readout and gesture tracking functionality
+* **[546](https://github.com/Mkbewe/world-generator/issues/546):** refactor geology form actions and related components ([#580](https://github.com/Mkbewe/world-generator/issues/580)) ([a93cdd0](https://github.com/Mkbewe/world-generator/commit/a93cdd0521a99b3995457a96843f9694c1d724cb))
+
+  - simplify geology form actions by consolidating functions
+  - update geological region handling for improved terrain management
+  - add tests for new geology form actions functionality
+* **[547](https://github.com/Mkbewe/world-generator/issues/547):** extract world generation use case ([#591](https://github.com/Mkbewe/world-generator/issues/591)) ([0df82c7](https://github.com/Mkbewe/world-generator/commit/0df82c7cd3349e19e4bb029bec9b6fcb33416050))
+
+  - add application-layer service for generation, cache and selective
+  reuse
+  - move renderer, replay and preview store handling to a preview adapter
+  - keep progress presentation in the component adapter
+  - guard superseded runs with explicit run ids
+  - add service contract tests and application boundary rules
+* **[548](https://github.com/Mkbewe/world-generator/issues/548):** extract statistics view models ([#573](https://github.com/Mkbewe/world-generator/issues/573)) ([fcd36d1](https://github.com/Mkbewe/world-generator/commit/fcd36d117b43cada1d2244e4a5f1519352f5ea40))
+
+  - remove generation-statistics, map-statistics, render-statistics
+  wrappers
+  - add pure builders: buildGenerationStatisticsModel,
+  buildMapStatisticsModel, buildRenderStatisticsModel — no t dependency,
+  return MessageKey references
+* **[549](https://github.com/Mkbewe/world-generator/issues/549):** extract map measurement geometry ([#571](https://github.com/Mkbewe/world-generator/issues/571)) ([8d6f50e](https://github.com/Mkbewe/world-generator/commit/8d6f50edc48fa47c8c50cdebd215923ab53100ef))
+* **[550](https://github.com/Mkbewe/world-generator/issues/550):** simplify progressive painting implementation ([#582](https://github.com/Mkbewe/world-generator/issues/582)) ([faa882e](https://github.com/Mkbewe/world-generator/commit/faa882e30b9fc441c6acadf26aa6f582eb8e2767))
+
+  - replace manual tile painting with a progressive approach
+  - enhance overview rendering logic for better performance
+  - add tests for progressive painting functionality
+* **[551](https://github.com/Mkbewe/world-generator/issues/551):** deduplicate distribution bar components ([#572](https://github.com/Mkbewe/world-generator/issues/572)) ([72b6807](https://github.com/Mkbewe/world-generator/commit/72b68071f1225ec004ec7535f2599eaf3a7d7798))
+
+  - Consolidate region distribution logic into DistributionBar.
+  - Enhance accessibility with aria labels for better screen reader
+  support.
+  - Remove redundant components and tests for cleaner codebase.
+* **[552](https://github.com/Mkbewe/world-generator/issues/552):** enhance pipeline worker and output validation ([#581](https://github.com/Mkbewe/world-generator/issues/581)) ([ebd1aa8](https://github.com/Mkbewe/world-generator/commit/ebd1aa8033fc5995ce9aa7fec00eccc8efeaad42))
+
+  - add validation for pipeline worker requests and responses
+  - improve error handling for invalid messages
+  - refactor layer cache to ensure valid map layers
+* improve measurement geometry tests ([#576](https://github.com/Mkbewe/world-generator/issues/576)) ([5600688](https://github.com/Mkbewe/world-generator/commit/560068829ca42a8a0aa7e6232e48e0d3ab3a5a4b))
+
+  - Simplify geometry calculations by ensuring defined values
+  - Enhance test coverage for measurement geometry scenarios
+
 ## [0.14.1](https://github.com/Mkbewe/world-generator/compare/v0.14.0...v0.14.1) (2026-11-09)
 
 ### Code Refactoring
