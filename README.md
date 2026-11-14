@@ -99,15 +99,15 @@ statistics snapshot as JSON.
 
 - `src/utils/map-generator` contains the stage pipeline, stages, stage events and
   worker transport.
-- `src/components/world-generator` is the generator view: settings, generation
-  orchestration and the map preview.
-- `src/components/map-preview` is the preview view: the preview card, the layer
-  tabs, the map canvas and the sidebar with overlays and the cursor readout.
+- `src/features/world-generator` owns the generator UI: the screen, settings,
+  forms, map preview and generation progress.
+- `src/components` contains shared UI components used across features.
 - `src/utils/map-renderer` renders layers and overlays (scene, view, layer cache,
   metrics and persistence).
 - `src/stores` holds global UI state: form values per settings tab, generation
   progress and statistics, map config, preview selection and render statistics.
-- `src/components/generation-progress` renders the current stage and progress.
+- `src/features/world-generator/generation-progress` renders the current stage
+  and progress.
 - `tooling/` contains shared tool configuration for Vite, Vitest, ESLint,
   Stylelint, commitlint, lint-staged and release-it.
 - VS Code extension settings point at the `tooling/` configs:

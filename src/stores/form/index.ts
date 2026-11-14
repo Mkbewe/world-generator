@@ -11,7 +11,28 @@ export {
   heightmapConfigOf,
   useHeightmapFormStore,
 } from './heightmap-form';
-export { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from './macro-region-form';
+export {
+  applyRegionBoundaries,
+  baseRegions,
+  boundariesToShares,
+  clampBoundaries,
+  MACRO_REGION_FORM_DEFAULTS,
+  MACRO_REGION_PRESETS,
+  macroRegionPreset,
+  MIN_MACRO_REGION_SHARE,
+  overlayRegions,
+  regionBoundaries,
+  regionSegments,
+  removeBaseRegion,
+  splitLargestRegion,
+  useMacroRegionFormStore,
+} from './macro-region-form';
+export type {
+  BandOverlayRegion,
+  MacroRegionLayoutChange,
+  MacroRegionPresetDefinition,
+  MacroRegionPresetId,
+} from './macro-region-form';
 export {
   DEFAULT_WORLD_SIZE,
   useWorldShapeFormStore,

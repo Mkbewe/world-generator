@@ -10,8 +10,20 @@ export {
   DEFAULT_SEED,
   DEFAULT_WORLD_SIZE,
   applyGeologyPreset,
+  applyRegionBoundaries,
+  baseRegions,
+  boundariesToShares,
+  clampBoundaries,
   updateGeologicalRegion,
   MACRO_REGION_FORM_DEFAULTS,
+  MACRO_REGION_PRESETS,
+  macroRegionPreset,
+  MIN_MACRO_REGION_SHARE,
+  overlayRegions,
+  regionBoundaries,
+  regionSegments,
+  removeBaseRegion,
+  splitLargestRegion,
   useBaseClimateFormStore,
   useGeneralFormStore,
   useGeologyFormStore,
@@ -19,6 +31,12 @@ export {
   useMacroRegionFormStore,
   useWorldShapeFormStore,
   WORLD_SHAPE_FORM_DEFAULTS,
+} from './form';
+export type {
+  BandOverlayRegion,
+  MacroRegionLayoutChange,
+  MacroRegionPresetDefinition,
+  MacroRegionPresetId,
 } from './form';
 export {
   type GenerationProgressState,

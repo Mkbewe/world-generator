@@ -1,10 +1,6 @@
+import { baseRegions, overlayRegions, regionSegments } from './lib/boundary-model';
+import { macroRegionPreset } from './lib/presets';
 import { MACRO_REGION_FORM_DEFAULTS, useMacroRegionFormStore } from './macro-region-form-store';
-import {
-  baseRegions,
-  overlayRegions,
-  regionSegments,
-} from '../../../components/settings-panel/forms/macro-region-form/lib/boundary-model';
-import { macroRegionPreset } from '../../../components/settings-panel/forms/macro-region-form/lib/presets';
 
 describe('useMacroRegionFormStore', () => {
   beforeEach(() => {

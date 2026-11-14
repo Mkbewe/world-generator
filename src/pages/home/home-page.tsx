@@ -1,4 +1,4 @@
-import { WorldGenerator } from '../../components/world-generator';
+import { WorldGenerator } from '../../features/world-generator/world-generator';
 
 export function HomePage() {
   return <WorldGenerator />;
