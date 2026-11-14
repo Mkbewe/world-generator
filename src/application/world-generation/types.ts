@@ -1,37 +1,18 @@
-import type {
-  GenerationEvent,
-  MacroRegionConfig,
-  MacroRegionDeformation,
-  MapConfig,
-  PipelineStageId,
-  StageInfo,
-} from '@generator';
+import type { GenerationEvent, PipelineStageId, StageInfo } from '@generator';
 import type { LayerDataRecord, MapInfo, MapRasters } from '@layers';
 
-export interface WorldGenerationDimensionsMeters {
-  readonly widthMeters: number;
-  readonly heightMeters: number;
-}
+import type {
+  WorldSnapshotData,
+  WorldSnapshotDimensionsMeters,
+  WorldSnapshotRegionGeometry,
+} from '../../utils/world-snapshot';
 
-export interface WorldGenerationRegionGeometry {
-  readonly seed: number;
-  readonly regions: readonly MacroRegionConfig[];
-  readonly deformation: MacroRegionDeformation;
-}
-
-export interface WorldGenerationRun {
-  readonly width: number;
-  readonly height: number;
-  readonly seed: string;
-  readonly shape: MapConfig['world']['shape'];
-  readonly regionGeometry: WorldGenerationRegionGeometry;
-  readonly dimensionsMeters: WorldGenerationDimensionsMeters;
+export type WorldGenerationDimensionsMeters = WorldSnapshotDimensionsMeters;
+export type WorldGenerationRegionGeometry = WorldSnapshotRegionGeometry;
+export type WorldGenerationRun = Omit<WorldSnapshotData, 'layers' | 'info'> & {
   readonly info: MapInfo;
-}
-
-export interface WorldGenerationSnapshot extends WorldGenerationRun {
-  readonly layers: MapRasters;
-}
+};
+export type WorldGenerationSnapshot = WorldSnapshotData & { readonly info: MapInfo };
 
 export interface WorldGenerationCacheEntry {
   readonly layers: MapRasters;

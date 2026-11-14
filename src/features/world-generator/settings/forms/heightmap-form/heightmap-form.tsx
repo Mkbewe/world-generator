@@ -6,6 +6,7 @@ import {
   MIN_ISLET_FREQUENCY,
   MIN_RELIEF,
 } from '@generator/stages/heightmap';
+import type { GeologicalRegionConfig } from '@generator/types';
 import { geologyRegionColor } from '@layers';
 import { Flex } from '@radix-ui/themes';
 
@@ -15,33 +16,33 @@ import {
   ColorSwatchTabs,
 } from '../../../../../components/color-swatch-tabs';
 import { SliderField } from '../../../../../components/slider-field';
-import { useGeologyFormStore, useHeightmapFormStore } from '../../../../../stores';
-import { useGeologySelection } from '../geology-form/hooks/use-geology-selection';
+import { useHeightmapFormStore } from '../../../../../stores';
+import type { RegionLink } from '../../lib/region-data';
 import { percent } from '../lib/percent';
 import { regionId } from '../lib/region-id';
 
+interface HeightmapFormProps {
+  regionLink: RegionLink<GeologicalRegionConfig>;
+}
+
 /** Global heightmap settings and the terrain sliders of every region. */
-export function HeightmapForm(): React.JSX.Element {
+export function HeightmapForm({ regionLink }: HeightmapFormProps): React.JSX.Element {
   const { t } = useTranslation();
   const heightmap = useHeightmapFormStore(state => state.heightmap);
   const terrainSlots = useHeightmapFormStore(state => state.slots);
   const setRelief = useHeightmapFormStore(state => state.setRelief);
   const setIsletFrequency = useHeightmapFormStore(state => state.setIsletFrequency);
   const setRegionTerrain = useHeightmapFormStore(state => state.setRegionTerrain);
-  const regionCount = useGeologyFormStore(state => state.regionCount);
-  const slots = useGeologyFormStore(state => state.slots);
-  const tabItems: readonly ColorSwatchTabOption[] = slots
-    .slice(0, regionCount)
-    .map((slot, index) => ({
-      id: regionId(index),
-      label: t('common.regionName', { index: index + 1 }),
-      color: geologyRegionColor(slot.type, index),
-    }));
-  const { selectedIndex, selectedId, region, selectRegionById } = useGeologySelection(
-    regionCount,
-    slots
-  );
-  const terrain = terrainSlots[selectedIndex] ?? defaultRegionTerrain(region.type);
+  const {
+    data: { regions, selectedIndex, selectedId, selectedRegion },
+    actions: { selectRegionById },
+  } = regionLink;
+  const tabItems: readonly ColorSwatchTabOption[] = regions.map((slot, index) => ({
+    id: regionId(index),
+    label: t('common.regionName', { index: index + 1 }),
+    color: geologyRegionColor(slot.type, index),
+  }));
+  const terrain = terrainSlots[selectedIndex] ?? defaultRegionTerrain(selectedRegion.type);
 
   return (
     <Flex direction='column' gap='4'>
@@ -75,7 +76,7 @@ export function HeightmapForm(): React.JSX.Element {
       />
       <HeightmapTerrainCard
         index={selectedIndex}
-        type={region.type}
+        type={selectedRegion.type}
         terrain={terrain}
         selection={{
           ids: tabItems.map(item => item.id),

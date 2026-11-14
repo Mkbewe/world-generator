@@ -1,9 +1,8 @@
 import type { MapSize } from './layer';
 import type { ViewportSize } from './viewport';
 import type { MessageKey } from '../../i18n';
-import type { MacroRegionConfig, MacroRegionDeformation } from '../map-generator/types';
-import type { MapBaseLayerId, MapInfo, MapOverlayId, MapRasters } from '../map-layers';
-import type { WorldShape } from '../world-shape';
+import type { MapBaseLayerId, MapOverlayId } from '../map-layers';
+import type { WorldSnapshotData, WorldSnapshotMetadata } from '../world-snapshot';
 
 export type { MapBaseLayerId, MapInfo, MapOverlayId, MapRasters } from '../map-layers';
 
@@ -13,26 +12,10 @@ export interface SpatialMask {
   contains(x: number, y: number): boolean;
 }
 
-export interface MapMetadata {
-  seed: string;
-  shape: WorldShape;
-  /** Physical world size; lets vector layers clip to meter-based margins. */
-  dimensionsMeters?: {
-    readonly widthMeters: number;
-    readonly heightMeters: number;
-  };
-  regionGeometry?: {
-    seed: number;
-    regions: readonly MacroRegionConfig[];
-    deformation: MacroRegionDeformation;
-  };
-}
+export type MapMetadata = WorldSnapshotMetadata;
 
 /** Everything the renderer needs to display an existing map. */
-export interface MapSnapshotData extends MapSize, MapMetadata {
-  layers: MapRasters;
-  info?: MapInfo;
-}
+export type MapSnapshotData = WorldSnapshotData;
 
 export interface MapLayerOption<TId extends string> {
   id: TId;

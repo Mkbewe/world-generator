@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { MAX_GEOLOGICAL_REGIONS, MIN_GEOLOGICAL_REGIONS } from '@generator/stages/geology';
+import type { GeologicalRegionConfig } from '@generator/types';
 import { geologyRegionColor } from '@layers';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
-import { useGeologySelection } from './hooks/use-geology-selection';
 import { useRegionDistribution } from './hooks/use-region-distribution';
 import { PRESET_OPTIONS } from './lib/preset-options';
 import { GeologicalRegionCard } from './geological-region-card';
@@ -18,30 +18,32 @@ import {
   updateGeologicalRegion,
   useGeologyFormStore,
 } from '../../../../../stores';
+import type { RegionLink } from '../../lib/region-data';
 import { percent } from '../lib/percent';
 import { regionId } from '../lib/region-id';
 import { GEOLOGY_SHARE_COPY } from '../lib/share-copy';
 
+interface GeologyFormProps {
+  regionLink: RegionLink<GeologicalRegionConfig>;
+}
+
 /** Starter presets, shared layout and per-region settings of the geology map. */
-export function GeologyForm(): React.JSX.Element {
+export function GeologyForm({ regionLink }: GeologyFormProps): React.JSX.Element {
   const { t } = useTranslation();
-  const regionCount = useGeologyFormStore(state => state.regionCount);
   const layout = useGeologyFormStore(state => state.layout);
-  const slots = useGeologyFormStore(state => state.slots);
   const setRegionCount = useGeologyFormStore(state => state.setRegionCount);
   const setLayout = useGeologyFormStore(state => state.setLayout);
   const setRegionShareBoundary = useGeologyFormStore(state => state.setRegionShareBoundary);
-  const activeSlots = slots.slice(0, regionCount);
+  const {
+    data: { regions: activeSlots, selectedIndex, selectedId, selectedRegion },
+    actions: { selectRegionById },
+  } = regionLink;
   const regionTypes = activeSlots.map(slot => slot.type);
   const tabItems: readonly ColorSwatchTabOption[] = regionTypes.map((type, index) => ({
     id: regionId(index),
     label: t('common.regionName', { index: index + 1 }),
     color: geologyRegionColor(type, index),
   }));
-  const { selectedIndex, selectedId, region, selectRegionById } = useGeologySelection(
-    regionCount,
-    slots
-  );
   const { segments, draft, minShare } = useRegionDistribution(activeSlots, setRegionShareBoundary);
   const distributionSegments = segments.map((segment, index) => ({
     ...segment,
@@ -69,7 +71,7 @@ export function GeologyForm(): React.JSX.Element {
       <SliderField
         label={t('forms.geology.regions')}
         description={t('forms.geology.regionsDescription')}
-        value={regionCount}
+        value={activeSlots.length}
         min={MIN_GEOLOGICAL_REGIONS}
         max={MAX_GEOLOGICAL_REGIONS}
         step={1}
@@ -77,7 +79,7 @@ export function GeologyForm(): React.JSX.Element {
         rangeLabels={[t('forms.geology.rangeOne'), `${MAX_GEOLOGICAL_REGIONS}`]}
         onChange={setRegionCount}
       />
-      {regionCount > 1 && (
+      {activeSlots.length > 1 && (
         <DistributionBar
           groupAriaLabel={t('forms.geology.areaAria')}
           segments={distributionSegments}
@@ -120,7 +122,7 @@ export function GeologyForm(): React.JSX.Element {
       />
       <GeologicalRegionCard
         index={selectedIndex}
-        region={region}
+        region={selectedRegion}
         selection={{
           ids: tabItems.map(item => item.id),
           selectedId,

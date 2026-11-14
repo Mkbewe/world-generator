@@ -13,11 +13,17 @@ import {
   useViewSyncStore,
   VIEW_SYNC_DEFAULTS,
 } from '../../../../../stores';
+import { useGeologyRegionLink } from '../../hooks/use-geology-region-link';
+
+function GeologyFormHarness() {
+  const regionLink = useGeologyRegionLink();
+  return <GeologyForm regionLink={regionLink} />;
+}
 
 function renderForm() {
   return render(
     <Theme>
-      <GeologyForm />
+      <GeologyFormHarness />
     </Theme>
   );
 }
