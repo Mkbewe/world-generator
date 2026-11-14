@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { MapRenderer } from '@renderer';
 
 import { useGenerationSession } from './use-generation-session';
 import {
   baseClimateConfigOf,
+  type GenerationProgressState,
   geologyConfigOf,
   heightmapConfigOf,
   useBaseClimateFormStore,
@@ -35,6 +36,7 @@ export function useWorldGeneration(): WorldGeneration {
   );
   const [generationRun, setGenerationRun] = useState(0);
   const [error, setError] = useState<string>();
+  const activeRun = useRef(0);
 
   const generate = useCallback(async (): Promise<void> => {
     const shapeForm = useWorldShapeFormStore.getState();
@@ -58,14 +60,24 @@ export function useWorldGeneration(): WorldGeneration {
     const { setConfig } = useMapConfigStore.getState();
     const { setProgress } = useGenerationProgressStore.getState();
     const { setResult } = useGenerationStatisticsStore.getState();
+    const runId = ++activeRun.current;
+    const isActiveRun = (): boolean => activeRun.current === runId;
+    const reportProgress = (progress: GenerationProgressState): void => {
+      if (isActiveRun()) {
+        setProgress(progress);
+      }
+    };
 
     setResult(undefined);
-    setGenerationRun(current => current + 1);
+    setGenerationRun(runId);
     setError(undefined);
     setIsGenerating(true);
 
     try {
-      const result = await worldGenerationSession.generate(built.config, setProgress);
+      const result = await worldGenerationSession.generate(built.config, reportProgress);
+      if (!isActiveRun()) {
+        return;
+      }
       if (!result) {
         setProgress(undefined);
         return;
@@ -73,13 +85,18 @@ export function useWorldGeneration(): WorldGeneration {
       setConfig(built.config);
       setResult(result);
     } catch (generationError) {
+      if (!isActiveRun()) {
+        return;
+      }
       const current = useGenerationProgressStore.getState().progress;
       setProgress(current ? { ...current, status: 'failed' } : undefined);
       setError(
         generationError instanceof Error ? generationError.message : 'World generation failed.'
       );
     } finally {
-      setIsGenerating(false);
+      if (isActiveRun()) {
+        setIsGenerating(false);
+      }
     }
   }, []);
 
