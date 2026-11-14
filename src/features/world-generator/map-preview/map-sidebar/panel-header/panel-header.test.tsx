@@ -13,12 +13,17 @@ describe('PanelHeader', () => {
       <Theme>
         <PanelHeader
           collapsed={false}
-          position='middle'
+          position='top'
           onPositionChange={onPositionChange}
           onCollapsedChange={onCollapsedChange}
         />
       </Theme>
     );
+
+    expect(screen.getAllByRole('radio').map(radio => radio.getAttribute('aria-label'))).toEqual([
+      'Move panels to top',
+      'Move panels to bottom',
+    ]);
 
     await user.click(screen.getByRole('radio', { name: 'Move panels to bottom' }));
     expect(onPositionChange).toHaveBeenCalledWith('bottom');
@@ -42,7 +47,7 @@ describe('PanelHeader', () => {
     );
 
     expect(screen.queryByText('Panels')).toBeNull();
-    expect(screen.queryByRole('radio', { name: 'Center panels' })).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Show panels' }));
     expect(onCollapsedChange).toHaveBeenCalledWith(false);

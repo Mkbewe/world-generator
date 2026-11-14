@@ -1,5 +1,5 @@
 import { Theme } from '@radix-ui/themes';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { CursorReadout } from './cursor-readout';
@@ -60,10 +60,27 @@ describe('MapSidebar', () => {
   it('floats the sections with the panel header in fullscreen', () => {
     const container = renderSidebar('fullscreen');
 
-    expect(container.querySelector('[data-position]')).toHaveAttribute('data-position', 'middle');
+    expect(container.querySelector('[data-position]')).toHaveAttribute('data-position', 'top');
+    const positions = screen.getByRole('radiogroup', { name: 'Panel position' });
+    expect(
+      within(positions)
+        .getAllByRole('radio')
+        .map(radio => radio.getAttribute('aria-label'))
+    ).toEqual(['Move panels to top', 'Move panels to bottom']);
     expect(screen.getByText('Panels')).toBeInTheDocument();
     expect(screen.getByText('View')).toBeInTheDocument();
     expect(screen.getByText('Controls')).toBeInTheDocument();
+  });
+
+  it('moves the floating panel between the top and the bottom', async () => {
+    const user = userEvent.setup();
+    const container = renderSidebar('fullscreen');
+
+    await user.click(screen.getByRole('radio', { name: 'Move panels to bottom' }));
+    expect(container.querySelector('[data-position]')).toHaveAttribute('data-position', 'bottom');
+
+    await user.click(screen.getByRole('radio', { name: 'Move panels to top' }));
+    expect(container.querySelector('[data-position]')).toHaveAttribute('data-position', 'top');
   });
 
   it('collapses the floating panels to the toggle button and expands back', async () => {

@@ -42,7 +42,7 @@ export type MapSidebarProps = MapSidebarInlineProps | MapSidebarFullscreenProps;
 export function MapSidebar(props: MapSidebarProps) {
   const { preview, navigation, onLayerChange, onOverlayChange } = props;
   const [collapsed, setCollapsed] = useState(false);
-  const [position, setPosition] = useState<PanelPosition>('middle');
+  const [position, setPosition] = useState<PanelPosition>('top');
   const { tabs, activeTab } = navigation;
   const hasLayerViews = tabs.some(tab => (tab.children?.length ?? 0) > 1);
   const overlays = <OverlayControls preview={preview} onOverlayChange={onOverlayChange} />;
