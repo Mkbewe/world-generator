@@ -1,4 +1,5 @@
 import {
+  baseClimatePresetConfig,
   DEFAULT_MACRO_REGIONS,
   GenerationCancelledError,
   type GenerationEvent,
@@ -69,17 +70,20 @@ function stageStatistics(
 
 function createCache(initial?: WorldGenerationCacheEntry) {
   let entry = initial;
+  let saved: WorldGenerationSnapshot | undefined;
   return {
     cache: {
       get: vi.fn(() => entry),
       save: vi.fn((snapshot: WorldGenerationSnapshot) => {
         entry = snapshot;
+        saved = snapshot;
       }),
       clear: vi.fn(() => {
         entry = undefined;
+        saved = undefined;
       }),
     } satisfies WorldGenerationCache,
-    saved: () => entry,
+    saved: () => saved,
   };
 }
 
@@ -175,6 +179,21 @@ describe('WorldGenerationService', () => {
     expect(runner.mock.lastCall?.[1]?.reuse.dirtyStageIds).toEqual(['macro-region']);
   });
 
+  it('captures the base-climate boundary geometry with the snapshot', async () => {
+    const runner = createRunner({ statistics: [], totalDurationMs: 1 });
+    const { cache, saved } = createCache();
+    const service = new WorldGenerationService(runner, cache);
+    const preset = { ...baseClimatePresetConfig('earth-like'), zoneIrregularity: 0.12 };
+
+    await service.generate({ ...config, baseClimate: preset });
+
+    expect(saved()?.baseClimateGeometry).toEqual({
+      seed: 17,
+      zones: preset.zones,
+      zoneIrregularity: 0.12,
+    });
+  });
+
   it('drops a cache entry with keys outside the persistent output set', async () => {
     const layers = {
       worldMask: new Uint8Array(4),
@@ -235,11 +254,11 @@ describe('WorldGenerationService', () => {
       options?.onEvent?.(completed('world-shape', { worldMask: 'nope' }));
       return { statistics: [], totalDurationMs: 1 };
     });
-    const { cache, saved } = createCache({ layers: { worldMask: mask } });
+    const { cache } = createCache({ layers: { worldMask: mask } });
     const service = new WorldGenerationService(runner, cache);
 
     await expect(service.generate(config)).rejects.toThrow('invalid type');
-    expect(saved()?.layers.worldMask).toBe(mask);
+    expect(cache.get()?.layers.worldMask).toBe(mask);
   });
 
   it('keeps the real statistics of stages reused by the next run', async () => {
@@ -284,14 +303,14 @@ describe('WorldGenerationService', () => {
         options?.signal?.addEventListener('abort', () => reject(new GenerationCancelledError()));
       });
     });
-    const { cache, saved } = createCache({ layers: { worldMask: mask } });
+    const { cache } = createCache({ layers: { worldMask: mask } });
     const service = new WorldGenerationService(runner, cache);
 
     const run = service.generate(config);
     service.cancel();
 
     await expect(run).resolves.toBeUndefined();
-    expect(saved()?.layers.worldMask).toBe(mask);
+    expect(cache.get()?.layers.worldMask).toBe(mask);
   });
 
   it('lets a superseding run own the result', async () => {

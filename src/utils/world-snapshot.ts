@@ -1,4 +1,4 @@
-import type { MacroRegionConfig, MacroRegionDeformation } from '@generator';
+import type { HeatZoneConfig, MacroRegionConfig, MacroRegionDeformation } from '@generator';
 import type { MapInfo, MapRasters } from '@layers';
 
 import type { WorldShape } from './world-shape';
@@ -14,11 +14,18 @@ export interface WorldSnapshotRegionGeometry {
   deformation: MacroRegionDeformation;
 }
 
+export interface WorldSnapshotBaseClimateGeometry {
+  seed: number;
+  zones: readonly HeatZoneConfig[];
+  zoneIrregularity: number;
+}
+
 export interface WorldSnapshotMetadata {
   seed: string;
   shape: WorldShape;
   dimensionsMeters?: WorldSnapshotDimensionsMeters;
   regionGeometry?: WorldSnapshotRegionGeometry;
+  baseClimateGeometry?: WorldSnapshotBaseClimateGeometry;
 }
 
 export interface WorldSnapshotData extends WorldSnapshotMetadata {

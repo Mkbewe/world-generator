@@ -90,7 +90,8 @@ export class WorldGenerationPreview {
       { width: run.width, height: run.height },
       run.shape,
       run.regionGeometry,
-      run.dimensionsMeters
+      run.dimensionsMeters,
+      run.baseClimateGeometry
     );
     renderer.setInfo(this.info);
     renderer.setOverlayData(this.layers);

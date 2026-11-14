@@ -163,11 +163,12 @@ export class MapRenderer {
     size: MapSize,
     shape: WorldShape,
     regionGeometry?: MapMetadata['regionGeometry'],
-    dimensionsMeters?: MapMetadata['dimensionsMeters']
+    dimensionsMeters?: MapMetadata['dimensionsMeters'],
+    baseClimateGeometry?: MapMetadata['baseClimateGeometry']
   ): void {
     this.cancel();
     this.lifetime = new AbortController();
-    this.scene.start(size, { shape, regionGeometry, dimensionsMeters });
+    this.scene.start(size, { shape, regionGeometry, dimensionsMeters, baseClimateGeometry });
     this.mapSize = size;
     this.error = undefined;
     this.metrics.start();
@@ -176,7 +177,13 @@ export class MapRenderer {
 
   /** Displays existing layer data without progressive drawing or generation statistics. */
   load(snapshot: MapSnapshotData): void {
-    this.start(snapshot, snapshot.shape, snapshot.regionGeometry, snapshot.dimensionsMeters);
+    this.start(
+      snapshot,
+      snapshot.shape,
+      snapshot.regionGeometry,
+      snapshot.dimensionsMeters,
+      snapshot.baseClimateGeometry
+    );
     this.setInfo(snapshot.info ?? {});
     this.setOverlayData(snapshot.layers);
     this.metrics.reset();

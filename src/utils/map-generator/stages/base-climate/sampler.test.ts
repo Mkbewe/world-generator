@@ -1,5 +1,5 @@
 import { baseClimatePresetConfig } from './defaults';
-import { createHeatZoneSampler } from './sampler';
+import { createHeatZoneClassifier, createHeatZoneSampler } from './sampler';
 import { planarDistance } from '../../space';
 import type { BaseClimateConfig } from '../../types';
 
@@ -70,5 +70,41 @@ describe('createHeatZoneSampler', () => {
 
   it('requires at least one zone', () => {
     expect(() => createHeatZoneSampler([], planarDistance)).toThrow('At least one heat zone');
+  });
+});
+
+describe('createHeatZoneClassifier', () => {
+  it('replays the same zones from the seed and irregularity', () => {
+    const config = baseClimatePresetConfig('earth-like');
+    const input = {
+      seed: 123,
+      zones: config.zones,
+      irregularity: 0.2,
+      distance: planarDistance,
+    };
+    const first = createHeatZoneClassifier(input);
+    const repeated = createHeatZoneClassifier(input);
+    const points: readonly (readonly [number, number])[] = [
+      [0.1, 0.2],
+      [0.5, 0.5],
+      [0.9, 0.8],
+    ];
+
+    for (const [x, y] of points) {
+      expect(repeated(x, y)).toBe(first(x, y));
+    }
+  });
+
+  it('matches the plain sampler when irregularity is zero', () => {
+    const config = baseClimatePresetConfig('ring-world');
+    const classifier = createHeatZoneClassifier({
+      seed: 7,
+      zones: config.zones,
+      distance: planarDistance,
+    });
+    const sampler = createHeatZoneSampler(config.zones, planarDistance);
+
+    expect(classifier(0.5, 0.5)).toBe(sampler({ x: 0.5, y: 0.5 }));
+    expect(classifier(0, 0)).toBe(sampler({ x: 0, y: 0 }));
   });
 });

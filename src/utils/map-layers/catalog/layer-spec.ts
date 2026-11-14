@@ -22,6 +22,8 @@ export type PaletteSpec =
 
 export type RasterDataType = 'uint8' | 'int16' | 'float32';
 
+export type BoundarySource = 'region' | 'heat-zone';
+
 export interface LayerGroupSpec {
   readonly id: string;
   readonly labelKey: MessageKey;
@@ -68,7 +70,7 @@ export interface RasterLayerSpec<TId extends string = string> extends LayerSpecB
    * edges, so borders stay smooth at any zoom. The renderer resolves the
    * matching sampler from the map geometry.
    */
-  readonly boundarySource?: 'region';
+  readonly boundarySource?: BoundarySource;
   readonly providesMask?: { readonly insideValue: number };
   /** Cells holding this value stay transparent, e.g. "no structure" in an id map. */
   readonly skipValue?: number;

@@ -15,9 +15,10 @@ export {
   BASE_CLIMATE_PRESETS,
   DEFAULT_BASE_CLIMATE_CONFIG,
   baseClimatePresetConfig,
+  createHeatZoneClassifier,
   isBaseClimateConfig,
 } from './stages/base-climate';
-export type { BaseClimatePreset } from './stages/base-climate';
+export type { BaseClimatePreset, HeatZoneClassifierInput } from './stages/base-climate';
 export {
   DEFAULT_GEOLOGY_CONFIG,
   GEOLOGY_PRESETS,

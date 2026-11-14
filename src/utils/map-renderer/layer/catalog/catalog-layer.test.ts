@@ -21,6 +21,31 @@ const FLOAT_SPEC = {
   },
 } as const satisfies LayerSpec;
 
+const HEAT_ZONE_SPEC = {
+  id: 'heat-zones',
+  labelKey: 'layers.heatZones',
+  kind: 'raster',
+  source: 'heatZoneMap',
+  dataType: 'int16',
+  boundarySource: 'heat-zone',
+  palette: {
+    kind: 'discrete',
+    colors: [
+      [255, 0, 0],
+      [0, 255, 0],
+    ],
+    overflow: 'cycle',
+  },
+} as const satisfies LayerSpec;
+
+function heatZoneData(): Int16Array {
+  const data = new Int16Array(16);
+  for (let y = 0; y < 4; y++) {
+    data.set([0, 0, 1, 1], y * 4);
+  }
+  return data;
+}
+
 /** Output buffer mapped one pixel per source cell. */
 function targetFor(width: number, height: number): RenderTarget {
   return { width, height, projection: { cellSize: 1, left: 0, top: 0, width, height } };
@@ -204,6 +229,51 @@ describe('CatalogLayer', () => {
       world.dispose();
       regions.dispose();
       restore();
+    }
+  });
+
+  it('resolves a heat-zone boundary source at different zoom levels', async () => {
+    for (const cellSize of [4, 8]) {
+      const { images, restore } = mockCanvasContext();
+      const geometry = {
+        shape: 'rectangle' as const,
+        boundaries: { 'heat-zone': (x: number) => (x < 0.45 ? 0 : 1) },
+      };
+      const layer = new CatalogLayer(
+        HEAT_ZONE_SPEC,
+        { width: 4, height: 4 },
+        heatZoneData(),
+        undefined,
+        geometry
+      );
+      const size = 4 * cellSize;
+      const target: RenderTarget = {
+        width: size,
+        height: size,
+        projection: { cellSize, left: 0, top: 0, width: size, height: size },
+      };
+
+      try {
+        await layer.prepare(new AbortController().signal, target);
+
+        expect(layer.sample(0, 0)).toBe(0);
+        expect(layer.sample(3, 0)).toBe(1);
+        const pixels = targetPixels(images);
+        const hasBlend = Array.from({ length: pixels.length / 4 }, (_, index) => {
+          const offset = index * 4;
+          return pixels.slice(offset, offset + 4);
+        }).some(
+          ([red, green, blue, alpha]) =>
+            alpha !== undefined &&
+            alpha > 0 &&
+            !(red === 255 && green === 0 && blue === 0) &&
+            !(red === 0 && green === 255 && blue === 0)
+        );
+        expect(hasBlend).toBe(true);
+      } finally {
+        layer.dispose();
+        restore();
+      }
     }
   });
 

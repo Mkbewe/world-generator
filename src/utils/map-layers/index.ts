@@ -23,6 +23,7 @@ export {
 } from './palettes/palettes';
 export type { PixelWriter } from './palettes/palettes';
 export type {
+  BoundarySource,
   Color,
   DiscreteOverflow,
   LayerGroupSpec,

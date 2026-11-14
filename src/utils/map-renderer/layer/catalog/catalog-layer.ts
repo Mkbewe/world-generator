@@ -225,10 +225,8 @@ function resolveBoundary(
   spec: RasterLayerSpec<MapBaseLayerId>,
   geometry?: SmoothGeometry
 ): ((x: number, y: number) => number) | undefined {
-  if (spec.boundarySource === 'region') {
-    return geometry?.regionAt;
-  }
-  return undefined;
+  const source = spec.boundarySource;
+  return source ? geometry?.boundaries?.[source] : undefined;
 }
 
 /** How a layer smooths its edges: analytic borders, the world edge or none. */
