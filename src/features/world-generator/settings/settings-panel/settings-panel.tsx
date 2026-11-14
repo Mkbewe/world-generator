@@ -27,6 +27,7 @@ import {
   MacroRegionForm,
   WorldShapeForm,
 } from '../forms';
+import { useGeologyRegionLink } from '../hooks/use-geology-region-link';
 
 interface SettingsPanelProps {
   isGenerating: boolean;
@@ -45,6 +46,7 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
   const setShape = useWorldShapeFormStore(state => state.setShape);
   const setSizeMeters = useWorldShapeFormStore(state => state.setSizeMeters);
   const setMetersPerSample = useWorldShapeFormStore(state => state.setMetersPerSample);
+  const regionLink = useGeologyRegionLink();
   const formTabs: Partial<Record<MapBaseLayerId, Omit<VerticalTabItem<SettingsTab>, 'value'>>> = {
     'world-shape': {
       label: t('settings.worldShape'),
@@ -73,12 +75,12 @@ export function SettingsPanel({ isGenerating, onGenerate }: SettingsPanelProps) 
     'geology': {
       label: t('settings.geology'),
       icon: <SewingPinIcon />,
-      content: <GeologyForm />,
+      content: <GeologyForm regionLink={regionLink} />,
     },
     'heightmap': {
       label: t('settings.heightmap'),
       icon: <FrameIcon />,
-      content: <HeightmapForm />,
+      content: <HeightmapForm regionLink={regionLink} />,
     },
   };
   const tabs: readonly VerticalTabItem<SettingsTab>[] = [

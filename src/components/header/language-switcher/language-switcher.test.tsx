@@ -89,6 +89,20 @@ describe('LanguageSwitcher', () => {
     expect(trigger).toHaveFocus();
   });
 
+  it('closes the drawer row on Escape while its trigger has focus', async () => {
+    const user = userEvent.setup();
+    renderSwitcher('row');
+
+    const trigger = screen.getByRole('button', { name: triggerName() });
+    await user.click(trigger);
+    expect(trigger).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
+
   it('opens a menu with the flag and name of every supported locale', async () => {
     const user = userEvent.setup();
     renderSwitcher();

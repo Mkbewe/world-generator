@@ -1,11 +1,6 @@
-﻿import type { MapSize } from '../layer';
-import type { MapInfo, MapMetadata, MapRasters } from '../types';
+﻿import type { WorldSnapshotData } from '../../world-snapshot';
 
-export interface GeneratedMapSnapshot extends MapSize, MapMetadata {
-  layers: MapRasters;
-  /** Non-raster information captured with the map, e.g. macro region labels. */
-  info?: MapInfo;
-}
+export type GeneratedMapSnapshot = WorldSnapshotData;
 
 export class MapRepository {
   private snapshot?: GeneratedMapSnapshot;

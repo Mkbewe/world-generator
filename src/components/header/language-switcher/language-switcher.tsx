@@ -31,7 +31,17 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
 
   if (variant === 'row') {
     return (
-      <Box>
+      <Box
+        onKeyDown={event => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen(false);
+          triggerRef.current?.focus();
+        }}
+      >
         <Button
           ref={triggerRef}
           variant='ghost'
@@ -60,13 +70,6 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps) 
             onValueChange={value => {
               setLocale(resolveLocale(value));
               setIsOpen(false);
-            }}
-            onKeyDown={event => {
-              if (event.key === 'Escape') {
-                event.preventDefault();
-                setIsOpen(false);
-                triggerRef.current?.focus();
-              }
             }}
             aria-label={t('header.language')}
             className={styles.inlineOptions}

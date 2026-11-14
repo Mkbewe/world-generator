@@ -59,6 +59,7 @@ module.exports = [
       },
       'boundaries/elements': [
         { type: 'application', pattern: 'src/application/**', partialMatch: false },
+        { type: 'features', pattern: 'src/features/**', partialMatch: false },
         { type: 'generator', pattern: 'src/utils/map-generator/**', partialMatch: false },
         { type: 'layers', pattern: 'src/utils/map-layers/**', partialMatch: false },
         { type: 'renderer', pattern: 'src/utils/map-renderer/**', partialMatch: false },
@@ -92,6 +93,7 @@ module.exports = [
                 { to: { element: { type: 'renderer' } } },
                 { to: { element: { type: 'readout' } } },
                 { to: { element: { type: 'application' } } },
+                { to: { element: { type: 'features' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -110,6 +112,7 @@ module.exports = [
               from: [{ element: { type: 'renderer' } }],
               disallow: [
                 { to: { element: { type: 'application' } } },
+                { to: { element: { type: 'features' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -128,6 +131,7 @@ module.exports = [
               disallow: [
                 { to: { element: { type: 'renderer' } } },
                 { to: { element: { type: 'application' } } },
+                { to: { element: { type: 'features' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -145,6 +149,7 @@ module.exports = [
               from: [{ element: { type: 'readout' } }],
               disallow: [
                 { to: { element: { type: 'application' } } },
+                { to: { element: { type: 'features' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -162,6 +167,7 @@ module.exports = [
               from: [{ element: { type: 'application' } }],
               disallow: [
                 { to: { element: { type: 'renderer' } } },
+                { to: { element: { type: 'features' } } },
                 { to: { element: { type: 'stores' } } },
                 { to: { element: { type: 'components' } } },
                 { to: { element: { type: 'layouts' } } },
@@ -176,6 +182,19 @@ module.exports = [
                 { to: { element: { type: 'api' } } },
               ],
               message: 'The application layer must stay independent of rendering and UI.',
+            },
+            {
+              from: [{ element: { type: 'components' } }],
+              disallow: [{ to: { element: { type: 'features' } } }],
+              message: 'Shared components must not import feature code.',
+            },
+            {
+              from: [{ element: { type: 'stores' } }],
+              disallow: [
+                { to: { element: { type: 'features' } } },
+                { to: { element: { type: 'components' } } },
+              ],
+              message: 'Stores must stay independent of UI feature code.',
             },
           ],
         },
