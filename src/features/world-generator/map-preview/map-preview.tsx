@@ -11,9 +11,9 @@ import { usePreviewControls } from './hooks/use-preview-controls';
 import { usePreviewFullscreen } from './hooks/use-preview-fullscreen';
 import { useTabSync } from './hooks/use-tab-sync';
 import { LayerNavigation } from './lib/layer-navigation';
-import { readoutItems } from './lib/readout-registry';
 import { LayerTabs } from './layer-tabs';
 import { MapCanvas } from './map-canvas';
+import { MapReadout } from './map-readout';
 import { MapSidebar } from './map-sidebar';
 import { tabForLayer, usePreviewStore, useViewSyncStore } from '../../../stores';
 import { worldDimensions } from '../../../utils/map-readout';
@@ -131,13 +131,15 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     navigation: navigationState,
     onLayerChange: handleLayerChange,
     onOverlayChange: handleOverlayChange,
-    inspector: {
-      items: readoutItems(readout.readout, preview.info, measurement.measurement, {
-        actions: !isFullscreen,
-      }),
-      pinned: readout.pinned,
-      onAction: handleReadoutAction,
-    },
+    inspector: (
+      <MapReadout
+        store={readout.store}
+        info={preview.info}
+        measurement={measurement.measurement}
+        actions={!isFullscreen}
+        onAction={handleReadoutAction}
+      />
+    ),
   };
 
   return (
