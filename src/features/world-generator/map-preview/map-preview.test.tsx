@@ -487,6 +487,102 @@ describe('MapPreview readout', () => {
     expect(screen.queryByText('Distance:')).toBeNull();
   });
 
+  it('pins locations only while the pin mode is on', async () => {
+    const user = userEvent.setup();
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
+    const pin = screen.getByRole('button', { name: 'Pin' });
+    expect(pin).toHaveAttribute('aria-pressed', 'true');
+    await user.click(pin);
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 100, clientY: 100 });
+
+    expect(screen.queryByRole('group', { name: 'Cursor readout (pinned)' })).toBeNull();
+
+    await user.click(pin);
+    expect(pin).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 100, clientY: 100 });
+
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 300, clientY: 300 });
+
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+    expect(pin).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('keeps pinning on in the preview when the fullscreen mode turns it off', async () => {
+    const user = userEvent.setup();
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    const pin = screen.getByRole('button', { name: 'Pin' });
+    await user.click(pin);
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(screen.getByRole('button', { name: 'Exit fullscreen' }));
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 100, clientY: 100 });
+
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    expect(screen.getByRole('button', { name: 'Pin' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('keeps pinning and measuring mutually exclusive', async () => {
+    const user = userEvent.setup();
+    const { renderer } = renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+    renderer.current?.setInfo({
+      worldDimensions: { widthMeters: 4000, heightMeters: 4000, sampleWidth: 4, sampleHeight: 4 },
+    });
+    await act(async () => {});
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    const pin = screen.getByRole('button', { name: 'Pin' });
+    const measure = screen.getByRole('button', { name: 'Measure' });
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 100, clientY: 100 });
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+
+    await user.click(measure);
+    expect(measure).toHaveAttribute('aria-pressed', 'true');
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(canvas, { clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 300, clientY: 300 });
+    expect(screen.getByText('Distance:')).toBeInTheDocument();
+
+    await user.click(pin);
+    expect(pin).toHaveAttribute('aria-pressed', 'true');
+    expect(measure).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByText('Distance:')).toBeNull();
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 300, clientY: 300 });
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+
+    await user.click(pin);
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+  });
+
   it('keeps measuring out of the normal view', async () => {
     renderPreview();
     const canvas = screen.getByLabelText('Generated map preview');

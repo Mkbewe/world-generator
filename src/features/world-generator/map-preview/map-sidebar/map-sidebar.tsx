@@ -3,9 +3,9 @@ import { Card, Flex, Separator } from '@radix-ui/themes';
 
 import { FullscreenControl, type FullscreenControlProps } from './fullscreen-control';
 import { LayerViews } from './layer-views';
-import { MeasureControls, type MeasureControlsProps } from './measure-controls';
 import { OverlayControls } from './overlay-controls';
 import { PanelHeader, type PanelPosition } from './panel-header';
+import { ToolBar, type ToolBarProps } from './tool-bar';
 import { ViewControls, type ViewControlsProps } from './view-controls';
 import type {
   MapBaseLayerId,
@@ -34,8 +34,8 @@ interface MapSidebarFullscreenProps extends MapSidebarBaseProps {
   readonly mode: 'fullscreen';
   /** Zoom controls rendered above the overlays. */
   view: ViewControlsProps;
-  /** Distance measuring controls rendered under the view section. */
-  measure: MeasureControlsProps;
+  /** Measuring and pinning tools rendered under the view section. */
+  toolBar: ToolBarProps;
   /** Cursor readout rendered below the layer sections. */
   inspector: ReactNode;
 }
@@ -92,7 +92,7 @@ export function MapSidebar(props: MapSidebarProps) {
             <Separator size='4' />
             <ViewControls {...props.view} />
             <Separator size='4' />
-            <MeasureControls {...props.measure} />
+            <ToolBar {...props.toolBar} />
             <Separator size='4' />
             {overlays}
             {layerViews && (

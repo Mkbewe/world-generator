@@ -4,7 +4,9 @@ import type { MapOverlayId, MapRenderer, MapRendererState } from '@renderer';
 
 import { usePreviewStore } from '../../../../stores';
 import type { WorldDimensions } from '../../../../utils/world-dimensions';
+import type { MapReadoutStore } from '../lib/map-readout-store';
 import { MapMeasure } from '../map-measure';
+import { MapPin } from '../map-pin';
 import { ScaleBar } from '../scale-bar';
 
 interface PreviewControlsOptions {
@@ -13,23 +15,19 @@ interface PreviewControlsOptions {
   preview: MapRendererState;
   dimensions?: WorldDimensions;
   measurement?: Measurement;
+  readoutStore: MapReadoutStore;
   isFullscreen: boolean;
-  measuring: boolean;
-  setMeasuring: (measuring: boolean) => void;
-  onClearMeasurement: () => void;
 }
 
-/** Stable view, measure and overlay controls for the preview sidebar and canvas. */
+/** Stable view and overlay controls with the canvas overlays of the preview. */
 export function usePreviewControls({
   rendererRef,
   wrapperRef,
   preview,
   dimensions,
   measurement,
+  readoutStore,
   isFullscreen,
-  measuring,
-  setMeasuring,
-  onClearMeasurement,
 }: PreviewControlsOptions) {
   const handleOverlayChange = useCallback(
     (id: MapOverlayId, visible: boolean): void => {
@@ -42,12 +40,6 @@ export function usePreviewControls({
   const handleZoomIn = useCallback((): void => rendererRef.current?.zoomIn(), [rendererRef]);
   const handleZoomOut = useCallback((): void => rendererRef.current?.zoomOut(), [rendererRef]);
   const handleResetView = useCallback((): void => rendererRef.current?.resetView(), [rendererRef]);
-  const handleToggleMeasuring = useCallback((): void => {
-    if (measuring) {
-      onClearMeasurement();
-    }
-    setMeasuring(!measuring);
-  }, [measuring, onClearMeasurement, setMeasuring]);
 
   const view = useMemo(
     () => ({
@@ -59,11 +51,6 @@ export function usePreviewControls({
       onReset: handleResetView,
     }),
     [handleResetView, handleZoomIn, handleZoomOut, isFullscreen, preview.fitted, preview.zoom]
-  );
-
-  const measure = useMemo(
-    () => ({ measuring, onToggleMeasuring: handleToggleMeasuring }),
-    [handleToggleMeasuring, measuring]
   );
 
   const canvasChildren = useMemo(
@@ -78,10 +65,25 @@ export function usePreviewControls({
             dimensions={dimensions}
             measurement={measurement}
           />
+          <MapPin
+            store={readoutStore}
+            containerRef={wrapperRef}
+            rendererRef={rendererRef}
+            viewTransform={preview.viewTransform}
+            dimensions={dimensions}
+          />
         </>
       ) : null,
-    [dimensions, measurement, preview.viewTransform, preview.zoom, rendererRef, wrapperRef]
+    [
+      dimensions,
+      measurement,
+      preview.viewTransform,
+      preview.zoom,
+      readoutStore,
+      rendererRef,
+      wrapperRef,
+    ]
   );
 
-  return { handleOverlayChange, view, measure, canvasChildren };
+  return { handleOverlayChange, view, canvasChildren };
 }

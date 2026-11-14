@@ -43,7 +43,7 @@ stwierdzono potrzeby zmian.
 | Komponent lub moduł | Zakres wymaganej poprawy |
 | --- | --- |
 | `mobile-menu/mobile-menu.tsx` i `mobile-menu/menu-drawer/menu-drawer.tsx` | Określić i wdrożyć modalny lub niemodalny kontrakt draweru, w tym właściwe zarządzanie fokusem przy otwarciu, zamknięciu i nawigacji klawiaturą. |
-| `map-sidebar/measure-controls/measure-controls.tsx` | Przenieść teksty „Controls”, „Measure” i instrukcję obsługi do katalogów tłumaczeń. |
+| `map-sidebar/tool-bar/tool-bar.tsx` | Przenieść teksty „Tools”, „Measure” i instrukcję obsługi do katalogów tłumaczeń. |
 | `info-label/info-label.tsx` | Uczynić `description` opcjonalnym w typie, zgodnie z zachowaniem komponentu, który już pomija tooltip bez opisu. |
 
 ## Dalsze kierunki porządkowania

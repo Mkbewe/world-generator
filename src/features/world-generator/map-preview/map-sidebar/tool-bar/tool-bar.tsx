@@ -2,16 +2,20 @@ import { useTranslation } from 'react-i18next';
 import { MixerHorizontalIcon, RulerHorizontalIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Text } from '@radix-ui/themes';
 
-import styles from './measure-controls.module.scss';
+import { PinControl } from '../../pin-control';
+import styles from './tool-bar.module.scss';
 
-export interface MeasureControlsProps {
+export interface ToolBarProps {
   /** Whether clicks on the map add measurement points. */
   measuring: boolean;
   onToggleMeasuring: () => void;
+  /** Whether map taps pin locations. */
+  pinning: boolean;
+  onTogglePinning: () => void;
 }
 
-/** Distance measuring controls of the preview. */
-export function MeasureControls({ measuring, onToggleMeasuring }: MeasureControlsProps) {
+/** Measuring and pinning tools of the preview sidebar. */
+export function ToolBar({ measuring, onToggleMeasuring, pinning, onTogglePinning }: ToolBarProps) {
   const { t } = useTranslation();
 
   return (
@@ -19,7 +23,7 @@ export function MeasureControls({ measuring, onToggleMeasuring }: MeasureControl
       <Flex align='center' gap='2' className={styles.title}>
         <MixerHorizontalIcon width={20} height={20} />
         <Text size='3' weight='bold'>
-          {t('measureControls.title')}
+          {t('toolBar.title')}
         </Text>
       </Flex>
       <Flex align='center' gap='2'>
@@ -31,11 +35,12 @@ export function MeasureControls({ measuring, onToggleMeasuring }: MeasureControl
           onClick={onToggleMeasuring}
         >
           <RulerHorizontalIcon />
-          {t('measureControls.toggle')}
+          {t('toolBar.measure')}
         </Button>
+        <PinControl pinning={pinning} onToggle={onTogglePinning} />
       </Flex>
       <Text size='1' color='gray'>
-        {t('measureControls.hint')}
+        {t('toolBar.measureHint')}
       </Text>
     </Flex>
   );

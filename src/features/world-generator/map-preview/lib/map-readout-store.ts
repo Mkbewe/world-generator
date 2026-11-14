@@ -26,6 +26,13 @@ export class MapReadoutStore {
     this.update({ readout, pinned: !this.state.pinned });
   }
 
+  unpin(): void {
+    if (!this.state.pinned) {
+      return;
+    }
+    this.update({ ...this.state, pinned: false });
+  }
+
   clear(): void {
     if (this.state.readout === undefined) {
       return;

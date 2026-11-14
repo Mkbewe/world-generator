@@ -44,10 +44,11 @@ const pl = {
   'mapCanvas.label': 'Podgląd wygenerowanej mapy',
   'mapCanvas.keyboardHint':
     'Strzałki przesuwają mapę, plus i minus zmieniają zoom, a zero resetuje widok.',
-  'measureControls.title': 'Pomiary',
-  'measureControls.toggle': 'Linijka',
-  'measureControls.hint':
+  'toolBar.title': 'Narzędzia',
+  'toolBar.measure': 'Linijka',
+  'toolBar.measureHint':
     'Kliknij, aby dodać punkty. Prawy przycisk kończy, ponowny czyści; Backspace cofa.',
+  'pinControls.toggle': 'Pinezka',
   'selectionControls.previous': 'Poprzedni',
   'selectionControls.next': 'Następny',
   'scaleBar.label': 'Skala: {{label}}',

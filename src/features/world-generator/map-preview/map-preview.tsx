@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Flex, Heading, Separator, Text } from '@radix-ui/themes';
-import type { ReadoutAction } from '@readout';
 
 import { useMapGestures } from './hooks/use-map-gestures';
 import { useMapMeasurement } from './hooks/use-map-measurement';
@@ -9,6 +8,8 @@ import { useMapReadout } from './hooks/use-map-readout';
 import { useMapRenderer } from './hooks/use-map-renderer';
 import { usePreviewControls } from './hooks/use-preview-controls';
 import { usePreviewFullscreen } from './hooks/use-preview-fullscreen';
+import { usePreviewReadoutAction } from './hooks/use-preview-readout-action';
+import { usePreviewTools } from './hooks/use-preview-tools';
 import { useTabSync } from './hooks/use-tab-sync';
 import { LayerNavigation } from './lib/layer-navigation';
 import { LayerTabs } from './layer-tabs';
@@ -29,11 +30,7 @@ interface MapPreviewProps {
 
 export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) {
   const { t } = useTranslation();
-  const {
-    isFullscreen,
-    toggleFullscreen,
-    triggerRef: fullscreenTriggerRef,
-  } = usePreviewFullscreen();
+  const { isFullscreen, toggleFullscreen, triggerRef } = usePreviewFullscreen();
   const cardRef = useRef<HTMLDivElement>(null);
   const layerTree = usePreviewStore(state => state.layerTree);
   const [navigation] = useState(() => new LayerNavigation(layerRegistry.tree));
@@ -49,11 +46,21 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
   const measuringActive = isFullscreen && measuring;
   const readout = useMapReadout(rendererRef, preview);
   const measurement = useMapMeasurement({ active: measuringActive });
+  const tools = usePreviewTools({
+    isFullscreen,
+    measuring,
+    setMeasuring,
+    clearMeasurement: measurement.clear,
+    unpin: readout.unpin,
+  });
+  const resetTools = tools.reset;
+  const handleReadoutAction = usePreviewReadoutAction();
   const gestures = useMapGestures({
     rendererRef,
     canvasRef,
     zoomable: isFullscreen,
     measuring: measuringActive,
+    pinning: tools.pinningActive,
     readout,
     measurement,
   });
@@ -74,22 +81,14 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
 
   const handleToggleFullscreen = useCallback((): void => {
     if (!isFullscreen) {
-      setMeasuring(false);
+      resetTools();
     }
     toggleFullscreen();
-  }, [isFullscreen, toggleFullscreen]);
+  }, [isFullscreen, resetTools, toggleFullscreen]);
 
   useEffect(() => {
     rendererRef.current?.setSelection(selectedFeature);
   }, [preview.info, rendererRef, selectedFeature]);
-
-  /** Applies a readout action's declared feature and settings target. */
-  const handleReadoutAction = useCallback((action: ReadoutAction): void => {
-    const { target } = action;
-    useViewSyncStore
-      .getState()
-      .selectFeature({ layerId: target.layerId, featureId: target.featureId }, target.settingsTab);
-  }, []);
 
   /** Applies a selection: the renderer switches and the preview store remembers it. */
   const selectLayer = useCallback(
@@ -126,16 +125,14 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
 
   useTabSync({ rendererRef, onLayerChange: selectLayer });
 
-  const { handleOverlayChange, view, measure, canvasChildren } = usePreviewControls({
+  const { handleOverlayChange, view, canvasChildren } = usePreviewControls({
     rendererRef,
     wrapperRef,
     preview,
     dimensions,
     measurement: measurement.measurement,
+    readoutStore: readout.store,
     isFullscreen,
-    measuring,
-    setMeasuring,
-    onClearMeasurement: measurement.clear,
   });
   const sidebarProps = {
     preview,
@@ -144,7 +141,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     onOverlayChange: handleOverlayChange,
     fullscreen: {
       active: isFullscreen,
-      triggerRef: fullscreenTriggerRef,
+      triggerRef,
       onToggle: handleToggleFullscreen,
     },
     inspector: (
@@ -156,6 +153,12 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
         onAction={handleReadoutAction}
       />
     ),
+    toolBar: {
+      measuring,
+      onToggleMeasuring: tools.toggleMeasuring,
+      pinning: tools.pinningActive,
+      onTogglePinning: tools.togglePinning,
+    },
   };
 
   return (
@@ -191,7 +194,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
           </MapCanvas>
           <div className={styles.spacer} aria-hidden='true' />
           {isFullscreen ? (
-            <MapSidebar {...sidebarProps} mode='fullscreen' view={view} measure={measure} />
+            <MapSidebar {...sidebarProps} mode='fullscreen' view={view} />
           ) : (
             <MapSidebar {...sidebarProps} />
           )}

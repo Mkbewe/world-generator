@@ -34,4 +34,14 @@ describe('MapReadoutStore', () => {
 
     expect(listener).toHaveBeenCalledTimes(3);
   });
+
+  it('unpins without clearing the readout', () => {
+    const store = new MapReadoutStore();
+    store.setReadout(READOUT);
+    store.togglePinned(READOUT);
+
+    store.unpin();
+
+    expect(store.getSnapshot()).toEqual({ readout: READOUT, pinned: false });
+  });
 });
