@@ -32,9 +32,9 @@ The cursor readout in the sidebar shows information for the map position under
 the pointer. Click or tap the map to pin the readout. Click or tap again to
 resume following the pointer.
 
-Use **Measure** in the sidebar controls to measure a path: click to add points,
-right-click to finish, right-click again to clear, and press **Backspace** to
-undo the last point.
+In fullscreen, measurement is off by default. Enable **Measure** in the sidebar
+controls to measure a path: click to add points, right-click to finish,
+right-click again to clear, and press **Backspace** to undo the last point.
 
 The fullscreen control is in the map sidebar, beside the preview. In fullscreen,
 use the mouse wheel or the sidebar zoom controls to zoom, drag the map to pan,
