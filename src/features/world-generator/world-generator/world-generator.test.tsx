@@ -103,6 +103,18 @@ describe('WorldGenerator', () => {
       putImageData: vi.fn(),
       clearRect: vi.fn(),
       drawImage: vi.fn(),
+      setTransform: vi.fn(),
+      setLineDash: vi.fn(),
+      fill: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      arc: vi.fn(),
+      stroke: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
   });
 

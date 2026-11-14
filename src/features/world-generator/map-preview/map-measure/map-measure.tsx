@@ -1,7 +1,8 @@
-import type { RefObject } from 'react';
+import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { Measurement } from '@readout';
-import type { ViewTransform } from '@renderer';
+import type { MapRenderer, ViewTransform } from '@renderer';
 
+import { drawMeasurement, type MeasureCanvasTheme } from './lib/measure-canvas';
 import { calculateMeasurementGeometry } from './lib/measure-geometry';
 import { useElementSize } from '../../../../hooks/use-element-size';
 import type { WorldDimensions } from '../../../../utils/world-dimensions';
@@ -10,98 +11,105 @@ import styles from './map-measure.module.scss';
 export interface MapMeasureProps {
   /** The map area the measured path is drawn over. */
   containerRef: RefObject<HTMLElement | null>;
+  rendererRef: RefObject<MapRenderer | null>;
   /** Current placement of the map in the preview. */
   viewTransform: ViewTransform;
   dimensions: WorldDimensions;
   measurement?: Measurement;
 }
 
-/** Committed points with the live preview, as ruler segments, markers and labels. */
+interface MeasurementFrame {
+  readonly viewTransform: ViewTransform;
+  readonly dimensions: WorldDimensions;
+  readonly measurement?: Measurement;
+  readonly width: number;
+  readonly height: number;
+}
+
+/** Committed points with the live preview, as a canvas overlay matching the map. */
 export function MapMeasure({
   containerRef,
+  rendererRef,
   viewTransform,
   dimensions,
   measurement,
 }: MapMeasureProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { width, height } = useElementSize(containerRef);
-  const geometry = calculateMeasurementGeometry({
-    measurement,
+  const latest = useRef<MeasurementFrame>({
     viewTransform,
     dimensions,
-    containerWidth: width,
-    containerHeight: height,
+    measurement,
+    width,
+    height,
   });
+  const draw = useCallback((): void => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+    const frame = latest.current;
+    const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    const pixelWidth = Math.max(1, Math.round(frame.width * ratio));
+    const pixelHeight = Math.max(1, Math.round(frame.height * ratio));
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, frame.width, frame.height);
+    const geometry = calculateMeasurementGeometry({
+      measurement: frame.measurement,
+      viewTransform: frame.viewTransform,
+      dimensions: frame.dimensions,
+      containerWidth: frame.width,
+      containerHeight: frame.height,
+    });
+    if (geometry) {
+      drawMeasurement(context, geometry, readTheme(canvas));
+    }
+  }, []);
 
-  if (!geometry) {
-    return null;
-  }
+  useLayoutEffect(() => {
+    latest.current = { viewTransform, dimensions, measurement, width, height };
+    draw();
+  }, [dimensions, draw, height, measurement, viewTransform, width]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) {
+      return;
+    }
+    return renderer.subscribeView(view => {
+      latest.current = { ...latest.current, viewTransform: view };
+      draw();
+    });
+  }, [draw, rendererRef]);
 
   return (
-    <svg className={styles.overlay} aria-hidden='true'>
-      {geometry.segments.map((segment, index) => (
-        <g key={`segment-${index}`}>
-          <line
-            className={segment.preview ? styles.preview : styles.line}
-            x1={segment.start.x}
-            y1={segment.start.y}
-            x2={segment.end.x}
-            y2={segment.end.y}
-          />
-          {segment.ticks.map(tick => (
-            <line
-              key={`${tick.x1}:${tick.y1}`}
-              className={styles.tick}
-              x1={tick.x1}
-              y1={tick.y1}
-              x2={tick.x2}
-              y2={tick.y2}
-            />
-          ))}
-        </g>
-      ))}
-      {geometry.segments.map((segment, index) => (
-        <text
-          key={`segment-label-${index}`}
-          className={styles.label}
-          x={segment.label.x}
-          y={segment.label.y}
-          textAnchor='middle'
-          dominantBaseline='central'
-        >
-          {segment.label.text}
-        </text>
-      ))}
-      {geometry.points.map((point, index) => (
-        <circle key={`point-${index}`} className={styles.marker} cx={point.x} cy={point.y} r={4} />
-      ))}
-      {geometry.previewPoint && (
-        <circle
-          className={styles.previewMarker}
-          cx={geometry.previewPoint.x}
-          cy={geometry.previewPoint.y}
-          r={3}
-        />
-      )}
-      <text
-        className={styles.label}
-        x={geometry.startLabel.x}
-        y={geometry.startLabel.y}
-        textAnchor='middle'
-        dominantBaseline='central'
-      >
-        {geometry.startLabel.text}
-      </text>
-      {geometry.totalLabel && (
-        <text
-          className={styles.label}
-          x={geometry.totalLabel.x}
-          y={geometry.totalLabel.y}
-          textAnchor='middle'
-          dominantBaseline='central'
-        >
-          {geometry.totalLabel.text}
-        </text>
-      )}
-    </svg>
+    <canvas
+      ref={canvasRef}
+      className={styles.overlay}
+      aria-hidden='true'
+      data-testid='map-measure'
+    />
   );
+}
+
+function readTheme(canvas: HTMLCanvasElement): MeasureCanvasTheme {
+  const style = getComputedStyle(canvas);
+  const read = (name: string, fallback: string): string =>
+    style.getPropertyValue(name).trim() || fallback;
+  return {
+    line: read('--violet-9', '#6e56cf'),
+    background: read('--color-background', '#ffffff'),
+    text: read('--gray-12', '#1f1f1f'),
+    fontSize: read('--font-size-1', '12px'),
+    fontFamily: style.fontFamily || 'sans-serif',
+    fontWeight: read('--font-weight-medium', '500'),
+  };
 }

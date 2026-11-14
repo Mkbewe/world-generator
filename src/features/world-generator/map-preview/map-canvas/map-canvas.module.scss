@@ -15,6 +15,7 @@
   width: min(600px, 100%);
   margin-inline: auto;
   aspect-ratio: 1;
+  overflow: hidden;
 
   .area[data-expanded] & {
     width: 100%;

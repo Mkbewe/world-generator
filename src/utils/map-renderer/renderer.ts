@@ -209,6 +209,11 @@ export class MapRenderer {
     return this.view.viewTransform;
   }
 
+  /** Subscribes to synchronous view changes for overlays outside React. */
+  subscribeView(listener: (view: ViewTransform) => void): () => void {
+    return this.view.subscribeView(listener);
+  }
+
   /** Reads the displayed layer's sample at a source raster cell. */
   inspect(x: number, y: number): MapInspection | undefined {
     const id = this.view.displayedLayer;

@@ -50,6 +50,7 @@ export class MapView {
   private view: ViewTransform = fitView();
   private progressive = true;
   private selectedLayer?: MapBaseLayerId;
+  private readonly viewListeners = new Set<(view: ViewTransform) => void>();
 
   constructor(
     private readonly elements: MapViewElements,
@@ -89,6 +90,20 @@ export class MapView {
 
   get viewTransform(): ViewTransform {
     return this.view;
+  }
+
+  /** Synchronous notification for overlays drawn outside the React tree. */
+  subscribeView(listener: (view: ViewTransform) => void): () => void {
+    this.viewListeners.add(listener);
+    return () => {
+      this.viewListeners.delete(listener);
+    };
+  }
+
+  private notifyView(): void {
+    for (const listener of this.viewListeners) {
+      listener(this.view);
+    }
   }
 
   get overlayDurationMs(): number {
@@ -139,6 +154,7 @@ export class MapView {
     this.size = size;
     this.viewport.start();
     this.applyTargetSize();
+    this.notifyView();
   }
 
   restoreSelection(fallback?: MapBaseLayerId): void {
@@ -347,6 +363,7 @@ export class MapView {
       this.presenter.ensure(this.presented);
     }
     this.renderOverlays();
+    this.notifyView();
     return true;
   }
 
