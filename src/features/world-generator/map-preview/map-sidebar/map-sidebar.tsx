@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { Card, Flex, Separator } from '@radix-ui/themes';
 
+import { FullscreenControl, type FullscreenControlProps } from './fullscreen-control';
 import { LayerViews } from './layer-views';
 import { MeasureControls, type MeasureControlsProps } from './measure-controls';
 import { OverlayControls } from './overlay-controls';
@@ -19,6 +20,8 @@ interface MapSidebarBaseProps {
   navigation: MapLayerNavigation;
   onLayerChange: (layer: MapBaseLayerId) => void;
   onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
+  /** The fullscreen switch rendered above the overlays in either mode. */
+  fullscreen: FullscreenControlProps;
 }
 
 interface MapSidebarInlineProps extends MapSidebarBaseProps {
@@ -54,6 +57,7 @@ export function MapSidebar(props: MapSidebarProps) {
   if (props.mode !== 'fullscreen') {
     return (
       <Flex direction='column' gap='3' className={styles.sidebar}>
+        <FullscreenControl {...props.fullscreen} />
         <Card size='1' variant='surface' className={styles.section}>
           {overlays}
         </Card>
@@ -82,8 +86,10 @@ export function MapSidebar(props: MapSidebarProps) {
           onPositionChange={setPosition}
           onCollapsedChange={setCollapsed}
         />
+        <FullscreenControl {...props.fullscreen} />
         {!collapsed && (
           <>
+            <Separator size='4' />
             <ViewControls {...props.view} />
             <Separator size='4' />
             <MeasureControls {...props.measure} />

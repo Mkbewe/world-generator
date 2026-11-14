@@ -1,7 +1,6 @@
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { EnterFullScreenIcon, ExitFullScreenIcon, MoonIcon, SunIcon } from '@radix-ui/react-icons';
+import { MoonIcon, SunIcon } from '@radix-ui/react-icons';
 import { Avatar, Badge, Flex, Heading, IconButton } from '@radix-ui/themes';
 
 import { useHeaderActions } from './header-actions-context';
@@ -16,17 +15,8 @@ interface HeaderProps {
 }
 
 export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
-  const { canFullscreen, isFullscreen, setIsFullscreen } = useHeaderActions();
+  const { isFullscreen } = useHeaderActions();
   const { t } = useTranslation();
-  const fullscreenTriggerRef = useRef<HTMLButtonElement>(null);
-  const wasFullscreenRef = useRef(false);
-
-  useEffect(() => {
-    if (wasFullscreenRef.current && !isFullscreen) {
-      fullscreenTriggerRef.current?.focus();
-    }
-    wasFullscreenRef.current = isFullscreen;
-  }, [isFullscreen]);
 
   return (
     <div className={styles.root} data-fullscreen={isFullscreen || undefined}>
@@ -64,26 +54,10 @@ export function Header({ onToggleTheme, currentTheme }: HeaderProps) {
           </Flex>
           <Flex gap='4' align='center' display={{ initial: 'none', sm: 'flex' }}>
             <LanguageSwitcher />
-            {canFullscreen && (
-              <Flex align='center' gap='2'>
-                <IconButton
-                  ref={fullscreenTriggerRef}
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  size='3'
-                  color='gray'
-                  variant='surface'
-                  title={t(isFullscreen ? 'header.exitFullscreen' : 'header.enterFullscreen')}
-                  aria-label={t(isFullscreen ? 'header.exitFullscreen' : 'header.enterFullscreen')}
-                  aria-pressed={isFullscreen}
-                >
-                  {isFullscreen ? <ExitFullScreenIcon /> : <EnterFullScreenIcon />}
-                </IconButton>
-                {isFullscreen && (
-                  <Badge variant='outline' color='gray' size='3'>
-                    {t('header.esc')}
-                  </Badge>
-                )}
-              </Flex>
+            {isFullscreen && (
+              <Badge variant='outline' color='gray' size='3'>
+                {t('header.esc')}
+              </Badge>
             )}
             {onToggleTheme && (
               <IconButton

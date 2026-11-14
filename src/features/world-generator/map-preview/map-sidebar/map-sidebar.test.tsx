@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { Theme } from '@radix-ui/themes';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -19,6 +20,11 @@ const MEASURE = { measuring: false, onToggleMeasuring: () => {} };
 const INSPECTOR = <CursorReadout items={[]} />;
 
 function renderSidebar(mode: 'inline' | 'fullscreen'): HTMLElement {
+  const fullscreen = {
+    active: mode === 'fullscreen',
+    triggerRef: createRef<HTMLButtonElement>(),
+    onToggle: () => {},
+  };
   const { container } = render(
     <Theme>
       {mode === 'fullscreen' ? (
@@ -28,6 +34,7 @@ function renderSidebar(mode: 'inline' | 'fullscreen'): HTMLElement {
           navigation={NAVIGATION}
           onLayerChange={() => {}}
           onOverlayChange={() => {}}
+          fullscreen={fullscreen}
           view={VIEW}
           measure={MEASURE}
           inspector={INSPECTOR}
@@ -39,6 +46,7 @@ function renderSidebar(mode: 'inline' | 'fullscreen'): HTMLElement {
           navigation={NAVIGATION}
           onLayerChange={() => {}}
           onOverlayChange={() => {}}
+          fullscreen={fullscreen}
           inspector={INSPECTOR}
         />
       )}
@@ -55,6 +63,11 @@ describe('MapSidebar', () => {
     expect(screen.queryByText('Panels')).toBeNull();
     expect(screen.queryByText('View')).toBeNull();
     expect(screen.queryByText('Controls')).toBeNull();
+    const trigger = screen.getByRole('button', { name: 'Enter fullscreen' });
+    expect(trigger).toHaveAttribute('aria-pressed', 'false');
+    expect(trigger.compareDocumentPosition(screen.getByText('Overlays'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
   });
 
   it('floats the sections with the panel header in fullscreen', () => {
@@ -67,6 +80,11 @@ describe('MapSidebar', () => {
         .getAllByRole('radio')
         .map(radio => radio.getAttribute('aria-label'))
     ).toEqual(['Move panels to top', 'Move panels to bottom']);
+    const trigger = screen.getByRole('button', { name: 'Exit fullscreen' });
+    expect(trigger).toHaveAttribute('aria-pressed', 'true');
+    expect(trigger.compareDocumentPosition(screen.getByText('Overlays'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
     expect(screen.getByText('Panels')).toBeInTheDocument();
     expect(screen.getByText('View')).toBeInTheDocument();
     expect(screen.getByText('Controls')).toBeInTheDocument();

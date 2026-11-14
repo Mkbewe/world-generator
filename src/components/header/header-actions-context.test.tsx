@@ -3,20 +3,17 @@ import { act, renderHook } from '@testing-library/react';
 import { HeaderActionsProvider, useHeaderActions } from './header-actions-context';
 
 describe('HeaderActionsProvider', () => {
-  it('starts without a fullscreen preview', () => {
+  it('starts outside fullscreen', () => {
     const { result } = renderHook(() => useHeaderActions(), { wrapper: HeaderActionsProvider });
 
-    expect(result.current.canFullscreen).toBe(false);
     expect(result.current.isFullscreen).toBe(false);
   });
 
-  it('tracks the fullscreen flag registered by the preview', () => {
+  it('tracks the fullscreen flag', () => {
     const { result } = renderHook(() => useHeaderActions(), { wrapper: HeaderActionsProvider });
 
-    act(() => result.current.setCanFullscreen(true));
     act(() => result.current.setIsFullscreen(true));
 
-    expect(result.current.canFullscreen).toBe(true);
     expect(result.current.isFullscreen).toBe(true);
   });
 

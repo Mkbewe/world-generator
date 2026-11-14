@@ -5,14 +5,14 @@ import { usePreviewFullscreen } from './use-preview-fullscreen';
 import { HeaderActionsProvider, useHeaderActions } from '../../../../components/header';
 
 function Harness() {
-  const isFullscreen = usePreviewFullscreen();
+  const { isFullscreen, toggleFullscreen, triggerRef } = usePreviewFullscreen();
   const { setIsFullscreen } = useHeaderActions();
 
   return (
     <>
       <span data-testid='state'>{isFullscreen ? 'on' : 'off'}</span>
-      <button type='button' onClick={() => setIsFullscreen(true)}>
-        Enter
+      <button ref={triggerRef} type='button' onClick={toggleFullscreen}>
+        Toggle
       </button>
       <button type='button' onClick={() => setIsFullscreen(false)}>
         Exit
@@ -39,7 +39,7 @@ describe('usePreviewFullscreen', () => {
     const user = userEvent.setup();
     renderHarness();
 
-    await user.click(screen.getByRole('button', { name: 'Enter' }));
+    await user.click(screen.getByRole('button', { name: 'Toggle' }));
 
     expect(screen.getByTestId('state')).toHaveTextContent('on');
     expect(document.documentElement.style.overflow).toBe('hidden');
@@ -51,13 +51,15 @@ describe('usePreviewFullscreen', () => {
     expect(document.documentElement.style.overflow).toBe('');
   });
 
-  it('leaves the mode on Escape', async () => {
+  it('leaves the mode on Escape and returns focus to the trigger', async () => {
     const user = userEvent.setup();
     renderHarness();
 
-    await user.click(screen.getByRole('button', { name: 'Enter' }));
+    await user.click(screen.getByRole('button', { name: 'Toggle' }));
+    screen.getByRole('button', { name: 'Exit' }).focus();
     await user.keyboard('{Escape}');
 
     expect(screen.getByTestId('state')).toHaveTextContent('off');
+    expect(screen.getByRole('button', { name: 'Toggle' })).toHaveFocus();
   });
 });
