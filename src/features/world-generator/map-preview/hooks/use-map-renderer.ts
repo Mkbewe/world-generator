@@ -1,0 +1,54 @@
+import { useLayoutEffect, useRef, useState } from 'react';
+import { OVERLAY_IDS } from '@layers';
+import { emptyRenderState, MapRenderer, type MapRendererState } from '@renderer';
+
+import { usePreviewStore, useRenderStatisticsStore } from '../../../../stores';
+import type { LayerNavigation } from '../lib/layer-navigation';
+
+interface UseMapRendererOptions {
+  navigation: LayerNavigation;
+  onReady: (renderer: MapRenderer | undefined) => void;
+}
+
+/** Owns the renderer instance, its canvas refs and the preview state it reports. */
+export function useMapRenderer({ navigation, onReady }: UseMapRendererOptions) {
+  const [preview, setPreview] = useState<MapRendererState>(emptyRenderState);
+  const setRenderStatistics = useRenderStatisticsStore(state => state.setResult);
+  const rendererRef = useRef<MapRenderer | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    const overlayCanvas = overlayRef.current;
+    const viewportElement = wrapperRef.current;
+    if (!canvas || !overlayCanvas || !viewportElement) {
+      return;
+    }
+
+    const { baseLayer, overlays } = usePreviewStore.getState();
+    const renderer = new MapRenderer({ canvas, overlayCanvas, viewportElement }, setPreview, {
+      selectedLayer: baseLayer,
+      shouldDisplay: id => navigation.leadsToSelection(id, usePreviewStore.getState().layerTree),
+      onRenderStatistics: setRenderStatistics,
+    });
+    for (const id of OVERLAY_IDS) {
+      const visible = overlays[id];
+      if (visible !== undefined) {
+        renderer.setOverlay(id, visible);
+      }
+    }
+    rendererRef.current = renderer;
+    setPreview(renderer.state);
+    onReady(renderer);
+
+    return () => {
+      rendererRef.current = null;
+      onReady(undefined);
+      renderer.dispose();
+    };
+  }, [navigation, onReady, setRenderStatistics]);
+
+  return { preview, rendererRef, canvasRef, overlayRef, wrapperRef };
+}

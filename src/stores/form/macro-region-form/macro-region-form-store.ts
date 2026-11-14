@@ -15,11 +15,8 @@ import {
   regionSegments,
   removeBaseRegion,
   splitLargestRegion,
-} from '../../../components/settings-panel/forms/macro-region-form/lib/boundary-model';
-import {
-  macroRegionPreset,
-  type MacroRegionPresetId,
-} from '../../../components/settings-panel/forms/macro-region-form/lib/presets';
+} from './lib/boundary-model';
+import { macroRegionPreset, type MacroRegionPresetId } from './lib/presets';
 import { createStore } from '../../create-store';
 
 const DEFAULT_PRESET = macroRegionPreset('rings-with-poles');

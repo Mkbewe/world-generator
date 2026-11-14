@@ -40,7 +40,7 @@ See `README.md` and `docs/roadmap.md` for architecture.
 
 - one public component per file, in its own folder with a colocated test; add a `module.scss` only when the component has its own styles
 - non-component logic and types live in a `lib/` folder; hooks live in a `hooks/` folder, which is the preferred place for them (a `lib/` folder is still acceptable, but prefer `hooks/`)
-- soft limit ~150 lines per component file under `src/components` (ESLint fails above 200)
+- soft limit ~150 lines per component file under `src/components` and `src/features` (ESLint fails above 200)
 - prefer few files per folder (roughly seven at most); split a folder that keeps growing by responsibility
 - shared wrappers take `children`; do not add text props just to pass copy through a wrapper
 
