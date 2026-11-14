@@ -45,7 +45,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     () => navigation.toViewState(preview.layers, preview.displayedLayer, layerTree),
     [navigation, preview.layers, preview.displayedLayer, layerTree]
   );
-  const [measuring, setMeasuring] = useState(true);
+  const [measuring, setMeasuring] = useState(false);
   const measuringActive = isFullscreen && measuring;
   const readout = useMapReadout(rendererRef, preview);
   const measurement = useMapMeasurement({ active: measuringActive });
@@ -71,6 +71,13 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     rendererRef.current?.resetView();
     clearMeasurement();
   }, [clearMeasurement, isFullscreen, rendererRef]);
+
+  const handleToggleFullscreen = useCallback((): void => {
+    if (!isFullscreen) {
+      setMeasuring(false);
+    }
+    toggleFullscreen();
+  }, [isFullscreen, toggleFullscreen]);
 
   useEffect(() => {
     rendererRef.current?.setSelection(selectedFeature);
@@ -138,7 +145,7 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     fullscreen: {
       active: isFullscreen,
       triggerRef: fullscreenTriggerRef,
-      onToggle: toggleFullscreen,
+      onToggle: handleToggleFullscreen,
     },
     inspector: (
       <MapReadout

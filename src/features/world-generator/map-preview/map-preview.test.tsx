@@ -380,6 +380,39 @@ describe('MapPreview readout', () => {
     expect(renderer.current?.viewTransform.centerX).toBe(centerAfterRelease);
   });
 
+  it('keeps measurement off until the measure control is enabled', async () => {
+    const user = userEvent.setup();
+    const { renderer } = renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+    renderer.current?.setInfo({
+      worldDimensions: { widthMeters: 4000, heightMeters: 4000, sampleWidth: 4, sampleHeight: 4 },
+    });
+    await act(async () => {});
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
+    const measure = screen.getByRole('button', { name: /measure/i });
+    expect(measure).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.pointerDown(canvas, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerUp(canvas, { button: 0, clientX: 100, clientY: 100 });
+
+    expect(screen.queryByText('Distance:')).toBeNull();
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+
+    await user.click(measure);
+    expect(measure).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Exit fullscreen' }));
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+
+    expect(screen.getByRole('button', { name: /measure/i })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+  });
+
   it('measures clicked points, finishes on right-click and undoes with Backspace', async () => {
     const user = userEvent.setup();
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
@@ -409,6 +442,11 @@ describe('MapPreview readout', () => {
     await act(async () => {});
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
 
+    expect(screen.getByRole('button', { name: /measure/i })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+    await user.click(screen.getByRole('button', { name: /measure/i }));
     expect(screen.getByRole('button', { name: /measure/i })).toHaveAttribute(
       'aria-pressed',
       'true'
