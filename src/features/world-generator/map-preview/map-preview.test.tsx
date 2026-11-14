@@ -100,6 +100,11 @@ describe('MapPreview readout', () => {
       ellipse: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
+      setTransform: vi.fn(),
+      setLineDash: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
+      fill: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
       closePath: vi.fn(),
@@ -433,7 +438,6 @@ describe('MapPreview readout', () => {
     expect(
       within(screen.getByRole('group', { name: 'Cursor readout' })).getByText('2.89 km')
     ).toBeInTheDocument();
-    expect(canvas.parentElement?.querySelector('line')).not.toBeNull();
 
     fireEvent.contextMenu(canvas);
     fireEvent.pointerMove(canvas, { clientX: 350, clientY: 250 });
@@ -445,7 +449,6 @@ describe('MapPreview readout', () => {
     fireEvent.keyDown(window, { key: 'Backspace' });
 
     expect(screen.queryByText('Distance:')).toBeNull();
-    expect(canvas.parentElement?.querySelector('line')).toBeNull();
 
     fireEvent.pointerMove(canvas, { clientX: 300, clientY: 300 });
     fireEvent.contextMenu(canvas);
@@ -457,7 +460,6 @@ describe('MapPreview readout', () => {
     fireEvent.contextMenu(canvas);
 
     expect(screen.queryByText('Distance:')).toBeNull();
-    expect(canvas.parentElement?.querySelector('line')).toBeNull();
 
     await user.click(screen.getByRole('button', { name: /measure/i }));
 
@@ -493,6 +495,10 @@ describe('MapPreview tab sync', () => {
       ellipse: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
+      setTransform: vi.fn(),
+      setLineDash: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
       closePath: vi.fn(),

@@ -73,13 +73,14 @@ export function usePreviewControls({
           <ScaleBar containerRef={wrapperRef} zoom={preview.zoom} dimensions={dimensions} />
           <MapMeasure
             containerRef={wrapperRef}
+            rendererRef={rendererRef}
             viewTransform={preview.viewTransform}
             dimensions={dimensions}
             measurement={measurement}
           />
         </>
       ) : null,
-    [dimensions, measurement, preview.viewTransform, preview.zoom, wrapperRef]
+    [dimensions, measurement, preview.viewTransform, preview.zoom, rendererRef, wrapperRef]
   );
 
   return { handleOverlayChange, view, measure, canvasChildren };

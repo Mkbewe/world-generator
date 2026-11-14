@@ -53,6 +53,26 @@ describe('MapView', () => {
     vi.restoreAllMocks();
   });
 
+  it('notifies view subscribers synchronously and stops after unsubscribe', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 4,
+      height: 4,
+      devicePixelRatio: 1,
+    });
+    const view = new MapView(createElements(), new RenderMetrics(layerRegistry), vi.fn());
+    view.start({ width: 2, height: 2 }, 'disc');
+    const listener = vi.fn();
+    const unsubscribe = view.subscribeView(listener);
+
+    view.zoomIn();
+
+    expect(listener).toHaveBeenCalledWith({ scale: 2, centerX: 0.5, centerY: 0.5 });
+    unsubscribe();
+    view.zoomIn();
+    expect(listener).toHaveBeenCalledOnce();
+    view.dispose();
+  });
+
   it('renders a magnified layer at display resolution', async () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
       width: 4,
