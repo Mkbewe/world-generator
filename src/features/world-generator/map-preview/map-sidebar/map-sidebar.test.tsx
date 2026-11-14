@@ -2,6 +2,7 @@ import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { CursorReadout } from './cursor-readout';
 import { MapSidebar } from './map-sidebar';
 import { emptyRenderState } from '../../../../utils/map-renderer';
 
@@ -15,7 +16,7 @@ const VIEW = {
   onReset: () => {},
 };
 const MEASURE = { measuring: false, onToggleMeasuring: () => {} };
-const INSPECTOR = { items: [] };
+const INSPECTOR = <CursorReadout items={[]} />;
 
 function renderSidebar(mode: 'inline' | 'fullscreen'): HTMLElement {
   const { container } = render(

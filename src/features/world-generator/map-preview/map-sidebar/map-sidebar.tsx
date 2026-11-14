@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Card, Flex, Separator } from '@radix-ui/themes';
 
-import { CursorReadout, type CursorReadoutProps } from './cursor-readout';
 import { LayerViews } from './layer-views';
 import { MeasureControls, type MeasureControlsProps } from './measure-controls';
 import { OverlayControls } from './overlay-controls';
@@ -25,7 +24,7 @@ interface MapSidebarBaseProps {
 interface MapSidebarInlineProps extends MapSidebarBaseProps {
   readonly mode?: 'inline';
   /** Cursor readout rendered below the layer sections. */
-  inspector?: CursorReadoutProps;
+  inspector?: ReactNode;
 }
 
 interface MapSidebarFullscreenProps extends MapSidebarBaseProps {
@@ -35,7 +34,7 @@ interface MapSidebarFullscreenProps extends MapSidebarBaseProps {
   /** Distance measuring controls rendered under the view section. */
   measure: MeasureControlsProps;
   /** Cursor readout rendered below the layer sections. */
-  inspector: CursorReadoutProps;
+  inspector: ReactNode;
 }
 
 export type MapSidebarProps = MapSidebarInlineProps | MapSidebarFullscreenProps;
@@ -50,7 +49,7 @@ export function MapSidebar(props: MapSidebarProps) {
   const layerViews = hasLayerViews ? (
     <LayerViews tabs={tabs} activeTab={activeTab} onViewChange={onLayerChange} />
   ) : null;
-  const readout = props.inspector ? <CursorReadout {...props.inspector} /> : null;
+  const readout = props.inspector ?? null;
 
   if (props.mode !== 'fullscreen') {
     return (
