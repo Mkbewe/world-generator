@@ -54,6 +54,7 @@ describe('useMapGestures', () => {
         canvasRef: { current: null },
         zoomable: true,
         measuring: false,
+        pinning: false,
         readout,
         measurement,
       })
@@ -80,6 +81,7 @@ describe('useMapGestures', () => {
         canvasRef: { current: null },
         zoomable: true,
         measuring: false,
+        pinning: true,
         readout,
         measurement,
       })
@@ -101,6 +103,26 @@ describe('useMapGestures', () => {
     expect(readout.togglePin).toHaveBeenCalledOnce();
   });
 
+  it('ignores taps while the pin mode is off', () => {
+    const { readout, measurement, renderer } = createPorts();
+    const { result } = renderHook(() =>
+      useMapGestures({
+        rendererRef: { current: renderer as unknown as MapRenderer },
+        canvasRef: { current: null },
+        zoomable: true,
+        measuring: false,
+        pinning: false,
+        readout,
+        measurement,
+      })
+    );
+
+    act(() => result.current.handlers.onPointerDown(pointerEvent()));
+    act(() => result.current.handlers.onPointerUp(pointerEvent()));
+
+    expect(readout.togglePin).not.toHaveBeenCalled();
+  });
+
   it('moves measurement points and finishes them from the context menu', () => {
     const { readout, measurement, renderer } = createPorts();
     const { result } = renderHook(() =>
@@ -109,6 +131,7 @@ describe('useMapGestures', () => {
         canvasRef: { current: null },
         zoomable: true,
         measuring: true,
+        pinning: false,
         readout,
         measurement,
       })
@@ -135,6 +158,7 @@ describe('useMapGestures', () => {
         canvasRef: { current: null },
         zoomable: true,
         measuring: true,
+        pinning: false,
         readout,
         measurement,
       })

@@ -30,7 +30,10 @@ overlays in the sidebar; an overlay may be unavailable for some base layers.
 
 The cursor readout in the sidebar shows information for the map position under
 the pointer. Click or tap the map to pin the readout. Click or tap again to
-resume following the pointer.
+resume following the pointer. Pinning is always on in the preview; in fullscreen,
+the **Pin** control under Tools turns it off and on, and pinned locations are
+marked on the map. Measuring and pinning are exclusive: turning one on turns the
+other off and clears its marks.
 
 In fullscreen, measurement is off by default. Enable **Measure** in the sidebar
 controls to measure a path: click to add points, right-click to finish,

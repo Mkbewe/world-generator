@@ -44,10 +44,11 @@ const en = {
   'mapCanvas.label': 'Generated map preview',
   'mapCanvas.keyboardHint':
     'Arrow keys pan the map, plus and minus zoom, and zero resets the view.',
-  'measureControls.title': 'Controls',
-  'measureControls.toggle': 'Measure',
-  'measureControls.hint':
+  'toolBar.title': 'Tools',
+  'toolBar.measure': 'Measure',
+  'toolBar.measureHint':
     'Click to add points. Right-click to finish, again to clear; Backspace to undo.',
+  'pinControls.toggle': 'Pin',
   'selectionControls.previous': 'Previous',
   'selectionControls.next': 'Next',
   'scaleBar.label': 'Scale: {{label}}',

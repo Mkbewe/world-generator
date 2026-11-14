@@ -39,6 +39,7 @@ interface UseMapGesturesOptions {
   readonly canvasRef: RefObject<HTMLCanvasElement | null>;
   readonly zoomable: boolean;
   readonly measuring: boolean;
+  readonly pinning: boolean;
   readonly readout: MapReadoutPort;
   readonly measurement: MapMeasurementPort;
 }
@@ -59,6 +60,7 @@ export function useMapGestures({
   canvasRef,
   zoomable,
   measuring,
+  pinning,
   readout,
   measurement,
 }: UseMapGesturesOptions) {
@@ -171,12 +173,15 @@ export function useMapGestures({
       if (gesture.moved || gesture.button === 1) {
         return;
       }
+      if (!pinning) {
+        return;
+      }
       const position = sampleAt(event);
       if (position) {
         togglePin(position);
       }
     },
-    [sampleAt, togglePin]
+    [pinning, sampleAt, togglePin]
   );
 
   const handlePointerCancel = useCallback(

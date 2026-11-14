@@ -88,6 +88,10 @@ export function useMapReadout(
     [readoutAt, store]
   );
 
+  const unpin = useCallback((): void => {
+    store.unpin();
+  }, [store]);
+
   const handlePointerLeave = useCallback(
     (event: ReactPointerEvent<HTMLElement>): void => {
       if (store.isPinned() || isTouchPointer(event)) {
@@ -98,5 +102,5 @@ export function useMapReadout(
     [clear, store]
   );
 
-  return { store, sampleAt, trackReadout, togglePin, clear, handlePointerLeave };
+  return { store, sampleAt, trackReadout, togglePin, unpin, clear, handlePointerLeave };
 }

@@ -16,7 +16,12 @@ const VIEW = {
   onZoomOut: () => {},
   onReset: () => {},
 };
-const MEASURE = { measuring: false, onToggleMeasuring: () => {} };
+const TOOL_BAR = {
+  measuring: false,
+  onToggleMeasuring: () => {},
+  pinning: true,
+  onTogglePinning: () => {},
+};
 const INSPECTOR = <CursorReadout items={[]} />;
 
 function renderSidebar(mode: 'inline' | 'fullscreen'): HTMLElement {
@@ -36,7 +41,7 @@ function renderSidebar(mode: 'inline' | 'fullscreen'): HTMLElement {
           onOverlayChange={() => {}}
           fullscreen={fullscreen}
           view={VIEW}
-          measure={MEASURE}
+          toolBar={TOOL_BAR}
           inspector={INSPECTOR}
         />
       ) : (
@@ -62,7 +67,7 @@ describe('MapSidebar', () => {
     expect(container.querySelector('[data-position]')).toBeNull();
     expect(screen.queryByText('Panels')).toBeNull();
     expect(screen.queryByText('View')).toBeNull();
-    expect(screen.queryByText('Controls')).toBeNull();
+    expect(screen.queryByText('Tools')).toBeNull();
     const trigger = screen.getByRole('button', { name: 'Enter fullscreen' });
     expect(trigger).toHaveAttribute('aria-pressed', 'false');
     expect(trigger.compareDocumentPosition(screen.getByText('Overlays'))).toBe(
@@ -87,7 +92,7 @@ describe('MapSidebar', () => {
     );
     expect(screen.getByText('Panels')).toBeInTheDocument();
     expect(screen.getByText('View')).toBeInTheDocument();
-    expect(screen.getByText('Controls')).toBeInTheDocument();
+    expect(screen.getByText('Tools')).toBeInTheDocument();
   });
 
   it('moves the floating panel between the top and the bottom', async () => {
