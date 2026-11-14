@@ -36,9 +36,10 @@ Use **Measure** in the sidebar controls to measure a path: click to add points,
 right-click to finish, right-click again to clear, and press **Backspace** to
 undo the last point.
 
-The fullscreen control is in the page header. In fullscreen, use the mouse
-wheel or the sidebar zoom controls to zoom, drag the map to pan, and use reset
-to fit the whole map in view. Leaving fullscreen restores the fitted view.
+The fullscreen control is in the map sidebar, beside the preview. In fullscreen,
+use the mouse wheel or the sidebar zoom controls to zoom, drag the map to pan,
+press **Escape** to leave, and use reset to fit the whole map in view. Leaving
+fullscreen restores the fitted view.
 
 ## Statistics and export
 

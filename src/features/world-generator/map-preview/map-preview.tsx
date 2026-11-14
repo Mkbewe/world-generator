@@ -29,7 +29,11 @@ interface MapPreviewProps {
 
 export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) {
   const { t } = useTranslation();
-  const isFullscreen = usePreviewFullscreen();
+  const {
+    isFullscreen,
+    toggleFullscreen,
+    triggerRef: fullscreenTriggerRef,
+  } = usePreviewFullscreen();
   const cardRef = useRef<HTMLDivElement>(null);
   const layerTree = usePreviewStore(state => state.layerTree);
   const [navigation] = useState(() => new LayerNavigation(layerRegistry.tree));
@@ -131,6 +135,11 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     navigation: navigationState,
     onLayerChange: handleLayerChange,
     onOverlayChange: handleOverlayChange,
+    fullscreen: {
+      active: isFullscreen,
+      triggerRef: fullscreenTriggerRef,
+      onToggle: toggleFullscreen,
+    },
     inspector: (
       <MapReadout
         store={readout.store}

@@ -1,0 +1,5 @@
+.control {
+  @include mobile {
+    display: none;
+  }
+}

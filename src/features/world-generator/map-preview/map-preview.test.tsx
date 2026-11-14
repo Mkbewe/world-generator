@@ -4,7 +4,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { MapPreview } from './map-preview';
-import { HeaderActionsProvider, useHeaderActions } from '../../../components/header';
+import { HeaderActionsProvider } from '../../../components/header';
 import {
   PREVIEW_DEFAULTS,
   usePreviewStore,
@@ -63,21 +63,6 @@ function geologyPlanFixture(): GeologyPlan {
     regionBorderDistanceMap: new Float32Array(16).fill(100),
     worldAreaSquareMeters: 400,
   };
-}
-
-function FullscreenBridge() {
-  const { setIsFullscreen } = useHeaderActions();
-
-  return (
-    <>
-      <button type='button' onClick={() => setIsFullscreen(true)}>
-        Enter fullscreen
-      </button>
-      <button type='button' onClick={() => setIsFullscreen(false)}>
-        Leave fullscreen
-      </button>
-    </>
-  );
 }
 
 function expectPosition(x: number, y: number): void {
@@ -265,12 +250,11 @@ describe('MapPreview readout', () => {
     expectPosition(2, 2);
   });
 
-  it('moves focus into the overlay when fullscreen opens', async () => {
+  it('moves focus into the overlay and back to the sidebar trigger', async () => {
     const user = userEvent.setup();
     render(
       <Theme>
         <HeaderActionsProvider>
-          <FullscreenBridge />
           <MapPreview onReady={createOnReady().onReady} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>
@@ -281,6 +265,10 @@ describe('MapPreview readout', () => {
 
     const overlay = screen.getByLabelText('Generated map preview').closest('.rt-Card');
     expect(overlay).toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Exit fullscreen' }));
+
+    expect(screen.getByRole('button', { name: 'Enter fullscreen' })).toHaveFocus();
   });
 
   it('zooms and pans only in the fullscreen mode', async () => {
@@ -289,7 +277,6 @@ describe('MapPreview readout', () => {
     render(
       <Theme>
         <HeaderActionsProvider>
-          <FullscreenBridge />
           <MapPreview onReady={onReady} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>
@@ -310,7 +297,7 @@ describe('MapPreview readout', () => {
     fireEvent.pointerUp(canvas, { button: 0, clientX: 260, clientY: 200 });
     expect(renderer.current?.viewTransform.centerX).toBeLessThan(centerBefore);
 
-    await user.click(screen.getByRole('button', { name: 'Leave fullscreen' }));
+    await user.click(screen.getByRole('button', { name: 'Exit fullscreen' }));
     expect(renderer.current?.viewTransform).toEqual({ scale: 1, centerX: 0.5, centerY: 0.5 });
   });
 
@@ -320,7 +307,6 @@ describe('MapPreview readout', () => {
     render(
       <Theme>
         <HeaderActionsProvider>
-          <FullscreenBridge />
           <MapPreview onReady={onReady} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>
@@ -347,7 +333,6 @@ describe('MapPreview readout', () => {
     render(
       <Theme>
         <HeaderActionsProvider>
-          <FullscreenBridge />
           <MapPreview onReady={onReady} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>
@@ -371,7 +356,6 @@ describe('MapPreview readout', () => {
     render(
       <Theme>
         <HeaderActionsProvider>
-          <FullscreenBridge />
           <MapPreview onReady={onReady} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>
@@ -413,7 +397,6 @@ describe('MapPreview readout', () => {
     render(
       <Theme>
         <HeaderActionsProvider>
-          <FullscreenBridge />
           <MapPreview onReady={onReady} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>

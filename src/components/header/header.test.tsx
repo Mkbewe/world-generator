@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { MemoryRouter } from 'react-router';
 import { Theme } from '@radix-ui/themes';
 import { render, screen } from '@testing-library/react';
@@ -12,14 +11,12 @@ interface RenderOptions {
   currentTheme?: 'light' | 'dark';
 }
 
-function FullscreenBridge() {
-  const { setCanFullscreen, setIsFullscreen } = useHeaderActions();
-
-  useEffect(() => setCanFullscreen(true), [setCanFullscreen]);
+function FullscreenState() {
+  const { setIsFullscreen } = useHeaderActions();
 
   return (
-    <button type='button' onClick={() => setIsFullscreen(false)}>
-      Leave fullscreen
+    <button type='button' onClick={() => setIsFullscreen(true)}>
+      Enter mode
     </button>
   );
 }
@@ -29,7 +26,7 @@ function renderHeader({ onToggleTheme, currentTheme }: RenderOptions = {}) {
     <MemoryRouter>
       <Theme>
         <HeaderActionsProvider>
-          <FullscreenBridge />
+          <FullscreenState />
           <Header onToggleTheme={onToggleTheme} currentTheme={currentTheme} />
         </HeaderActionsProvider>
       </Theme>
@@ -66,20 +63,16 @@ describe('Header', () => {
     expect(screen.queryByRole('button', { name: /switch to/i })).not.toBeInTheDocument();
   });
 
-  it('should return focus to the fullscreen trigger after leaving the mode', async () => {
+  it('shows the fullscreen status and the escape hint without a toggle', async () => {
     const user = userEvent.setup();
     renderHeader();
 
-    const trigger = screen.getByRole('button', { name: 'Enter fullscreen' });
-    expect(trigger).toHaveAttribute('aria-pressed', 'false');
-    await user.click(trigger);
-    expect(screen.getByRole('button', { name: 'Exit fullscreen' })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
+    expect(screen.queryByRole('button', { name: /fullscreen/i })).toBeNull();
 
-    await user.click(screen.getByRole('button', { name: 'Leave fullscreen' }));
+    await user.click(screen.getByRole('button', { name: 'Enter mode' }));
 
-    expect(trigger).toHaveFocus();
+    expect(screen.getByText('Fullscreen')).toBeInTheDocument();
+    expect(screen.getByText('Esc')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /fullscreen/i })).toBeNull();
   });
 });

@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { worldGenerationSession } from './lib/world-generation-session';
-import { HeaderActionsProvider, useHeaderActions } from '../../../components/header';
+import { HeaderActionsProvider } from '../../../components/header';
 import {
   BASE_CLIMATE_FORM_DEFAULTS,
   baseClimateConfigOf,
@@ -64,16 +64,6 @@ function pendingRun(options?: { signal?: AbortSignal }): Promise<never> {
   return new Promise((_, reject) => {
     options?.signal?.addEventListener('abort', () => reject(new Error('Generation cancelled.')));
   });
-}
-
-function FullscreenBridge() {
-  const { setIsFullscreen } = useHeaderActions();
-
-  return (
-    <button type='button' onClick={() => setIsFullscreen(true)}>
-      Enter fullscreen
-    </button>
-  );
 }
 
 function renderWorldGenerator() {
@@ -306,14 +296,7 @@ describe('WorldGenerator', () => {
 
   it('removes the settings column from the tab order while fullscreen is open', async () => {
     const user = userEvent.setup();
-    render(
-      <Theme>
-        <HeaderActionsProvider>
-          <FullscreenBridge />
-          <WorldGenerator />
-        </HeaderActionsProvider>
-      </Theme>
-    );
+    renderWorldGenerator();
 
     expect(screen.getByText('Map Settings').closest('[inert]')).toBeNull();
 
