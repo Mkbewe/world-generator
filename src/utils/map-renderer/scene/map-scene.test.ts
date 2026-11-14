@@ -1,3 +1,5 @@
+import { BASE_CLIMATE_ZONE_COLORS } from '@layers';
+
 import { MapScene } from './map-scene';
 import { createRadialLayout } from '../../map-generator/stages/macro-region/editor/presets';
 import type { GeologyPlan } from '../../map-generator/types';
@@ -9,6 +11,7 @@ import {
   MapLayer,
   OceanCurrentLayer,
 } from '../layer';
+import type { RenderTarget } from '../preview-targets';
 
 const BASE_CATALOG = [layerRegistry.get('world-shape'), layerRegistry.get('macro-region')];
 
@@ -42,6 +45,24 @@ function setup() {
   const scene = new MapScene(new LayerCache(), new LayerRegistry(BASE_CATALOG));
   scene.start({ width: 2, height: 2 });
   return scene;
+}
+
+function mockCanvasContext(): { images: ImageData[]; restore: () => void } {
+  const images: ImageData[] = [];
+  const spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    createImageData: (width: number, height: number) => {
+      const image = {
+        width,
+        height,
+        data: new Uint8ClampedArray(width * height * 4),
+      } as ImageData;
+      images.push(image);
+      return image;
+    },
+    putImageData: vi.fn(),
+    drawImage: vi.fn(),
+  } as unknown as CanvasRenderingContext2D);
+  return { images, restore: () => spy.mockRestore() };
 }
 
 describe('MapScene', () => {
@@ -101,6 +122,73 @@ describe('MapScene', () => {
     scene.add('world-shape', new Uint8Array(9).fill(1));
 
     expect(() => scene.add('macro-region', new Uint8Array(9))).not.toThrow();
+  });
+
+  it('uses base-climate geometry for heat-zone boundaries', async () => {
+    const { images, restore } = mockCanvasContext();
+    const scene = new MapScene(new LayerCache());
+    const zoneConfig = [
+      {
+        id: 'west',
+        label: 'West',
+        thermal: 'cold',
+        geometry: { kind: 'band', axis: 'x', center: 0.25, width: 0.5 },
+      },
+      {
+        id: 'east',
+        label: 'East',
+        thermal: 'warm',
+        geometry: { kind: 'band', axis: 'x', center: 0.725, width: 0.55 },
+      },
+    ] as const;
+    scene.start(
+      { width: 4, height: 4 },
+      {
+        shape: 'rectangle',
+        baseClimateGeometry: {
+          seed: 123,
+          zones: zoneConfig,
+          zoneIrregularity: 0,
+        },
+      }
+    );
+    scene.add('world-shape', new Uint8Array(16).fill(1));
+    const zones = new Int16Array(16);
+    for (let y = 0; y < 4; y++) {
+      zones.set([0, 0, 1, 1], y * 4);
+    }
+    const [heatZones] = scene.add('heat-zones', zones);
+    const target: RenderTarget = {
+      width: 16,
+      height: 16,
+      projection: { cellSize: 4, left: 0, top: 0, width: 16, height: 16 },
+    };
+
+    try {
+      await heatZones.prepare(new AbortController().signal, target);
+
+      expect(heatZones.sample(0, 0)).toBe(0);
+      expect(heatZones.sample(3, 0)).toBe(1);
+      const pixels = images.slice(1).flatMap(image => Array.from(image.data));
+      let hasBlend = false;
+      for (let index = 0; index < pixels.length; index += 4) {
+        const red = pixels[index];
+        const green = pixels[index + 1];
+        const blue = pixels[index + 2];
+        const alpha = pixels[index + 3];
+        const isZoneColor = BASE_CLIMATE_ZONE_COLORS.some(
+          color => color[0] === red && color[1] === green && color[2] === blue
+        );
+        if (alpha !== undefined && alpha > 0 && !isZoneColor) {
+          hasBlend = true;
+          break;
+        }
+      }
+      expect(hasBlend).toBe(true);
+    } finally {
+      heatZones.dispose();
+      restore();
+    }
   });
 
   it('invalidates cached layers when dimensions, dependencies or definitions change', () => {

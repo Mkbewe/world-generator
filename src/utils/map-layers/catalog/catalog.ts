@@ -66,6 +66,7 @@ const CATALOG_ENTRIES = [
     source: 'heatZoneMap',
     dataType: 'int16',
     clipTo: 'world-shape',
+    boundarySource: 'heat-zone',
     skipValue: -1,
     settingsForm: true,
     readout: true,

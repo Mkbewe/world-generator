@@ -1,6 +1,8 @@
 import { baseClimatePresetConfig } from './defaults';
+import { createHeatZoneClassifier } from './sampler';
 import { BaseClimateStage } from './stage';
 import { MapGenerator } from '../../pipeline/pipeline';
+import { planarDistance } from '../../space';
 import type { BaseClimateConfig, MapConfig, MapState } from '../../types';
 
 function config(
@@ -113,6 +115,25 @@ describe('BaseClimateStage', () => {
     expect(zoneMap(warped)).not.toEqual(zoneMap(clean));
     expect(zoneMap(repeated)).toEqual(zoneMap(warped));
     expect([...zoneMap(warped)].every(zone => zone >= 0 && zone < 5)).toBe(true);
+  });
+
+  it('matches the continuous classifier at every generated cell', async () => {
+    const preset = { ...baseClimatePresetConfig('earth-like'), zoneIrregularity: 0.12 };
+    const source = config(preset, 16, 16);
+    const result = await generate(source);
+    const classifier = createHeatZoneClassifier({
+      seed: source.world.seed,
+      zones: preset.zones,
+      irregularity: preset.zoneIrregularity,
+      distance: planarDistance,
+    });
+    const map = zoneMap(result);
+
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
+        expect(classifier(x / 15, y / 15)).toBe(map[y * 16 + x]);
+      }
+    }
   });
 
   it('shifts the moisture field with the world moisture control', async () => {

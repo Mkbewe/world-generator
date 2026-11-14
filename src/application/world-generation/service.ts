@@ -1,4 +1,5 @@
 import {
+  DEFAULT_BASE_CLIMATE_CONFIG,
   DEFAULT_MACRO_DEFORMATION,
   DEFAULT_MACRO_REGIONS,
   type MapConfig,
@@ -75,12 +76,19 @@ export class WorldGenerationService {
         regions: config.macroRegions ?? DEFAULT_MACRO_REGIONS,
         deformation: config.macroRegionDeformation ?? DEFAULT_MACRO_DEFORMATION,
       };
+      const baseClimate = config.baseClimate ?? DEFAULT_BASE_CLIMATE_CONFIG;
+      const baseClimateGeometry = {
+        seed: config.world.seed,
+        zones: baseClimate.zones,
+        zoneIrregularity: baseClimate.zoneIrregularity ?? 0,
+      };
       const run: WorldGenerationRun = {
         width: config.world.dimensions.sampleWidth,
         height: config.world.dimensions.sampleHeight,
         seed: String(config.world.seed),
         shape: config.world.shape,
         regionGeometry,
+        baseClimateGeometry,
         dimensionsMeters: {
           widthMeters: config.world.dimensions.widthMeters,
           heightMeters: config.world.dimensions.heightMeters,

@@ -1,5 +1,8 @@
+import { planarDistance } from '../../map-generator/space';
+import { createHeatZoneClassifier } from '../../map-generator/stages/base-climate';
 import { createMacroRegionClassifier } from '../../map-generator/stages/macro-region';
 import {
+  type BoundarySource,
   type LayerDataRecord,
   type LayerSpec,
   type MapInfo,
@@ -37,7 +40,9 @@ export class MapScene {
   private geometry?: SmoothGeometry;
   private shape?: WorldShape;
   private regionConfig?: MapMetadata['regionGeometry'];
+  private baseClimateConfig?: MapMetadata['baseClimateGeometry'];
   private dimensionsMeters?: MapMetadata['dimensionsMeters'];
+  private boundaryConfigs: Partial<Record<BoundarySource, unknown>> = {};
   private info: MapInfo = {};
   private data: LayerDataRecord = {};
   private selection?: MapFeatureSelection;
@@ -73,7 +78,10 @@ export class MapScene {
    */
   start(
     size: MapSize,
-    metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry' | 'dimensionsMeters'>
+    metadata?: Pick<
+      MapMetadata,
+      'shape' | 'regionGeometry' | 'baseClimateGeometry' | 'dimensionsMeters'
+    >
   ): void {
     if (!matchesMapSize(this.currentSize, size)) {
       this.reset();
@@ -84,11 +92,19 @@ export class MapScene {
 
   /** Updates the shape and region geometry without touching received layers. */
   private setMetadata(
-    metadata?: Pick<MapMetadata, 'shape' | 'regionGeometry' | 'dimensionsMeters'>
+    metadata?: Pick<
+      MapMetadata,
+      'shape' | 'regionGeometry' | 'baseClimateGeometry' | 'dimensionsMeters'
+    >
   ): void {
     this.shape = metadata?.shape;
     this.regionConfig = metadata?.regionGeometry;
+    this.baseClimateConfig = metadata?.baseClimateGeometry;
     this.dimensionsMeters = metadata?.dimensionsMeters;
+    this.boundaryConfigs = {
+      ...(this.regionConfig ? { region: this.regionConfig } : {}),
+      ...(this.baseClimateConfig ? { 'heat-zone': this.baseClimateConfig } : {}),
+    };
     this.rebuildGeometry();
   }
 
@@ -99,9 +115,14 @@ export class MapScene {
       this.geometry = undefined;
       return;
     }
+    const regionAt = this.createRegionAt(this.regionConfig);
+    const heatZoneAt = this.createHeatZoneAt(this.baseClimateConfig);
     this.geometry = {
       shape: this.shape,
-      regionAt: this.createRegionAt(this.regionConfig),
+      boundaries: {
+        ...(regionAt ? { region: regionAt } : {}),
+        ...(heatZoneAt ? { 'heat-zone': heatZoneAt } : {}),
+      },
     };
   }
 
@@ -115,6 +136,20 @@ export class MapScene {
       seed: region.seed,
       regions: region.regions,
       deformation: region.deformation,
+    });
+  }
+
+  private createHeatZoneAt(
+    geometry: MapMetadata['baseClimateGeometry']
+  ): ((x: number, y: number) => number) | undefined {
+    if (!geometry) {
+      return undefined;
+    }
+    return createHeatZoneClassifier({
+      seed: geometry.seed,
+      zones: geometry.zones,
+      irregularity: geometry.zoneIrregularity,
+      distance: planarDistance,
     });
   }
 
@@ -221,17 +256,12 @@ export class MapScene {
 
     const size = this.size;
     const clipMask = spec.clipTo ? this.rasterLayer(spec.clipTo) : undefined;
+    const boundaryConfig = spec.boundarySource
+      ? this.boundaryConfigs[spec.boundarySource]
+      : undefined;
     const layer = this.cache.getOrCreate(
       id,
-      [
-        spec,
-        value,
-        size.width,
-        size.height,
-        clipMask,
-        this.geometry?.shape,
-        spec.boundarySource === 'region' ? this.regionConfig : undefined,
-      ],
+      [spec, value, size.width, size.height, clipMask, this.geometry?.shape, boundaryConfig],
       () => new CatalogLayer(spec, size, value, clipMask, this.geometry, this.info)
     );
     this.layers.set(id, layer);
@@ -367,7 +397,9 @@ export class MapScene {
     this.geometry = undefined;
     this.shape = undefined;
     this.regionConfig = undefined;
+    this.baseClimateConfig = undefined;
     this.dimensionsMeters = undefined;
+    this.boundaryConfigs = {};
     this.info = {};
     this.data = {};
     this.selection = undefined;

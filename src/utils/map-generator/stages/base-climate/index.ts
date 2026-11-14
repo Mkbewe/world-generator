@@ -12,6 +12,6 @@ export type { BaseClimatePreset } from './defaults';
 export { isBaseClimateConfig, validateBaseClimateConfig } from './config/base-climate-check';
 export { createOceanCurrentSampler } from './currents';
 export type { OceanCurrentDistance, OceanCurrentSample } from './currents';
-export { createHeatZoneSampler } from './sampler';
-export type { HeatZoneDistance } from './sampler';
+export { createHeatZoneClassifier, createHeatZoneSampler } from './sampler';
+export type { HeatZoneClassifierInput, HeatZoneDistance } from './sampler';
 export { BaseClimateStage } from './stage';

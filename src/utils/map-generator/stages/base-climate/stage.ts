@@ -2,14 +2,9 @@ import { isBaseClimateConfig } from './config/base-climate-check';
 import { createOceanCurrentSampler, type OceanCurrentSample } from './currents';
 import { DEFAULT_BASE_CLIMATE_CONFIG } from './defaults';
 import { createBaseMoistureBand, moistureValue } from './moisture';
-import { createHeatZoneSampler } from './sampler';
+import { createHeatZoneClassifier } from './sampler';
 import { clamp01 } from '../../../math';
 import { GenerationCancelledError } from '../../errors';
-import {
-  createDisplacementField,
-  type DisplacementField,
-  type DisplacementOffsets,
-} from '../../irregularity';
 import type { MapContext } from '../../pipeline/context';
 import { assertStageOutput, type MapStage } from '../../pipeline/stage';
 import { BASE_CLIMATE_STAGE, type PipelineStageId } from '../../pipeline/stage-definitions';
@@ -21,7 +16,6 @@ import type {
   MapState,
   StageMetrics,
   StageProgressReporter,
-  WorldPoint,
 } from '../../types';
 
 const PROGRESS_STEP = 0.1;
@@ -75,18 +69,17 @@ export class BaseClimateStage implements MapStage<
     }
 
     const space = spaceOf(context);
-    const zoneAt = createHeatZoneSampler(config.zones, (left, right) =>
-      space.distance(left, right)
-    );
+    const zoneAt = createHeatZoneClassifier({
+      seed: context.config.world.seed,
+      zones: config.zones,
+      irregularity: config.zoneIrregularity,
+      distance: (left, right) => space.distance(left, right),
+    });
     const currentAt = createOceanCurrentSampler(config.currents, (left, right) =>
       space.distance(left, right)
     );
     const moistureBand = createBaseMoistureBand(context.random, dimensions);
     const moistureBias = (config.moisture ?? 0.5) - 0.5;
-    const irregularity = config.zoneIrregularity ?? 0;
-    const displacement = createDisplacementField(context.random, 'base-climate.zones');
-    const offset: DisplacementOffsets = { x: 0, y: 0 };
-    const zonePoint = { x: 0, y: 0 };
     const heatZoneMap = new Int16Array(cells);
     heatZoneMap.fill(-1);
     const moistureBaseMap = new Float32Array(cells);
@@ -105,9 +98,7 @@ export class BaseClimateStage implements MapStage<
           continue;
         }
         const point = space.cellToNormalized(x, y);
-        heatZoneMap[cell] = zoneAt(
-          displacedPoint(point, irregularity, displacement, offset, zonePoint)
-        );
+        heatZoneMap[cell] = zoneAt(point.x, point.y);
         moistureBaseMap[cell] = clamp01(moistureValue(moistureBand, point) + moistureBias);
         currentAt(point, current);
         oceanCurrentMap[cell] = current.angle;
@@ -248,21 +239,4 @@ function sharesByThermalClass(
     temperate: totals.temperate / covered,
     warm: totals.warm / covered,
   };
-}
-
-/** Shifted sample point for the heat-zone sampler; one field probe per cell. */
-function displacedPoint(
-  point: WorldPoint,
-  amplitude: number,
-  field: DisplacementField,
-  offset: DisplacementOffsets,
-  out: { x: number; y: number }
-): WorldPoint {
-  if (amplitude <= 0) {
-    return point;
-  }
-  field(point.x, point.y, offset);
-  out.x = point.x + offset.x * amplitude;
-  out.y = point.y + offset.y * amplitude;
-  return out;
 }
