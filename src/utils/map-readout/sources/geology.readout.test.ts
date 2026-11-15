@@ -29,10 +29,12 @@ function item(infoValue: ReadoutContext['info'], id: string) {
 }
 
 describe('geologyReadout', () => {
-  it('shows the region, its type, character, area and edit action', () => {
+  it('shows the region, its type, area and edit action', () => {
+    expect(
+      geologyReadout.read(inspection({ id: 'region-2' }), context(info))?.map(entry => entry.id)
+    ).toEqual(['region', 'type', 'area', 'edit-region']);
     expect(item(info, 'region')?.value).toBe('region-2');
     expect(item(info, 'type')?.value).toEqual({ key: 'readout.lagoon' });
-    expect(item(info, 'character')?.value).toEqual({ key: 'readout.lagoonDescription' });
     expect(item(info, 'area')?.value).toMatchObject({ key: 'readout.areaShare' });
     expect(item(info, 'edit-region')?.action).toEqual({
       id: 'edit-region',

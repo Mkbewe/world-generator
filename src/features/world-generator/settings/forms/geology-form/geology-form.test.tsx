@@ -74,7 +74,7 @@ describe('GeologyForm', () => {
   it('leaves the terrain sliders to the heightmap form', () => {
     renderForm();
 
-    expect(screen.getByText('Character: Broad irregular uplifts')).toBeInTheDocument();
+    expect(screen.queryByText(/^Character:/)).not.toBeInTheDocument();
     expect(screen.queryByText('Land share')).not.toBeInTheDocument();
     expect(screen.queryByText('Mountainousness')).not.toBeInTheDocument();
   });

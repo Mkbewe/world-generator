@@ -24,11 +24,6 @@ export const geologyReadout = defineVectorReadout('geology', parseGeology, (plan
   return [
     { id: 'region', labelKey: 'readout.region', value: region.id },
     { id: 'type', labelKey: 'readout.type', value: { key: `readout.${region.type}` } },
-    {
-      id: 'character',
-      labelKey: 'readout.character',
-      value: { key: `readout.${region.type}Description` },
-    },
     ...areaItems(region, plan.worldAreaSquareMeters),
     {
       id: 'edit-region',
