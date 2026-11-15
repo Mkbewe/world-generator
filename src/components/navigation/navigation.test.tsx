@@ -26,6 +26,22 @@ describe('Navigation', () => {
     expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute('href', '/statistics');
   });
 
+  it('keeps the legacy generator at the far right of the bar', () => {
+    renderNavigation();
+
+    const home = screen.getByRole('link', { name: 'Home' });
+    const statistics = screen.getByRole('link', { name: 'Statistics' });
+    const legacy = screen.getByRole('link', { name: 'Legacy Generator' });
+    const homeItem = home.closest('li');
+    const legacyItem = legacy.closest('li');
+
+    expect(statistics.compareDocumentPosition(legacy)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(homeItem).not.toBeNull();
+    expect(legacyItem).not.toBeNull();
+    expect(homeItem).not.toHaveClass(/trailing/);
+    expect(legacyItem).toHaveClass(/trailing/);
+  });
+
   it('marks the home link as active on the home page', () => {
     renderNavigation('/');
 

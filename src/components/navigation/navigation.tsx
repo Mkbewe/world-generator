@@ -9,12 +9,14 @@ import styles from './navigation.module.scss';
 export interface NavigationItem {
   labelKey: MessageKey;
   to: string;
+  /** Placement inside the bar; `end` pushes the item to the far right. */
+  align?: 'start' | 'end';
 }
 
 export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   { labelKey: 'navigation.home', to: '/' },
   { labelKey: 'navigation.statistics', to: '/statistics' },
-  { labelKey: 'navigation.legacy', to: '/legacy-generator' },
+  { labelKey: 'navigation.legacy', to: '/legacy-generator', align: 'end' },
 ];
 
 export function isActivePath(pathname: string, to: string): boolean {
@@ -40,7 +42,10 @@ export function Navigation({ inert = false }: NavigationProps) {
         <NavigationMenu.Root>
           <NavigationMenu.List className={styles.list}>
             {NAVIGATION_ITEMS.map(item => (
-              <NavigationMenu.Item key={item.to}>
+              <NavigationMenu.Item
+                key={item.to}
+                className={item.align === 'end' ? styles.trailing : undefined}
+              >
                 <NavigationMenu.Link asChild>
                   <NavLink
                     to={item.to}
