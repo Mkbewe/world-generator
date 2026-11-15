@@ -246,35 +246,32 @@ Deployment auth is provided by the `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and
 
 ## Feature flags
 
-Feature flags are resolved at runtime from **Vercel Global Config**, so they can
-be toggled from the Vercel dashboard without a redeploy.
+Feature flags are local to the current browser. They are read once at startup
+from the `feature-flags` `localStorage` entry; there is no remote store, server
+endpoint, or shared deployment rollout.
 
 **How it works:**
 
 - `src/feature-flags/flags.ts` is the typed registry. `FLAG_DEFAULTS` holds each
-  flag's default (also the fallback when the remote store is unavailable).
+  flag's default and is also the fallback for missing or invalid stored data.
   Flags can be booleans or strings; string flags declare their allowed values in
   `FLAG_OPTIONS`, which becomes the flag's TypeScript union type.
-- `api/flags.ts` is a Vercel Function that reads only the registered flags from
-  Global Config and returns them as JSON at `GET /api/flags`. If Global Config
-  is unavailable, it returns `FLAG_DEFAULTS`.
-- `FeatureFlagsProvider` fetches `/api/flags` on load; consume flags with
-  `useFlag('breadcrumbs')`. Remote values are validated against the registry —
-  unknown keys, wrong types, and string values outside `FLAG_OPTIONS` are ignored
-  and fall back to the default.
+- `FeatureFlagsProvider` resolves the stored JSON against the registry; unknown
+  keys, wrong types, and string values outside `FLAG_OPTIONS` fall back to the
+  defaults. Consume flags with `useFlag('breadcrumbs')`.
+- Breadcrumbs are disabled by default.
 
-**Dashboard setup (one time):**
+To change flags in this browser, set the entry and refresh the page. On the
+first load, a missing entry is created with the defaults so it can be edited in
+the browser dev tools:
 
-1. In the Vercel project: **Storage → Create Database → Global Config**.
-2. Under **Items**, add the flags as JSON, e.g. `{ "breadcrumbs": false }`.
-3. Connecting the store to the project sets the `GLOBAL_CONFIG` environment
-   variable automatically.
+```js
+localStorage.setItem('feature-flags', JSON.stringify({ breadcrumbs: true }));
+```
 
-Change a flag by editing its item in **Items** — no redeploy needed.
-
-**Local development:** `pnpm dev` serves `/api/flags` from `flags.local.json`.
-Edit that file and refresh the app to test different flag values. To exercise
-the real Vercel Function locally, run `vercel env pull` and then `vercel dev`.
+Remove the entry with `localStorage.removeItem('feature-flags')` to restore the
+defaults. This affects only the current browser profile; it is not a way to roll
+out flags to all users or a replacement for deployment configuration.
 
 ## Notes
 
