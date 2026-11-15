@@ -9,10 +9,5 @@
       "master": false
     }
   },
-  "functions": {
-    "api/**/*.ts": {
-      "includeFiles": "shared/**"
-    }
-  },
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

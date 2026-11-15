@@ -14,8 +14,8 @@ wydajności — ten wymaga osobnych pomiarów.
 
 Bazy są zdrowe: pipeline nie importuje UI ani renderera, niemal każdy komponent
 ma test, a większość etapów ma `stage.test.ts` (poza heightmapą); stores to 11
-małych spójnych jednostek. Brak `console.log`/`TODO`, ale są dwa `console.warn`
-w `feature-flags-context.tsx` i jeden `eslint-disable` w legacy. Realny dług to
+małych spójnych jednostek. Brak `console.log`/`TODO` i `console.warn`; jest jeden
+`eslint-disable` w legacy. Realny dług to
 nie architektura, tylko:
 
 - duplikaty wielokrotne (9× `clamp01`, 2× `createYieldToBrowser`, 3× `percent`,
@@ -224,8 +224,7 @@ jest jawnie typowana. Jeśli coś, to dopiero po realnym profilowaniu.
   shared-shell bez copy-paste.
 - `useBoundaryDraft` + `BaseRegionCard` memo pokazują świadome zarządzanie
   drag UX; stores są w porządku, problem nie jest strukturalny.
-- Brak `console.log`, TODO i komentarza z zamkniętym kodem; są dwa `console.warn`
-  w `feature-flags-context.tsx` (dozwolone przez `no-console`) i jeden
+- Brak `console.log`, TODO i komentarza z zamkniętym kodem; jest jeden
   `eslint-disable` w `legacy-generator/world-controls.tsx`.
 
 ## 12. Status realizacji #506
