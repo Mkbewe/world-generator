@@ -18,7 +18,7 @@ interface GeologicalRegionCardProps {
   onChange: (patch: Partial<GeologicalRegionConfig>) => void;
 }
 
-/** Type and character of the active region; its area is edited on the bar. */
+/** Type of the active region; its area is edited on the bar. */
 export function GeologicalRegionCard({
   index,
   region,
@@ -26,7 +26,6 @@ export function GeologicalRegionCard({
   onChange,
 }: GeologicalRegionCardProps) {
   const { t } = useTranslation();
-  const selected = REGION_TYPE_OPTIONS.find(option => option.id === region.type);
 
   return (
     <EditorCard>
@@ -57,11 +56,6 @@ export function GeologicalRegionCard({
           </RadioCards.Item>
         ))}
       </RadioCards.Root>
-      {selected && (
-        <Text size='1' color='gray'>
-          {t('forms.geology.character', { character: t(selected.descriptionKey) })}
-        </Text>
-      )}
     </EditorCard>
   );
 }

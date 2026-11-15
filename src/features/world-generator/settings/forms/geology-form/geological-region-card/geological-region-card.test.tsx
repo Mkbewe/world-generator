@@ -32,13 +32,12 @@ function renderCard(overrides: { region?: GeologicalRegionConfig; onChange?: () 
 }
 
 describe('GeologicalRegionCard', () => {
-  it('shows the type and character of the region', () => {
+  it('shows the region number and type options', () => {
     renderCard();
 
     expect(screen.getByText('Region 3')).toBeInTheDocument();
-    expect(
-      screen.getByText('Character: Low reef rings, lagoons and sandy islets')
-    ).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Lagoon' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.queryByText(/^Character:/)).not.toBeInTheDocument();
   });
 
   it('leaves the terrain sliders to the heightmap form', () => {
