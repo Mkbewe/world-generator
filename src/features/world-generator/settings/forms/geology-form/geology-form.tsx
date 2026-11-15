@@ -79,19 +79,6 @@ export function GeologyForm({ regionLink }: GeologyFormProps): React.JSX.Element
         rangeLabels={[t('forms.geology.rangeOne'), `${MAX_GEOLOGICAL_REGIONS}`]}
         onChange={setRegionCount}
       />
-      {activeSlots.length > 1 && (
-        <DistributionBar
-          groupAriaLabel={t('forms.geology.areaAria')}
-          segments={distributionSegments}
-          draft={draft}
-          selectedId={selectedId}
-          minShare={minShare}
-          header={{
-            label: t(GEOLOGY_SHARE_COPY.labelKey),
-            description: t(GEOLOGY_SHARE_COPY.descriptionKey),
-          }}
-        />
-      )}
       <SliderField
         label={t('forms.geology.evenness')}
         description={t('forms.geology.evennessDescription')}
@@ -114,6 +101,19 @@ export function GeologyForm({ regionLink }: GeologyFormProps): React.JSX.Element
         rangeLabels={[t('forms.geology.rangeClean'), t('forms.geology.rangeRagged')]}
         onChange={irregularity => setLayout({ irregularity })}
       />
+      {activeSlots.length > 1 && (
+        <DistributionBar
+          groupAriaLabel={t('forms.geology.areaAria')}
+          segments={distributionSegments}
+          draft={draft}
+          selectedId={selectedId}
+          minShare={minShare}
+          header={{
+            label: t(GEOLOGY_SHARE_COPY.labelKey),
+            description: t(GEOLOGY_SHARE_COPY.descriptionKey),
+          }}
+        />
+      )}
       <ColorSwatchTabs
         items={tabItems}
         selectedId={selectedId}
