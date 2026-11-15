@@ -46,6 +46,21 @@ describe('GeologyForm', () => {
     expect(screen.queryByText('Add area')).not.toBeInTheDocument();
   });
 
+  it('orders the layout controls from evenness to the region editor', () => {
+    renderForm();
+
+    const evenness = screen.getByText('Evenness');
+    const border = screen.getByText('Border irregularity');
+    const area = screen.getByText('Area share');
+    const tabs = screen.getByRole('group', { name: 'Geology regions' });
+    const editor = screen.getByText('Region 1');
+
+    expect(evenness.compareDocumentPosition(border)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(border.compareDocumentPosition(area)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(area.compareDocumentPosition(tabs)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(tabs.compareDocumentPosition(editor)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('resets the region terrains when a preset is applied', async () => {
     const user = userEvent.setup();
     renderForm();
