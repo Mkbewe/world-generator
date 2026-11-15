@@ -32,6 +32,7 @@ const en = {
   'notFoundPage.description':
     'The page you are looking for drifted beyond the world border or never made it into this seed.',
   'notFoundPage.back': 'Back to home',
+  'statisticsPage.title': 'Statistics',
   'statisticsPage.emptyTitle': 'No statistics yet',
   'statisticsPage.emptyDescription': 'Generate a world to see pipeline statistics.',
   'statisticsPage.back': 'Back to generator',
