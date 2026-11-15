@@ -1,12 +1,12 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
 
-import type { RouteHandle } from './components/breadcrumbs';
-import { MainLayout } from './layouts/main-layout';
-import { ErrorPage } from './pages/error';
-import { HomePage } from './pages/home';
-import { LegacyGeneratorPage } from './pages/legacy-generator';
-import { NotFoundPage } from './pages/not-found';
-import { StatisticsPage } from './pages/statistics';
+import type { RouteHandle } from '../components/breadcrumbs';
+import { MainLayout } from '../layouts/main-layout';
+import { ErrorPage } from '../pages/error';
+import { HomePage } from '../pages/home';
+import { LegacyGeneratorPage } from '../pages/legacy-generator';
+import { NotFoundPage } from '../pages/not-found';
+import { StatisticsPage } from '../pages/statistics';
 
 function CrashTestTrigger(): never {
   throw new Error('Intentional crash to preview the 500 error page.');

@@ -1,9 +1,9 @@
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { render, screen } from '@testing-library/react';
 
-import { FeatureFlagsContext, FLAG_DEFAULTS } from './feature-flags';
 import { routes } from './router';
-import { ThemeProvider } from './theme';
+import { FeatureFlagsContext, FLAG_DEFAULTS } from '../feature-flags';
+import { ThemeProvider } from '../theme';
 
 function renderRoute(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
