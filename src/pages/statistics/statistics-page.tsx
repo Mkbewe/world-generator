@@ -52,9 +52,14 @@ export function StatisticsPage() {
 
   return (
     <Flex direction='column' gap='5'>
-      <Flex justify='end'>
-        <Button onClick={() => setIsExportOpen(true)}>{t('statisticsPage.export')}</Button>
-      </Flex>
+      <header>
+        <Flex justify='between' align='center' gap='3' wrap='wrap'>
+          <Heading size='6' color='violet'>
+            {t('statisticsPage.title')}
+          </Heading>
+          <Button onClick={() => setIsExportOpen(true)}>{t('statisticsPage.export')}</Button>
+        </Flex>
+      </header>
       <StatisticsPanel model={mapModel} />
       <StatisticsPanel model={generationModel} />
       {renderModel && <StatisticsPanel model={renderModel} />}

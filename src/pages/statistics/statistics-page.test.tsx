@@ -53,7 +53,7 @@ describe('StatisticsPage', () => {
     expect(screen.queryByRole('button', { name: 'Export' })).not.toBeInTheDocument();
   });
 
-  it('renders map and generation statistics when present', () => {
+  it('renders the page header, map and generation statistics when present', () => {
     useGenerationStatisticsStore.setState({
       result: {
         statistics: [
@@ -79,6 +79,16 @@ describe('StatisticsPage', () => {
 
     renderPage();
 
+    const title = screen.getByRole('heading', { name: 'Statistics' });
+    const exportButton = screen.getByRole('button', { name: 'Export' });
+    const pageHeader = title.closest('header');
+    expect(pageHeader).not.toBeNull();
+    expect(pageHeader).toContainElement(exportButton);
+    expect(title.compareDocumentPosition(exportButton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(exportButton.compareDocumentPosition(screen.getByRole('heading', { name: 'Map' }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+
     expect(screen.getByRole('heading', { name: 'Map' })).toBeInTheDocument();
     expect(screen.getByText('123456')).toBeInTheDocument();
     expect(screen.getByText('10 × 10 m')).toBeInTheDocument();
@@ -88,7 +98,6 @@ describe('StatisticsPage', () => {
     expect(screen.getByText('12.5 ms')).toBeInTheDocument();
     expect(screen.getAllByText('40.0 ms')).toHaveLength(2);
     expect(screen.queryByText('No statistics yet')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
   });
 
   it('exports the statistics as a JSON file', async () => {

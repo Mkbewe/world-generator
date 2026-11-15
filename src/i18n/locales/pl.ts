@@ -32,6 +32,7 @@ const pl = {
   'notFoundPage.description':
     'Strona, której szukasz, odpłynęła poza granice świata albo nie trafiła do tego seeda.',
   'notFoundPage.back': 'Wróć do strony głównej',
+  'statisticsPage.title': 'Statystyki',
   'statisticsPage.emptyTitle': 'Brak statystyk',
   'statisticsPage.emptyDescription': 'Wygeneruj świat, aby zobaczyć statystyki potoku.',
   'statisticsPage.back': 'Wróć do generatora',
