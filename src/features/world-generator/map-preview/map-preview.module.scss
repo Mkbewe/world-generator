@@ -35,9 +35,20 @@
   min-width: 0;
 }
 
+.mapColumn {
+  flex: 1 1 auto;
+  align-self: flex-start;
+  min-width: 0;
+}
+
 .card[data-fullscreen] .workspace {
   position: relative;
   flex: 1;
+  min-height: 0;
+}
+
+.card[data-fullscreen] .mapColumn {
+  align-self: stretch;
   min-height: 0;
 }
 
@@ -54,5 +65,9 @@
 @include mobile {
   .workspace {
     flex-direction: column;
+  }
+
+  .mapColumn {
+    align-self: stretch;
   }
 }

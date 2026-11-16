@@ -43,6 +43,17 @@ describe('LayerViews', () => {
     expect(onViewChange).toHaveBeenCalledWith('macro-region');
   });
 
+  it('renders nothing when the active tab has no views', () => {
+    render(
+      <Theme>
+        <LayerViews tabs={climateTabs()} activeTab='world-shape' onViewChange={() => undefined} />
+      </Theme>
+    );
+
+    expect(screen.queryByText('Base Climate')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
+  });
+
   it('ignores clicks on unavailable views', async () => {
     const user = userEvent.setup();
     const onViewChange = vi.fn();

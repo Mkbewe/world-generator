@@ -64,13 +64,10 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     readout,
     measurement,
   });
-  const hasMap = preview.layers.some(layer => layer.available);
   const dimensions = worldDimensions(preview.info);
   const selectedFeature = useViewSyncStore(state => state.selectedFeature);
-
   const { clear: clearMeasurement } = measurement;
-  const { clear: clearReadout } = readout;
-
+  const clearReadout = readout.clear;
   useEffect(() => {
     clearReadout();
     if (isFullscreen) {
@@ -80,14 +77,12 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
     rendererRef.current?.resetView();
     clearMeasurement();
   }, [clearMeasurement, clearReadout, isFullscreen, rendererRef]);
-
   const handleToggleFullscreen = useCallback((): void => {
     if (!isFullscreen) {
       resetTools();
     }
     toggleFullscreen();
   }, [isFullscreen, resetTools, toggleFullscreen]);
-
   useEffect(() => {
     rendererRef.current?.setSelection(selectedFeature);
   }, [preview.info, rendererRef, selectedFeature]);
@@ -183,17 +178,20 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             onLayerChange={handleLayerChange}
             expanded={isFullscreen}
           />
-          <MapCanvas
-            wrapperRef={wrapperRef}
-            canvasRef={canvasRef}
-            overlayRef={overlayRef}
-            handlers={gestures.handlers}
-            ready={hasMap}
-            panning={gestures.panning}
-            expanded={isFullscreen}
-          >
-            {canvasChildren}
-          </MapCanvas>
+          <Flex direction='column' gap='3' className={styles.mapColumn}>
+            <MapCanvas
+              wrapperRef={wrapperRef}
+              canvasRef={canvasRef}
+              overlayRef={overlayRef}
+              handlers={gestures.handlers}
+              ready={preview.layers.some(layer => layer.available)}
+              panning={gestures.panning}
+              expanded={isFullscreen}
+            >
+              {canvasChildren}
+            </MapCanvas>
+            {progress && !isFullscreen && <GenerationProgress key={progressKey} model={progress} />}
+          </Flex>
           <div className={styles.spacer} aria-hidden='true' />
           {isFullscreen ? (
             <MapSidebar {...sidebarProps} mode='fullscreen' view={view} />
@@ -206,7 +204,6 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
             {preview.error}
           </Text>
         )}
-        {progress && !isFullscreen && <GenerationProgress key={progressKey} model={progress} />}
       </Flex>
     </Card>
   );
