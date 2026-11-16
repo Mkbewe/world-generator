@@ -17,49 +17,42 @@ function rendersViews(
 
 export function LayerViews({ tabs, activeTab, onViewChange }: LayerViewsProps) {
   const { t } = useTranslation();
+  const activeGroup = tabs.filter(rendersViews).find(group => group.id === activeTab);
+
+  if (!activeGroup) {
+    return null;
+  }
 
   return (
-    <div className={styles.sections}>
-      {tabs.filter(rendersViews).map(group => (
-        <Flex
-          key={group.id}
-          direction='column'
-          gap='3'
-          className={styles.section}
-          data-active={group.id === activeTab}
-          aria-hidden={group.id !== activeTab}
-          inert={group.id !== activeTab}
-        >
-          <Text size='2' weight='bold' color='gray'>
-            {t(group.labelKey)}
-          </Text>
-          <RadioCards.Root
-            columns='1'
-            gap='2'
-            size='1'
-            className={styles.options}
-            aria-label={t('layers.view', { name: t(group.labelKey) })}
-            value={group.selectedChild}
-            onValueChange={value => {
-              const child = group.children.find(child => child.id === value);
-              if (child?.available) {
-                onViewChange(child.selectedLayer);
-              }
-            }}
+    <Flex direction='column' gap='3' className={styles.section}>
+      <Text size='2' weight='bold' color='gray'>
+        {t(activeGroup.labelKey)}
+      </Text>
+      <RadioCards.Root
+        columns='1'
+        gap='2'
+        size='1'
+        className={styles.options}
+        aria-label={t('layers.view', { name: t(activeGroup.labelKey) })}
+        value={activeGroup.selectedChild}
+        onValueChange={value => {
+          const child = activeGroup.children.find(child => child.id === value);
+          if (child?.available) {
+            onViewChange(child.selectedLayer);
+          }
+        }}
+      >
+        {activeGroup.children.map(child => (
+          <RadioCards.Item
+            key={child.id}
+            value={child.id}
+            disabled={!child.available}
+            className={styles.option}
           >
-            {group.children.map(child => (
-              <RadioCards.Item
-                key={child.id}
-                value={child.id}
-                disabled={!child.available}
-                className={styles.option}
-              >
-                {t(child.labelKey)}
-              </RadioCards.Item>
-            ))}
-          </RadioCards.Root>
-        </Flex>
-      ))}
-    </div>
+            {t(child.labelKey)}
+          </RadioCards.Item>
+        ))}
+      </RadioCards.Root>
+    </Flex>
   );
 }

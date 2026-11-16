@@ -13,6 +13,7 @@ import {
 } from '../../../stores';
 import type { MapRenderer } from '../../../utils/map-renderer';
 import { Viewport } from '../../../utils/map-renderer/viewport';
+import { buildProgressViewModel, type ProgressViewModel } from '../generation-progress';
 
 function createOnReady(): {
   onReady: (renderer: MapRenderer | undefined) => void;
@@ -32,18 +33,79 @@ function createOnReady(): {
   };
 }
 
-function renderPreview() {
+function renderPreview(progress?: ProgressViewModel) {
   const { onReady, renderer } = createOnReady();
   return {
     ...render(
       <Theme>
         <HeaderActionsProvider>
-          <MapPreview onReady={onReady} progressKey={0} />
+          <MapPreview onReady={onReady} progress={progress} progressKey={0} />
         </HeaderActionsProvider>
       </Theme>
     ),
     renderer,
   };
+}
+
+function mockCanvas(): void {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    createImageData: (width: number, height: number) => ({
+      data: new Uint8ClampedArray(width * height * 4),
+    }),
+    putImageData: vi.fn(),
+    clearRect: vi.fn(),
+    drawImage: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    beginPath: vi.fn(),
+    ellipse: vi.fn(),
+    rect: vi.fn(),
+    clip: vi.fn(),
+    setTransform: vi.fn(),
+    setLineDash: vi.fn(),
+    fillText: vi.fn(),
+    strokeText: vi.fn(),
+    fill: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    closePath: vi.fn(),
+    arc: vi.fn(),
+    stroke: vi.fn(),
+  } as unknown as CanvasRenderingContext2D);
+  vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 400,
+    height: 400,
+    right: 400,
+    bottom: 400,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect);
+}
+
+function progressFixture(): ProgressViewModel {
+  return buildProgressViewModel({
+    status: 'completed',
+    totalDurationMs: 1500,
+    stages: [
+      {
+        id: 'world-shape',
+        nameKey: 'stages.worldShape',
+        status: 'completed',
+        percentage: 100,
+        durationMs: 500,
+      },
+      {
+        id: 'base-climate',
+        nameKey: 'stages.baseClimate',
+        status: 'completed',
+        percentage: 100,
+        durationMs: 1000,
+      },
+    ],
+  });
 }
 
 function geologyPlanFixture(): GeologyPlan {
@@ -70,43 +132,13 @@ function expectPosition(x: number, y: number): void {
   expect(screen.getByText(`Y ${y} cell`)).toBeInTheDocument();
 }
 
+function rendersAfter(anchor: Node, node: Node): boolean {
+  return (anchor.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
 describe('MapPreview readout', () => {
   beforeEach(() => {
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
-      createImageData: (width: number, height: number) => ({
-        data: new Uint8ClampedArray(width * height * 4),
-      }),
-      putImageData: vi.fn(),
-      clearRect: vi.fn(),
-      drawImage: vi.fn(),
-      save: vi.fn(),
-      restore: vi.fn(),
-      beginPath: vi.fn(),
-      ellipse: vi.fn(),
-      rect: vi.fn(),
-      clip: vi.fn(),
-      setTransform: vi.fn(),
-      setLineDash: vi.fn(),
-      fillText: vi.fn(),
-      strokeText: vi.fn(),
-      fill: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      closePath: vi.fn(),
-      arc: vi.fn(),
-      stroke: vi.fn(),
-    } as unknown as CanvasRenderingContext2D);
-    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({
-      left: 0,
-      top: 0,
-      width: 400,
-      height: 400,
-      right: 400,
-      bottom: 400,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    } as DOMRect);
+    mockCanvas();
   });
 
   afterEach(() => {
@@ -655,6 +687,46 @@ describe('MapPreview readout', () => {
     fireEvent.pointerUp(canvas, { button: 0, clientX: 300, clientY: 300 });
 
     expect(screen.queryByText('Distance:')).toBeNull();
+  });
+});
+
+describe('MapPreview progress placement', () => {
+  beforeEach(() => {
+    mockCanvas();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders progress after the map and before the sidebar sections', async () => {
+    renderPreview(progressFixture());
+    await act(async () => {});
+
+    const map = screen.getByLabelText('Generated map preview');
+    const progress = screen.getByText('Complete').closest('[aria-live="polite"]');
+    const overlays = screen.getByText('Overlays');
+
+    expect(progress).not.toBeNull();
+    if (!progress) {
+      throw new Error('Expected the progress block.');
+    }
+    expect(rendersAfter(map, progress)).toBe(true);
+    expect(rendersAfter(progress, overlays)).toBe(true);
+  });
+
+  it('hides progress in fullscreen and restores it on exit', async () => {
+    const user = userEvent.setup();
+    renderPreview(progressFixture());
+    await act(async () => {});
+
+    expect(screen.getByText('Complete')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    expect(screen.queryByText('Complete')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Exit fullscreen' }));
+    expect(screen.getByText('Complete')).toBeInTheDocument();
   });
 });
 

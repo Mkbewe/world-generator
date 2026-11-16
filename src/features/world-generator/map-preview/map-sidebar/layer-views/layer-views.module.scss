@@ -1,15 +1,5 @@
-.sections {
-  display: grid;
-  min-width: 0;
-}
-
 .section {
-  grid-area: 1 / 1;
   min-width: 0;
-}
-
-.section[data-active='false'] {
-  visibility: hidden;
 }
 
 .options {
