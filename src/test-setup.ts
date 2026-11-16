@@ -35,3 +35,6 @@ function matchMediaStub(query: string): MediaQueryList {
 }
 
 globalThis.matchMedia = matchMediaStub;
+
+// jsdom does not implement scrolling; the fullscreen preview scrolls the page.
+window.scrollTo = () => {};
