@@ -30,9 +30,15 @@ function renderHarness() {
 }
 
 describe('usePreviewFullscreen', () => {
+  beforeEach(() => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  });
+
   afterEach(() => {
+    vi.restoreAllMocks();
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
   });
 
   it('locks the html element while open and restores it on exit', async () => {
@@ -49,6 +55,18 @@ describe('usePreviewFullscreen', () => {
 
     expect(screen.getByTestId('state')).toHaveTextContent('off');
     expect(document.documentElement.style.overflow).toBe('');
+  });
+
+  it('opens at the top and restores the previous page scroll position', async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 240 });
+    renderHarness();
+
+    await user.click(screen.getByRole('button', { name: 'Toggle' }));
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+
+    await user.click(screen.getByRole('button', { name: 'Exit' }));
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 240);
   });
 
   it('leaves the mode on Escape and returns focus to the trigger', async () => {

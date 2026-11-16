@@ -43,15 +43,18 @@ export function usePreviewFullscreen(): PreviewFullscreen {
     }
     const root = document.documentElement;
     const previousOverflow = root.style.overflow;
+    const previousScrollY = window.scrollY;
     root.style.overflow = 'hidden';
+    window.scrollTo(0, 0);
     return () => {
       root.style.overflow = previousOverflow;
+      window.scrollTo(0, previousScrollY);
     };
   }, [isFullscreen]);
 
   useEffect(() => {
     if (wasFullscreenRef.current && !isFullscreen) {
-      triggerRef.current?.focus();
+      triggerRef.current?.focus({ preventScroll: true });
     }
     wasFullscreenRef.current = isFullscreen;
   }, [isFullscreen]);
