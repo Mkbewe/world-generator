@@ -1,5 +1,106 @@
 # Changelog
 
+## [0.14.3](https://github.com/Mkbewe/world-generator/compare/v0.14.2...v0.14.3) (2026-11-16)
+
+### Features
+
+* **[559](https://github.com/Mkbewe/world-generator/issues/559):** show pinned locations on the map ([#604](https://github.com/Mkbewe/world-generator/issues/604)) ([75a9d27](https://github.com/Mkbewe/world-generator/commit/75a9d27ab919c7981c77094be92c65353079b8b5))
+
+  - add a Pin tool to the sidebar Tools bar, excluding the Measure mode
+  - keep pinning always on in the preview and toggleable in fullscreen
+  - draw the pinned location as a canvas marker aligned with pan and zoom
+  - clear the pin marker or measurement when its tool is turned off
+  - cover pin geometry, marker drawing, exclusivity and tool modes with
+  tests
+  - update the i18n catalogues, user guide and architecture notes
+
+### Bug Fixes
+
+* **[555](https://github.com/Mkbewe/world-generator/issues/555):** draw measurements on a clipped canvas overlay ([#600](https://github.com/Mkbewe/world-generator/issues/600)) ([51439e3](https://github.com/Mkbewe/world-generator/commit/51439e3e74303bd28e687a06f740f081cc208002))
+
+  - replace the SVG measurement layer with a canvas that matches the map
+  viewport
+  - clip measurement output to the map area instead of leaking outside it
+  - subscribe the overlay to synchronous renderer view changes for redraws
+  - move canvas painting into map-measure/lib/measure-canvas and update
+  tests
+* **[556](https://github.com/Mkbewe/world-generator/issues/556):** update panel position to top and remove middle option ([#601](https://github.com/Mkbewe/world-generator/issues/601)) ([c1e9904](https://github.com/Mkbewe/world-generator/commit/c1e9904bf250dce438fd15596a10144876735862))
+
+  - change default panel position to top
+  - remove middle position from options
+  - update tests to reflect new position behavior
+* **[557](https://github.com/Mkbewe/world-generator/issues/557):** remove character display from geological region card ([#605](https://github.com/Mkbewe/world-generator/issues/605)) ([3ade9b3](https://github.com/Mkbewe/world-generator/commit/3ade9b344afd384347699b68e3cd4e0f4603beff))
+
+  - update tests to reflect removal of character information
+  - adjust readout to exclude character details
+  - clean up localization files by removing character keys
+* **[558](https://github.com/Mkbewe/world-generator/issues/558):** disable measurement by default in fullscreen mode ([#603](https://github.com/Mkbewe/world-generator/issues/603)) ([6349b8c](https://github.com/Mkbewe/world-generator/commit/6349b8cc5b446c27cae18279f861d7e92bec888f))
+
+  - measurement is off until the measure control is enabled
+  - updated user guide to reflect changes in measurement functionality
+* **[560](https://github.com/Mkbewe/world-generator/issues/560):** move the fullscreen control into the map sidebar ([#602](https://github.com/Mkbewe/world-generator/issues/602)) ([b04dab7](https://github.com/Mkbewe/world-generator/commit/b04dab7489ee0ebf390a440afcc3a01b2929ae19))
+
+  - remove the fullscreen toggle and its focus logic from the global
+  header
+  - add an accessible enter/exit control above the overlays in both
+  sidebar modes
+  - return focus to the relocated trigger when fullscreen closes
+  - keep fullscreen desktop-only and preserve the escape behavior
+  - drop the now-unused canFullscreen state and update tests and the user
+  guide
+* **[561](https://github.com/Mkbewe/world-generator/issues/561):** reorder layout controls in geology form for better clarity ([#606](https://github.com/Mkbewe/world-generator/issues/606)) ([b190982](https://github.com/Mkbewe/world-generator/commit/b1909828a8392249b353467f6ae3bf3fd328b234))
+
+  - updated layout control order from evenness to region editor
+  - ensured consistent display of controls in the form
+* **[562](https://github.com/Mkbewe/world-generator/issues/562):** add title to statistics page header ([#607](https://github.com/Mkbewe/world-generator/issues/607)) ([5cf9fe9](https://github.com/Mkbewe/world-generator/commit/5cf9fe9903bf47c093f5f1103641a89cd7a0ccfd))
+
+  - include a title for better user context
+  - update tests to verify header rendering
+* **[564](https://github.com/Mkbewe/world-generator/issues/564):** update legacy generator alignment in navigation bar ([#608](https://github.com/Mkbewe/world-generator/issues/608)) ([696f7d3](https://github.com/Mkbewe/world-generator/commit/696f7d3f6d2dd25922439779d3440f89aec819ad))
+* **[566](https://github.com/Mkbewe/world-generator/issues/566):** smooth base-climate zone boundaries ([#598](https://github.com/Mkbewe/world-generator/issues/598)) ([fe574bb](https://github.com/Mkbewe/world-generator/commit/fe574bb840760a2cf57220896f101f502c018266))
+
+  - share the heat-zone classifier between generation and preview
+  - generalize boundary sources through smooth geometry
+  - persist base-climate geometry in snapshots and pass it to the renderer
+  - cover classifier, renderer, scene and snapshot behavior with tests
+* **[568](https://github.com/Mkbewe/world-generator/issues/568):** improve world generation run management and progress reporting ([#596](https://github.com/Mkbewe/world-generator/issues/596)) ([ae55a08](https://github.com/Mkbewe/world-generator/commit/ae55a08521dbecf9e459749e34cd6c2c983d0c22))
+
+  - track active generation runs to prevent state conflicts
+  - enhance progress reporting for ongoing runs
+  - ensure error handling does not affect active generation state
+* **[611](https://github.com/Mkbewe/world-generator/issues/611):** ensure scroll position is restored on fullscreen exit ([#612](https://github.com/Mkbewe/world-generator/issues/612)) ([66bdc13](https://github.com/Mkbewe/world-generator/commit/66bdc13d95660e7f54f6ac746abc0ecb3e0e0ee8))
+
+  - mock window.scrollTo for testing fullscreen behavior
+  - restore previous scroll position when exiting fullscreen
+  - prevent scrolling during fullscreen mode
+
+### Code Refactoring
+
+* **[563](https://github.com/Mkbewe/world-generator/issues/563):** move router and its tests into a router folder ([#609](https://github.com/Mkbewe/world-generator/issues/609)) ([98c02ff](https://github.com/Mkbewe/world-generator/commit/98c02ffcfe7f7df897187f74b95fa112717ffca9))
+
+  - relocate router.tsx and router.test.tsx under src/router/
+  - update the app import and the router's own relative imports
+  - keep the router API, routes and behavior unchanged
+* **[569](https://github.com/Mkbewe/world-generator/issues/569):** replace remote feature flags with local storage ([#610](https://github.com/Mkbewe/world-generator/issues/610)) ([adbdeb3](https://github.com/Mkbewe/world-generator/commit/adbdeb35930848932644784106e1dd7f5afc4915))
+
+  - read flags from the feature-flags localStorage entry and validate them
+  - initialize the entry with defaults when missing; fall back on invalid
+  data
+  - remove the Vercel Global Config function, shared registry and dev
+  middleware
+  - drop @vercel/global-config plus obsolete Vercel, tsconfig and ESLint
+  setup
+  - remove the unused useFlags hook and update docs and focused tests
+
+### Performance Improvements
+
+* **[567](https://github.com/Mkbewe/world-generator/issues/567):** isolate cursor readout from preview renders ([#599](https://github.com/Mkbewe/world-generator/issues/599)) ([9e6244e](https://github.com/Mkbewe/world-generator/commit/9e6244eb339df4a3664f94da3b1b463ee6a340cf))
+
+  - move readout and pin state into a local readout store
+  - subscribe only MapReadout through useSyncExternalStore
+  - pass the readout node through the sidebar without preview state
+  - cover the store, readout rendering and render isolation with tests
+
 ## [0.14.2](https://github.com/Mkbewe/world-generator/compare/v0.14.1...v0.14.2) (2026-11-14)
 
 ### Features
