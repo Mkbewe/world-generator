@@ -98,9 +98,105 @@ describe('useMapGestures', () => {
         pointerEvent({ pointerId: 2, clientX: 30, clientY: 10 })
       )
     );
+    expect(readout.clear).not.toHaveBeenCalled();
+
     act(() => result.current.handlers.onPointerUp(pointerEvent({ pointerId: 2, clientX: 30 })));
 
     expect(readout.togglePin).toHaveBeenCalledOnce();
+  });
+
+  it('clears the live readout after a touch drag that does not pan', () => {
+    const { readout, measurement, renderer } = createPorts();
+    const { result } = renderHook(() =>
+      useMapGestures({
+        rendererRef: { current: renderer as unknown as MapRenderer },
+        canvasRef: { current: null },
+        zoomable: false,
+        measuring: false,
+        pinning: true,
+        readout,
+        measurement,
+      })
+    );
+
+    act(() =>
+      result.current.handlers.onPointerDown(
+        pointerEvent({ pointerType: 'touch', clientX: 100, clientY: 100 })
+      )
+    );
+    act(() =>
+      result.current.handlers.onPointerMove(
+        pointerEvent({ pointerType: 'touch', clientX: 130, clientY: 100 })
+      )
+    );
+    act(() =>
+      result.current.handlers.onPointerUp(
+        pointerEvent({ pointerType: 'touch', clientX: 130, clientY: 100 })
+      )
+    );
+
+    expect(readout.clear).toHaveBeenCalled();
+    expect(readout.togglePin).not.toHaveBeenCalled();
+  });
+
+  it('clears the live readout after touch panning', () => {
+    const { readout, measurement, renderer } = createPorts();
+    const { result } = renderHook(() =>
+      useMapGestures({
+        rendererRef: { current: renderer as unknown as MapRenderer },
+        canvasRef: { current: null },
+        zoomable: true,
+        measuring: false,
+        pinning: true,
+        readout,
+        measurement,
+      })
+    );
+
+    act(() =>
+      result.current.handlers.onPointerDown(
+        pointerEvent({ pointerType: 'touch', clientX: 100, clientY: 100 })
+      )
+    );
+    act(() =>
+      result.current.handlers.onPointerMove(
+        pointerEvent({ pointerType: 'touch', clientX: 130, clientY: 100 })
+      )
+    );
+    act(() =>
+      result.current.handlers.onPointerUp(
+        pointerEvent({ pointerType: 'touch', clientX: 130, clientY: 100 })
+      )
+    );
+
+    expect(renderer.panByPixels).toHaveBeenCalledWith(30, 0);
+    expect(readout.clear).toHaveBeenCalled();
+    expect(readout.togglePin).not.toHaveBeenCalled();
+  });
+
+  it('clears the live readout when a touch gesture is cancelled', () => {
+    const { readout, measurement, renderer } = createPorts();
+    const { result } = renderHook(() =>
+      useMapGestures({
+        rendererRef: { current: renderer as unknown as MapRenderer },
+        canvasRef: { current: null },
+        zoomable: false,
+        measuring: false,
+        pinning: true,
+        readout,
+        measurement,
+      })
+    );
+
+    act(() =>
+      result.current.handlers.onPointerDown(
+        pointerEvent({ pointerType: 'touch', clientX: 100, clientY: 100 })
+      )
+    );
+    act(() => result.current.handlers.onPointerCancel());
+
+    expect(readout.clear).toHaveBeenCalledOnce();
+    expect(readout.togglePin).not.toHaveBeenCalled();
   });
 
   it('ignores taps while the pin mode is off', () => {
@@ -165,7 +261,7 @@ describe('useMapGestures', () => {
     );
 
     act(() => result.current.handlers.onPointerDown(pointerEvent()));
-    act(() => result.current.handlers.onPointerCancel(pointerEvent()));
+    act(() => result.current.handlers.onPointerCancel());
 
     expect(measurement.clearPreview).toHaveBeenCalledOnce();
     expect(readout.clear).toHaveBeenCalledOnce();

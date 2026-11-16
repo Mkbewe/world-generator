@@ -69,15 +69,17 @@ export function MapPreview({ onReady, progress, progressKey }: MapPreviewProps) 
   const selectedFeature = useViewSyncStore(state => state.selectedFeature);
 
   const { clear: clearMeasurement } = measurement;
+  const { clear: clearReadout } = readout;
 
   useEffect(() => {
+    clearReadout();
     if (isFullscreen) {
       cardRef.current?.focus();
       return;
     }
     rendererRef.current?.resetView();
     clearMeasurement();
-  }, [clearMeasurement, isFullscreen, rendererRef]);
+  }, [clearMeasurement, clearReadout, isFullscreen, rendererRef]);
 
   const handleToggleFullscreen = useCallback((): void => {
     if (!isFullscreen) {

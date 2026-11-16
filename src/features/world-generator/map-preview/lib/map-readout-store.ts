@@ -19,6 +19,9 @@ export class MapReadoutStore {
   };
 
   setReadout(readout: InspectorReadout): void {
+    if (this.state.pinned) {
+      return;
+    }
     this.update({ ...this.state, readout });
   }
 
@@ -34,10 +37,10 @@ export class MapReadoutStore {
   }
 
   clear(): void {
-    if (this.state.readout === undefined) {
+    if (this.state.pinned || this.state.readout === undefined) {
       return;
     }
-    this.update({ ...this.state, readout: undefined });
+    this.update({ readout: undefined, pinned: false });
   }
 
   isPinned(): boolean {

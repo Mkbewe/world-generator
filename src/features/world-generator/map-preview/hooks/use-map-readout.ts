@@ -1,19 +1,8 @@
-import {
-  type PointerEvent as ReactPointerEvent,
-  type RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { InspectorReadout, PointerSample } from '@readout';
 import type { MapRenderer, MapRendererState } from '@renderer';
 
 import { MapReadoutStore } from '../lib/map-readout-store';
-
-function isTouchPointer(event: { pointerType: string }): boolean {
-  return event.pointerType === 'touch';
-}
 
 export function useMapReadout(
   rendererRef: RefObject<MapRenderer | null>,
@@ -76,6 +65,9 @@ export function useMapReadout(
   );
 
   const clear = useCallback((): void => {
+    if (store.isPinned()) {
+      return;
+    }
     positionRef.current = undefined;
     store.clear();
   }, [store]);
@@ -92,15 +84,9 @@ export function useMapReadout(
     store.unpin();
   }, [store]);
 
-  const handlePointerLeave = useCallback(
-    (event: ReactPointerEvent<HTMLElement>): void => {
-      if (store.isPinned() || isTouchPointer(event)) {
-        return;
-      }
-      clear();
-    },
-    [clear, store]
-  );
+  const handlePointerLeave = useCallback((): void => {
+    clear();
+  }, [clear]);
 
   return { store, sampleAt, trackReadout, togglePin, unpin, clear, handlePointerLeave };
 }

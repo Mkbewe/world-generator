@@ -34,6 +34,12 @@ describe('MapReadout', () => {
 
     act(() => store.clear());
 
+    expect(screen.getByText('X 1 cell')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+
+    act(() => store.unpin());
+    act(() => store.clear());
+
     expect(screen.queryByText('X 1 cell')).toBeNull();
   });
 });

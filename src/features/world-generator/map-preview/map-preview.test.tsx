@@ -138,7 +138,7 @@ describe('MapPreview readout', () => {
     expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
   });
 
-  it('tracks a touch drag on the map without pinning', async () => {
+  it('clears the touch readout after a drag and does not pin it', async () => {
     renderPreview();
     const canvas = screen.getByLabelText('Generated map preview');
     await act(async () => {});
@@ -147,8 +147,8 @@ describe('MapPreview readout', () => {
     fireEvent.pointerMove(canvas, { pointerType: 'touch', clientX: 300, clientY: 300 });
     fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
 
-    expectPosition(3, 3);
-    expect(screen.getByRole('group', { name: 'Cursor readout' })).toBeInTheDocument();
+    expect(screen.queryByText('X 3 cell')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Cursor readout (pinned)' })).toBeNull();
   });
 
   it('pins on a touch tap and unpins on the next tap', async () => {
@@ -182,15 +182,53 @@ describe('MapPreview readout', () => {
     expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
   });
 
-  it('keeps the touch readout after the finger leaves the canvas', async () => {
+  it('clears the touch readout when the finger leaves the preview', async () => {
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    const card = canvas.closest('.rt-Card');
+    await act(async () => {});
+    expect(card).not.toBeNull();
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerOut(card as HTMLElement, {
+      pointerType: 'touch',
+      relatedTarget: document.body,
+    });
+
+    expect(screen.queryByText('X 1 cell')).toBeNull();
+  });
+
+  it('keeps a pinned touch readout when another touch gesture is cancelled', async () => {
     renderPreview();
     const canvas = screen.getByLabelText('Generated map preview');
     await act(async () => {});
 
     fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
-    fireEvent.pointerLeave(canvas, { pointerType: 'touch' });
+    fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
+    fireEvent.pointerCancel(canvas, { pointerType: 'touch' });
 
     expectPosition(1, 1);
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
+  });
+
+  it('clears only the live readout when fullscreen opens or closes', async () => {
+    const user = userEvent.setup();
+    renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+
+    fireEvent.pointerMove(canvas, { clientX: 100, clientY: 100 });
+    expectPosition(1, 1);
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    expect(screen.queryByText('X 1 cell')).toBeNull();
+
+    fireEvent.pointerMove(canvas, { clientX: 200, clientY: 200 });
+    expectPosition(2, 2);
+
+    await user.click(screen.getByRole('button', { name: 'Exit fullscreen' }));
+    expect(screen.queryByText('X 2 cell')).toBeNull();
   });
 
   it('freezes the readout over the panels and clears it outside the preview', async () => {
@@ -487,6 +525,28 @@ describe('MapPreview readout', () => {
     expect(screen.queryByText('Distance:')).toBeNull();
   });
 
+  it('measures touch points without pinning the readout', async () => {
+    const user = userEvent.setup();
+    const { renderer } = renderPreview();
+    const canvas = screen.getByLabelText('Generated map preview');
+    await act(async () => {});
+    renderer.current?.setInfo({
+      worldDimensions: { widthMeters: 4000, heightMeters: 4000, sampleWidth: 4, sampleHeight: 4 },
+    });
+    await act(async () => {});
+
+    await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    await user.click(screen.getByRole('button', { name: /measure/i }));
+
+    fireEvent.pointerDown(canvas, { button: 0, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', clientX: 300, clientY: 300 });
+    fireEvent.pointerUp(canvas, { button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
+
+    expect(screen.getByText('Distance:')).toBeInTheDocument();
+    expect(screen.queryByText('X 3 cell')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Cursor readout (pinned)' })).toBeNull();
+  });
+
   it('pins locations only while the pin mode is on', async () => {
     const user = userEvent.setup();
     renderPreview();
@@ -539,6 +599,7 @@ describe('MapPreview readout', () => {
 
     await user.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
     expect(screen.getByRole('button', { name: 'Pin' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('group', { name: 'Cursor readout (pinned)' })).toBeInTheDocument();
   });
 
   it('keeps pinning and measuring mutually exclusive', async () => {
