@@ -48,6 +48,7 @@ interface PointerGesture {
   readonly kind: PointerGestureKind;
   readonly pointerId: number;
   readonly button: number;
+  readonly touch: boolean;
   readonly startX: number;
   readonly startY: number;
   lastX: number;
@@ -107,6 +108,7 @@ export function useMapGestures({
         kind,
         pointerId: event.pointerId,
         button: event.button,
+        touch: event.pointerType === 'touch',
         startX: event.clientX,
         startY: event.clientY,
         lastX: event.clientX,
@@ -140,6 +142,10 @@ export function useMapGestures({
             setPanning(true);
           }
         }
+        if (gesture.moved && gesture.kind === 'tap' && gesture.touch) {
+          clear();
+          return;
+        }
         if (gesture.moved && gesture.kind === 'pan') {
           gesture.lastX = event.clientX;
           gesture.lastY = event.clientY;
@@ -156,7 +162,7 @@ export function useMapGestures({
       }
       trackReadout(event);
     },
-    [measuring, previewPoint, rendererRef, sampleAt, trackReadout]
+    [clear, measuring, previewPoint, rendererRef, sampleAt, trackReadout]
   );
 
   const handlePointerUp = useCallback(
@@ -168,12 +174,21 @@ export function useMapGestures({
       gestureRef.current = undefined;
       setPanning(false);
       if (gesture.kind === 'measure') {
+        if (gesture.touch) {
+          clear();
+        }
         return;
       }
       if (gesture.moved || gesture.button === 1) {
+        if (gesture.touch) {
+          clear();
+        }
         return;
       }
       if (!pinning) {
+        if (gesture.touch) {
+          clear();
+        }
         return;
       }
       const position = sampleAt(event);
@@ -181,23 +196,17 @@ export function useMapGestures({
         togglePin(position);
       }
     },
-    [pinning, sampleAt, togglePin]
+    [clear, pinning, sampleAt, togglePin]
   );
 
-  const handlePointerCancel = useCallback(
-    (event: ReactPointerEvent<HTMLCanvasElement>): void => {
-      if (gestureRef.current?.kind === 'measure') {
-        clearPreview();
-      }
-      gestureRef.current = undefined;
-      setPanning(false);
-      if (event.pointerType === 'touch') {
-        return;
-      }
-      clear();
-    },
-    [clear, clearPreview]
-  );
+  const handlePointerCancel = useCallback((): void => {
+    if (gestureRef.current?.kind === 'measure') {
+      clearPreview();
+    }
+    gestureRef.current = undefined;
+    setPanning(false);
+    clear();
+  }, [clear, clearPreview]);
 
   const handleContextMenu = useCallback(
     (event: ReactMouseEvent<HTMLCanvasElement>): void => {

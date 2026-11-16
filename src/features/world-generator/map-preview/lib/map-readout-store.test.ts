@@ -26,13 +26,28 @@ describe('MapReadoutStore', () => {
 
     store.clear();
 
-    expect(store.getSnapshot()).toEqual({ readout: undefined, pinned: true });
-    expect(listener).toHaveBeenCalledTimes(3);
+    expect(store.getSnapshot()).toEqual({ readout: READOUT, pinned: true });
+    expect(listener).toHaveBeenCalledTimes(2);
 
     unsubscribe();
     store.setReadout(READOUT);
 
-    expect(listener).toHaveBeenCalledTimes(3);
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a pinned readout frozen until it is unpinned', () => {
+    const store = new MapReadoutStore();
+    store.setReadout(READOUT);
+    store.togglePinned(READOUT);
+
+    store.setReadout({ ...READOUT, position: { x: 3, y: 4, u: 0.75, v: 1 } });
+
+    expect(store.getSnapshot()).toEqual({ readout: READOUT, pinned: true });
+
+    store.unpin();
+    store.clear();
+
+    expect(store.getSnapshot()).toEqual({ readout: undefined, pinned: false });
   });
 
   it('unpins without clearing the readout', () => {
