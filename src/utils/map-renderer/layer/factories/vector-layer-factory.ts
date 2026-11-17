@@ -1,4 +1,4 @@
-import type { LayerDataRecord } from '@layers';
+import type { CategoricalBoundaryStyle, LayerDataRecord } from '@layers';
 
 import type { WorldShape } from '../../../world-shape';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
@@ -18,6 +18,8 @@ export interface VectorLayerInput {
   readonly mask?: SpatialMask;
   /** World outline the layer may paint, e.g. an ocean background. */
   readonly shape?: WorldShape;
+  /** Screen-space boundary treatment declared by the catalog entry. */
+  readonly boundaryStyle?: CategoricalBoundaryStyle;
   /** Physical world size for meter-based clipping; absent on restored maps. */
   readonly dimensionsMeters?: {
     readonly widthMeters: number;

@@ -1,4 +1,5 @@
-import { REGION_GUTTER_HALF_WIDTH_PX } from './region-preview-raster';
+import { GEOLOGY_BOUNDARY_STYLE } from '@layers';
+
 import type { MapProjection } from '../../view/view-transform';
 import type { MapSize } from '../layer';
 
@@ -58,7 +59,8 @@ export function strokeRegionBorders(
   }
   context.save();
   context.strokeStyle = options.color ?? '#fff';
-  context.lineWidth = options.lineWidthPx ?? REGION_GUTTER_HALF_WIDTH_PX * 2;
+  context.lineWidth =
+    options.lineWidthPx ?? (GEOLOGY_BOUNDARY_STYLE.gutter?.halfWidthPx ?? 2.5) * 2;
   context.lineCap = 'round';
   context.lineJoin = 'round';
   context.beginPath();

@@ -24,6 +24,27 @@ export type RasterDataType = 'uint8' | 'int16' | 'float32';
 
 export type BoundarySource = 'region' | 'heat-zone';
 
+/** Screen-space gutter drawn around categorical region borders. */
+export interface BoundaryGutterStyle {
+  readonly halfWidthPx: number;
+  readonly fadePx: number;
+  readonly color: Color;
+}
+
+/** Accent band drawn inside the border of the selected categorical region. */
+export interface BoundaryHighlightStyle {
+  readonly color: Color;
+  /** Distance from the border at which the band starts. */
+  readonly innerPx: number;
+  readonly bandPx: number;
+  readonly fadePx: number;
+}
+
+export interface CategoricalBoundaryStyle {
+  readonly gutter?: BoundaryGutterStyle;
+  readonly highlight?: BoundaryHighlightStyle;
+}
+
 export interface LayerGroupSpec {
   readonly id: string;
   readonly labelKey: MessageKey;
@@ -59,6 +80,8 @@ interface LayerSpecBase<TId extends string = string> {
   readonly readout?: boolean;
   /** Overlay presentation of this layer or its data. */
   readonly overlay?: OverlaySpec<TId>;
+  /** Screen-space boundary treatment for categorical layers. */
+  readonly boundaryStyle?: CategoricalBoundaryStyle;
 }
 
 /** Declarative description of one renderable raster. */

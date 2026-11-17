@@ -1,3 +1,4 @@
+import { GEOLOGY_BOUNDARY_STYLE } from './boundary-styles';
 import type { LayerSpec, OverlaySpec } from './layer-spec';
 import type { LayerDataRecord, MapBaseLayerId, MapRasters } from './types';
 import type { MessageKey } from '../../../i18n';
@@ -132,6 +133,7 @@ const CATALOG_ENTRIES = [
     clipTo: 'world-shape',
     settingsForm: true,
     readout: true,
+    boundaryStyle: GEOLOGY_BOUNDARY_STYLE,
   },
   {
     id: 'heightmap',

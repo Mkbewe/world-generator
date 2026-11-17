@@ -1,4 +1,4 @@
-import type { LayerSpec } from '@layers';
+import { GEOLOGY_BOUNDARY_STYLE, type LayerSpec } from '@layers';
 
 import { CatalogLayer } from './catalog-layer';
 import type { RenderTarget } from '../../preview-targets';
@@ -36,6 +36,11 @@ const HEAT_ZONE_SPEC = {
     ],
     overflow: 'cycle',
   },
+} as const satisfies LayerSpec;
+
+const STYLED_HEAT_ZONE_SPEC = {
+  ...HEAT_ZONE_SPEC,
+  boundaryStyle: GEOLOGY_BOUNDARY_STYLE,
 } as const satisfies LayerSpec;
 
 function heatZoneData(): Int16Array {
@@ -274,6 +279,35 @@ describe('CatalogLayer', () => {
         layer.dispose();
         restore();
       }
+    }
+  });
+
+  it('applies declared gutters to a categorical raster', async () => {
+    const { images, restore } = mockCanvasContext();
+    const geometry = {
+      shape: 'rectangle' as const,
+      boundaries: { 'heat-zone': (x: number) => (x < 0.45 ? 0 : 1) },
+    };
+    const layer = new CatalogLayer(
+      STYLED_HEAT_ZONE_SPEC,
+      { width: 4, height: 4 },
+      heatZoneData(),
+      undefined,
+      geometry
+    );
+
+    try {
+      await layer.prepare(new AbortController().signal, targetFor(4, 4));
+      const pixels = targetPixels(images);
+      const white = Array.from({ length: pixels.length / 4 }, (_, index) =>
+        pixels.slice(index * 4, index * 4 + 4)
+      ).some(
+        ([red, green, blue, alpha]) => red === 255 && green === 255 && blue === 255 && alpha === 255
+      );
+      expect(white).toBe(true);
+    } finally {
+      layer.dispose();
+      restore();
     }
   });
 
