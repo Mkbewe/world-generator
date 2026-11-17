@@ -304,6 +304,7 @@ export class MapScene {
           mask: clipMask,
           shape: this.geometry?.shape,
           dimensionsMeters: this.dimensionsMeters,
+          boundaryStyle: spec.boundaryStyle,
         })
     );
     this.layers.set(spec.id, layer);

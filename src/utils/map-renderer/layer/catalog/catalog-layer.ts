@@ -2,6 +2,7 @@ import { compilePalette, type PixelWriter, type RasterData, type RasterLayerSpec
 
 import type { SmoothGeometry } from './smooth-geometry';
 import { type SmoothLayerMode, SmoothLayerPainter } from './smooth-layer-painter';
+import { regionBorderDistances } from '../../../grid-distance';
 import type { RenderTarget } from '../../preview-targets';
 import type { MapBaseLayerId, MapInfo, SpatialMask } from '../../types';
 import { cellAtPixel } from '../../view/cell-at-pixel';
@@ -16,6 +17,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   readonly data: RasterData;
   private readonly writePixel: PixelWriter;
   private readonly smoothPainter?: SmoothLayerPainter;
+  private readonly boundaryDistances?: Float32Array;
   private readonly smoothInterior: boolean;
 
   constructor(
@@ -38,7 +40,10 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
     const boundary = resolveBoundary(spec, geometry);
     const mode = smoothMode(spec, boundary);
     this.smoothInterior = mode !== 'clipped';
-    if (geometry && (boundary || spec.providesMask || clipMask)) {
+    this.boundaryDistances = spec.boundaryStyle
+      ? regionBorderDistances(Int16Array.from(this.data), size.width, size.height)
+      : undefined;
+    if (geometry && (boundary || spec.providesMask || clipMask || spec.boundaryStyle)) {
       this.smoothPainter = new SmoothLayerPainter(
         size,
         this.data,
@@ -48,7 +53,10 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
         geometry,
         mode,
         spec.skipValue,
-        boundary
+        boundary,
+        spec.boundaryStyle && this.boundaryDistances
+          ? { distances: this.boundaryDistances, style: spec.boundaryStyle }
+          : undefined
       );
     }
   }
@@ -59,7 +67,7 @@ export class CatalogLayer extends MapLayer implements SpatialMask {
   }
 
   protected extraBufferBytes(): number {
-    return this.smoothPainter?.boundaryBytes ?? 0;
+    return (this.smoothPainter?.boundaryBytes ?? 0) + (this.boundaryDistances?.byteLength ?? 0);
   }
 
   /** A skip value marks real empty area, so the overview must not fill it in. */

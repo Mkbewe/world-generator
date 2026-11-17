@@ -9,6 +9,7 @@ export {
   selectRasters,
 } from './catalog/catalog';
 export type { MapOverlayId, OverlayDescriptor } from './catalog/catalog';
+export { GEOLOGY_BOUNDARY_STYLE } from './catalog/boundary-styles';
 export {
   compilePalette,
   BASE_CLIMATE_ZONE_COLORS,
@@ -23,7 +24,10 @@ export {
 } from './palettes/palettes';
 export type { PixelWriter } from './palettes/palettes';
 export type {
+  BoundaryGutterStyle,
+  BoundaryHighlightStyle,
   BoundarySource,
+  CategoricalBoundaryStyle,
   Color,
   DiscreteOverflow,
   LayerGroupSpec,

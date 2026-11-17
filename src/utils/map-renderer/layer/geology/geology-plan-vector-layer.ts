@@ -1,10 +1,17 @@
 import { isGeologyPlan } from '@generator/stages/geology';
 import type { GeologyPlan, WorldPoint } from '@generator/types';
-import { geologyRegionColor } from '@layers';
+import {
+  type CategoricalBoundaryStyle,
+  compilePalette,
+  GEOLOGY_BOUNDARY_STYLE,
+  geologyRegionColor,
+} from '@layers';
 
 import { paintLabels, regionCentres } from './geology-labels';
+import { regionBorderDistances } from '../../../grid-distance';
 import type { RenderTarget } from '../../preview-targets';
 import type { LayerHit, MapBaseLayerId, MapFeatureSelection, SpatialMask } from '../../types';
+import { SmoothLayerPainter } from '../catalog/smooth-layer-painter';
 import type { VectorLayerFactory } from '../factories/vector-layer-factory';
 import {
   type LayerPresentation,
@@ -14,14 +21,9 @@ import {
 } from '../layer';
 import { paintProgressive } from '../progressive-paint';
 import { regionBorderSegments, strokeRegionBorders } from '../region-preview/region-preview-border';
-import {
-  extendRegionOwners,
-  paintRegionPixels,
-  regionBorderDistances,
-} from '../region-preview/region-preview-raster';
+import { extendRegionOwners } from '../region-preview/region-preview-raster';
 
 const FRAME_STRIPES = 8;
-const HIGHLIGHT_COLOR = [124, 58, 237] as const;
 
 /**
  * The plan paints in stripes and cannot show a partial frame; the presenter
@@ -37,6 +39,7 @@ const GEOLOGY_PRESENTATION: LayerPresentation = {
 
 export interface GeologyPlanLayerOptions {
   readonly mask?: SpatialMask;
+  readonly boundaryStyle?: CategoricalBoundaryStyle;
 }
 
 /** Neon region bodies separated by white space on one clipped world canvas. */
@@ -46,6 +49,8 @@ export class GeologyPlanVectorLayer extends MapLayer {
   private readonly extendedOwners: Int16Array;
   private readonly distances: Float32Array;
   private readonly borders: Float64Array;
+  private readonly boundaryPainter: SmoothLayerPainter;
+  private readonly boundaryStyle: CategoricalBoundaryStyle;
   private readonly tileCanvas = document.createElement('canvas');
   private highlightIndex = -1;
 
@@ -62,6 +67,24 @@ export class GeologyPlanVectorLayer extends MapLayer {
     this.distances = regionBorderDistances(this.extendedOwners, raster.width, raster.height);
     this.borders = regionBorderSegments(this.extendedOwners, raster.width, raster.height, size);
     this.centres = regionCentres(this.extendedOwners, raster.width, raster.height);
+    this.boundaryStyle = options.boundaryStyle ?? GEOLOGY_BOUNDARY_STYLE;
+    this.boundaryPainter = new SmoothLayerPainter(
+      size,
+      this.extendedOwners,
+      undefined,
+      undefined,
+      compilePalette({
+        kind: 'discrete',
+        colors: this.colors,
+        overflow: { color: [0, 0, 0] },
+      }),
+      { shape: 'rectangle' },
+      'categorical',
+      -1,
+      undefined,
+      { distances: this.distances, style: this.boundaryStyle, sourceSize: raster }
+    );
+    this.boundaryPainter.setSelectedOwner(this.highlightIndex);
   }
 
   override get presentation(): LayerPresentation {
@@ -78,12 +101,24 @@ export class GeologyPlanVectorLayer extends MapLayer {
       return false;
     }
     this.highlightIndex = index;
+    this.boundaryPainter.setSelectedOwner(index);
     this.invalidate();
     return true;
   }
 
   override paintFallbackDetails(context: CanvasRenderingContext2D, view: RenderTarget): void {
-    strokeRegionBorders(context, this.borders, view.projection);
+    const gutter = this.boundaryStyle.gutter;
+    strokeRegionBorders(
+      context,
+      this.borders,
+      view.projection,
+      gutter
+        ? {
+            color: `rgb(${gutter.color[0]} ${gutter.color[1]} ${gutter.color[2]})`,
+            lineWidthPx: gutter.halfWidthPx * 2,
+          }
+        : undefined
+    );
     this.paintRegionLabels(context, view);
   }
 
@@ -170,7 +205,6 @@ export class GeologyPlanVectorLayer extends MapLayer {
     height: number,
     showGutters = true
   ): void {
-    const raster = this.plan.regionRasterSize;
     if (!this.extendedOwners.length) {
       return;
     }
@@ -181,22 +215,7 @@ export class GeologyPlanVectorLayer extends MapLayer {
       throw new Error('Canvas is not available.');
     }
     const image = tileContext.createImageData(width, height);
-    paintRegionPixels(image.data, {
-      owners: this.extendedOwners,
-      distances: this.distances,
-      rasterWidth: raster.width,
-      rasterHeight: raster.height,
-      colors: this.colors,
-      mapSize: this.size,
-      projection: target.projection,
-      left,
-      top,
-      width,
-      height,
-      showGutters,
-      highlightOwner: this.highlightIndex,
-      highlightColor: HIGHLIGHT_COLOR,
-    });
+    this.boundaryPainter.paint(image.data, target, { x: left, y: top, width, height }, showGutters);
     tileContext.putImageData(image, 0, 0);
     context.drawImage(this.tileCanvas, left, top);
   }
@@ -205,10 +224,10 @@ export class GeologyPlanVectorLayer extends MapLayer {
 export const geologyPlanVectorLayerFactory: VectorLayerFactory = {
   id: 'geology',
   supports: isGeologyPlan,
-  create({ id, size, value, mask }) {
+  create({ id, size, value, mask, boundaryStyle }) {
     if (!isGeologyPlan(value)) {
       throw new Error('Invalid geology plan data.');
     }
-    return new GeologyPlanVectorLayer(id, size, value, { mask });
+    return new GeologyPlanVectorLayer(id, size, value, { mask, boundaryStyle });
   },
 };
