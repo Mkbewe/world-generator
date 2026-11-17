@@ -20,7 +20,7 @@ interface MapSidebarBaseProps {
   navigation: MapLayerNavigation;
   onLayerChange: (layer: MapBaseLayerId) => void;
   onOverlayChange: (id: MapOverlayId, visible: boolean) => void;
-  /** The fullscreen switch rendered above the overlays in either mode. */
+  /** The fullscreen switch rendered in the inline sidebar and expanded panel. */
   fullscreen: FullscreenControlProps;
 }
 
@@ -47,7 +47,7 @@ export function MapSidebar(props: MapSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [position, setPosition] = useState<PanelPosition>('top');
   const { tabs, activeTab } = navigation;
-  const hasLayerViews = tabs.some(tab => (tab.children?.length ?? 0) > 1);
+  const hasLayerViews = tabs.some(tab => tab.id === activeTab && (tab.children?.length ?? 0) > 1);
   const overlays = <OverlayControls preview={preview} onOverlayChange={onOverlayChange} />;
   const layerViews = hasLayerViews ? (
     <LayerViews tabs={tabs} activeTab={activeTab} onViewChange={onLayerChange} />
@@ -79,30 +79,34 @@ export function MapSidebar(props: MapSidebarProps) {
       data-position={position}
       data-collapsed={collapsed || undefined}
     >
-      <Flex direction='column' gap='3'>
+      <Flex direction='column' gap='3' className={styles.panelBody}>
         <PanelHeader
           collapsed={collapsed}
           position={position}
           onPositionChange={setPosition}
           onCollapsedChange={setCollapsed}
         />
-        <FullscreenControl {...props.fullscreen} />
         {!collapsed && (
           <>
+            <FullscreenControl {...props.fullscreen} />
             <Separator size='4' />
-            <ViewControls {...props.view} />
-            <Separator size='4' />
-            <ToolBar {...props.toolBar} />
-            <Separator size='4' />
-            {overlays}
-            {layerViews && (
-              <>
+            <div className={styles.panelScroll} data-panel-scroll>
+              <Flex direction='column' gap='3'>
+                <ViewControls {...props.view} />
                 <Separator size='4' />
-                {layerViews}
-              </>
-            )}
-            <Separator size='4' />
-            {readout}
+                <ToolBar {...props.toolBar} />
+                <Separator size='4' />
+                {overlays}
+                {layerViews && (
+                  <>
+                    <Separator size='4' data-layer-views-separator />
+                    {layerViews}
+                  </>
+                )}
+                <Separator size='4' />
+                {readout}
+              </Flex>
+            </div>
           </>
         )}
       </Flex>
