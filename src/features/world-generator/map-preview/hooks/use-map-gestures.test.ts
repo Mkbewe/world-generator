@@ -41,7 +41,7 @@ function createPorts() {
     finish: vi.fn(),
     clearPreview: vi.fn(),
   };
-  const renderer = { panByPixels: vi.fn() };
+  const renderer = { panByPixels: vi.fn(), zoomAtPointer: vi.fn() };
   return { readout, measurement, renderer };
 }
 
@@ -171,6 +171,52 @@ describe('useMapGestures', () => {
 
     expect(renderer.panByPixels).toHaveBeenCalledWith(30, 0);
     expect(readout.clear).toHaveBeenCalled();
+    expect(readout.togglePin).not.toHaveBeenCalled();
+  });
+
+  it('zooms with two touch pointers without pinning', () => {
+    const { readout, measurement, renderer } = createPorts();
+    const { result } = renderHook(() =>
+      useMapGestures({
+        rendererRef: { current: renderer as unknown as MapRenderer },
+        canvasRef: { current: null },
+        zoomable: true,
+        measuring: false,
+        pinning: true,
+        readout,
+        measurement,
+      })
+    );
+
+    act(() =>
+      result.current.handlers.onPointerDown(
+        pointerEvent({ pointerType: 'touch', pointerId: 1, clientX: 100, clientY: 100 })
+      )
+    );
+    act(() =>
+      result.current.handlers.onPointerDown(
+        pointerEvent({ pointerType: 'touch', pointerId: 2, clientX: 200, clientY: 100 })
+      )
+    );
+    act(() =>
+      result.current.handlers.onPointerMove(
+        pointerEvent({ pointerType: 'touch', pointerId: 2, clientX: 300, clientY: 100 })
+      )
+    );
+
+    expect(renderer.zoomAtPointer).toHaveBeenCalledWith(200, 100, 2);
+
+    act(() =>
+      result.current.handlers.onPointerUp(
+        pointerEvent({ pointerType: 'touch', pointerId: 2, clientX: 300, clientY: 100 })
+      )
+    );
+    act(() =>
+      result.current.handlers.onPointerUp(
+        pointerEvent({ pointerType: 'touch', pointerId: 1, clientX: 100, clientY: 100 })
+      )
+    );
+
     expect(readout.togglePin).not.toHaveBeenCalled();
   });
 

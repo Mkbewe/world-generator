@@ -13,7 +13,7 @@ export interface FullscreenControlProps {
   onToggle: () => void;
 }
 
-/** The desktop-only fullscreen switch beside the map in both sidebar modes. */
+/** The fullscreen switch beside the map in both sidebar modes. */
 export function FullscreenControl({ active, triggerRef, onToggle }: FullscreenControlProps) {
   const { t } = useTranslation();
   const label = t(active ? 'fullscreenControls.exit' : 'fullscreenControls.enter');

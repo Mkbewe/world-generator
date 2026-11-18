@@ -56,6 +56,20 @@ interface PointerGesture {
   moved: boolean;
 }
 
+interface PointerPosition {
+  readonly x: number;
+  readonly y: number;
+}
+
+interface PinchGesture {
+  readonly pointerIds: readonly [number, number];
+  lastDistance: number;
+}
+
+function pointerDistance(first: PointerPosition, second: PointerPosition): number {
+  return Math.hypot(second.x - first.x, second.y - first.y);
+}
+
 export function useMapGestures({
   rendererRef,
   canvasRef,
@@ -66,6 +80,9 @@ export function useMapGestures({
   measurement,
 }: UseMapGesturesOptions) {
   const gestureRef = useRef<PointerGesture | undefined>(undefined);
+  const pointersRef = useRef(new Map<number, PointerPosition>());
+  const pinchRef = useRef<PinchGesture | undefined>(undefined);
+  const ignoreTouchRef = useRef(false);
   const [panning, setPanning] = useState(false);
   const { sampleAt, trackReadout, togglePin, clear } = readout;
   const { addPoint, previewPoint, finish, clearPreview } = measurement;
@@ -93,6 +110,34 @@ export function useMapGestures({
 
   const handlePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+      if (event.pointerType === 'touch' && zoomable && !measuring) {
+        const pointers = pointersRef.current;
+        if (pointers.size === 0) {
+          ignoreTouchRef.current = false;
+        }
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 2) {
+          const [firstId, secondId] = [...pointers.keys()];
+          if (firstId === undefined || secondId === undefined) {
+            return;
+          }
+          const first = pointers.get(firstId);
+          const second = pointers.get(secondId);
+          if (first && second) {
+            pinchRef.current = {
+              pointerIds: [firstId, secondId],
+              lastDistance: pointerDistance(first, second),
+            };
+            gestureRef.current = undefined;
+            setPanning(false);
+            clear();
+          }
+          return;
+        }
+        if (pointers.size > 2) {
+          return;
+        }
+      }
       if (gestureRef.current) {
         return;
       }
@@ -127,11 +172,33 @@ export function useMapGestures({
       }
       trackReadout(event);
     },
-    [addPoint, measuring, sampleAt, trackReadout, zoomable]
+    [addPoint, clear, measuring, sampleAt, trackReadout, zoomable]
   );
 
   const handlePointerMove = useCallback(
     (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+      if (pinchRef.current && event.pointerType === 'touch') {
+        pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const pinch = pinchRef.current;
+        const [firstId, secondId] = pinch.pointerIds;
+        const first = pointersRef.current.get(firstId);
+        const second = pointersRef.current.get(secondId);
+        if (first && second) {
+          const distance = pointerDistance(first, second);
+          if (pinch.lastDistance > 0) {
+            rendererRef.current?.zoomAtPointer(
+              (first.x + second.x) / 2,
+              (first.y + second.y) / 2,
+              distance / pinch.lastDistance
+            );
+          }
+          pinch.lastDistance = distance;
+        }
+        return;
+      }
+      if (ignoreTouchRef.current && event.pointerType === 'touch') {
+        return;
+      }
       const gesture = gestureRef.current;
       if (gesture?.pointerId === event.pointerId) {
         const deltaX = event.clientX - gesture.lastX;
@@ -167,6 +234,24 @@ export function useMapGestures({
 
   const handlePointerUp = useCallback(
     (event: ReactPointerEvent<HTMLCanvasElement>): void => {
+      if (event.pointerType === 'touch') {
+        pointersRef.current.delete(event.pointerId);
+      }
+      const pinch = pinchRef.current;
+      if (pinch?.pointerIds.includes(event.pointerId)) {
+        pinchRef.current = undefined;
+        gestureRef.current = undefined;
+        setPanning(false);
+        clear();
+        ignoreTouchRef.current = pointersRef.current.size > 0;
+        return;
+      }
+      if (event.pointerType === 'touch' && ignoreTouchRef.current) {
+        if (pointersRef.current.size === 0) {
+          ignoreTouchRef.current = false;
+        }
+        return;
+      }
       const gesture = gestureRef.current;
       if (gesture?.pointerId !== event.pointerId) {
         return;
@@ -204,6 +289,9 @@ export function useMapGestures({
       clearPreview();
     }
     gestureRef.current = undefined;
+    pinchRef.current = undefined;
+    pointersRef.current.clear();
+    ignoreTouchRef.current = false;
     setPanning(false);
     clear();
   }, [clear, clearPreview]);

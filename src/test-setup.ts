@@ -20,7 +20,7 @@ if (!globalThis.localStorage && jsdomWindow) {
   });
 }
 
-// jsdom lacks matchMedia, which the fullscreen preview uses to detect mobile viewports.
+// jsdom lacks matchMedia, which browser-only helpers and Radix Themes may query.
 function matchMediaStub(query: string): MediaQueryList {
   return {
     matches: false,

@@ -82,9 +82,17 @@
 }
 
 @include mobile {
+  .root[data-expanded] {
+    width: 100%;
+  }
+
   .root .strip {
     flex-direction: row;
     height: auto;
+  }
+
+  .root[data-expanded] .strip {
+    width: 100%;
   }
 
   .root .trigger {

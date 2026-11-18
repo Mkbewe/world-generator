@@ -22,7 +22,7 @@
 .panelScroll {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
@@ -57,5 +57,21 @@
     padding-top: var(--space-3);
     border-top: 1px solid var(--gray-6);
     border-left: 0;
+  }
+
+  .panel[data-position] {
+    right: var(--space-3);
+    left: auto;
+    width: 100%;
+    max-width: 250px;
+    max-height: calc(100% - var(--layer-strip-size) - var(--space-6));
+  }
+
+  .panel[data-position='top'] {
+    top: calc(var(--layer-strip-size) + var(--space-3));
+  }
+
+  .panel[data-position='bottom'] {
+    bottom: var(--space-3);
   }
 }
