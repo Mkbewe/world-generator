@@ -63,6 +63,11 @@
 }
 
 @include mobile {
+  .card[data-fullscreen] {
+    inset: var(--fullscreen-header-offset, 0) env(safe-area-inset-right, 0)
+      env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  }
+
   .workspace {
     flex-direction: column;
   }

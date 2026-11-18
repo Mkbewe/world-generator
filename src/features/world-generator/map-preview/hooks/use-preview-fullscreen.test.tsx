@@ -57,6 +57,25 @@ describe('usePreviewFullscreen', () => {
     expect(document.documentElement.style.overflow).toBe('');
   });
 
+  it('stays open on a mobile viewport', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+      media: '(width < 768px)',
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    } as unknown as MediaQueryList);
+    renderHarness();
+
+    await user.click(screen.getByRole('button', { name: 'Toggle' }));
+
+    expect(screen.getByTestId('state')).toHaveTextContent('on');
+  });
+
   it('opens at the top and restores the previous page scroll position', async () => {
     const user = userEvent.setup();
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 240 });

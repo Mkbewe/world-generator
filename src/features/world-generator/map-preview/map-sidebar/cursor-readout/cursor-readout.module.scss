@@ -28,6 +28,13 @@
   white-space: nowrap;
 }
 
+@include mobile {
+  .axes {
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+    white-space: normal;
+  }
+}
+
 .separated {
   margin-bottom: var(--space-2);
 }
