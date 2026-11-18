@@ -29,7 +29,6 @@ export interface ProgressStageViewModel {
   readonly status: ProgressStageStatus;
   readonly percentage: number;
   readonly trailing?: ProgressStageTrailing;
-  readonly barLabelKey?: MessageKey;
 }
 
 export interface ProgressViewModel {
@@ -41,11 +40,6 @@ export interface ProgressViewModel {
   readonly total: number;
   readonly stages: readonly ProgressStageViewModel[];
 }
-
-const BAR_LABEL_KEYS: Partial<Record<ProgressStageStatus, MessageKey>> = {
-  completed: 'progress.stage.completed',
-  skipped: 'progress.stage.skipped',
-};
 
 /** Turns the store-shaped progress state into a presentation model. */
 export function buildProgressViewModel(source: ProgressSource): ProgressViewModel {
@@ -62,7 +56,6 @@ export function buildProgressViewModel(source: ProgressSource): ProgressViewMode
       status: stage.status,
       percentage: stage.percentage,
       trailing: stageTrailing(stage),
-      barLabelKey: BAR_LABEL_KEYS[stage.status],
     })),
   };
 }

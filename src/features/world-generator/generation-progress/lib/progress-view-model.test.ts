@@ -49,21 +49,13 @@ describe('buildProgressViewModel', () => {
     ]);
   });
 
-  it('derives the trailing value and bar label of every stage', () => {
+  it('derives the trailing value of every stage', () => {
     const stages = buildProgressViewModel(SOURCE).stages;
 
-    expect(stages[0]).toMatchObject({
-      trailing: { kind: 'duration', durationMs: 120 },
-      barLabelKey: 'progress.stage.completed',
-    });
-    expect(stages[1]).toMatchObject({
-      trailing: { kind: 'skipped' },
-      barLabelKey: 'progress.stage.skipped',
-    });
+    expect(stages[0]?.trailing).toEqual({ kind: 'duration', durationMs: 120 });
+    expect(stages[1]?.trailing).toEqual({ kind: 'skipped' });
     expect(stages[2]?.trailing).toBeUndefined();
-    expect(stages[2]?.barLabelKey).toBeUndefined();
     expect(stages[3]?.trailing).toBeUndefined();
-    expect(stages[3]?.barLabelKey).toBeUndefined();
   });
 
   it('handles an empty stage list', () => {

@@ -9,22 +9,31 @@ import styles from './stage-list.module.scss';
 export function StageList({ stages }: { stages: readonly ProgressStageViewModel[] }) {
   return (
     <div className={styles.labels}>
-      {stages.map(stage => (
-        <StageLabel key={stage.id} stage={stage} />
+      {stages.map((stage, index) => (
+        <StageLabel key={stage.id} stage={stage} index={index} />
       ))}
     </div>
   );
 }
 
-function StageLabel({ stage }: { stage: ProgressStageViewModel }) {
+function StageLabel({ stage, index }: { stage: ProgressStageViewModel; index: number }) {
   const { t } = useTranslation();
   const trailing = stageTrailing(stage, t);
 
   return (
-    <div className={styles.label} data-status={stage.status}>
-      <Text size='1' className={styles.labelName} title={t(stage.nameKey)}>
-        {t(stage.nameKey)}
-      </Text>
+    <div
+      className={styles.label}
+      data-status={stage.status}
+      aria-current={stage.status === 'running' ? 'step' : undefined}
+    >
+      <div className={styles.labelHeading}>
+        <span className={styles.labelIndex} aria-hidden='true'>
+          {index + 1}.
+        </span>
+        <Text size='1' className={styles.labelName}>
+          {t(stage.nameKey)}
+        </Text>
+      </div>
       {trailing !== undefined && (
         <Text size='1' className={styles.labelTime}>
           {trailing}
