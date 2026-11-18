@@ -8,7 +8,23 @@
 .panel[data-position] {
   position: absolute;
   right: 0;
+  display: flex;
+  flex-direction: column;
   width: 16rem;
+  max-height: 100%;
+}
+
+.panelBody {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.panelScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .panel[data-position='top'] {
@@ -29,6 +45,10 @@
 
 .card {
   margin-top: auto;
+
+  &::after {
+    box-shadow: none;
+  }
 }
 
 @include mobile {
