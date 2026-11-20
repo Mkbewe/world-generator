@@ -9,13 +9,14 @@ import type {
 
 import { mainCentre, nextCentre } from './placement';
 import { clamp01 } from '../../../../math';
-import type { WorldDimensions } from '../../../../world-dimensions';
+import { MIN_WORLD_SIZE, type WorldDimensions } from '../../../../world-dimensions';
 import type { RegionShape } from '../config/region-shape';
 import {
   BORDER_GATE_FADE_METERS,
   BORDER_GATE_METERS,
   MAX_FORMS_PER_REGION,
   MIN_ISLAND_RADIUS_METERS,
+  RADIUS_SIZE_EXPONENT,
 } from '../defaults';
 
 /** One bay bite of an island outline: bearing, bite depth and angular width. */
@@ -88,8 +89,7 @@ const LAND_SHARE_FLOOR = 0.03;
 const LAND_SHARE_RANGE = 0.97;
 /** The biggest island of a region, as a share of the region's square root. */
 const MAX_RADIUS_SHARE = 0.2;
-/** Below this land share the form count shrinks to avoid tiny specks. */
-const SPARSE_LAND_SHARE = 0.15;
+
 /** Deep bays of a plain island: how far they bite in and their width. */
 const BAY_DEPTH_MIN = 0.25;
 const BAY_DEPTH_RANGE = 0.45;
@@ -150,9 +150,10 @@ export function buildRegionForms(input: RegionFormsInput): IslandForm[] {
     return [];
   }
   const shape = input.shape;
-  const stream = input.random.create(`heightmap.${input.region.id}.forms`);
-  const count = formCount(input.terrain, shape);
-  const weights = formWeights(stream, count, input.terrain.concentration);
+  const namespace = `heightmap.${input.region.id}.forms`;
+  const stream = input.random.create(namespace);
+  const count = formCount(input.region, input.terrain, shape, input.dimensions);
+  const weights = formWeights(input.random, namespace, count, input.terrain.concentration);
   const radii = formRadii(input.region, input.terrain, shape, weights);
   const maxRadius = radii.reduce((max, radius) => Math.max(max, radius), MIN_ISLAND_RADIUS_METERS);
   const cellMeters = input.dimensions.widthMeters / input.dimensions.sampleWidth;
@@ -223,27 +224,68 @@ function interiorCells(
   return deep.length > 0 ? deep : cells;
 }
 
-/** Few focused masses or many scattered ones; sparse land sheds forms. */
-function formCount(terrain: RegionTerrainConfig, shape: RegionShape): number {
-  const concentration = clamp01(terrain.concentration);
-  const raw = shape.maxForms - (shape.maxForms - shape.minForms) * concentration;
-  const landShare = clamp01(terrain.landShare);
-  if (landShare >= SPARSE_LAND_SHARE) {
-    return clampCount(raw);
-  }
-  return clampCount(raw * (0.5 + (landShare / SPARSE_LAND_SHARE) * 0.5));
+/**
+ * Count from the target land area and the shape's nominal island radius.
+ * The radius share shrinks with the world side while the region span grows,
+ * so area growth becomes new forms at the configured radius exponent.
+ */
+function formCount(
+  region: GeologicalRegionPlan,
+  terrain: RegionTerrainConfig,
+  shape: RegionShape,
+  dimensions: WorldDimensions
+): number {
+  const radius = nominalRadius(region, terrain, shape, dimensions);
+  return clampCount(targetLandArea(region, terrain, shape) / (Math.PI * radius * radius));
+}
+
+function nominalRadius(
+  region: GeologicalRegionPlan,
+  terrain: RegionTerrainConfig,
+  shape: RegionShape,
+  dimensions: WorldDimensions
+): number {
+  const worldArea = dimensions.widthMeters * dimensions.heightMeters;
+  const minimumArea = MIN_WORLD_SIZE * MIN_WORLD_SIZE;
+  const sizeRatio = Math.sqrt(worldArea / minimumArea);
+  const radiusShare = shape.baseRadiusShare * Math.pow(sizeRatio, RADIUS_SIZE_EXPONENT - 1);
+  const divisionFactor = 1 / Math.sqrt(1 - shape.divisionShare * clamp01(terrain.concentration));
+  return Math.sqrt(region.areaSquareMeters) * radiusShare * divisionFactor;
+}
+
+function targetLandArea(
+  region: GeologicalRegionPlan,
+  terrain: RegionTerrainConfig,
+  shape: RegionShape
+): number {
+  return (
+    region.areaSquareMeters *
+    shape.coverageFactor *
+    (LAND_SHARE_FLOOR + LAND_SHARE_RANGE * clamp01(terrain.landShare))
+  );
 }
 
 function clampCount(value: number): number {
   return Math.max(1, Math.min(MAX_FORMS_PER_REGION, Math.round(value)));
 }
 
-/** Power-law weights: focused regions let the first form take most of the area. */
-function formWeights(stream: SeededRandom, count: number, concentration: number): number[] {
+/**
+ * Power-law weights: focused regions let the first form take most of the area.
+ * Every index draws its jitter from its own stream, so adding forms does not
+ * re-roll their jitter; the normalized share still depends on the final count.
+ */
+function formWeights(
+  random: RandomFactory,
+  namespace: string,
+  count: number,
+  concentration: number
+): number[] {
   const exponent = 0.65 + 1.15 * clamp01(concentration);
   const raw = Array.from(
     { length: count },
-    (_, index) => Math.pow(index + 1, -exponent) * (0.75 + 0.5 * stream.next())
+    (_, index) =>
+      Math.pow(index + 1, -exponent) *
+      (0.75 + 0.5 * random.create(`${namespace}.weight.${index}`).next())
   );
   const total = raw.reduce((sum, value) => sum + value, 0);
   return raw.map(value => value / total);
@@ -256,16 +298,10 @@ function formRadii(
   shape: RegionShape,
   weights: readonly number[]
 ): number[] {
-  const targetLandArea =
-    region.areaSquareMeters *
-    shape.coverageFactor *
-    (LAND_SHARE_FLOOR + LAND_SHARE_RANGE * clamp01(terrain.landShare));
   const maxRadius = maxRegionRadius(region);
+  const target = targetLandArea(region, terrain, shape);
   return weights.map(weight =>
-    Math.min(
-      maxRadius,
-      Math.max(MIN_ISLAND_RADIUS_METERS, Math.sqrt((targetLandArea * weight) / Math.PI))
-    )
+    Math.min(maxRadius, Math.max(MIN_ISLAND_RADIUS_METERS, Math.sqrt((target * weight) / Math.PI)))
   );
 }
 

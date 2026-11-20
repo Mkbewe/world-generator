@@ -45,6 +45,21 @@ const DETAIL_DIMENSIONS: WorldDimensions = {
 
 const CELLS = DIMENSIONS.sampleWidth * DIMENSIONS.sampleHeight;
 
+/** Equal 15.6 m cells let the 3 km and 12 km rasters share one land-share reference. */
+const SMALL_WORLD: WorldDimensions = {
+  widthMeters: 3000,
+  heightMeters: 3000,
+  sampleWidth: 192,
+  sampleHeight: 192,
+};
+
+const LARGE_WORLD: WorldDimensions = {
+  widthMeters: 12_000,
+  heightMeters: 12_000,
+  sampleWidth: 768,
+  sampleHeight: 768,
+};
+
 function region(
   index: number,
   type: GeologicalRegionType,
@@ -326,6 +341,32 @@ describe('buildHeightField', () => {
       }
     }
     expect(wall).toBe(true);
+  });
+
+  it('keeps the land share close between the smallest and largest worlds', () => {
+    const smallWorld = plan(
+      [{ ...region(0, 'ordinary', SMALL_WORLD), centre: { x: 0.5, y: 0.5 } }],
+      undefined,
+      SMALL_WORLD
+    );
+    const largeWorld = plan(
+      [{ ...region(0, 'ordinary', LARGE_WORLD), centre: { x: 0.5, y: 0.5 } }],
+      undefined,
+      LARGE_WORLD
+    );
+    const smallShare =
+      countLand(build(smallWorld, undefined, { isletFrequency: 0 }, SMALL_WORLD)) /
+      (SMALL_WORLD.sampleWidth * SMALL_WORLD.sampleHeight);
+    const largeShare =
+      countLand(build(largeWorld, undefined, { isletFrequency: 0 }, LARGE_WORLD)) /
+      (LARGE_WORLD.sampleWidth * LARGE_WORLD.sampleHeight);
+    const configuredShare = REGION_SHAPES.ordinary.coverageFactor * (0.03 + 0.97 * 0.5);
+
+    expect(Math.abs(smallShare - largeShare)).toBeLessThan(0.02);
+    // The stamped relief spills past the nominal radius; keep both references
+    // within three percentage points of the configured land share.
+    expect(Math.abs(smallShare - configuredShare)).toBeLessThan(0.03);
+    expect(Math.abs(largeShare - configuredShare)).toBeLessThan(0.03);
   });
 
   it('raises more land with the land-share tendency', () => {

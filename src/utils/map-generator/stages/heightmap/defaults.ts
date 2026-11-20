@@ -44,9 +44,12 @@ export const COAST_DETAIL_SHARE = 0.18;
 export const FIELD_SMOOTH_PASSES = 2;
 export const FIELD_SMOOTH_SHARE = 0.022;
 
-/** Smallest island radius and the cap on distinct forms per region. */
+/** Area growth spent on island radius instead of form count; 0 adds only forms. */
+export const RADIUS_SIZE_EXPONENT = 0.4;
+/** Safety cap for custom worlds beyond the UI's maximum size. */
+export const MAX_FORMS_PER_REGION = 128;
+/** Smallest island radius in metres. */
 export const MIN_ISLAND_RADIUS_METERS = 95;
-export const MAX_FORMS_PER_REGION = 14;
 
 /** Islets rise on shelf and bank water up to this depth; the abyss stays dark. */
 export const ISLET_MAX_DEPTH_METERS = 50;

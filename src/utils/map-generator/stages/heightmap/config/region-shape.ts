@@ -8,9 +8,10 @@ import type { GeologicalRegionType } from '@generator/types';
 export interface RegionShape {
   /** Multiplier of the region's landShare to convert slider 0..1 into target land coverage. */
   readonly coverageFactor: number;
-  /** Minimum and maximum form count at concentration = 1 (focused) and concentration = 0 (archipelago). */
-  readonly minForms: number;
-  readonly maxForms: number;
+  /** Nominal island radius at 3 km, as a share of the region's square-root span. */
+  readonly baseRadiusShare: number;
+  /** Radius growth at concentration = 1; count falls from the reference set to this share. */
+  readonly divisionShare: number;
   /** Multiplier of the world land amplitude. */
   readonly amplitudeFactor: number;
   /** Base exponent of the radial height profile (lower = steeper dome/bluff, higher = flatter lowland with sharp peak). */
@@ -51,8 +52,8 @@ export interface RegionShape {
 export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> = {
   ordinary: {
     coverageFactor: 0.11,
-    minForms: 2,
-    maxForms: 10,
+    baseRadiusShare: 0.04161,
+    divisionShare: 0.8,
     amplitudeFactor: 0.9,
     heightCurve: 1.2,
     cliffShare: 0.5,
@@ -71,8 +72,8 @@ export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> 
   },
   volcanic: {
     coverageFactor: 0.09,
-    minForms: 1,
-    maxForms: 7,
+    baseRadiusShare: 0.04221,
+    divisionShare: 0.85714,
     amplitudeFactor: 1.8,
     heightCurve: 1.45,
     cliffShare: 0.55,
@@ -91,8 +92,8 @@ export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> 
   },
   lagoon: {
     coverageFactor: 0.09,
-    minForms: 3,
-    maxForms: 11,
+    baseRadiusShare: 0.0346,
+    divisionShare: 0.66667,
     amplitudeFactor: 0.018,
     heightCurve: 0.75,
     cliffShare: 0.05,
@@ -111,8 +112,8 @@ export const REGION_SHAPES: Readonly<Record<GeologicalRegionType, RegionShape>> 
   },
   fjord: {
     coverageFactor: 0.12,
-    minForms: 2,
-    maxForms: 8,
+    baseRadiusShare: 0.0544,
+    divisionShare: 0.75,
     amplitudeFactor: 1.35,
     heightCurve: 0.85,
     cliffShare: 0.5,
