@@ -16,17 +16,18 @@ const REGION_SHAPE_VARIANTS: Readonly<
   ordinary: {
     warm: {
       coverageFactor: 0.12,
+      baseRadiusShare: 0.04931,
+      divisionShare: 0.77778,
       amplitudeFactor: 0.75,
       heightCurve: 1.35,
       cliffShare: 0.3,
       ridgeShare: 0.2,
       shelfFactor: 3.4,
-      maxForms: 9,
     },
     cold: {
       coverageFactor: 0.13,
-      minForms: 4,
-      maxForms: 13,
+      baseRadiusShare: 0.04092,
+      divisionShare: 0.69231,
       amplitudeFactor: 0.75,
       heightCurve: 1.1,
       cliffShare: 0.35,
@@ -70,8 +71,8 @@ const REGION_SHAPE_VARIANTS: Readonly<
   lagoon: {
     warm: {
       coverageFactor: 0.08,
-      minForms: 4,
-      maxForms: 12,
+      baseRadiusShare: 0.03702,
+      divisionShare: 0.6,
       amplitudeFactor: 0.01,
       heightCurve: 0.7,
       cliffShare: 0.03,
@@ -84,8 +85,8 @@ const REGION_SHAPE_VARIANTS: Readonly<
     },
     temperate: {
       coverageFactor: 0.11,
-      minForms: 4,
-      maxForms: 10,
+      baseRadiusShare: 0.03825,
+      divisionShare: 0.66667,
       amplitudeFactor: 0.04,
       heightCurve: 0.8,
       cliffShare: 0.15,
@@ -98,8 +99,8 @@ const REGION_SHAPE_VARIANTS: Readonly<
     },
     cold: {
       coverageFactor: 0.12,
-      minForms: 6,
-      maxForms: 14,
+      baseRadiusShare: 0.03951,
+      divisionShare: 0.71429,
       amplitudeFactor: 0.022,
       heightCurve: 0.95,
       cliffShare: 0.1,
@@ -183,8 +184,8 @@ function shiftShape(
 
   return {
     coverageFactor: blend(base.coverageFactor, variant.coverageFactor),
-    minForms: blend(base.minForms, variant.minForms, true),
-    maxForms: blend(base.maxForms, variant.maxForms, true),
+    baseRadiusShare: blend(base.baseRadiusShare, variant.baseRadiusShare),
+    divisionShare: blend(base.divisionShare, variant.divisionShare),
     amplitudeFactor: blend(base.amplitudeFactor, variant.amplitudeFactor),
     heightCurve: blend(base.heightCurve, variant.heightCurve),
     cliffShare: blend(base.cliffShare, variant.cliffShare),

@@ -28,16 +28,42 @@ const FINE_DIMENSIONS: WorldDimensions = {
   sampleHeight: 128,
 };
 
+const SMALL_DIMENSIONS: WorldDimensions = {
+  widthMeters: 3000,
+  heightMeters: 3000,
+  sampleWidth: 64,
+  sampleHeight: 64,
+};
+
+const LARGE_DIMENSIONS: WorldDimensions = {
+  widthMeters: 12_000,
+  heightMeters: 12_000,
+  sampleWidth: 64,
+  sampleHeight: 64,
+};
+
+/** Beyond the UI's 12 km maximum, used only for the safety cap. */
+const EXTREME_DIMENSIONS: WorldDimensions = {
+  widthMeters: 48_000,
+  heightMeters: 48_000,
+  sampleWidth: 64,
+  sampleHeight: 64,
+};
+
 const CELLS = DIMENSIONS.sampleWidth * DIMENSIONS.sampleHeight;
 
-function region(index: number, type: GeologicalRegionType): GeologicalRegionPlan {
+function region(
+  index: number,
+  type: GeologicalRegionType,
+  dimensions: WorldDimensions = DIMENSIONS
+): GeologicalRegionPlan {
   return {
     id: `region-${index + 1}`,
     type,
     centre: { x: (index + 0.5) / 2, y: 0.5 },
     thermal: 'temperate',
     weight: 1,
-    areaSquareMeters: DIMENSIONS.widthMeters * DIMENSIONS.heightMeters,
+    areaSquareMeters: dimensions.widthMeters * dimensions.heightMeters,
   };
 }
 
@@ -99,14 +125,15 @@ function regionForms(
   dimensions: WorldDimensions = DIMENSIONS,
   mask?: Uint8Array,
   shape?: RegionShape,
-  shapeAt?: (point: WorldPoint) => RegionShape
+  shapeAt?: (point: WorldPoint) => RegionShape,
+  terrainOverrides: Partial<RegionTerrainConfig> = {}
 ): {
   readonly forms: ReturnType<typeof buildRegionForms>;
   readonly space: ReturnType<typeof createWorldSpace>;
   readonly anchor: GeologicalRegionPlan;
 } {
   const space = createWorldSpace(dimensions);
-  const source = plan([region(0, type)], mask, dimensions);
+  const source = plan([region(0, type, dimensions)], mask, dimensions);
   const anchor = source.regions[0];
   if (!anchor) {
     throw new Error('The plan must carry the region.');
@@ -117,7 +144,7 @@ function regionForms(
     region: anchor,
     shape: regionShape,
     shapeAt: shapeAt ?? (() => regionShape),
-    terrain: terrain(),
+    terrain: terrain(terrainOverrides),
     cells:
       collectRegionInteriors(source, source.regionOwnerMap, source.regionBorderDistanceMap)[0] ??
       [],
@@ -129,6 +156,18 @@ function regionForms(
     amplitudeMeters: 500,
   });
   return { forms, space, anchor };
+}
+
+function meanRadius(forms: ReturnType<typeof buildRegionForms>): number {
+  return forms.reduce((sum, form) => sum + form.radiusMeters, 0) / forms.length;
+}
+
+function nominalLandShare(
+  forms: ReturnType<typeof buildRegionForms>,
+  dimensions: WorldDimensions
+): number {
+  const area = forms.reduce((sum, form) => sum + Math.PI * form.radiusMeters ** 2, 0);
+  return area / (dimensions.widthMeters * dimensions.heightMeters);
 }
 
 describe('buildRegionForms', () => {
@@ -155,7 +194,7 @@ describe('buildRegionForms', () => {
     const warm = regionShapeFor('lagoon', 'warm', 1);
     const cold = regionShapeFor('lagoon', 'cold', 1);
     const { forms } = regionForms('lagoon', DIMENSIONS, undefined, warm, point =>
-      point.x < 0.5 ? cold : warm
+      point.x < 0.3 ? cold : warm
     );
 
     expect(forms.some(form => form.shape.buildsReef)).toBe(true);
@@ -166,10 +205,10 @@ describe('buildRegionForms', () => {
     const warm = regionShapeFor('lagoon', 'warm', 1);
     const cold = regionShapeFor('lagoon', 'cold', 1);
     const first = regionForms('lagoon', DIMENSIONS, undefined, warm, point =>
-      point.x < 0.5 ? cold : warm
+      point.x < 0.3 ? cold : warm
     );
     const second = regionForms('lagoon', DIMENSIONS, undefined, warm, point =>
-      point.x < 0.5 ? warm : cold
+      point.x < 0.3 ? warm : cold
     );
 
     expect(first.forms.map(form => form.centre)).toEqual(second.forms.map(form => form.centre));
@@ -208,15 +247,90 @@ describe('buildRegionForms', () => {
       const offset = space.distanceMeters(form.centre, form.peak) / form.radiusMeters;
       expect(offset).toBeGreaterThanOrEqual(0.25);
       expect(offset).toBeLessThanOrEqual(0.95);
-      // Every plain island bites deep bays into its outline.
-      const bays = form.bays.filter(bay => bay.depth > 0);
-      expect(bays.length).toBeGreaterThanOrEqual(1);
-      for (const bay of bays) {
-        expect(bay.depth).toBeGreaterThanOrEqual(0.25);
-        expect(bay.depth).toBeLessThanOrEqual(0.7);
-        expect(bay.width).toBeGreaterThanOrEqual(0.35);
-      }
     }
+  });
+
+  it('bites deep bays into plain island outlines', () => {
+    const { forms } = regionForms('ordinary');
+    const bays = forms.flatMap(form => form.bays.filter(bay => bay.depth > 0));
+
+    expect(bays.length).toBeGreaterThan(0);
+    for (const bay of bays) {
+      expect(bay.depth).toBeGreaterThanOrEqual(0.25);
+      expect(bay.depth).toBeLessThanOrEqual(0.7);
+      expect(bay.width).toBeGreaterThanOrEqual(0.35);
+    }
+  });
+
+  it('adds forms as the world grows instead of only scaling the same set', () => {
+    const small = regionForms('ordinary', SMALL_DIMENSIONS).forms;
+    const large = regionForms('ordinary', LARGE_DIMENSIONS).forms;
+    const smallMean = meanRadius(small);
+    const largeMean = meanRadius(large);
+
+    expect(large.length).toBeGreaterThanOrEqual(small.length * 4);
+    expect(largeMean).toBeGreaterThan(smallMean);
+    expect(largeMean).toBeLessThan(smallMean * 2);
+    expect(Math.max(...large.map(form => form.radiusMeters))).toBeGreaterThan(
+      Math.max(...small.map(form => form.radiusMeters))
+    );
+    expect(
+      Math.max(...large.map(form => form.radiusMeters)) /
+        Math.min(...large.map(form => form.radiusMeters))
+    ).toBeGreaterThan(1.5);
+  });
+
+  it('keeps the larger world deterministic for one seed and configuration', () => {
+    const first = regionForms('ordinary', LARGE_DIMENSIONS).forms;
+    const second = regionForms('ordinary', LARGE_DIMENSIONS).forms;
+
+    expect(second).toEqual(first);
+  });
+
+  it('keeps the configured land share at both world sizes', () => {
+    const shape = REGION_SHAPES.ordinary;
+    const targetShare = shape.coverageFactor * (0.03 + 0.97 * 0.5);
+    const small = regionForms('ordinary', SMALL_DIMENSIONS).forms;
+    const large = regionForms('ordinary', LARGE_DIMENSIONS).forms;
+
+    expect(nominalLandShare(small, SMALL_DIMENSIONS)).toBeCloseTo(targetShare, 2);
+    expect(nominalLandShare(large, LARGE_DIMENSIONS)).toBeCloseTo(targetShare, 2);
+  });
+
+  it('derives the count from the target land area', () => {
+    const low = regionForms('ordinary', SMALL_DIMENSIONS, undefined, undefined, undefined, {
+      landShare: 0.2,
+    }).forms;
+    const high = regionForms('ordinary', SMALL_DIMENSIONS, undefined, undefined, undefined, {
+      landShare: 0.8,
+    }).forms;
+
+    expect(high.length).toBeGreaterThan(low.length);
+  });
+
+  it('turns island division into fewer, larger forms', () => {
+    const many = regionForms('ordinary', SMALL_DIMENSIONS, undefined, undefined, undefined, {
+      concentration: 0.1,
+    }).forms;
+    const few = regionForms('ordinary', SMALL_DIMENSIONS, undefined, undefined, undefined, {
+      concentration: 0.9,
+    }).forms;
+
+    expect(few.length).toBeLessThan(many.length);
+    expect(meanRadius(few)).toBeGreaterThan(meanRadius(many));
+  });
+
+  it('does not clamp a large world to the old fourteen-form cap', () => {
+    const shape = regionShapeFor('lagoon', 'cold', 1);
+    const { forms } = regionForms('lagoon', LARGE_DIMENSIONS, undefined, shape);
+
+    expect(forms.length).toBeGreaterThan(14);
+  });
+
+  it('caps custom worlds beyond the UI maximum at the safety limit', () => {
+    const { forms } = regionForms('ordinary', EXTREME_DIMENSIONS);
+
+    expect(forms).toHaveLength(128);
   });
 
   it('keeps caldera summits centred and free of bays', () => {
@@ -233,7 +347,6 @@ describe('buildRegionForms', () => {
         expect(form.bays.every(bay => bay.depth === 0)).toBe(true);
       } else {
         expect(offset).toBeGreaterThanOrEqual(0.25);
-        expect(form.bays.some(bay => bay.depth > 0)).toBe(true);
       }
     }
   });

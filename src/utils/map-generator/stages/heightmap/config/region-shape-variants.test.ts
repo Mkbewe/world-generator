@@ -21,7 +21,8 @@ describe('regionShapeFor', () => {
 
     expect(shape.cavityShare).toBe(0);
     expect(shape.buildsReef).toBe(false);
-    expect(shape.maxForms).toBeGreaterThan(REGION_SHAPES.lagoon.maxForms);
+    expect(shape.baseRadiusShare).toBeGreaterThan(REGION_SHAPES.lagoon.baseRadiusShare);
+    expect(shape.divisionShare).toBeGreaterThan(REGION_SHAPES.lagoon.divisionShare);
     expect(shape.amplitudeFactor).toBeGreaterThan(REGION_SHAPES.lagoon.amplitudeFactor);
   });
 
@@ -83,7 +84,9 @@ describe('regionShapeFor', () => {
     for (const type of ['ordinary', 'volcanic', 'lagoon', 'fjord'] as const) {
       for (const thermal of ['cold', 'temperate', 'warm'] as const) {
         const shape = regionShapeFor(type, thermal, 1);
-        expect(shape.minForms).toBeLessThanOrEqual(shape.maxForms);
+        expect(shape.baseRadiusShare).toBeGreaterThan(0);
+        expect(shape.divisionShare).toBeGreaterThanOrEqual(0);
+        expect(shape.divisionShare).toBeLessThanOrEqual(1);
         expect(shape.shelfFactor).toBeGreaterThan(1);
         expect(shape.cavityShare).toBeGreaterThanOrEqual(0);
         expect(shape.cavityShare).toBeLessThanOrEqual(1);

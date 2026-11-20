@@ -188,8 +188,8 @@ pól przepisu, a nie nowym algorytmem wysp:
 | ordinary | szerszy szelf, niższe klify | dzisiejszy ordinary | porozrywany archipelag, zaokrąglone grzbiety |
 
 To są przesunięcia pól takich jak `cavityShare`, `chuteCount`, `amplitudeFactor`,
-`maxForms`, `shelfFactor` i `ridgeShare`. `ordinary` i `volcanic` zmieniają się
-najmniej.
+`baseRadiusShare`, `divisionShare`, `shelfFactor` i `ridgeShare`. `ordinary`
+i `volcanic` zmieniają się najmniej.
 
 Geologia może lekko woleć ciepłe kotwice dla `lagoon` i zimne dla `fjord`.
 To **bias wagi, nie filtr** i tylko lekki tie-breaker: kotwica nie przesuwa się
