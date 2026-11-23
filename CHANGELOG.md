@@ -1,5 +1,79 @@
 # Changelog
 
+## [0.14.4](https://github.com/Mkbewe/world-generator/compare/v0.14.3...v0.14.4) (2026-11-23)
+
+### Features
+
+* **[584](https://github.com/Mkbewe/world-generator/issues/584):** enable the fullscreen preview on mobile ([#620](https://github.com/Mkbewe/world-generator/issues/620)) ([10cf87e](https://github.com/Mkbewe/world-generator/commit/10cf87ea9c91691b208dae465b1b5be1e3663580))
+
+  - remove the mobile force-exit from the fullscreen preview
+  - respect safe-area insets and keep the overlay below the layer tabs
+  - use horizontal layer tabs and a narrow movable panel with internal
+  scrolling
+  - add two-finger pinch zoom while preserving touch pan, measurement,
+  pinning and readout
+  - contain readout content horizontally and update the user guide
+  - cover mobile fullscreen, pinch zoom and panel layout with tests
+* **[586](https://github.com/Mkbewe/world-generator/issues/586):** place generation progress under the map ([#617](https://github.com/Mkbewe/world-generator/issues/617)) ([4df4ed1](https://github.com/Mkbewe/world-generator/commit/4df4ed16dff60b94f7490b82b0b00813c319b805))
+
+  - move the progress block into the map column below the canvas
+  - render only the active layer view group to remove the empty mobile gap
+  - keep progress hidden in fullscreen and restore it on exit
+  - cover layout order, fullscreen visibility and empty views with tests
+* **[587](https://github.com/Mkbewe/world-generator/issues/587):** keep the progress legend readable for ten stages ([#622](https://github.com/Mkbewe/world-generator/issues/622)) ([85a5db7](https://github.com/Mkbewe/world-generator/commit/85a5db7d8d14c962c92b4a0ce50b1628d8d18661))
+
+  - wrap stage names in a numbered grid instead of one ellipsized row
+  - mark the active stage with a violet label and `aria-current="step"`
+  - keep `completed` and `skipped` copy in the bar segments and derive it
+  in `StageBars`
+  - cover ten-stage layouts at narrow and wide widths, including all stage
+  states
+
+### Bug Fixes
+
+* **[508](https://github.com/Mkbewe/world-generator/issues/508):** gate islets by coverage instead of uniform count ([#624](https://github.com/Mkbewe/world-generator/issues/624)) ([5bf99e6](https://github.com/Mkbewe/world-generator/commit/5bf99e6b5733f270964ec5b4caf5ebf7331a98fa))
+* **[509](https://github.com/Mkbewe/world-generator/issues/509):** derive island counts from world area ([#623](https://github.com/Mkbewe/world-generator/issues/623)) ([a869938](https://github.com/Mkbewe/world-generator/commit/a869938e38e4714dcf31e1f2926287a7409d1b89))
+
+  - derive form count from the target land area and the shape's nominal
+  radius
+  - replace fixed form-count ranges with a radius share and
+  island-division growth
+  - scale island radius with world size while adding more islands
+  - draw per-form weight jitter from independent seeded streams
+  - tune lagoon form density and cap oversized custom worlds
+  - cover size scaling, land share, determinism and the safety limit with
+  tests
+* **[585](https://github.com/Mkbewe/world-generator/issues/585):** stabilize touch readout gestures ([#615](https://github.com/Mkbewe/world-generator/issues/615)) ([b657d5c](https://github.com/Mkbewe/world-generator/commit/b657d5cc4289a1f64137331c7b038b844a280148))
+
+  - clear the live readout on touch drag, pan, cancel and leave
+  - keep pinned readouts frozen through gestures and fullscreen changes
+  - prevent measurement gestures from toggling the pin
+  - preserve desktop mouse readout behavior
+  - cover the touch state transitions with regression tests
+* **[616](https://github.com/Mkbewe/world-generator/issues/616):** keep the fullscreen sidebar compact and scrollable ([#619](https://github.com/Mkbewe/world-generator/issues/619)) ([78cb81f](https://github.com/Mkbewe/world-generator/commit/78cb81fc0d0685fdf3a29cf8363d8b757ad7b6f8))
+
+  - hide the fullscreen control while the panel is collapsed
+  - bound the expanded panel and scroll its sections internally on short
+  viewports
+  - remove the duplicate border and layer-view separator when no views are
+  shown
+  - keep the header and fullscreen control outside the scroll area
+  - cover the collapsed, scrollable and separator states with tests
+* **[625](https://github.com/Mkbewe/world-generator/issues/625):** keep the selected preview layer when navigating back ([a0bfc1c](https://github.com/Mkbewe/world-generator/commit/a0bfc1c36e78ba77ef3bc565192a43616cb375d8))
+
+### Code Refactoring
+
+* **[597](https://github.com/Mkbewe/world-generator/issues/597):** unify categorical boundary rendering ([#618](https://github.com/Mkbewe/world-generator/issues/618)) ([fb22ee3](https://github.com/Mkbewe/world-generator/commit/fb22ee311ebb1c430550a9a7d7ea7a38187d4911))
+
+  - move gutter and highlight painting into the shared boundary painter
+  - declare the geology boundary style in the layer catalog
+  - reuse the shared painter in geology and remove the duplicate raster
+  loop
+  - map smaller owner rasters onto the map grid and preserve
+  selected-region highlighting
+  - cover gutters, highlighting, zoom fallback and source mapping with
+  tests
+
 ## [0.14.3](https://github.com/Mkbewe/world-generator/compare/v0.14.2...v0.14.3) (2026-11-16)
 
 ### Features
