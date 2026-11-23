@@ -179,7 +179,7 @@ export class MapView {
 
   begin(layer: MapLayer): void {
     const restored = layer.renderedTarget !== undefined;
-    if ((this.progressive || restored) && this.shouldDisplay(layer.id)) {
+    if ((this.progressive || restored) && this.displays(layer)) {
       this.presented = layer;
       this.presenter.show(layer);
     }
@@ -187,6 +187,13 @@ export class MapView {
 
   present(layer: MapLayer): void {
     if (this.displays(layer)) {
+      this.show(layer);
+    }
+  }
+
+  /** Shows a silently prepared layer only when it is the selected one. */
+  presentSelected(layer: MapLayer): void {
+    if (layer.id === this.selectedLayer) {
       this.show(layer);
     }
   }
