@@ -131,6 +131,80 @@ describe('MapView', () => {
     layer.dispose();
   });
 
+  it('keeps the selected layer when cached layers begin on restore', async () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 4,
+      height: 4,
+      devicePixelRatio: 1,
+    });
+    const world = createLayer();
+    const macro = new CatalogLayer(
+      layerRegistry.raster('macro-region'),
+      { width: 2, height: 2 },
+      new Uint8Array(4),
+      world
+    );
+    const source = new MapView(createElements(), new RenderMetrics(layerRegistry), vi.fn());
+    source.start({ width: 2, height: 2 }, 'disc');
+    const target = source.renderTarget();
+    if (!target) {
+      throw new Error('Expected a render target.');
+    }
+    await world.prepare(new AbortController().signal, target);
+    await macro.prepare(new AbortController().signal, target);
+    source.dispose();
+
+    const view = new MapView(
+      createElements(),
+      new RenderMetrics(layerRegistry),
+      vi.fn(),
+      'world-shape'
+    );
+    view.start({ width: 2, height: 2 }, 'disc');
+    view.restoreSelection('macro-region');
+    view.begin(world);
+    expect(view.displayedLayer).toBe('world-shape');
+
+    view.begin(macro);
+    expect(view.displayedLayer).toBe('world-shape');
+
+    view.dispose();
+    world.dispose();
+    macro.dispose();
+  });
+
+  it('shows a silently prepared layer only when it is selected', () => {
+    vi.spyOn(Viewport.prototype, 'measure').mockReturnValue({
+      width: 4,
+      height: 4,
+      devicePixelRatio: 1,
+    });
+    const view = new MapView(
+      createElements(),
+      new RenderMetrics(layerRegistry),
+      vi.fn(),
+      'world-shape'
+    );
+    const world = createLayer();
+    const macro = new CatalogLayer(
+      layerRegistry.raster('macro-region'),
+      { width: 2, height: 2 },
+      new Uint8Array(4),
+      world
+    );
+    view.start({ width: 2, height: 2 }, 'disc');
+
+    view.presentSelected(macro);
+    expect(view.displayedLayer).toBeUndefined();
+
+    view.presentSelected(world);
+    expect(view.displayedLayer).toBe('world-shape');
+
+    view.dispose();
+    world.dispose();
+    macro.dispose();
+  });
+
   it('keeps the raster size until the viewport is measured', () => {
     vi.spyOn(Viewport.prototype, 'measure').mockReturnValue(undefined);
     const elements = createElements();

@@ -530,9 +530,9 @@ describe('MapRenderer', () => {
     await preview.ready;
 
     expect(onRenderStatistics.mock.lastCall?.[0]).toMatchObject({
-      elapsedDurationMs: 6,
+      elapsedDurationMs: 4,
       firstTileDurationMs: undefined,
-      presentationDurationMs: 6,
+      presentationDurationMs: 4,
       overlayDurationMs: expect.any(Number),
       layers: [
         { durationMs: 504, tiles: 100, pixels: 900, reused: true },

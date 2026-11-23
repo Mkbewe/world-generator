@@ -389,7 +389,9 @@ export class MapRenderer {
   private present(layer: MapLayer, silent = false): void {
     this.scene.markReady(layer);
     this.view.setMasks(this.scene.masks);
-    if (!silent) {
+    if (silent) {
+      this.view.presentSelected(layer);
+    } else {
       this.view.present(layer);
     }
     this.emitState();
