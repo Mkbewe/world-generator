@@ -87,6 +87,17 @@ export const ISLET_MASK_FADE = 0.05;
 export const ISLET_FREQUENCY_EXPONENT = 1.5;
 
 /**
+ * Coverage gate: the frequency opens the coarse shoal field, so whole islands
+ * and banks stay clean at low values instead of every coast getting the same
+ * sprinkle. The field is normalized against the practical amplitude of the
+ * bank band; the open level keeps clean water patches even at the maximum.
+ */
+export const ISLET_COVERAGE_PRACTICAL_MAX = 0.5;
+export const ISLET_COVERAGE_LEVEL_CLOSED = 0.95;
+export const ISLET_COVERAGE_LEVEL_OPEN = 0.15;
+export const ISLET_COVERAGE_FADE = 0.12;
+
+/**
  * Open-sea banks: the islet frequency also lifts scattered patches of deep
  * water toward the bank depth, so skerries can appear away from any island
  * shelf. The spread and the detail band vary each bank's top, and the depth

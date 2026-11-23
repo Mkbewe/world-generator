@@ -15,6 +15,10 @@ import {
   ISLET_AMPLITUDE_FLOOR,
   ISLET_BUMP_DEPTH_METERS,
   ISLET_BUMP_METERS,
+  ISLET_COVERAGE_FADE,
+  ISLET_COVERAGE_LEVEL_CLOSED,
+  ISLET_COVERAGE_LEVEL_OPEN,
+  ISLET_COVERAGE_PRACTICAL_MAX,
   ISLET_EMERGENCE_MAX_METERS,
   ISLET_EMERGENCE_MIN_METERS,
   ISLET_FREQUENCY_EXPONENT,
@@ -47,8 +51,10 @@ export interface IsletReliefInput {
 
 /**
  * Owns the islet and bank behaviour: which water cells rise, how far from the
- * shore, and how high the resulting skerry stands. The composition only hands
- * it one water cell and takes the new surface back.
+ * shore, and how high the resulting skerry stands. The coverage gate first
+ * decides which coasts and shoals are open at all; the fine band then picks the
+ * individual rocks inside them. The composition only hands it one water cell
+ * and takes the new surface back.
  */
 export class IsletRelief {
   private readonly plan: GeologyPlan;
@@ -56,6 +62,7 @@ export class IsletRelief {
   private readonly regionBands: readonly HeightmapNoiseBands[];
   private readonly shapeAt: (regionIndex: number, point: WorldPoint) => RegionShape;
   private readonly opened: number;
+  private readonly coverageThreshold: number;
   private readonly shoreDistanceGate: number;
 
   constructor(input: IsletReliefInput) {
@@ -63,7 +70,11 @@ export class IsletRelief {
     this.bands = input.bands;
     this.regionBands = input.regionBands;
     this.shapeAt = input.shapeAt;
-    this.opened = Math.pow(clamp01(input.config.isletFrequency), ISLET_FREQUENCY_EXPONENT);
+    const frequency = clamp01(input.config.isletFrequency);
+    this.opened = Math.pow(frequency, ISLET_FREQUENCY_EXPONENT);
+    this.coverageThreshold =
+      ISLET_COVERAGE_LEVEL_CLOSED -
+      (ISLET_COVERAGE_LEVEL_CLOSED - ISLET_COVERAGE_LEVEL_OPEN) * frequency;
     this.shoreDistanceGate = input.shoreWidthMeters * ISLET_MIN_SHORE_DISTANCE_SHARE;
   }
 
@@ -76,28 +87,30 @@ export class IsletRelief {
     if (!region || !band) {
       return surface;
     }
-    const shape = this.shapeAt(cell.owner, cell.point);
-    let result = surface;
-    if (this.isOpenWater(cell)) {
-      result = this.applyBank(result, cell);
+    if (surface >= 0 || !this.isOpenWater(cell)) {
+      return surface;
     }
+    const shoal = this.bands.bank(cell.point);
+    const coverage = this.coverageWeight(shoal);
+    if (coverage <= 0) {
+      return surface;
+    }
+    let result = this.applyBank(surface, cell, coverage, shoal);
     if (
       result <= 0 &&
       result > -ISLET_MAX_DEPTH_METERS &&
       cell.distanceToShore > this.shoreDistanceGate &&
-      this.isOpenWater(cell) &&
       cell.gate > ISLET_GATE_MIN
     ) {
-      result = this.applyIslet(result, cell, band, shape);
+      const shape = this.shapeAt(cell.owner, cell.point);
+      result = this.applyIslet(result, cell, band, shape, coverage);
     }
     return result;
   }
 
-  private applyBank(surface: number, cell: IsletCell): number {
+  private applyBank(surface: number, cell: IsletCell, coverage: number, shoal: number): number {
     const fine = this.bands.fine(cell.point);
-    const bank = this.bankWeight(
-      this.bands.bank(cell.point) + BANK_LARGE_SHARE * cell.large + BANK_FINE_SHARE * fine
-    );
+    const bank = this.bankWeight(shoal + BANK_LARGE_SHARE * cell.large + BANK_FINE_SHARE * fine);
     if (bank <= 0) {
       return surface;
     }
@@ -108,16 +121,17 @@ export class IsletRelief {
       -BANK_DEPTH_METERS -
       BANK_DEPTH_SPREAD_METERS * clamp01(0.5 + 0.5 * cell.large) -
       BANK_DETAIL_SPREAD_METERS * clamp01(0.5 + 0.5 * fine);
-    return surface + Math.max(0, target - surface) * bank * depthFade;
+    return surface + Math.max(0, target - surface) * bank * coverage * depthFade;
   }
 
   private applyIslet(
     surface: number,
     cell: IsletCell,
     band: HeightmapNoiseBands,
-    shape: RegionShape
+    shape: RegionShape,
+    coverage: number
   ): number {
-    const bump = this.isletBump(band, cell.point);
+    const bump = this.isletBump(band, cell.point) * coverage;
     const depthShare = clamp01(-surface / ISLET_BUMP_DEPTH_METERS);
     const amplitude = Math.max(ISLET_AMPLITUDE_FLOOR, Math.min(1, shape.amplitudeFactor));
     const lifted = surface + bump * depthShare * amplitude;
@@ -128,6 +142,15 @@ export class IsletRelief {
       ISLET_EMERGENCE_MIN_METERS +
       (ISLET_EMERGENCE_MAX_METERS - ISLET_EMERGENCE_MIN_METERS) * this.heightShare(cell.point);
     return Math.min(lifted, cap);
+  }
+
+  /** Share of the slider's coverage at this shoal value; zero keeps the coast clean. */
+  private coverageWeight(shoal: number): number {
+    const share = clamp01(0.5 + shoal / (2 * ISLET_COVERAGE_PRACTICAL_MAX));
+    if (share <= this.coverageThreshold) {
+      return 0;
+    }
+    return smoothstep(clamp01((share - this.coverageThreshold) / ISLET_COVERAGE_FADE));
   }
 
   private isletBump(band: HeightmapNoiseBands, point: WorldPoint): number {
