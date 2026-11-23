@@ -12,12 +12,13 @@ import type { WorldDimensions } from '../../../world-dimensions';
 import { containsNormalized } from '../../../world-shape';
 import { RandomFactory } from '../../random';
 import { createWorldSpace } from '../../space';
-import type {
-  GeologicalRegionPlan,
-  GeologicalRegionType,
-  GeologyPlan,
-  HeightmapConfig,
-  RegionTerrainConfig,
+import {
+  GEOLOGICAL_REGION_TYPES,
+  type GeologicalRegionPlan,
+  type GeologicalRegionType,
+  type GeologyPlan,
+  type HeightmapConfig,
+  type RegionTerrainConfig,
 } from '../../types';
 
 const DIMENSIONS: WorldDimensions = {
@@ -490,6 +491,14 @@ describe('buildHeightField', () => {
     const source = plan([region(0, 'ordinary', DETAIL_DIMENSIONS)], undefined, DETAIL_DIMENSIONS);
     const none = build(source, undefined, { isletFrequency: 0 }, DETAIL_DIMENSIONS, seed);
     const many = build(source, undefined, { isletFrequency: 0.9 }, DETAIL_DIMENSIONS, seed);
+
+    expect(countLand(many)).toBeGreaterThan(countLand(none));
+  });
+
+  it.each(GEOLOGICAL_REGION_TYPES)('adds islets to %s regions at a high frequency', type => {
+    const source = plan([region(0, type, DETAIL_DIMENSIONS)], undefined, DETAIL_DIMENSIONS);
+    const none = build(source, undefined, { isletFrequency: 0 }, DETAIL_DIMENSIONS);
+    const many = build(source, undefined, { isletFrequency: 0.9 }, DETAIL_DIMENSIONS);
 
     expect(countLand(many)).toBeGreaterThan(countLand(none));
   });
