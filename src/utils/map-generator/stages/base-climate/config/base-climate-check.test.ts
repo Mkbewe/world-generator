@@ -153,6 +153,30 @@ describe('validateBaseClimateConfig', () => {
     expect(isBaseClimateConfig({ ...base, moisture: 0.2 })).toBe(true);
   });
 
+  it('checks manual moisture zones', () => {
+    const base = getBaseClimatePresets()[0];
+    const zone = {
+      id: 'dry-belt',
+      label: 'Dry belt',
+      kind: 'dry' as const,
+      geometry: { kind: 'band' as const, axis: 'y' as const, center: 0.5, width: 0.2 },
+    };
+
+    expect(isBaseClimateConfig({ ...base, moistureZones: [zone] })).toBe(true);
+    expect(() =>
+      validateBaseClimateConfig({
+        ...base,
+        moistureZones: [zone, { ...zone }],
+      })
+    ).toThrow('Duplicate moisture zone id');
+    expect(() =>
+      validateBaseClimateConfig({
+        ...base,
+        moistureZones: [{ ...zone, geometry: { kind: 'band', axis: 'y', center: 2, width: 0.2 } }],
+      })
+    ).toThrow('center');
+  });
+
   it('rejects an invalid heat-zone irregularity', () => {
     const base = getBaseClimatePresets()[0];
 

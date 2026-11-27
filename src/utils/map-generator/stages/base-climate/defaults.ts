@@ -10,6 +10,9 @@ import type {
 export const MIN_HEAT_ZONES = 1;
 export const MAX_HEAT_ZONES = 32;
 
+/** Bounds of the manual moisture belts and rings. */
+export const MAX_MOISTURE_ZONES = 16;
+
 /** Bounds of the static ocean-current sources. */
 export const MAX_OCEAN_CURRENT_SOURCES = 16;
 export const MAX_OCEAN_CURRENT_RADIUS = 2;
@@ -109,6 +112,7 @@ export function baseClimatePresetConfig(preset: BaseClimatePreset): BaseClimateC
   return {
     geologyCoupling: 1,
     moisture: 0.5,
+    moistureZones: [],
     zoneIrregularity: 0,
     zones: PRESET_ZONES[preset].map(zone => ({
       ...zone,

@@ -157,6 +157,21 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptorKeys> = {
     precision: 3,
     descriptionKey: 'statistics.metrics.temperatureStdDevDescription',
   },
+  riverCells: {
+    labelKey: 'statistics.metrics.riverCells',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.riverCellsDescription',
+  },
+  lakeCells: {
+    labelKey: 'statistics.metrics.lakeCells',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.lakeCellsDescription',
+  },
+  basinCount: {
+    labelKey: 'statistics.metrics.basinCount',
+    kind: 'number',
+    descriptionKey: 'statistics.metrics.basinCountDescription',
+  },
   landShare: {
     labelKey: 'statistics.metrics.landShare',
     kind: 'ratio',

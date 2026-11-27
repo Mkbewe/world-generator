@@ -458,6 +458,12 @@ const en = {
   'statistics.metrics.temperatureStdDev': 'Temperature spread',
   'statistics.metrics.temperatureStdDevDescription':
     'Standard deviation of temperature among covered cells.',
+  'statistics.metrics.riverCells': 'River cells',
+  'statistics.metrics.riverCellsDescription': 'Cells carrying a river channel.',
+  'statistics.metrics.lakeCells': 'Lake cells',
+  'statistics.metrics.lakeCellsDescription': 'Cells covered by a filled lake depression.',
+  'statistics.metrics.basinCount': 'Basins',
+  'statistics.metrics.basinCountDescription': 'Distinct lake drainage basins in the world.',
   'statistics.metrics.landShare': 'Land share',
   'statistics.metrics.landShareDescription': 'Share of the world above the sea level.',
   'statistics.metrics.coldShare': 'Cold share',

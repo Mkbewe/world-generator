@@ -120,7 +120,7 @@ describe('selectDirtyStageIds', () => {
         },
         ['base-climate', 'climate'],
       ],
-      [{ baseClimate: { ...baseClimate, moisture: 0.8 } }, ['base-climate']],
+      [{ baseClimate: { ...baseClimate, moisture: 0.8 } }, ['base-climate', 'climate']],
       [{ geology: { ...geology, regionCount: 6 } }, ['geology', 'heightmap', 'climate']],
       [{ heightmap: { ...heightmap, relief: 0.8 } }, ['heightmap', 'climate']],
     ];

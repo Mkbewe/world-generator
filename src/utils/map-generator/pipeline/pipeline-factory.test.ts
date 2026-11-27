@@ -43,6 +43,10 @@ describe('createMapGenerator', () => {
     expect(result.context.state.heightmap).toBeInstanceOf(Float32Array);
     expect(result.context.state.provenanceMap).toBeInstanceOf(Int16Array);
     expect(result.context.state.temperatureMap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.moistureMap).toBeInstanceOf(Float32Array);
+    expect(result.context.state.riverMap).toBeInstanceOf(Uint8Array);
+    expect(result.context.state.lakeMap).toBeInstanceOf(Uint8Array);
+    expect(result.context.state.basinMap).toBeInstanceOf(Int16Array);
   });
 
   it('produces an identical state for the same seed and configuration', async () => {
@@ -126,8 +130,15 @@ describe('createMapGenerator', () => {
       },
       {
         id: 'climate',
-        reads: ['worldMask', 'heatZoneMap', 'heightmap', 'oceanCurrentStrength'],
-        writes: ['temperatureMap'],
+        reads: [
+          'worldMask',
+          'heatZoneMap',
+          'heightmap',
+          'moistureBaseMap',
+          'oceanCurrentMap',
+          'oceanCurrentStrength',
+        ],
+        writes: ['temperatureMap', 'moistureMap', 'riverMap', 'lakeMap', 'basinMap'],
         configKeys: [
           'world.seed',
           'world.shape',
@@ -136,6 +147,8 @@ describe('createMapGenerator', () => {
           'baseClimate.zoneIrregularity',
           'baseClimate.geologyCoupling',
           'baseClimate.currents',
+          'baseClimate.moisture',
+          'baseClimate.moistureZones',
           'geology',
           'heightmap',
         ],

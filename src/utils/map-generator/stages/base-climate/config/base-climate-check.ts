@@ -1,9 +1,15 @@
 import { isNormalized, validateGeometry } from '@generator/geometry';
-import { type BaseClimateConfig, HEAT_ZONE_CLASSES, OCEAN_CURRENT_FLOWS } from '@generator/types';
+import {
+  type BaseClimateConfig,
+  HEAT_ZONE_CLASSES,
+  MOISTURE_ZONE_KINDS,
+  OCEAN_CURRENT_FLOWS,
+} from '@generator/types';
 
 import {
   MAX_HEAT_ZONE_IRREGULARITY,
   MAX_HEAT_ZONES,
+  MAX_MOISTURE_ZONES,
   MAX_OCEAN_CURRENT_RADIUS,
   MAX_OCEAN_CURRENT_SOURCES,
   MIN_HEAT_ZONES,
@@ -28,6 +34,14 @@ export function validateBaseClimateConfig(config: BaseClimateConfig): void {
   }
   if (config.moisture !== undefined && !isNormalized(config.moisture)) {
     throw new RangeError('Base moisture must be within 0..1.');
+  }
+  if (config.moistureZones !== undefined) {
+    if (!Array.isArray(config.moistureZones)) {
+      throw new RangeError('Moisture zones must be a list.');
+    }
+    if (config.moistureZones.length > MAX_MOISTURE_ZONES) {
+      throw new RangeError(`At most ${MAX_MOISTURE_ZONES} moisture zones are allowed.`);
+    }
   }
   if (
     config.zoneIrregularity !== undefined &&
@@ -54,6 +68,24 @@ export function validateBaseClimateConfig(config: BaseClimateConfig): void {
       throw new RangeError(`Heat zone "${zone.id}" has an invalid thermal class.`);
     }
     validateGeometry(zone.id, zone.geometry, 'Heat zone');
+  }
+
+  const moistureIds = new Set<string>();
+  for (const zone of config.moistureZones ?? []) {
+    if (!zone.id) {
+      throw new RangeError('Moisture zone id must not be empty.');
+    }
+    if (moistureIds.has(zone.id)) {
+      throw new RangeError(`Duplicate moisture zone id: "${zone.id}".`);
+    }
+    moistureIds.add(zone.id);
+    if (!zone.label) {
+      throw new RangeError(`Moisture zone "${zone.id}" must have a label.`);
+    }
+    if (!MOISTURE_ZONE_KINDS.includes(zone.kind)) {
+      throw new RangeError(`Moisture zone "${zone.id}" has an invalid kind.`);
+    }
+    validateGeometry(zone.id, zone.geometry, 'Moisture zone');
   }
 
   for (const source of config.currents) {

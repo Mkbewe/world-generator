@@ -12,6 +12,10 @@ export const RASTER_OUTPUT_KEYS = [
   'heightmap',
   'provenanceMap',
   'temperatureMap',
+  'moistureMap',
+  'riverMap',
+  'lakeMap',
+  'basinMap',
 ] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
@@ -36,6 +40,10 @@ export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32
   heightmap: 'float32',
   provenanceMap: 'int16',
   temperatureMap: 'float32',
+  moistureMap: 'float32',
+  riverMap: 'uint8',
+  lakeMap: 'uint8',
+  basinMap: 'int16',
 };
 
 const rasterConstructors = {

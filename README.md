@@ -58,9 +58,10 @@ The application separates configuration, world generation, and map presentation.
   Each stage declares the data it reads and writes; the execution order is
   derived from those dependencies, so the presentation order is not itself a
   dependency graph.
-- Climate derives a continuous 0..1 temperature raster from the heat zones,
-  elevation, coastal moderation, and seeded noise; moisture and hydrology
-  remain planned.
+- Climate derives continuous 0..1 temperature and moisture rasters, then builds
+  surface hydrology from them: rivers, lakes and drainage basins. Moisture
+  combines manual zones, currents and an upwind rain shadow; its preview layer
+  is planned for #629, and hydrology for #630.
 - The worker streams stage lifecycle, progress, and output data. `postMessage`
   copies stage output to the main thread; the sample budget accounts for that
   copy. The final result contains generation statistics, while map outputs are

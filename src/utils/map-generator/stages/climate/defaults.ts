@@ -1,4 +1,4 @@
-import type { HeatZoneClass } from '../../types';
+import type { HeatZoneClass, MoistureZoneKind } from '../../types';
 
 /** Normalized base temperature of each heat-zone class, 0..1. */
 export const HEAT_ZONE_TEMPERATURES: Readonly<Record<HeatZoneClass, number>> = {
@@ -6,6 +6,30 @@ export const HEAT_ZONE_TEMPERATURES: Readonly<Record<HeatZoneClass, number>> = {
   temperate: 0.5,
   warm: 0.8,
 };
+
+/** Moisture offset of a manual zone, applied before wind and terrain. */
+export const MOISTURE_ZONE_OFFSETS: Readonly<Record<MoistureZoneKind, number>> = {
+  dry: -0.2,
+  neutral: 0,
+  wet: 0.2,
+};
+
+/** Share of the current strength added along the prevailing wind axis. */
+export const CLIMATE_CURRENT_MOISTURE_SHARE = 0.05;
+
+/** Moisture lost per 1000 m of upwind rise, capped to one rain shadow. */
+export const CLIMATE_RAIN_SHADOW_PER_1000_METERS = 0.3;
+export const CLIMATE_RAIN_SHADOW_MAX = 0.35;
+
+/** How quickly wind-carried moisture relaxes back to the local base, 0..1. */
+export const CLIMATE_WIND_RELAXATION = 0.2;
+
+/** River flow threshold as a share of the land cells, and the strength spread above it. */
+export const CLIMATE_RIVER_THRESHOLD_SHARE = 0.0005;
+export const CLIMATE_RIVER_STRENGTH_SCALE = 8;
+
+/** Height difference below which a filled cell counts as a lake, in metres. */
+export const CLIMATE_LAKE_EPSILON = 1e-4;
 
 /** Side of the coarse temperature grid; the map resolution caps it. */
 export const CLIMATE_BASE_GRID_SIDE = 96;
