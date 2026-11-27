@@ -20,8 +20,8 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
 
 ## 2. Stan: co już działa
 
-- **Pipeline** — etapy World shape, Macro regions, BaseClimate, Geology
-  i Heightmap działają w workerze, z postępem, statystykami, selektywnym
+- **Pipeline** — etapy World shape, Macro regions, BaseClimate, Geology,
+  Heightmap i Climate działają w workerze, z postępem, statystykami, selektywnym
   przeliczaniem i pamięcią sesji między widokami.
 - **BaseClimate** — domyślny preset Ring world definiuje strefy ciepła; bazowa
   wilgotność i prądy dochodzą w tym samym etapie, a overlaye
@@ -34,6 +34,10 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
   jedną skupioną wyspę, z płaskimi i górzystymi masami, klifami, kraterami
   i lagunami; poziom wody jest stały w rastrze (bez suwaka poziomu morza),
   a wysepki pojawiają się tylko na płytkim szelfie przy brzegach.
+- **Klimat** — etap Climate liczy ciągłą temperaturę: bazę ze stref ciepła,
+  spadek z wysokością, moderację wybrzeża i seedowany, powykrzywiany noise.
+  Podgląd i odczyt temperatury dochodzą osobno (#628), a wilgotność i hydrologia
+  pozostają w #485.
 - **Ustawienia** — formularze ogólne, World shape, Macro regions, BaseClimate,
   Geology i Heightmap; stan formularzy jest pamiętany, a spięcie zakładek
   z podglądem opcjonalne.
@@ -57,8 +61,8 @@ Etapy deklarują dane wejściowe i wyjściowe. Wykonanie respektuje te zależno�
 sama pozycja etapu na liście nie oznacza zależności od wszystkich etapów przed
 nim.
 
-1. **Climate** — ciągła temperatura, wilgotność, hydrologia i woda; gradienty
-   stref, wpływ wysokości, wiatru i cienia opadowego.
+1. **Climate** — wilgotność, hydrologia i woda; temperatura jest już liczona
+   w etapie Climate, a kolejne pola dochodzą w #485.
 2. **Formacje terenu** — klify, plaże, doliny i płaskowyże wynikające z nachyleń.
 3. **Biomy** — klasyfikacja z warunków środowiskowych, z wariantami gameplayowymi
    zależnymi od zagrożenia regionu.

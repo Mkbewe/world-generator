@@ -133,6 +133,30 @@ export const METRIC_DESCRIPTORS: Record<string, MetricDescriptorKeys> = {
     precision: 3,
     descriptionKey: 'statistics.metrics.moistureStdDevDescription',
   },
+  temperatureMin: {
+    labelKey: 'statistics.metrics.temperatureMin',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.temperatureMinDescription',
+  },
+  temperatureMax: {
+    labelKey: 'statistics.metrics.temperatureMax',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.temperatureMaxDescription',
+  },
+  temperatureMean: {
+    labelKey: 'statistics.metrics.temperatureMean',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.temperatureMeanDescription',
+  },
+  temperatureStdDev: {
+    labelKey: 'statistics.metrics.temperatureStdDev',
+    kind: 'number',
+    precision: 3,
+    descriptionKey: 'statistics.metrics.temperatureStdDevDescription',
+  },
   landShare: {
     labelKey: 'statistics.metrics.landShare',
     kind: 'ratio',

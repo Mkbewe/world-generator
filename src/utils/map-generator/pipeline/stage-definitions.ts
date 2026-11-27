@@ -11,6 +11,7 @@ export const MAP_CONFIG_KEYS = [
   'baseClimate.zones',
   'baseClimate.zoneIrregularity',
   'baseClimate.geologyCoupling',
+  'baseClimate.currents',
   'geology',
   'heightmap',
 ] as const;
@@ -93,6 +94,23 @@ export const HEIGHTMAP_STAGE = {
   ],
 } as const satisfies DeclaredStage;
 
+/** The Climate stage turns heat zones, height and the sea into a continuous temperature field. */
+export const CLIMATE_STAGE = {
+  id: 'climate',
+  nameKey: 'stages.climate',
+  configKeys: [
+    'world.seed',
+    'world.shape',
+    'world.dimensions',
+    'baseClimate.zones',
+    'baseClimate.zoneIrregularity',
+    'baseClimate.geologyCoupling',
+    'baseClimate.currents',
+    'geology',
+    'heightmap',
+  ],
+} as const satisfies DeclaredStage;
+
 /**
  * Presentation order of the canonical pipeline: settings tabs, preview layers
  * and the layer catalog follow this list. Execution order is derived from the
@@ -105,6 +123,7 @@ export const PIPELINE_STAGES = [
   BASE_CLIMATE_STAGE,
   GEOLOGY_STAGE,
   HEIGHTMAP_STAGE,
+  CLIMATE_STAGE,
 ] as const;
 
 export type PipelineStageId = (typeof PIPELINE_STAGES)[number]['id'];

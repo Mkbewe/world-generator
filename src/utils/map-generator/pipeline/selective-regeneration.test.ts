@@ -68,7 +68,7 @@ describe('selectDirtyStageIds', () => {
     const cases: ReadonlyArray<readonly [Partial<MapConfig>, readonly string[]]> = [
       [
         { world: { ...config.world, shape: 'rectangle' } },
-        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
+        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap', 'climate'],
       ],
       [
         {
@@ -77,7 +77,7 @@ describe('selectDirtyStageIds', () => {
             dimensions: { widthMeters: 4, heightMeters: 4, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
+        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap', 'climate'],
       ],
       [
         {
@@ -86,17 +86,17 @@ describe('selectDirtyStageIds', () => {
             dimensions: { ...config.world.dimensions, sampleWidth: 4, sampleHeight: 4 },
           },
         },
-        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
+        ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap', 'climate'],
       ],
       [
         { world: { ...config.world, seed: 18 } },
-        ['macro-region', 'base-climate', 'geology', 'heightmap'],
+        ['macro-region', 'base-climate', 'geology', 'heightmap', 'climate'],
       ],
       [{ macroRegions: createRadialLayout(3) }, ['macro-region']],
       [{ macroRegionDeformation: { amplitude: 0.2 } }, ['macro-region']],
       [
         { baseClimate: { ...baseClimate, geologyCoupling: 0.5 } },
-        ['base-climate', 'geology', 'heightmap'],
+        ['base-climate', 'geology', 'heightmap', 'climate'],
       ],
       [
         {
@@ -105,11 +105,11 @@ describe('selectDirtyStageIds', () => {
             zones: baseClimate.zones.map(zone => ({ ...zone, label: 'Edited' })),
           },
         },
-        ['base-climate', 'geology', 'heightmap'],
+        ['base-climate', 'geology', 'heightmap', 'climate'],
       ],
       [
         { baseClimate: { ...baseClimate, zoneIrregularity: 0.1 } },
-        ['base-climate', 'geology', 'heightmap'],
+        ['base-climate', 'geology', 'heightmap', 'climate'],
       ],
       [
         {
@@ -118,10 +118,11 @@ describe('selectDirtyStageIds', () => {
             currents: baseClimate.currents.map(source => ({ ...source, strength: 0.2 })),
           },
         },
-        ['base-climate'],
+        ['base-climate', 'climate'],
       ],
-      [{ geology: { ...geology, regionCount: 6 } }, ['geology', 'heightmap']],
-      [{ heightmap: { ...heightmap, relief: 0.8 } }, ['heightmap']],
+      [{ baseClimate: { ...baseClimate, moisture: 0.8 } }, ['base-climate']],
+      [{ geology: { ...geology, regionCount: 6 } }, ['geology', 'heightmap', 'climate']],
+      [{ heightmap: { ...heightmap, relief: 0.8 } }, ['heightmap', 'climate']],
     ];
 
     for (const [patch, expected] of cases) {
@@ -129,7 +130,7 @@ describe('selectDirtyStageIds', () => {
     }
   });
 
-  it('marks only the heightmap dirty when its region terrains change', () => {
+  it('marks the heightmap and climate dirty when heightmap region terrains change', () => {
     const changed: MapConfig = {
       ...config,
       heightmap: {
@@ -147,7 +148,7 @@ describe('selectDirtyStageIds', () => {
       },
     };
 
-    expect(selectDirtyStageIds(config, changed)).toEqual(['heightmap']);
+    expect(selectDirtyStageIds(config, changed)).toEqual(['heightmap', 'climate']);
   });
 
   it('keeps geology clean when macro regions change', () => {

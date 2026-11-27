@@ -190,6 +190,53 @@ describe('generation-statistics-model', () => {
       ]);
     });
 
+    it('localizes and formats climate metrics', () => {
+      const statistics: GenerationStatistics = {
+        totalDurationMs: 10,
+        statistics: [
+          createStage({
+            stageId: 'climate',
+            stageNameKey: 'stages.climate',
+            details: {
+              temperatureMin: 0.126,
+              temperatureMax: 0.874,
+              temperatureMean: 0.512,
+              temperatureStdDev: 0.143,
+            },
+          }),
+        ],
+      };
+
+      const metrics = buildGenerationStatisticsModel(statistics).sections[0].metrics;
+
+      expect(metrics).toEqual([
+        {
+          key: 'temperatureMin',
+          labelKey: 'statistics.metrics.temperatureMin',
+          descriptionKey: 'statistics.metrics.temperatureMinDescription',
+          value: '0.126',
+        },
+        {
+          key: 'temperatureMax',
+          labelKey: 'statistics.metrics.temperatureMax',
+          descriptionKey: 'statistics.metrics.temperatureMaxDescription',
+          value: '0.874',
+        },
+        {
+          key: 'temperatureMean',
+          labelKey: 'statistics.metrics.temperatureMean',
+          descriptionKey: 'statistics.metrics.temperatureMeanDescription',
+          value: '0.512',
+        },
+        {
+          key: 'temperatureStdDev',
+          labelKey: 'statistics.metrics.temperatureStdDev',
+          descriptionKey: 'statistics.metrics.temperatureStdDevDescription',
+          value: '0.143',
+        },
+      ]);
+    });
+
     it('throws when a stage reports a metric without a descriptor', () => {
       const statistics: GenerationStatistics = {
         totalDurationMs: 10,

@@ -4,6 +4,7 @@ import { MAP_CONFIG_KEYS, PIPELINE_STAGES, type PipelineStageId } from './stage-
 import { validateDimensions } from '../../world-dimensions';
 import { createWorldSpace } from '../space';
 import { BaseClimateStage } from '../stages/base-climate';
+import { ClimateStage } from '../stages/climate';
 import { GeologyStage } from '../stages/geology';
 import { HeightmapStage } from '../stages/heightmap';
 import { MacroRegionStage } from '../stages/macro-region';
@@ -20,6 +21,7 @@ const STAGE_FACTORIES: Readonly<
   'base-climate': () => new BaseClimateStage(),
   'geology': () => new GeologyStage(),
   'heightmap': () => new HeightmapStage(),
+  'climate': () => new ClimateStage(),
 };
 
 export function createMapGenerator(): MapGenerator<MapConfig, MapState, PipelineStageId> {

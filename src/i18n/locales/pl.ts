@@ -321,6 +321,7 @@ const pl = {
   'stages.baseClimate': 'Klimat bazowy',
   'stages.geology': 'Geologia',
   'stages.heightmap': 'Mapa wysokości',
+  'stages.climate': 'Klimat',
   'progress.status.running': 'Generowanie',
   'progress.status.completed': 'Gotowe',
   'progress.status.failed': 'Błąd',
@@ -455,6 +456,18 @@ const pl = {
   'statistics.metrics.moistureStdDev': 'Rozrzut wilgotności',
   'statistics.metrics.moistureStdDevDescription':
     'Odchylenie standardowe wilgotności bazowej w pokrytych komórkach.',
+  'statistics.metrics.temperatureMin': 'Minimalna temperatura',
+  'statistics.metrics.temperatureMinDescription':
+    'Najniższa temperatura w pokrytych komórkach, w skali 0–1.',
+  'statistics.metrics.temperatureMax': 'Maksymalna temperatura',
+  'statistics.metrics.temperatureMaxDescription':
+    'Najwyższa temperatura w pokrytych komórkach, w skali 0–1.',
+  'statistics.metrics.temperatureMean': 'Średnia temperatura',
+  'statistics.metrics.temperatureMeanDescription':
+    'Średnia temperatura w pokrytych komórkach, w skali 0–1.',
+  'statistics.metrics.temperatureStdDev': 'Rozrzut temperatury',
+  'statistics.metrics.temperatureStdDevDescription':
+    'Odchylenie standardowe temperatury w pokrytych komórkach.',
   'statistics.metrics.landShare': 'Udział lądu',
   'statistics.metrics.landShareDescription': 'Udział świata powyżej poziomu morza.',
   'statistics.metrics.coldShare': 'Udział stref zimnych',
