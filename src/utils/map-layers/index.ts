@@ -20,6 +20,7 @@ export {
   HEIGHTMAP_STOPS,
   MOISTURE_STOPS,
   regionColor,
+  TEMPERATURE_STOPS,
   validatePalette,
 } from './palettes/palettes';
 export type { PixelWriter } from './palettes/palettes';

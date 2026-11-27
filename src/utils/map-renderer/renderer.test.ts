@@ -159,6 +159,7 @@ describe('MapRenderer', () => {
       'ocean-currents',
       'geology',
       'heightmap',
+      'temperature',
     ]);
   });
 
@@ -310,6 +311,7 @@ describe('MapRenderer', () => {
     expect(preview.state.displayedLayer).toBe('macro-region');
     expect(preview.state.layers.map(layer => layer.available)).toEqual([
       true,
+      false,
       false,
       false,
       false,

@@ -87,6 +87,21 @@ describe('buildTemperatureMap', () => {
     expect(temperatureMap[3]).toBeLessThan(HEAT_ZONE_TEMPERATURES.warm);
   });
 
+  it('spreads a zone edge across a wide transition band', () => {
+    const cells = 96;
+    const heatZoneMap = new Int16Array(cells);
+    heatZoneMap.fill(1, cells / 2);
+
+    const temperatureMap = buildTemperatureMap(
+      fieldOf({ sampleWidth: cells, sampleHeight: 1, heatZoneMap })
+    );
+    const transitionCells = Array.from(temperatureMap).filter(
+      value => value > 0.25 && value < 0.75
+    ).length;
+
+    expect(transitionCells).toBeGreaterThan(10);
+  });
+
   it('keeps zero outside the world and fills the coarse edge from inside votes', () => {
     const temperatureMap = buildTemperatureMap(
       fieldOf({

@@ -129,6 +129,25 @@ describe('LayerNavigation', () => {
     });
   });
 
+  it('keeps the climate temperature layer in its own group', () => {
+    const navigation = new LayerNavigation(layerRegistry.tree);
+    const available = layerRegistry.order.map((id): MapLayerOption<MapBaseLayerId> => ({
+      id,
+      labelKey: 'layers.geology',
+      available: id === 'temperature',
+    }));
+
+    const state = navigation.toViewState(available, 'temperature');
+
+    expect(state.activeTab).toBe('climate');
+    expect(state.tabs.find(tab => tab.id === 'climate')).toMatchObject({
+      available: true,
+      selectedChild: 'temperature',
+      selectedLayer: 'temperature',
+      children: [{ id: 'temperature', available: true }],
+    });
+  });
+
   it('reflects a displayed view without changing the remembered child', () => {
     const navigation = new LayerNavigation(tree);
     const state = navigation.toViewState(layers, 'geology');

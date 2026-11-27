@@ -1,10 +1,10 @@
-import { GEOLOGY_BOUNDARY_STYLE, type LayerSpec } from '@layers';
+import { compilePalette, GEOLOGY_BOUNDARY_STYLE, type LayerSpec } from '@layers';
 
 import { CatalogLayer } from './catalog-layer';
 import type { RenderTarget } from '../../preview-targets';
 import { layerRegistry } from '../layer-registry';
 
-/** Float ramp layer used by the tests; the catalog ships only integer rasters. */
+/** Float ramp layer used by the tests, independent of the catalog entries. */
 const FLOAT_SPEC = {
   id: 'macro-region',
   labelKey: 'layers.geology',
@@ -206,6 +206,37 @@ describe('CatalogLayer', () => {
     } finally {
       world.dispose();
       noise.dispose();
+      restore();
+    }
+  });
+
+  it('renders the continuous climate temperature ramp', async () => {
+    const { images, restore } = mockCanvasContext();
+    const size = { width: 3, height: 1 };
+    const world = new CatalogLayer(
+      layerRegistry.raster('world-shape'),
+      size,
+      new Uint8Array([1, 1, 1])
+    );
+    const temperature = new CatalogLayer(
+      layerRegistry.raster('temperature'),
+      size,
+      new Float32Array([0, 0.5, 1]),
+      world
+    );
+
+    try {
+      await temperature.prepare(new AbortController().signal, targetFor(3, 1));
+      const writePixel = compilePalette(layerRegistry.raster('temperature').palette);
+      const expected = [0, 0.5, 1].flatMap(value => {
+        const pixels = new Uint8ClampedArray(4);
+        writePixel(pixels, 0, value);
+        return [...pixels];
+      });
+      expect(targetPixels(images)).toEqual(expected);
+    } finally {
+      world.dispose();
+      temperature.dispose();
       restore();
     }
   });

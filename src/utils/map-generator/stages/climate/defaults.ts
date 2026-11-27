@@ -10,8 +10,12 @@ export const HEAT_ZONE_TEMPERATURES: Readonly<Record<HeatZoneClass, number>> = {
 /** Side of the coarse temperature grid; the map resolution caps it. */
 export const CLIMATE_BASE_GRID_SIDE = 96;
 
-/** Box-blur passes over the coarse grid; softens the categorical zone borders. */
-export const CLIMATE_BASE_BLUR_PASSES = 1;
+/**
+ * Standard deviation of the climate transition, as a share of the coarse grid
+ * side. BaseClimate keeps its editable zones sharp; Climate turns them into
+ * broad gradients so neighbouring cells never jump between climate classes.
+ */
+export const CLIMATE_BASE_BLUR_SIGMA_SHARE = 0.08;
 
 /**
  * Temperature drop per 1000 m of elevation, in normalized 0..1 units:

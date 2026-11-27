@@ -10,6 +10,7 @@ describe('catalog-derived types', () => {
       | 'ocean-currents'
       | 'geology'
       | 'heightmap'
+      | 'temperature'
     >();
     expectTypeOf<MapRasters['worldMask']>().toEqualTypeOf<Uint8Array | undefined>();
     expectTypeOf<MapRasters['macroRegionIdMap']>().toEqualTypeOf<Uint8Array | undefined>();
@@ -18,5 +19,6 @@ describe('catalog-derived types', () => {
     expectTypeOf<MapRasters['oceanCurrentMap']>().toEqualTypeOf<Float32Array | undefined>();
     expectTypeOf<MapRasters['oceanCurrentStrength']>().toEqualTypeOf<Float32Array | undefined>();
     expectTypeOf<MapRasters['heightmap']>().toEqualTypeOf<Float32Array | undefined>();
+    expectTypeOf<MapRasters['temperatureMap']>().toEqualTypeOf<Float32Array | undefined>();
   });
 });
