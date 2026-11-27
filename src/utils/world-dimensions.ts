@@ -31,10 +31,12 @@ export interface MeterPoint {
 }
 
 /**
- * Bytes one full generator state copy holds per cell: the persistent rasters —
- * world mask 1 and macro region ids 1 — and the geology plan rasters — region
- * owner 2 and region border distance 4. The plan metadata is negligible next
- * to the rasters.
+ * Budget accounting per cell, used for the sample cap and the pre-generation
+ * memory estimate. It covers the baseline state copy (world mask and macro
+ * region ids) and the geology plan rasters (region owner and border distance);
+ * the stage rasters generated later — heat, moisture, currents, height,
+ * provenance and temperature — are not counted, so the real peak is higher.
+ * Replacing this with a packed-raster budget is tracked separately.
  */
 export const BYTES_PER_SAMPLE = 8;
 

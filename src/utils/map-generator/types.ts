@@ -257,6 +257,8 @@ export interface MapState {
   heightmap?: Float32Array;
   /** Produced by the heightmap stage: owning region index per cell, -1 outside. */
   provenanceMap?: Int16Array;
+  /** Produced by the climate stage: continuous temperature in 0..1, 0 outside. */
+  temperatureMap?: Float32Array;
 }
 
 export type StageMetric = number | string;

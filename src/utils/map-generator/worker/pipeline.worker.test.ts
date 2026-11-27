@@ -15,7 +15,14 @@ const request: PipelineWorkerGenerateRequest = {
     },
   },
   reuse: {
-    dirtyStageIds: ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap'],
+    dirtyStageIds: [
+      'world-shape',
+      'macro-region',
+      'base-climate',
+      'geology',
+      'heightmap',
+      'climate',
+    ],
     cachedState: {},
   },
 };
@@ -63,6 +70,7 @@ describe('generation worker', () => {
         { id: 'base-climate', nameKey: 'stages.baseClimate' },
         { id: 'geology', nameKey: 'stages.geology' },
         { id: 'heightmap', nameKey: 'stages.heightmap' },
+        { id: 'climate', nameKey: 'stages.climate' },
       ],
       skippedStageIds: [],
     });
@@ -72,6 +80,7 @@ describe('generation worker', () => {
     }
     expect(message.result).not.toHaveProperty('layers');
     expect(message.result.statistics.map(stage => stage.status)).toEqual([
+      'completed',
       'completed',
       'completed',
       'completed',
@@ -108,6 +117,7 @@ describe('generation worker', () => {
       'skipped',
       'skipped',
       'completed',
+      'completed',
     ]);
     expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
       ['world-shape', 'base-climate', 'geology']
@@ -133,7 +143,33 @@ describe('generation worker', () => {
       'skipped',
       'skipped',
       'skipped',
+      'skipped',
     ]);
+  });
+
+  it('reruns climate when a cached snapshot has no temperature raster', async () => {
+    const { createMapGenerator } = await import('../pipeline/pipeline-factory');
+    const full = await createMapGenerator().generate(request.config, {});
+    const cachedState = { ...full.context.state };
+    delete cachedState.temperatureMap;
+
+    const message = await generate({ ...request, reuse: { dirtyStageIds: [], cachedState } });
+
+    expect(message?.type).toBe('result');
+    if (message?.type !== 'result') {
+      throw new Error('Expected a generation result.');
+    }
+    expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
+      'skipped',
+      'skipped',
+      'skipped',
+      'skipped',
+      'skipped',
+      'completed',
+    ]);
+    expect(messages.flatMap(item => (item.type === 'stage-skipped' ? [item.stageId] : []))).toEqual(
+      ['world-shape', 'macro-region', 'base-climate', 'geology', 'heightmap']
+    );
   });
 
   it('recomputes geology when only the sample resolution changes', async () => {
@@ -180,6 +216,7 @@ describe('generation worker', () => {
     expect(message.result.statistics.map(statistic => statistic.status)).toEqual([
       'skipped',
       'completed',
+      'skipped',
       'skipped',
       'skipped',
       'skipped',

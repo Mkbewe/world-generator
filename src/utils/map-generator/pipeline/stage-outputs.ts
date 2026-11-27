@@ -11,6 +11,7 @@ export const RASTER_OUTPUT_KEYS = [
   'oceanCurrentStrength',
   'heightmap',
   'provenanceMap',
+  'temperatureMap',
 ] as const;
 
 /** Domain keys produced by stages and restored with the rasters on a later run. */
@@ -34,6 +35,7 @@ export const PERSISTENT_RASTER_TYPES: Record<RasterOutputKey, 'uint8' | 'float32
   oceanCurrentStrength: 'float32',
   heightmap: 'float32',
   provenanceMap: 'int16',
+  temperatureMap: 'float32',
 };
 
 const rasterConstructors = {

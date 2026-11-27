@@ -19,6 +19,7 @@ describe('selectPersistentRasters', () => {
       oceanCurrentStrength: new Float32Array(1),
       heightmap: new Float32Array(1),
       provenanceMap: new Int16Array(1),
+      temperatureMap: new Float32Array(1),
     };
 
     const selected = selectPersistentRasters(data);

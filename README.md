@@ -53,10 +53,14 @@ The application separates configuration, world generation, and map presentation.
 
 - The React forms build a typed `MapConfig`. Generation starts explicitly from
   the settings panel; changing a control does not automatically regenerate.
-- `src/utils/map-generator` runs in a Web Worker and contains five stages:
-  World Shape, Macro Regions, BaseClimate, Geology, and Heightmap. Each stage
-  declares the data it reads and writes. The execution order is derived from
-  those dependencies; the presentation order is not itself a dependency graph.
+- `src/utils/map-generator` runs in a Web Worker and contains six stages:
+  World Shape, Macro Regions, BaseClimate, Geology, Heightmap, and Climate.
+  Each stage declares the data it reads and writes; the execution order is
+  derived from those dependencies, so the presentation order is not itself a
+  dependency graph.
+- Climate derives a continuous 0..1 temperature raster from the heat zones,
+  elevation, coastal moderation, and seeded noise; moisture and hydrology
+  remain planned.
 - The worker streams stage lifecycle, progress, and output data. `postMessage`
   copies stage output to the main thread; the sample budget accounts for that
   copy. The final result contains generation statistics, while map outputs are

@@ -12,6 +12,7 @@ describe('createMapGenerator', () => {
       'base-climate',
       'geology',
       'heightmap',
+      'climate',
     ]);
 
     const config: MapConfig = {
@@ -30,6 +31,7 @@ describe('createMapGenerator', () => {
       'base-climate',
       'geology',
       'heightmap',
+      'climate',
     ]);
     expect(result.context.state.worldMask).toBeInstanceOf(Uint8Array);
     expect(result.context.state.macroRegionIdMap).toBeInstanceOf(Uint8Array);
@@ -40,6 +42,22 @@ describe('createMapGenerator', () => {
     expect(result.context.state.geologyPlan?.regions?.length).toBeGreaterThan(0);
     expect(result.context.state.heightmap).toBeInstanceOf(Float32Array);
     expect(result.context.state.provenanceMap).toBeInstanceOf(Int16Array);
+    expect(result.context.state.temperatureMap).toBeInstanceOf(Float32Array);
+  });
+
+  it('produces an identical state for the same seed and configuration', async () => {
+    const config: MapConfig = {
+      world: {
+        dimensions: { widthMeters: 24, heightMeters: 20, sampleWidth: 24, sampleHeight: 20 },
+        seed: 123,
+        shape: 'disc',
+      },
+    };
+
+    const first = await createMapGenerator().generate(config, {});
+    const second = await createMapGenerator().generate(config, {});
+
+    expect(second.context.state).toEqual(first.context.state);
   });
 
   it('declares the configuration inputs of every stage', () => {
@@ -102,6 +120,22 @@ describe('createMapGenerator', () => {
           'baseClimate.zones',
           'baseClimate.zoneIrregularity',
           'baseClimate.geologyCoupling',
+          'geology',
+          'heightmap',
+        ],
+      },
+      {
+        id: 'climate',
+        reads: ['worldMask', 'heatZoneMap', 'heightmap', 'oceanCurrentStrength'],
+        writes: ['temperatureMap'],
+        configKeys: [
+          'world.seed',
+          'world.shape',
+          'world.dimensions',
+          'baseClimate.zones',
+          'baseClimate.zoneIrregularity',
+          'baseClimate.geologyCoupling',
+          'baseClimate.currents',
           'geology',
           'heightmap',
         ],

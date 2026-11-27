@@ -318,6 +318,7 @@ const en = {
   'stages.baseClimate': 'Base Climate',
   'stages.geology': 'Geology',
   'stages.heightmap': 'Heightmap',
+  'stages.climate': 'Climate',
   'progress.status.running': 'Generating',
   'progress.status.completed': 'Complete',
   'progress.status.failed': 'Failed',
@@ -443,6 +444,18 @@ const en = {
   'statistics.metrics.moistureStdDev': 'Moisture spread',
   'statistics.metrics.moistureStdDevDescription':
     'Standard deviation of base-moisture values among covered cells.',
+  'statistics.metrics.temperatureMin': 'Minimum temperature',
+  'statistics.metrics.temperatureMinDescription':
+    'Lowest temperature among covered cells, in the normalized 0..1 range.',
+  'statistics.metrics.temperatureMax': 'Maximum temperature',
+  'statistics.metrics.temperatureMaxDescription':
+    'Highest temperature among covered cells, in the normalized 0..1 range.',
+  'statistics.metrics.temperatureMean': 'Mean temperature',
+  'statistics.metrics.temperatureMeanDescription':
+    'Average temperature among covered cells, in the normalized 0..1 range.',
+  'statistics.metrics.temperatureStdDev': 'Temperature spread',
+  'statistics.metrics.temperatureStdDevDescription':
+    'Standard deviation of temperature among covered cells.',
   'statistics.metrics.landShare': 'Land share',
   'statistics.metrics.landShareDescription': 'Share of the world above the sea level.',
   'statistics.metrics.coldShare': 'Cold share',
