@@ -282,15 +282,27 @@ export abstract class MapLayer {
    */
   abstract sample(x: number, y: number): LayerSample | undefined;
 
+  /**
+   * Derives data every painted frame needs. Runs before the overview and the
+   * frame, so painting methods may assume the derived state exists. A layer
+   * without derived data keeps the default no-op.
+   */
+  protected prepareSurface(_signal: AbortSignal, _target: RenderTarget): void | Promise<void> {}
+
   private async render(
     signal: AbortSignal,
     target: RenderTarget,
     onTile?: TileReporter
   ): Promise<void> {
     signal.throwIfAborted();
+    const context = this.surfaceContext(this.stage, target);
+    const surfacePreparation = this.prepareSurface(signal, target);
+    if (surfacePreparation) {
+      await surfacePreparation;
+      signal.throwIfAborted();
+    }
     this.renderOverview(signal);
     const startedAt = performance.now();
-    const context = this.surfaceContext(this.stage, target);
     const statistics: LayerRenderStatistics = {
       durationMs: performance.now() - startedAt,
       tiles: 0,
