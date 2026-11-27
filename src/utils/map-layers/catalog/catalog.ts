@@ -15,6 +15,7 @@ import {
   HEIGHTMAP_STOPS,
   MOISTURE_STOPS,
   REGION_COLORS,
+  TEMPERATURE_STOPS,
 } from '../palettes/palettes';
 
 const STAGE_ORDER = new Map<string, number>(
@@ -145,6 +146,18 @@ const CATALOG_ENTRIES = [
     settingsForm: true,
     readout: true,
     palette: { kind: 'ramp', stops: HEIGHTMAP_STOPS },
+  },
+  {
+    id: 'temperature',
+    labelKey: 'layers.temperature',
+    kind: 'raster',
+    source: 'temperatureMap',
+    dataType: 'float32',
+    clipTo: 'world-shape',
+    settingsForm: false,
+    readout: true,
+    group: { id: 'climate', labelKey: 'layers.climate' },
+    palette: { kind: 'ramp', stops: TEMPERATURE_STOPS },
   },
 ] as const satisfies readonly BoundLayerSpec[];
 

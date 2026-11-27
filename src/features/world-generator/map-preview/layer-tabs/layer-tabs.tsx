@@ -13,6 +13,7 @@ const LAYER_ICONS: Readonly<Partial<Record<MapBaseLayerId, ReactNode>>> = {
   'moisture': <SunIcon />,
   'ocean-currents': <SunIcon />,
   'geology': <SewingPinIcon />,
+  'temperature': <SunIcon />,
 };
 
 interface LayerTabsProps {

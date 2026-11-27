@@ -84,6 +84,20 @@ export const MOISTURE_STOPS = [
   { at: 1, color: [35, 95, 175] },
 ] as const satisfies readonly RampStop[];
 
+/**
+ * Normalized temperature ramp: cold blues through cyan and pale yellow to warm
+ * orange and red. The layer clips to the world mask, so the zero outside the
+ * world never reaches the ramp.
+ */
+export const TEMPERATURE_STOPS = [
+  { at: 0, color: [35, 65, 150] },
+  { at: 0.2, color: [55, 135, 210] },
+  { at: 0.4, color: [120, 200, 220] },
+  { at: 0.6, color: [240, 220, 120] },
+  { at: 0.8, color: [235, 130, 55] },
+  { at: 1, color: [170, 25, 45] },
+] as const satisfies readonly RampStop[];
+
 export const HEIGHTMAP_STOPS = [
   { at: -400, color: [12, 26, 58] },
   { at: -120, color: [24, 58, 110] },

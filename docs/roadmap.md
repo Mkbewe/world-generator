@@ -36,15 +36,15 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
   a wysepki pojawiają się tylko na płytkim szelfie przy brzegach.
 - **Klimat** — etap Climate liczy ciągłą temperaturę: bazę ze stref ciepła,
   spadek z wysokością, moderację wybrzeża i seedowany, powykrzywiany noise.
-  Podgląd i odczyt temperatury dochodzą osobno (#628), a wilgotność i hydrologia
-  pozostają w #485.
+  Podgląd i odczyt temperatury są dostępne, a wilgotność i hydrologia pozostają
+  w #485.
 - **Ustawienia** — formularze ogólne, World shape, Macro regions, BaseClimate,
   Geology i Heightmap; stan formularzy jest pamiętany, a spięcie zakładek
   z podglądem opcjonalne.
 - **Podgląd** — katalog warstw World shape, Macro regions, Heat zones, Moisture,
-  Ocean currents, Geology i Heightmap; dostępne są też nakładki, odczyt pod
-  kursorem, zoom/pan, tryb pełnoekranowy, miarka i skala. Warstwy rysują się
-  progresywnie, w rozdzielczości ekranu.
+  Ocean currents, Geology, Heightmap i Temperature; dostępne są też nakładki,
+  odczyt pod kursorem, zoom/pan, tryb pełnoekranowy, miarka i skala. Warstwy
+  rysują się progresywnie, w rozdzielczości ekranu.
 - **Statystyki** — czasy i metryki etapów oraz renderowania na osobnej stronie;
   dostępny jest eksport statystyk do JSON.
 

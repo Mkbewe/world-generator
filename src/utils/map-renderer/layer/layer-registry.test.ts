@@ -30,6 +30,13 @@ describe('LayerRegistry', () => {
     expect(() => registry.get('missing')).toThrow('Unknown layer');
   });
 
+  it('keeps the climate temperature layer unavailable until its raster exists', () => {
+    expect(layerRegistry.presentIn({})).not.toContain('temperature');
+    expect(layerRegistry.presentIn({ temperatureMap: new Float32Array(1) })).toContain(
+      'temperature'
+    );
+  });
+
   it('rejects unknown, non-mask and cyclic clipping dependencies', () => {
     expect(() => new LayerRegistry([{ ...regions, clipTo: 'missing' }])).toThrow('Unknown layer');
     expect(() => new LayerRegistry([solid('plain'), { ...regions, clipTo: 'plain' }])).toThrow(

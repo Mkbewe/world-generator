@@ -25,8 +25,9 @@ shows a warning; the requested physical world size is retained.
 ## Inspect the map
 
 Use the layer tabs to view **World Shape**, **Macro Regions**, **Heat Zones**,
-**Moisture**, **Ocean Currents**, **Geology**, or **Heightmap**. Toggle available
-overlays in the sidebar; an overlay may be unavailable for some base layers.
+**Moisture**, **Ocean Currents**, **Geology**, **Heightmap**, or **Temperature**.
+Toggle available overlays in the sidebar; an overlay may be unavailable for some
+base layers.
 
 The cursor readout in the sidebar shows information for the map position under
 the pointer. Click or tap the map to pin the readout. Click or tap again to

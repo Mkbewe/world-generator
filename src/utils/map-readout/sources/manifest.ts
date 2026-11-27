@@ -4,6 +4,7 @@ import { heightmapReadout } from './heightmap.readout';
 import { macroRegionReadout } from './macro-region.readout';
 import { moistureReadout } from './moisture.readout';
 import { oceanCurrentReadout } from './ocean-currents.readout';
+import { temperatureReadout } from './temperature.readout';
 import { worldShapeReadout } from './world-shape.readout';
 
 /** The only list a new readout joins; no dispatch branching lives here. */
@@ -12,6 +13,7 @@ export const READOUT_DEFINITIONS = [
   macroRegionReadout,
   heatZoneReadout,
   moistureReadout,
+  temperatureReadout,
   heightmapReadout,
   geologyReadout,
   oceanCurrentReadout,

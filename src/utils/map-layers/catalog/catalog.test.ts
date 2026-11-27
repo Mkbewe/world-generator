@@ -32,6 +32,21 @@ describe('LAYER_CATALOG', () => {
     expect(RASTER_CATALOG.map(layer => layer.id)).not.toContain('geology');
   });
 
+  it('registers the climate temperature raster layer', () => {
+    const entry = LAYER_CATALOG.find(layer => layer.id === 'temperature');
+
+    expect(entry).toMatchObject({
+      kind: 'raster',
+      source: 'temperatureMap',
+      dataType: 'float32',
+      clipTo: 'world-shape',
+      settingsForm: false,
+      readout: true,
+      group: { id: 'climate', labelKey: 'layers.climate' },
+    });
+    expect(RASTER_CATALOG.map(layer => layer.id)).toContain('temperature');
+  });
+
   it('sources every raster layer from a generator raster output', () => {
     const outputs = new Set<string>([...RASTER_OUTPUT_KEYS]);
 

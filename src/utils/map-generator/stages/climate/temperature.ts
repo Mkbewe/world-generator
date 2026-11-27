@@ -1,5 +1,5 @@
 import {
-  CLIMATE_BASE_BLUR_PASSES,
+  CLIMATE_BASE_BLUR_SIGMA_SHARE,
   CLIMATE_BASE_GRID_SIDE,
   CLIMATE_COAST_MODERATION,
   CLIMATE_COAST_REACH_SHARE,
@@ -65,7 +65,7 @@ export function buildTemperatureMap(input: TemperatureFieldInput): Float32Array 
   );
   const coastWeights = buildCoastWeights(grid);
   fillEmptyCells(grid);
-  blurGrid(grid, CLIMATE_BASE_BLUR_PASSES);
+  blurGrid(grid);
 
   const bands = createTemperatureBands(random, dimensions);
   const temperatureMap = sampleGrid(input, grid, coastWeights, bands);
@@ -235,42 +235,57 @@ function buildCoastWeights(grid: CoarseTemperatureGrid): Float32Array {
   return weights;
 }
 
-/** Small box blur with clamped edges; keeps narrow zones from becoming stairs. */
-function blurGrid(grid: CoarseTemperatureGrid, passes: number): void {
-  if (passes <= 0) {
-    return;
-  }
+/**
+ * Broad Gaussian transition with clamped edges. BaseClimate keeps its zones
+ * sharp; this blur is what turns them into a continuous climate field.
+ */
+function blurGrid(grid: CoarseTemperatureGrid): void {
   const { values, width, height } = grid;
-  let source = values;
-  let target: Float32Array = new Float32Array(values.length);
+  const sigmaX = Math.max(1, width * CLIMATE_BASE_BLUR_SIGMA_SHARE);
+  const sigmaY = Math.max(1, height * CLIMATE_BASE_BLUR_SIGMA_SHARE);
+  const radiusX = Math.max(1, Math.ceil(sigmaX * 3));
+  const radiusY = Math.max(1, Math.ceil(sigmaY * 3));
+  const kernelX = gaussianKernel(sigmaX, radiusX);
+  const kernelY = gaussianKernel(sigmaY, radiusY);
+  const horizontal = new Float32Array(values.length);
 
-  for (let pass = 0; pass < passes; pass++) {
-    for (let y = 0; y < height; y++) {
-      const top = Math.max(0, y - 1);
-      const bottom = Math.min(height - 1, y + 1);
-      for (let x = 0; x < width; x++) {
-        const left = Math.max(0, x - 1);
-        const right = Math.min(width - 1, x + 1);
-        let sum = 0;
-        let count = 0;
-        for (let sampleY = top; sampleY <= bottom; sampleY++) {
-          const row = sampleY * width;
-          for (let sampleX = left; sampleX <= right; sampleX++) {
-            sum += source[row + sampleX];
-            count++;
-          }
-        }
-        target[y * width + x] = sum / count;
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      for (let offset = -radiusX; offset <= radiusX; offset++) {
+        const sampleX = Math.min(width - 1, Math.max(0, x + offset));
+        sum += values[row + sampleX] * kernelX[offset + radiusX];
       }
+      horizontal[row + x] = sum;
     }
-    const previous = source;
-    source = target;
-    target = previous;
   }
 
-  if (source !== values) {
-    values.set(source);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      for (let offset = -radiusY; offset <= radiusY; offset++) {
+        const sampleY = Math.min(height - 1, Math.max(0, y + offset));
+        sum += horizontal[sampleY * width + x] * kernelY[offset + radiusY];
+      }
+      values[y * width + x] = sum;
+    }
   }
+}
+
+/** Normalized Gaussian weights for one axis. */
+function gaussianKernel(sigma: number, radius: number): Float32Array {
+  const kernel = new Float32Array(radius * 2 + 1);
+  let total = 0;
+  for (let offset = -radius; offset <= radius; offset++) {
+    const weight = Math.exp(-(offset * offset) / (2 * sigma * sigma));
+    kernel[offset + radius] = weight;
+    total += weight;
+  }
+  for (let index = 0; index < kernel.length; index++) {
+    kernel[index] /= total;
+  }
+  return kernel;
 }
 
 function sampleGrid(
