@@ -67,6 +67,19 @@ export interface HeatZoneConfig {
   readonly thermal: HeatZoneClass;
 }
 
+/** Manual moisture bias of a zone, before wind and terrain modifiers. */
+export const MOISTURE_ZONE_KINDS = ['dry', 'neutral', 'wet'] as const;
+
+export type MoistureZoneKind = (typeof MOISTURE_ZONE_KINDS)[number];
+
+/** One editable moisture zone: a band or ring that biases the base moisture. */
+export interface MoistureZoneConfig {
+  readonly id: string;
+  readonly label: string;
+  readonly geometry: HeatZoneGeometry;
+  readonly kind: MoistureZoneKind;
+}
+
 /** Flow of one ocean-current source; radial flows point to or away from the centre. */
 export const OCEAN_CURRENT_FLOWS = ['clockwise', 'counterclockwise', 'outward', 'inward'] as const;
 
@@ -90,6 +103,8 @@ export interface BaseClimateConfig {
   readonly geologyCoupling: number;
   /** Global moisture bias: 0 dry, 0.5 balanced, 1 wet. */
   readonly moisture?: number;
+  /** Manual dry/neutral/wet belts and rings layered over the base moisture. */
+  readonly moistureZones?: readonly MoistureZoneConfig[];
   /** How far heat-zone borders may shift in normalized units; 0 keeps them straight. */
   readonly zoneIrregularity?: number;
 }
@@ -244,6 +259,14 @@ export interface MapState {
   heatZoneMap?: Int16Array;
   /** Produced by the BaseClimate stage: independent base moisture, 0..1. */
   moistureBaseMap?: Float32Array;
+  /** Produced by the Climate stage: final moisture after zones, wind and terrain, 0..1. */
+  moistureMap?: Float32Array;
+  /** Produced by the Climate stage: normalized river flow, 0 where there is no river. */
+  riverMap?: Uint8Array;
+  /** Produced by the Climate stage: filled lake depressions. */
+  lakeMap?: Uint8Array;
+  /** Produced by the Climate stage: lake/drainage basin id, 0 outside a basin. */
+  basinMap?: Int16Array;
   /** Produced by the BaseClimate stage: base flow direction per cell, 0..2π. */
   oceanCurrentMap?: Float32Array;
   /** Produced by the BaseClimate stage: base flow strength per cell, 0..1. */

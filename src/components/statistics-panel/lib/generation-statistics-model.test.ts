@@ -202,6 +202,9 @@ describe('generation-statistics-model', () => {
               temperatureMax: 0.874,
               temperatureMean: 0.512,
               temperatureStdDev: 0.143,
+              riverCells: 47,
+              lakeCells: 612,
+              basinCount: 68,
             },
           }),
         ],
@@ -233,6 +236,24 @@ describe('generation-statistics-model', () => {
           labelKey: 'statistics.metrics.temperatureStdDev',
           descriptionKey: 'statistics.metrics.temperatureStdDevDescription',
           value: '0.143',
+        },
+        {
+          key: 'riverCells',
+          labelKey: 'statistics.metrics.riverCells',
+          descriptionKey: 'statistics.metrics.riverCellsDescription',
+          value: '47',
+        },
+        {
+          key: 'lakeCells',
+          labelKey: 'statistics.metrics.lakeCells',
+          descriptionKey: 'statistics.metrics.lakeCellsDescription',
+          value: '612',
+        },
+        {
+          key: 'basinCount',
+          labelKey: 'statistics.metrics.basinCount',
+          descriptionKey: 'statistics.metrics.basinCountDescription',
+          value: '68',
         },
       ]);
     });

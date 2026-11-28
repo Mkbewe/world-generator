@@ -53,6 +53,10 @@ describe('readout contract', () => {
     expect(first.context.state.heightmap).toEqual(second.context.state.heightmap);
     expect(first.context.state.provenanceMap).toEqual(second.context.state.provenanceMap);
     expect(first.context.state.temperatureMap).toEqual(second.context.state.temperatureMap);
+    expect(first.context.state.moistureMap).toEqual(second.context.state.moistureMap);
+    expect(first.context.state.riverMap).toEqual(second.context.state.riverMap);
+    expect(first.context.state.lakeMap).toEqual(second.context.state.lakeMap);
+    expect(first.context.state.basinMap).toEqual(second.context.state.basinMap);
     expect(first.context.state.geologyPlan?.regionOwnerMap).toEqual(
       second.context.state.geologyPlan?.regionOwnerMap
     );

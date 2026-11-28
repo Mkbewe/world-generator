@@ -1,7 +1,7 @@
 import { containsGeometry, distanceToGeometry } from '../../geometry';
 import { createDisplacementField } from '../../irregularity';
 import { RandomFactory } from '../../random/random-factory';
-import type { HeatZoneConfig, WorldPoint } from '../../types';
+import type { HeatZoneConfig, HeatZoneGeometry, WorldPoint } from '../../types';
 
 export type HeatZoneDistance = (left: WorldPoint, right: WorldPoint) => number;
 
@@ -12,6 +12,10 @@ export interface HeatZoneClassifierInput {
   readonly zones: readonly HeatZoneConfig[];
   readonly irregularity?: number;
   readonly distance: HeatZoneDistance;
+}
+
+interface GeometryZone {
+  readonly geometry: HeatZoneGeometry;
 }
 
 export function createHeatZoneClassifier(
@@ -40,16 +44,17 @@ export function createHeatZoneClassifier(
 }
 
 /**
- * tssigns a zone index to a normalized world point. Later zones paint over
+ * Assigns a zone index to a normalized world point. Later zones paint over
  * earlier ones where geometries overlap; points outside every zone fall back
  * to the nearest one, so the map has no gaps inside the world mask.
  */
-export function createHeatZoneSampler(
-  zones: readonly HeatZoneConfig[],
-  distance: HeatZoneDistance
+export function createGeometryZoneSampler<Zone extends GeometryZone>(
+  zones: readonly Zone[],
+  distance: HeatZoneDistance,
+  fallback: 'nearest' | 'none' = 'nearest'
 ): (point: WorldPoint) => number {
   if (zones.length === 0) {
-    throw new RangeError('At least one heat zone is required.');
+    throw new RangeError('At least one climate zone is required.');
   }
 
   return point => {
@@ -58,12 +63,23 @@ export function createHeatZoneSampler(
         return index;
       }
     }
-    return nearestZoneIndex(zones, point, distance);
+    return fallback === 'nearest' ? nearestZoneIndex(zones, point, distance) : -1;
   };
 }
 
-function nearestZoneIndex(
+/** Heat-zone sampler; the shared geometry sampler keeps the fallback in one place. */
+export function createHeatZoneSampler(
   zones: readonly HeatZoneConfig[],
+  distance: HeatZoneDistance
+): (point: WorldPoint) => number {
+  if (zones.length === 0) {
+    throw new RangeError('At least one heat zone is required.');
+  }
+  return createGeometryZoneSampler(zones, distance);
+}
+
+function nearestZoneIndex<Zone extends GeometryZone>(
+  zones: readonly Zone[],
   point: WorldPoint,
   distance: HeatZoneDistance
 ): number {

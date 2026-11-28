@@ -470,6 +470,12 @@ const pl = {
   'statistics.metrics.temperatureStdDev': 'Rozrzut temperatury',
   'statistics.metrics.temperatureStdDevDescription':
     'Odchylenie standardowe temperatury w pokrytych komórkach.',
+  'statistics.metrics.riverCells': 'Komórki rzek',
+  'statistics.metrics.riverCellsDescription': 'Komórki, przez które przepływa rzeka.',
+  'statistics.metrics.lakeCells': 'Komórki jezior',
+  'statistics.metrics.lakeCellsDescription': 'Komórki wypełnionych zagłębień jeziornych.',
+  'statistics.metrics.basinCount': 'Baseny',
+  'statistics.metrics.basinCountDescription': 'Liczba odrębnych basenów jeziornych.',
   'statistics.metrics.landShare': 'Udział lądu',
   'statistics.metrics.landShareDescription': 'Udział świata powyżej poziomu morza.',
   'statistics.metrics.coldShare': 'Udział stref zimnych',

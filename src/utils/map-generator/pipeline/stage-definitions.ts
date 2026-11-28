@@ -12,6 +12,8 @@ export const MAP_CONFIG_KEYS = [
   'baseClimate.zoneIrregularity',
   'baseClimate.geologyCoupling',
   'baseClimate.currents',
+  'baseClimate.moisture',
+  'baseClimate.moistureZones',
   'geology',
   'heightmap',
 ] as const;
@@ -94,7 +96,10 @@ export const HEIGHTMAP_STAGE = {
   ],
 } as const satisfies DeclaredStage;
 
-/** The Climate stage turns heat zones, height and the sea into a continuous temperature field. */
+/**
+ * The Climate stage turns heat zones, base climate and height into continuous
+ * temperature and moisture, then derives rivers, lakes and drainage basins.
+ */
 export const CLIMATE_STAGE = {
   id: 'climate',
   nameKey: 'stages.climate',
@@ -106,6 +111,8 @@ export const CLIMATE_STAGE = {
     'baseClimate.zoneIrregularity',
     'baseClimate.geologyCoupling',
     'baseClimate.currents',
+    'baseClimate.moisture',
+    'baseClimate.moistureZones',
     'geology',
     'heightmap',
   ],

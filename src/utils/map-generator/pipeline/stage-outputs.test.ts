@@ -20,6 +20,10 @@ describe('selectPersistentRasters', () => {
       heightmap: new Float32Array(1),
       provenanceMap: new Int16Array(1),
       temperatureMap: new Float32Array(1),
+      moistureMap: new Float32Array(1),
+      riverMap: new Uint8Array(1),
+      lakeMap: new Uint8Array(1),
+      basinMap: new Int16Array(1),
     };
 
     const selected = selectPersistentRasters(data);

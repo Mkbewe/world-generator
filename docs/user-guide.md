@@ -56,7 +56,8 @@ refreshing the page clears them.
 
 ## Current scope
 
-The current climate data includes heat zones, baseline moisture, and ocean
-currents. Continuous climate simulation, hydrology, biomes, whole-world preset
-selection, map-layer export, and a Godot data package are not currently
-available.
+The generator now derives continuous temperature and moisture, plus rivers,
+lakes and drainage basins. The preview still exposes heat zones, baseline
+moisture, ocean currents and temperature; moisture and hydrology preview layers
+are planned. Biomes, whole-world preset selection, map-layer export, and a
+Godot data package are not currently available.

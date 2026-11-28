@@ -34,10 +34,10 @@ Legenda: **[działa]** — używane w aplikacji, **[częściowo]** — fundament
   jedną skupioną wyspę, z płaskimi i górzystymi masami, klifami, kraterami
   i lagunami; poziom wody jest stały w rastrze (bez suwaka poziomu morza),
   a wysepki pojawiają się tylko na płytkim szelfie przy brzegach.
-- **Klimat** — etap Climate liczy ciągłą temperaturę: bazę ze stref ciepła,
-  spadek z wysokością, moderację wybrzeża i seedowany, powykrzywiany noise.
-  Podgląd i odczyt temperatury są dostępne, a wilgotność i hydrologia pozostają
-  w #485.
+- **Klimat** — etap Climate liczy ciągłą temperaturę (strefy ciepła, wysokość,
+  wybrzeże i noise), wilgotność (strefy manualne, prądy i cień opadowy) oraz
+  hydrologię: rzeki, jeziora i baseny. Podgląd i odczyt temperatury są dostępne;
+  warstwy wilgotności i hydrologii dochodzą w #629 i #630.
 - **Ustawienia** — formularze ogólne, World shape, Macro regions, BaseClimate,
   Geology i Heightmap; stan formularzy jest pamiętany, a spięcie zakładek
   z podglądem opcjonalne.
@@ -61,8 +61,8 @@ Etapy deklarują dane wejściowe i wyjściowe. Wykonanie respektuje te zależno�
 sama pozycja etapu na liście nie oznacza zależności od wszystkich etapów przed
 nim.
 
-1. **Climate** — wilgotność, hydrologia i woda; temperatura jest już liczona
-   w etapie Climate, a kolejne pola dochodzą w #485.
+1. **Climate** — podglądy wilgotności i hydrologii (#629, #630); generator
+   liczy już temperaturę, wilgotność oraz rzeki, jeziora i baseny.
 2. **Formacje terenu** — klify, plaże, doliny i płaskowyże wynikające z nachyleń.
 3. **Biomy** — klasyfikacja z warunków środowiskowych, z wariantami gameplayowymi
    zależnymi od zagrożenia regionu.
